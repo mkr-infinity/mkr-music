@@ -1,0 +1,59 @@
+{
+  "version": "1.0",
+  "description": "Welcome to the release of MKR MUSIC! 🎉<br><br>Crafted with a completely overhauled User Interface alongside massive underlying optimizations. Featuring Player v17 engine for significantly smoother audio transitions, offline history caching, customized mood summaries, and 9 selectable anime & minimal icons.<br><br>Please check out our <a href=\"https://github.com/mkr-infinity/mkr-music\">Release Notes</a>.",
+  "image": "https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/logo/mkr_music_logo.png",
+  "changelog": [
+    {
+      "title": "What's New in v7 Engine",
+      "description": "The following major additions require Android 11+ to function efficiently. If you encounter any bugs, please use the in-app reporting tool.",
+      "blocks": [
+        {
+          "type": "row",
+          "children": [
+            {
+              "type": "image",
+              "url": "https://raw.githubusercontent.com/vivizzz007/vivi-music/main/Changelog/Image/1.png",
+              "modifier": {
+                "weight": 1.0,
+                "height": 240
+              }
+            },
+            {
+              "type": "video",
+              "url": "https://raw.githubusercontent.com/vivizzz007/vivi-music/main/Changelog/Video/1.webm",
+              "modifier": {
+                "weight": 1.0,
+                "height": 240
+              }
+            }
+          ]
+        }
+      ],
+      "items": [
+        "Fully integrated <font color=\"#4CAF50\"><b>SponsorBlock API</b></font> natively without third-party redirects.",
+        "Brand new immersive <b>Listen Together</b> interface featuring dynamic glassmorphism.",
+        "Added Player v17 <small>(limited currently to portrait orientation)</small>.",
+        "Rebuilt the Miniplayer completely with Compose animations.",
+        "Added a new <i>Remix Section</i> dynamically injected onto the home screen."
+      ]
+    },
+    {
+      "title": "Fixes & Optimizations",
+      "items": [
+        "Removed legacy SimpleMusic API providers to improve launch times by <font color=\"#4CAF50\">40%</font>.",
+        "Spoofed core app metadata to mimic standard web browsers for <font color=\"#2196F3\"><b>safer uninterrupted streaming</b></font>.",
+        "Improved Musixmatch exact lyrics matching stability (thanks to johnpetersa19).",
+        "Fixed critical Spotify login failure loop."
+      ]
+    },
+    {
+      "title": "Support the Developer",
+      "description": "ViviMusic will always remain free and open-source. If you enjoy the countless hours poured into this app, consider supporting the development below ❤️️",
+      "items": [
+        "☕ Support me heavily on <b>Ko-fi:</b> https://ko-fi.com/vividhpashokan",
+        "💸 Support instantly via UPI: <b>vividhpashokan@axl</b>",
+        "💳 Support internationally via <b>PayPal:</b> https://www.paypal.me/vividhpashokan"
+      ]
+    }
+  ]
+}
