@@ -15,6 +15,7 @@ buildscript {
     dependencies {
         classpath(libs.gradle)
         classpath(kotlin("gradle-plugin", libs.versions.kotlin.get()))
+        classpath("com.google.dagger:hilt-android-gradle-plugin:${libs.versions.hilt.get()}")
     }
 }
 
