@@ -65,8 +65,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
-import coil.compose.AsyncImage
-import coil.request.ImageRequest
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.music.mkr.BuildConfig
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.R
@@ -248,7 +249,7 @@ fun AboutScreen(
                     isExternalLink = true
                 ),
                 Material3SettingsItem(
-                    icon = painterResource(R.drawable.source),
+                    icon = painterResource(R.drawable.github_main),
                     title = { Text("Upstream Project") },
                     description = { Text("Based on ViVi Music (GPL-3.0)") },
                     onClick = { uriHandler.safeOpenUri(context, "https://github.com/vivizzz007/vivi-music") },
@@ -456,7 +457,7 @@ private fun RepoMetricsRow(
         MetricCard(
             label = "Forks",
             count = if (forks != null) NumberFormat.getInstance().format(animatedForks) else "—",
-            iconRes = R.drawable.source,
+            iconRes = R.drawable.network_node,
             modifier = Modifier.weight(1f),
             onClick = onForksClick
         )

@@ -9,6 +9,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.core.content.edit
 import androidx.compose.foundation.clickable
@@ -137,6 +138,7 @@ import com.music.mkr.constants.LyricsScrollKey
 import com.music.mkr.constants.MiniPlayerBackgroundStyleKey
 import com.music.mkr.constants.ShowAudioQualityBadgeKey
 import com.music.mkr.constants.EnableSettingsPopupKey
+import com.music.mkr.constants.ShowCommentButtonKey
 import com.music.mkr.constants.AppIconKey
 import com.music.mkr.ui.component.AppIconSelectionDialog
 import com.music.mkr.utils.AppIcon

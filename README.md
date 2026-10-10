@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/logo/app_logo.svg" width="120" height="120" alt="MKR Music Logo" />
+  <img src="assets/logo/mkr_music_logo.png" width="120" height="120" alt="MKR Music Logo" />
 </p>
 
 <h1 align="center">MKR Music</h1>

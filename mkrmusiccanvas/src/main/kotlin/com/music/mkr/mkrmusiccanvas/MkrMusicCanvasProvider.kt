@@ -17,6 +17,8 @@ import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
+import com.music.mkr.canvas.CanvasArtwork
+
 @Serializable
 data class MkrMusicCanvasManifest(
     val items: List<MkrMusicCanvasItem> = emptyList()
@@ -95,7 +97,7 @@ object MkrMusicCanvasProvider {
         }
     }
 
-    suspend fun getBySongArtist(song: String, artist: String, album: String? = null): String? {
+    suspend fun getBySongArtist(song: String, artist: String, album: String? = null): CanvasArtwork? {
         val manifest = fetchManifest() ?: return null
         val s = song.trim().lowercase()
         val a = artist.trim().lowercase()
@@ -106,15 +108,22 @@ object MkrMusicCanvasProvider {
                     it.artist.trim().lowercase() == a &&
                     (al == null || it.album.isBlank() || it.album.trim().lowercase() == al)
         }
-        if (exactMatch != null) return exactMatch.url
-
-        val looseMatch = manifest.items.firstOrNull {
+        val match = exactMatch ?: manifest.items.firstOrNull {
             val itemSong = it.song.trim().lowercase()
             val itemArtist = it.artist.trim().lowercase()
             (itemSong == s || s.contains(itemSong) || itemSong.contains(s)) &&
                     (itemArtist == a || a.contains(itemArtist) || itemArtist.contains(a))
         }
-        return looseMatch?.url
+
+        return match?.let {
+            CanvasArtwork(
+                name = it.song,
+                artist = it.artist,
+                albumName = it.album.takeIf { alb -> alb.isNotBlank() },
+                animated = it.url,
+                videoUrl = it.url
+            )
+        }
     }
 }
 

@@ -10,6 +10,7 @@ import com.music.mkr.github.network.GitHubReleaseDto
 import com.music.mkr.github.network.GitHubRepoDto
 import com.music.mkr.github.network.GitHubService
 import com.music.mkr.utils.dataStore
+import com.music.mkr.utils.get
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow

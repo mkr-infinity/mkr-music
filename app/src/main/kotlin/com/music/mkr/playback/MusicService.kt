@@ -3577,7 +3577,7 @@ class MusicService :
                 player.stop()
                 player.clearMediaItems()
                 stopForeground(STOP_FOREGROUND_REMOVE)
-                notificationManager.cancelAll()
+                getSystemService(NotificationManager::class.java)?.cancelAll()
                 mediaSession.release()
             } catch (e: Exception) {
                 Timber.e(e, "Error stopping player on task clear")
