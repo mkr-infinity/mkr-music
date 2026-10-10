@@ -79,9 +79,9 @@ MKR Music features nine distinct launcher icon identities crafted directly from 
 To guarantee reproducibility and clean builds without local environment issues, MKR Music is configured to build exclusively on GitHub Actions:
 
 1. Navigate to the **[Actions tab](https://github.com/mkr-infinity/mkr-music/actions)**.
-2. Select the **CI & Debug Build** workflow.
+2. Select the **Production Release Build** workflow.
 3. Click **Run workflow** on the `main` branch.
-4. Download the compiled universal APK artifacts directly from the workflow run.
+4. Download the compiled release APK artifacts directly from the workflow run or GitHub Releases.
 
 ---
 

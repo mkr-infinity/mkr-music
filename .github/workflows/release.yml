@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   check_and_release:
-    name: Check Version & Publish Release
+    name: Build & Publish MKR Music Release
     runs-on: ubuntu-latest
     if: github.actor != 'dependabot[bot]'
 
@@ -45,21 +45,18 @@ jobs:
           echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
           echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
 
-      - name: Check If Release Already Exists
-        id: check_release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check Keystore Availability
+        id: check_keystore
         run: |
-          VERSION_NAME="${{ steps.version_info.outputs.version_name }}"
-          if gh release view "v$VERSION_NAME" >/dev/null 2>&1; then
-            echo "exists=true" >> $GITHUB_OUTPUT
-            echo "Release v$VERSION_NAME already exists. Skipping release steps."
+          if [ -n "${{ secrets.KEYSTORE }}" ]; then
+            echo "has_keystore=true" >> $GITHUB_OUTPUT
+            echo "Release Keystore secret detected."
           else
-            echo "exists=false" >> $GITHUB_OUTPUT
-            echo "Release v$VERSION_NAME does not exist. Proceeding with release."
+            echo "has_keystore=false" >> $GITHUB_OUTPUT
+            echo "No custom Keystore secret found. Using auto-generated signing key."
           fi
-      - name: Generate debug.keystore
-        if: steps.check_release.outputs.exists == 'false'
+
+      - name: Generate Signing Keystore
         run: |
           mkdir -p ~/.android
           keytool -genkey -v \
@@ -70,29 +67,17 @@ jobs:
             -keyalg RSA \
             -keysize 2048 \
             -validity 10000 \
-            -dname "CN=Android Debug,O=Android,C=US"
+            -dname "CN=MKR Music,O=MKR,C=US"
 
       - name: Build GMS Release APK
-        if: steps.check_release.outputs.exists == 'false'
-        env:
-          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
-          LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
-          VIVI_GITHUB_CLIENT_ID: ${{ secrets.VIVI_GITHUB_CLIENT_ID }}
-          VIVI_GITHUB_CLIENT_SECRET: ${{ secrets.VIVI_GITHUB_CLIENT_SECRET }}
         run: ./gradlew assembleUniversalGmsRelease --no-configuration-cache --console=plain --warning-mode summary -x lint
 
       - name: Build FOSS Release APK
-        if: steps.check_release.outputs.exists == 'false'
-        env:
-          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
-          LASTFM_SECRET: ${{ secrets.LASTFM_SECRET }}
-          VIVI_GITHUB_CLIENT_ID: ${{ secrets.VIVI_GITHUB_CLIENT_ID }}
-          VIVI_GITHUB_CLIENT_SECRET: ${{ secrets.VIVI_GITHUB_CLIENT_SECRET }}
         run: ./gradlew assembleUniversalFossRelease --no-configuration-cache --console=plain --warning-mode summary -x lint
 
-      - name: Sign GMS APK
-        if: steps.check_release.outputs.exists == 'false'
-        id: sign_gms
+      - name: Sign GMS APK with Custom Keystore
+        if: steps.check_keystore.outputs.has_keystore == 'true'
+        id: sign_gms_custom
         uses: ilharp/sign-android-release@v2.0.0
         with:
           releaseDir: app/build/outputs/apk/universalGms/release/
@@ -102,9 +87,9 @@ jobs:
           keyPassword: ${{ secrets.KEY_PASSWORD }}
           buildToolsVersion: 35.0.0
 
-      - name: Sign FOSS APK
-        if: steps.check_release.outputs.exists == 'false'
-        id: sign_foss
+      - name: Sign FOSS APK with Custom Keystore
+        if: steps.check_keystore.outputs.has_keystore == 'true'
+        id: sign_foss_custom
         uses: ilharp/sign-android-release@v2.0.0
         with:
           releaseDir: app/build/outputs/apk/universalFoss/release/
@@ -115,14 +100,19 @@ jobs:
           buildToolsVersion: 35.0.0
 
       - name: Prepare Release Assets
-        if: steps.check_release.outputs.exists == 'false'
         run: |
           mkdir -p release_assets
-          cp "${{ steps.sign_gms.outputs.signedFile }}" release_assets/vivi.apk
-          cp "${{ steps.sign_foss.outputs.signedFile }}" release_assets/izzydroid-universal-foss-release.apk
+          if [ "${{ steps.check_keystore.outputs.has_keystore }}" == "true" ]; then
+            cp "${{ steps.sign_gms_custom.outputs.signedFile }}" release_assets/mkr-music-universal-gms.apk
+            cp "${{ steps.sign_foss_custom.outputs.signedFile }}" release_assets/mkr-music-universal-foss.apk
+          else
+            GMS_APK=$(find app/build/outputs/apk/universalGms/release/ -name "*.apk" | head -n 1)
+            FOSS_APK=$(find app/build/outputs/apk/universalFoss/release/ -name "*.apk" | head -n 1)
+            cp "$GMS_APK" release_assets/mkr-music-universal-gms.apk
+            cp "$FOSS_APK" release_assets/mkr-music-universal-foss.apk
+          fi
 
       - name: Generate changelog.json
-        if: steps.check_release.outputs.exists == 'false'
         env:
           VERSION_CODE: ${{ steps.version_info.outputs.version_code }}
           VERSION_NAME: ${{ steps.version_info.outputs.version_name }}
@@ -165,7 +155,7 @@ jobs:
                           else:
                               features.append(clean_line)
           else:
-              features.append("Bug fixes and performance improvements.")
+              features.append("New MKR Music release with modern Material 3 Expressive UI, audio improvements, and bug fixes.")
               
           if not description:
               summary_items = []
@@ -220,8 +210,13 @@ jobs:
           with open("release_assets/changelog.json", "w", encoding="utf-8") as f:
               json.dump(data, f, indent=2)
 
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mkr-music-release-apks
+          path: release_assets/*
+
       - name: Create GitHub Release & Upload Assets
-        if: steps.check_release.outputs.exists == 'false'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -232,10 +227,15 @@ jobs:
           if [ -f "$NOTES_FILE" ]; then
             cat "$NOTES_FILE" > release_notes.txt
           else
-            echo "Release v$VERSION_NAME" > release_notes.txt
+            echo "MKR Music Release v$VERSION_NAME" > release_notes.txt
           fi
           echo -e "\n\n☕ Support development on Buy Me a Coffee: https://buymeacoffee.com/mkr_infinity" >> release_notes.txt
           
+          # Delete existing release/tag with same name if it exists so re-running works cleanly
+          gh release delete "v$VERSION_NAME" --yes || true
+          git tag -d "v$VERSION_NAME" 2>/dev/null || true
+          git push --delete origin "v$VERSION_NAME" 2>/dev/null || true
+
           gh release create "v$VERSION_NAME" release_assets/* \
             --title "MKR Music v$VERSION_NAME" \
             --notes-file release_notes.txt \
