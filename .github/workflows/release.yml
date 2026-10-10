@@ -50,10 +50,10 @@ jobs:
         run: |
           if [ -n "${{ secrets.KEYSTORE }}" ]; then
             echo "has_keystore=true" >> $GITHUB_OUTPUT
-            echo "Release Keystore secret detected."
+            echo "Custom Keystore secret detected."
           else
             echo "has_keystore=false" >> $GITHUB_OUTPUT
-            echo "No custom Keystore secret found. Using auto-generated signing key."
+            echo "No custom Keystore secret found. Using standard signing fallback."
           fi
 
       - name: Generate Signing Keystore
@@ -69,30 +69,15 @@ jobs:
             -validity 10000 \
             -dname "CN=MKR Music,O=MKR,C=US"
 
-      - name: Build GMS Release APK
+      - name: Build Universal Release APK
         run: ./gradlew assembleUniversalGmsRelease --no-configuration-cache --console=plain --warning-mode summary -x lint
 
-      - name: Build FOSS Release APK
-        run: ./gradlew assembleUniversalFossRelease --no-configuration-cache --console=plain --warning-mode summary -x lint
-
-      - name: Sign GMS APK with Custom Keystore
+      - name: Sign APK with Custom Keystore
         if: steps.check_keystore.outputs.has_keystore == 'true'
-        id: sign_gms_custom
+        id: sign_custom
         uses: ilharp/sign-android-release@v2.0.0
         with:
           releaseDir: app/build/outputs/apk/universalGms/release/
-          signingKey: ${{ secrets.KEYSTORE }}
-          keyAlias: ${{ secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-          buildToolsVersion: 35.0.0
-
-      - name: Sign FOSS APK with Custom Keystore
-        if: steps.check_keystore.outputs.has_keystore == 'true'
-        id: sign_foss_custom
-        uses: ilharp/sign-android-release@v2.0.0
-        with:
-          releaseDir: app/build/outputs/apk/universalFoss/release/
           signingKey: ${{ secrets.KEYSTORE }}
           keyAlias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -103,13 +88,10 @@ jobs:
         run: |
           mkdir -p release_assets
           if [ "${{ steps.check_keystore.outputs.has_keystore }}" == "true" ]; then
-            cp "${{ steps.sign_gms_custom.outputs.signedFile }}" release_assets/mkr-music-universal-gms.apk
-            cp "${{ steps.sign_foss_custom.outputs.signedFile }}" release_assets/mkr-music-universal-foss.apk
+            cp "${{ steps.sign_custom.outputs.signedFile }}" release_assets/mkr-music-universal-release.apk
           else
-            GMS_APK=$(find app/build/outputs/apk/universalGms/release/ -name "*.apk" | head -n 1)
-            FOSS_APK=$(find app/build/outputs/apk/universalFoss/release/ -name "*.apk" | head -n 1)
-            cp "$GMS_APK" release_assets/mkr-music-universal-gms.apk
-            cp "$FOSS_APK" release_assets/mkr-music-universal-foss.apk
+            BUILT_APK=$(find app/build/outputs/apk/universalGms/release/ -name "*.apk" | head -n 1)
+            cp "$BUILT_APK" release_assets/mkr-music-universal-release.apk
           fi
 
       - name: Generate changelog.json
@@ -213,7 +195,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mkr-music-release-apks
+          name: mkr-music-universal-release-apk
           path: release_assets/*
 
       - name: Create GitHub Release & Upload Assets

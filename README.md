@@ -67,10 +67,11 @@ MKR Music features nine distinct launcher icon identities crafted directly from 
 
 ---
 
-## 📦 Distribution Variants
+## 📦 Universal Release APK
 
-- **GMS Variant (`universalGms`)**: Includes Google Play Services and Google Cast support for casting music to Chromecasts, smart speakers, and smart displays.
-- **FOSS Variant (`universalFoss`)**: 100% Google Play Services-free, privacy-respecting, and compatible with F-Droid.
+MKR Music distributes a single, all-in-one **Universal Release APK** (`mkr-music-universal-release.apk`) that supports:
+- **All Devices**: Full support for `arm64-v8a`, `armeabi-v7a`, `x86`, and `x86_64` CPU architectures.
+- **Complete Features**: Full Google Cast streaming support, background playback, and all offline caching features out of the box.
 
 ---
 
