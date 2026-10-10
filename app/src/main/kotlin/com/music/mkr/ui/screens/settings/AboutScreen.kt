@@ -304,9 +304,9 @@ private fun DeveloperHeroCard(
                     model = ImageRequest.Builder(context)
                         .data(GitHubConfig.DEV_AVATAR_URL)
                         .crossfade(true)
-                        .error(R.drawable.dev)
-                        .placeholder(R.drawable.dev)
                         .build(),
+                    placeholder = painterResource(R.drawable.dev),
+                    error = painterResource(R.drawable.dev),
                     contentDescription = GitHubConfig.DEV_NAME,
                     modifier = Modifier
                         .matchParentSize()
