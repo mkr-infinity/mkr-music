@@ -1,0 +1,10 @@
+package com.music.mkr.ui.theme
+
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import com.music.mkr.R
+
+val bbh_bartle = FontFamily(
+    Font(R.font.bbh_bartle_regular, FontWeight.Normal)
+)
