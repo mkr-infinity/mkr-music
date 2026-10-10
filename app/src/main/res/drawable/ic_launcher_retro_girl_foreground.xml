@@ -1,0 +1,51 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Retro Melody Girl: 90s City Pop Anime Girl with Headband and Retro Headphones -->
+    <!-- Head/Face -->
+    <path
+        android:fillColor="#FBE9E7"
+        android:pathData="M44,48 L54,62 L64,48 C64,44 60,38 54,38 C48,38 44,44 44,48 Z" />
+    <!-- Retro Auburn Hair & Side Fringe -->
+    <path
+        android:fillColor="#5D4037"
+        android:pathData="M38,44 C36,34 42,26 54,26 C66,26 72,34 70,44 L72,58 L66,54 C66,44 62,38 54,38 C46,38 42,44 42,54 L36,58 Z" />
+    <!-- Vintage Headband (Warm Coral Red) -->
+    <path
+        android:fillColor="#FF5722"
+        android:pathData="M40,36 C44,32 64,32 68,36 L69,40 C64,36 44,36 39,40 Z" />
+    <!-- Cheerful Eyes -->
+    <path
+        android:fillColor="#26A69A"
+        android:pathData="M47,48 A2,2.5 0 1,0 47,53 A2,2.5 0 1,0 47,48 Z" />
+    <path
+        android:fillColor="#26A69A"
+        android:pathData="M61,48 A2,2.5 0 1,1 61,53 A2,2.5 0 1,1 61,48 Z" />
+    <!-- Classic Silver Headphone Band -->
+    <path
+        android:strokeColor="#ECEFF1"
+        android:strokeWidth="2.5"
+        android:pathData="M34,46 C34,22 74,22 74,46" />
+    <!-- Retro Mint/Teal Ear Foam Pads -->
+    <path
+        android:fillColor="#00897B"
+        android:pathData="M30,44 A6,8 0 1,0 30,60 A6,8 0 1,0 30,44 Z" />
+    <path
+        android:fillColor="#80CBC4"
+        android:pathData="M30,48 A3,4 0 1,0 30,56 A3,4 0 1,0 30,48 Z" />
+    <path
+        android:fillColor="#00897B"
+        android:pathData="M78,44 A6,8 0 1,1 78,60 A6,8 0 1,1 78,44 Z" />
+    <path
+        android:fillColor="#80CBC4"
+        android:pathData="M78,48 A3,4 0 1,1 78,56 A3,4 0 1,1 78,48 Z" />
+    <!-- Retro Polo Shirt Collar -->
+    <path
+        android:fillColor="#004D40"
+        android:pathData="M36,68 L48,62 L54,66 L60,62 L72,68 L76,84 L32,84 Z" />
+    <path
+        android:fillColor="#FFCC80"
+        android:pathData="M48,64 L54,72 L60,64 L54,62 Z" />
+</vector>

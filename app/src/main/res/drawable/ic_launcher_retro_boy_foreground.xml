@@ -1,0 +1,47 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Retro Rhythm Boy: 90s Lo-fi Anime Boy with Backward Cap & Foam Headphones -->
+    <!-- Head/Face -->
+    <path
+        android:fillColor="#FADBB6"
+        android:pathData="M44,48 L54,64 L64,48 C64,44 60,38 54,38 C48,38 44,44 44,48 Z" />
+    <!-- Backward Cap (Teal / Retro Green) -->
+    <path
+        android:fillColor="#00695C"
+        android:pathData="M38,36 C38,26 70,26 70,36 L72,40 L36,40 Z" />
+    <path
+        android:fillColor="#004D40"
+        android:pathData="M34,38 C32,41 38,43 42,41 L40,38 Z" />
+    <!-- Short Brown Hair Tuft -->
+    <path
+        android:fillColor="#4E342E"
+        android:pathData="M42,41 L48,46 L54,42 L60,46 L66,41 L68,46 C60,44 56,44 54,45 C52,44 46,44 42,46 Z" />
+    <!-- Retro Metal Wire Headband -->
+    <path
+        android:strokeColor="#CFD8DC"
+        android:strokeWidth="2"
+        android:pathData="M34,48 C34,22 74,22 74,48" />
+    <!-- Orange Vintage Foam Ear Pads -->
+    <path
+        android:fillColor="#FF6D00"
+        android:pathData="M30,46 A6,8 0 1,0 30,62 A6,8 0 1,0 30,46 Z" />
+    <path
+        android:fillColor="#FFA000"
+        android:pathData="M30,50 A3,4 0 1,0 30,58 A3,4 0 1,0 30,50 Z" />
+    <path
+        android:fillColor="#FF6D00"
+        android:pathData="M78,46 A6,8 0 1,1 78,62 A6,8 0 1,1 78,46 Z" />
+    <path
+        android:fillColor="#FFA000"
+        android:pathData="M78,50 A3,4 0 1,1 78,58 A3,4 0 1,1 78,50 Z" />
+    <!-- Bomber Jacket (Mustard & Terracotta) -->
+    <path
+        android:fillColor="#E65100"
+        android:pathData="M34,70 L48,62 L54,66 L60,62 L74,70 L78,84 L30,84 Z" />
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M48,64 L54,68 L60,64 L54,78 Z" />
+</vector>

@@ -1,0 +1,50 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Midnight Listener: Peaceful anime boy with studio headphones -->
+    <!-- Head/Face -->
+    <path
+        android:fillColor="#FCEADE"
+        android:pathData="M44,46 L54,62 L64,46 C64,42 60,36 54,36 C48,36 44,42 44,46 Z" />
+    <!-- Closed Eyes (Peaceful curved lines) -->
+    <path
+        android:strokeColor="#5C6BC0"
+        android:strokeWidth="1.5"
+        android:pathData="M47,50 C48.5,52 50.5,52 52,50 M56,50 C57.5,52 59.5,52 61,50" />
+    <!-- Soft Wavy Dark Blue Hair -->
+    <path
+        android:fillColor="#1A237E"
+        android:pathData="M40,44 C38,36 44,28 54,28 C64,28 70,36 68,44 L66,48 C62,40 56,40 54,42 C52,40 46,40 42,48 Z" />
+    <path
+        android:fillColor="#3949AB"
+        android:pathData="M42,32 C48,29 54,29 58,32 L56,36 C52,34 48,34 44,36 Z" />
+    <!-- Over-Ear Studio Headphones (Midnight Indigo & Cyan) -->
+    <path
+        android:strokeColor="#0D47A1"
+        android:strokeWidth="4"
+        android:pathData="M34,48 C34,26 74,26 74,48" />
+    <!-- Left Cup -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M28,46 A7,10 0 0,0 28,62 A3,6 0 0,0 28,46 Z" />
+    <path
+        android:fillColor="#1A237E"
+        android:pathData="M27,51 A3,5 0 0,0 27,57 A1.5,3 0 0,0 27,51 Z" />
+    <!-- Right Cup -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M80,46 A7,10 0 0,1 80,62 A3,6 0 0,1 80,46 Z" />
+    <path
+        android:fillColor="#1A237E"
+        android:pathData="M81,51 A3,5 0 0,1 81,57 A1.5,3 0 0,1 81,51 Z" />
+    <!-- Cozy Hoodie Collar -->
+    <path
+        android:fillColor="#101935"
+        android:pathData="M36,68 C42,62 48,64 54,64 C60,64 66,62 72,68 L78,84 L30,84 Z" />
+    <!-- Floating tiny stars/notes -->
+    <path
+        android:fillColor="#80D8FF"
+        android:pathData="M32,32 L34,30 L36,32 L34,34 Z M74,34 L75.5,32.5 L77,34 L75.5,35.5 Z" />
+</vector>

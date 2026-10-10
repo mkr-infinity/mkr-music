@@ -1,0 +1,50 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Dreamwave Girl: Atmospheric soft lofi anime girl with flowing hair -->
+    <!-- Floating Flowing Bob Hair (Back Layer) -->
+    <path
+        android:fillColor="#9575CD"
+        android:pathData="M34,36 C28,46 30,62 38,70 L42,62 C36,54 36,46 40,40 Z M74,36 C80,46 78,62 70,70 L66,62 C72,54 72,46 68,40 Z" />
+    <!-- Face -->
+    <path
+        android:fillColor="#FFF3E0"
+        android:pathData="M44,46 L54,60 L64,46 C64,42 60,36 54,36 C48,36 44,42 44,46 Z" />
+    <!-- Peaceful Closed Eyes -->
+    <path
+        android:strokeColor="#7E57C2"
+        android:strokeWidth="1.5"
+        android:pathData="M47,50 C48.5,52 50.5,52 52,50 M56,50 C57.5,52 59.5,52 61,50" />
+    <!-- Soft Pastel Violet Bangs -->
+    <path
+        android:fillColor="#B39DDB"
+        android:pathData="M40,36 C46,44 50,44 54,42 C58,44 62,44 68,36 C64,30 44,30 40,36 Z" />
+    <!-- Sleek Wireless Headband (Pearl Lavender) -->
+    <path
+        android:strokeColor="#D1C4E9"
+        android:strokeWidth="3.5"
+        android:pathData="M34,46 C34,26 74,26 74,46" />
+    <!-- Left Oval Ear Cup (Soft Cyan/Mint) -->
+    <path
+        android:fillColor="#80DEEA"
+        android:pathData="M30,44 A6,8 0 0,0 30,58 A3,5 0 0,0 30,44 Z" />
+    <path
+        android:fillColor="#E0F7FA"
+        android:pathData="M29,48 A2,3 0 0,0 29,54 A1,2 0 0,0 29,48 Z" />
+    <!-- Right Oval Ear Cup -->
+    <path
+        android:fillColor="#80DEEA"
+        android:pathData="M78,44 A6,8 0 0,1 78,58 A3,5 0 0,1 78,44 Z" />
+    <path
+        android:fillColor="#E0F7FA"
+        android:pathData="M79,48 A2,3 0 0,1 79,54 A1,2 0 0,1 79,48 Z" />
+    <!-- Oversized Pastel Sweater -->
+    <path
+        android:fillColor="#4A148C"
+        android:pathData="M34,66 C40,62 48,64 54,64 C60,64 68,62 74,66 L80,84 L28,84 Z" />
+    <path
+        android:fillColor="#7B1FA2"
+        android:pathData="M42,64 C48,68 60,68 66,64 L68,72 C60,76 48,76 40,72 Z" />
+</vector>

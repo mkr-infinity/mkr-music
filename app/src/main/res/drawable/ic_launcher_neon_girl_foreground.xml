@@ -1,0 +1,64 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Neon Harmony Girl: Cyberpunk idol with glowing headphones -->
+    <!-- Twin-tails Hair (Back) -->
+    <path
+        android:fillColor="#E91E63"
+        android:pathData="M32,38 C24,42 22,58 26,68 L32,60 C30,52 30,44 34,40 Z" />
+    <path
+        android:fillColor="#E91E63"
+        android:pathData="M76,38 C84,42 86,58 82,68 L76,60 C78,52 78,44 74,40 Z" />
+    <!-- Head/Face (Softer jawline) -->
+    <path
+        android:fillColor="#FFF0E5"
+        android:pathData="M44,46 L54,60 L64,46 C64,42 60,36 54,36 C48,36 44,42 44,46 Z" />
+    <!-- Anime Fringe / Bangs -->
+    <path
+        android:fillColor="#FF4081"
+        android:pathData="M40,36 C44,46 48,46 50,44 C52,47 56,47 60,43 C64,47 68,40 68,36 C64,30 44,30 40,36 Z" />
+    <!-- Expressive Eyes -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M47,48 A2,3 0 1,0 47,54 A2,3 0 1,0 47,48 Z" />
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M61,48 A2,3 0 1,1 61,54 A2,3 0 1,1 61,48 Z" />
+    <!-- Cyber Cat-Ear Headphones -->
+    <path
+        android:strokeColor="#880E4F"
+        android:strokeWidth="3.5"
+        android:pathData="M34,46 C34,26 74,26 74,46" />
+    <!-- Left Ear Point -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M40,30 L45,18 L50,28 Z" />
+    <!-- Right Ear Point -->
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M58,28 L63,18 L68,30 Z" />
+    <!-- Left Glowing Earpad -->
+    <path
+        android:fillColor="#FF007F"
+        android:pathData="M30,44 A6,8 0 0,0 30,58 A3,5 0 0,0 30,44 Z" />
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M29,48 A2,3 0 0,0 29,54 A1,2 0 0,0 29,48 Z" />
+    <!-- Right Glowing Earpad -->
+    <path
+        android:fillColor="#FF007F"
+        android:pathData="M78,44 A6,8 0 0,1 78,58 A3,5 0 0,1 78,44 Z" />
+    <path
+        android:fillColor="#00E5FF"
+        android:pathData="M79,48 A2,3 0 0,1 79,54 A1,2 0 0,1 79,48 Z" />
+    <!-- Idol Outfit Collar -->
+    <path
+        android:fillColor="#210033"
+        android:pathData="M36,66 L48,60 L54,64 L60,60 L72,66 L78,84 L30,84 Z" />
+    <path
+        android:strokeColor="#FF4081"
+        android:strokeWidth="2"
+        android:pathData="M42,66 L54,72 L66,66" />
+</vector>

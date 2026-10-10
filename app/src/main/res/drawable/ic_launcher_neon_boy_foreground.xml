@@ -1,0 +1,54 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Neon Beat Boy: Anime boy silhouette with spiky hair and glowing headphones -->
+    <!-- Head/Face contour -->
+    <path
+        android:fillColor="#FFDFBA"
+        android:pathData="M44,48 L54,64 L64,48 C64,44 60,38 54,38 C48,38 44,44 44,48 Z" />
+    <!-- Spiky Anime Hair (Dark Charcoal & Neon Highlights) -->
+    <path
+        android:fillColor="#1E1B2E"
+        android:pathData="M38,42 L42,32 L48,36 L54,26 L60,36 L66,32 L70,42 L68,46 L64,42 L54,38 L44,42 L40,46 Z" />
+    <path
+        android:fillColor="#FF4081"
+        android:pathData="M48,30 L54,26 L56,32 L51,33 Z" />
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M58,29 L64,31 L61,35 L57,32 Z" />
+    <!-- Cyber Visor / Glasses -->
+    <path
+        android:fillColor="#FF007F"
+        android:pathData="M45,46 L63,46 L61,51 L47,51 Z" />
+    <!-- Over-Ear DJ Headphones (Band & Glowing Earcups) -->
+    <!-- Headband -->
+    <path
+        android:strokeColor="#2E284A"
+        android:strokeWidth="4"
+        android:pathData="M34,48 C34,28 74,28 74,48" />
+    <!-- Left Earcup (Glowing Neon Orange/Pink) -->
+    <path
+        android:fillColor="#FF6D00"
+        android:pathData="M30,46 A6,9 0 0,0 30,62 A3,6 0 0,0 30,46 Z" />
+    <path
+        android:fillColor="#FFD180"
+        android:pathData="M29,51 A3,4 0 0,0 29,57 A1.5,3 0 0,0 29,51 Z" />
+    <!-- Right Earcup (Glowing Neon Orange/Pink) -->
+    <path
+        android:fillColor="#FF6D00"
+        android:pathData="M78,46 A6,9 0 0,1 78,62 A3,6 0 0,1 78,46 Z" />
+    <path
+        android:fillColor="#FFD180"
+        android:pathData="M79,51 A3,4 0 0,1 79,57 A1.5,3 0 0,1 79,51 Z" />
+    <!-- High Collar Jacket -->
+    <path
+        android:fillColor="#181428"
+        android:pathData="M36,70 L48,62 L54,66 L60,62 L72,70 L76,84 L32,84 Z" />
+    <!-- Collar Neon Trim -->
+    <path
+        android:strokeColor="#FF4081"
+        android:strokeWidth="2"
+        android:pathData="M38,71 L48,63 L54,67 L60,63 L70,71" />
+</vector>
