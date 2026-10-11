@@ -911,7 +911,6 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                 }
             }
         )
-        )
     )
 
     val pagerState = rememberPagerState(pageCount = { pages.size })
