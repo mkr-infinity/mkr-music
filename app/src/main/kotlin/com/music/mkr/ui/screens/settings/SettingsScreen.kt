@@ -390,8 +390,8 @@ fun SettingsScreen(
                 keywords = listOf("backup", "restore", "export", "import", "data", "playlists")
             ),
             SearchableSetting(
-                title = "About MKR Music",
-                description = "Version v6.0.8 Stable, developer credits, licenses & GitHub repo",
+                title = "About",
+                description = "Version v${BuildConfig.VERSION_NAME}, developer credits, licenses & GitHub repo",
                 category = "System & Support",
                 iconRes = R.drawable.info,
                 route = "settings/about",
@@ -737,7 +737,7 @@ fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(6.dp))
 
-            // Section 6 — About MKR Music
+            // Section 6 — About
             ExpressiveSettingGroup(
                 title = "About",
                 itemMinHeight = 64.dp,
@@ -745,8 +745,8 @@ fun SettingsScreen(
                     Material3SettingsItem(
                         key = "about_app",
                         icon = painterResource(R.drawable.icon),
-                        title = { Text("About MKR Music") },
-                        description = { Text("v${BuildConfig.VERSION_NAME} Stable • Developed by Mohammad Kaif Raja") },
+                        title = { Text("About") },
+                        description = { Text("v${BuildConfig.VERSION_NAME}") },
                         onClick = { navController.navigate("settings/about") }
                     )
                 )
@@ -792,10 +792,10 @@ fun SettingsScreen(
                         contentDescription = null,
                         modifier = Modifier
                             .size(16.dp)
-                            .clip(RoundedCornerShape(4.dp))
+                            .clip(CircleShape)
                     )
                     Text(
-                        text = "v6.0.8",
+                        text = "About",
                         style = MaterialTheme.typography.labelSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer

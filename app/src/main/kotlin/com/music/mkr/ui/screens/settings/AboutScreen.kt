@@ -74,6 +74,7 @@ import com.music.mkr.ui.component.DialogBasic
 import com.music.mkr.ui.component.ExpressiveSettingGroup
 import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.Material3SettingsItem
+import com.music.mkr.ui.component.DonateDialog
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.safeOpenUri
 import java.text.SimpleDateFormat
@@ -91,6 +92,10 @@ fun AboutScreen(
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
     var showSupportDialog by remember { mutableStateOf(false) }
+
+    if (showSupportDialog) {
+        DonateDialog(onDismiss = { showSupportDialog = false })
+    }
 
     val installedDate = remember {
         try {
@@ -111,7 +116,7 @@ fun AboutScreen(
         Spacer(modifier = Modifier.height(16.dp))
 
         // Top Hero Section: Developer Profile & Social Media Hub
-        DeveloperHeroCard()
+        DeveloperHeroCard(onSupportClick = { showSupportDialog = true })
 
         Spacer(modifier = Modifier.height(16.dp))
 
@@ -128,6 +133,13 @@ fun AboutScreen(
         ExpressiveSettingGroup(
             title = "App Information",
             items = listOf(
+                Material3SettingsItem(
+                    key = "about_donate",
+                    icon = painterResource(R.drawable.buymeacoffee),
+                    title = { Text(stringResource(R.string.donate)) },
+                    description = { Text("Support ongoing development (UPI, Coffee, Tea)") },
+                    onClick = { showSupportDialog = true }
+                ),
                 Material3SettingsItem(
                     key = "about_app",
                     icon = painterResource(R.drawable.deployed_app_update),
@@ -162,7 +174,7 @@ fun AboutScreen(
     }
 
     TopAppBar(
-        title = { Text("About MKR Music") },
+        title = { Text("About") },
         navigationIcon = {
             IconButton(
                 onClick = { onBack?.invoke() ?: navController.navigateUp() },
@@ -178,7 +190,9 @@ fun AboutScreen(
 }
 
 @Composable
-private fun DeveloperHeroCard() {
+private fun DeveloperHeroCard(
+    onSupportClick: () -> Unit
+) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
 
@@ -336,7 +350,7 @@ private fun DeveloperHeroCard() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(20.dp))
-                    .clickable { uriHandler.safeOpenUri(context, GitHubConfig.DEV_BUYMEACOFFEE_URL) },
+                    .clickable(onClick = onSupportClick),
                 shape = RoundedCornerShape(20.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
@@ -350,13 +364,13 @@ private fun DeveloperHeroCard() {
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.buymeacoffee),
-                        contentDescription = "Buy Me a Coffee",
+                        contentDescription = "Donate",
                         tint = Color.Unspecified,
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Support on Buy Me a Coffee",
+                        text = "Donate / Support",
                         style = MaterialTheme.typography.labelLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
