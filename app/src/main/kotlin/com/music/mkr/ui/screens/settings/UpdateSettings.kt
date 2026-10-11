@@ -65,7 +65,7 @@ import com.music.mkr.mkrmusic.updater.checkForUpdate
 //here b5.0.1 must be used for the beta tag
 
 /**
- * vivimusic Project (C) 2026
+ * MKR Music Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 

@@ -1,5 +1,5 @@
 /**
- * vivimusic Project (C) 2026
+ * MKR Music Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 
@@ -32,8 +32,10 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import kotlinx.coroutines.delay
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -197,10 +199,17 @@ fun AppearanceSettings(
         IconUtils.setIcon(activity, newIcon)
         showAppIconDialog = false
         coroutineScope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            val autoDismissJob = launch {
+                delay(3000L)
+                snackbarHostState.currentSnackbarData?.dismiss()
+            }
             val result = snackbarHostState.showSnackbar(
-                message = "App icon updated to ${newIcon.title}. Restart to apply.",
-                actionLabel = "Restart"
+                message = "This app will restart to change the logo.",
+                actionLabel = "Restart app",
+                duration = SnackbarDuration.Indefinite
             )
+            autoDismissJob.cancel()
             if (result == SnackbarResult.ActionPerformed) {
                 val packageManager = activity.packageManager
                 val intent = packageManager.getLaunchIntentForPackage(activity.packageName)
@@ -216,10 +225,17 @@ fun AppearanceSettings(
         onEnableDynamicIconChange(enabled)
         IconUtils.setIcon(activity, enabled)
         coroutineScope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
+            val autoDismissJob = launch {
+                delay(3000L)
+                snackbarHostState.currentSnackbarData?.dismiss()
+            }
             val result = snackbarHostState.showSnackbar(
-                message = "Icon updated, restart to apply",
-                actionLabel = "Restart"
+                message = "This app will restart to change the logo.",
+                actionLabel = "Restart app",
+                duration = SnackbarDuration.Indefinite
             )
+            autoDismissJob.cancel()
             if (result == SnackbarResult.ActionPerformed) {
                 val packageManager = activity.packageManager
                 val intent = packageManager.getLaunchIntentForPackage(activity.packageName)

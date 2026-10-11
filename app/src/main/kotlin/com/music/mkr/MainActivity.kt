@@ -1,5 +1,5 @@
 /**
- * vivimusic Project (C) 2026
+ * MKR Music Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 
@@ -1281,11 +1281,12 @@ class MainActivity : ComponentActivity() {
                                     ) { data ->
                                         Snackbar(
                                             snackbarData = data,
-                                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            actionColor = MaterialTheme.colorScheme.primary,
-                                            actionContentColor = MaterialTheme.colorScheme.primary,
-                                            dismissActionContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                                            shape = RoundedCornerShape(28.dp),
+                                            containerColor = MaterialTheme.colorScheme.inverseSurface,
+                                            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
+                                            actionColor = MaterialTheme.colorScheme.inversePrimary,
+                                            actionContentColor = MaterialTheme.colorScheme.inversePrimary,
+                                            dismissActionContentColor = MaterialTheme.colorScheme.inverseOnSurface
                                         )
                                     }
 

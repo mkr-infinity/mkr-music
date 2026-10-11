@@ -5,28 +5,26 @@
 
 package com.music.mkr.ui.component
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,10 +35,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.music.mkr.R
 import com.music.mkr.utils.AppIcon
-import com.music.mkr.utils.AppIconGroup
 
 @Composable
 fun AppIconSelectionDialog(
@@ -58,110 +56,77 @@ fun AppIconSelectionDialog(
             )
         },
         text = {
-            LazyColumn(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(max = 420.dp)
             ) {
-                AppIconGroup.entries.forEach { group ->
-                    item {
-                        Text(
-                            text = group.label,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = MaterialTheme.colorScheme.primary,
-                            fontWeight = FontWeight.SemiBold,
-                            modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
-                        )
-                    }
-
-                    val groupIcons = AppIcon.entries.filter { it.group == group }
-                    items(groupIcons, key = { it.key }) { icon ->
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(2),
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(vertical = 4.dp)
+                ) {
+                    items(AppIcon.entries, key = { it.key }) { icon ->
                         val isSelected = icon == currentIcon
 
                         Surface(
                             shape = RoundedCornerShape(16.dp),
                             color = if (isSelected) {
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
                             } else {
-                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
+                                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
                             },
                             border = if (isSelected) {
-                                androidx.compose.foundation.BorderStroke(
-                                    2.dp,
-                                    MaterialTheme.colorScheme.primary
-                                )
-                            } else null,
+                                BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
+                            } else {
+                                BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .clip(RoundedCornerShape(16.dp))
                                 .clickable { onSelect(icon) }
                         ) {
-                            Row(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(vertical = 14.dp, horizontal = 8.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
-                                Image(
-                                    painter = painterResource(icon.previewDrawableRes),
-                                    contentDescription = icon.title,
-                                    modifier = Modifier
-                                        .size(52.dp)
-                                        .clip(RoundedCornerShape(14.dp))
-                                )
-
-                                Spacer(modifier = Modifier.width(14.dp))
-
-                                Column(
-                                    modifier = Modifier.weight(1f)
+                                Box(
+                                    contentAlignment = Alignment.Center
                                 ) {
-                                    Text(
-                                        text = icon.title,
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurface
+                                    Image(
+                                        painter = painterResource(icon.previewDrawableRes),
+                                        contentDescription = icon.title,
+                                        modifier = Modifier
+                                            .size(68.dp)
+                                            .clip(RoundedCornerShape(16.dp))
                                     )
-                                    Spacer(modifier = Modifier.height(2.dp))
-                                    Text(
-                                        text = icon.subtitle,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
+                                    if (isSelected) {
+                                        Box(
+                                            modifier = Modifier
+                                                .matchParentSize()
+                                                .clip(RoundedCornerShape(16.dp))
+                                                .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
+                                        )
+                                    }
                                 }
 
-                                RadioButton(
-                                    selected = isSelected,
-                                    onClick = { onSelect(icon) }
+                                Spacer(modifier = Modifier.height(10.dp))
+
+                                Text(
+                                    text = icon.title,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                                    textAlign = TextAlign.Center,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
                                 )
                             }
-                        }
-                    }
-                }
-
-                item {
-                    Surface(
-                        shape = RoundedCornerShape(16.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.5f),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 4.dp)
-                    ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(14.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.palette),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(20.dp)
-                            )
-                            Spacer(modifier = Modifier.width(12.dp))
-                            Text(
-                                text = "Additional handcrafted app icons will be available soon.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                         }
                     }
                 }

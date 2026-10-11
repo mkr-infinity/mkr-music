@@ -1,5 +1,5 @@
 /**
- * vivimusic Project (C) 2026
+ * MKR Music Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
 
@@ -11,6 +11,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -20,6 +21,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.ui.unit.sp
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.fadeIn
@@ -398,7 +402,7 @@ fun UpdateScreen(navController: NavHostController) {
                             else -> "V${rawVersion.uppercase()}"
                         }
                         Text(
-                            text = "VIVI MUSIC $displayVer",
+                            text = "MKR MUSIC $displayVer",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground,
@@ -494,7 +498,7 @@ fun UpdateScreen(navController: NavHostController) {
                                             else -> "V${rawVersion.uppercase()}"
                                         }
                                         Text(
-                                            text = "VIVI MUSIC VERSION $displayVer",
+                                            text = "MKR MUSIC VERSION $displayVer",
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.Bold,
                                             color = MaterialTheme.colorScheme.onBackground
@@ -544,6 +548,62 @@ fun UpdateScreen(navController: NavHostController) {
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalAlignment = Alignment.Start
                                     ) {
+                                        // Backup & Restore warning capsule card
+                                        Surface(
+                                            shape = RoundedCornerShape(20.dp),
+                                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
+                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.35f)),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(bottom = 16.dp)
+                                        ) {
+                                            Column(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .padding(16.dp)
+                                            ) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.backup),
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.secondary,
+                                                        modifier = Modifier.size(22.dp)
+                                                    )
+                                                    Spacer(modifier = Modifier.width(10.dp))
+                                                    Text(
+                                                        text = "Before updating: Back up your data",
+                                                        style = MaterialTheme.typography.titleSmall,
+                                                        fontWeight = FontWeight.Bold,
+                                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                                    )
+                                                }
+                                                Spacer(modifier = Modifier.height(8.dp))
+                                                Text(
+                                                    text = "If an in-place update fails due to a signature mismatch, uninstalling will delete the app's internal files. Export a backup to your Downloads folder first so your playlists and settings remain safe.",
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
+                                                    lineHeight = 18.sp
+                                                )
+                                                Spacer(modifier = Modifier.height(12.dp))
+                                                Button(
+                                                    onClick = { navController.navigate("settings/backup_restore") },
+                                                    shape = RoundedCornerShape(12.dp),
+                                                    colors = ButtonDefaults.buttonColors(
+                                                        containerColor = MaterialTheme.colorScheme.secondary,
+                                                        contentColor = MaterialTheme.colorScheme.onSecondary
+                                                    ),
+                                                    modifier = Modifier.align(Alignment.End)
+                                                ) {
+                                                    Text(
+                                                        text = "Back up data",
+                                                        style = MaterialTheme.typography.labelMedium,
+                                                        fontWeight = FontWeight.SemiBold
+                                                    )
+                                                }
+                                            }
+                                        }
                                         val desc = currentStatus.description ?: ""
                                         if (desc.isNotBlank()) {
                                             val primaryColor = MaterialTheme.colorScheme.primary

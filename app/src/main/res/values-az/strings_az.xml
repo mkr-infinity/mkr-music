@@ -306,7 +306,7 @@
     <string name="backup_create_failed">Couldn\'t create yedək</string>
     <string name="restore_failed">Uğursuz -a bərpa yedək</string>
     <string name="discord_integration">Discord Integration</string>
-    <string name="discord_information">vivimusic uses KizzyRPC kitabxana -a set sizin Discord hesab\'s status. Bu involves using Discord Gateway bağlantı, which may olmaq considered bir violation -ın Discord\'s TOS. However, there dır no known cases -ın user accounts being suspended üçün bu reason. Istifadə et at sizin own risk.\n\vivimusic will only extract sizin token, və everything else dır stored locally.</string>
+    <string name="discord_information">MKR Music uses KizzyRPC kitabxana -a set sizin Discord hesab\'s status. Bu involves using Discord Gateway bağlantı, which may olmaq considered bir violation -ın Discord\'s TOS. However, there dır no known cases -ın user accounts being suspended üçün bu reason. Istifadə et at sizin own risk.\n\MKR Music will only extract sizin token, və everything else dır stored locally.</string>
     <string name="dismiss">Bağla</string>
     <string name="options">Seçimlər</string>
     <string name="preview">Önizləmə</string>

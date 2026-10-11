@@ -12,25 +12,53 @@ import androidx.annotation.DrawableRes
 import com.music.mkr.R
 import timber.log.Timber
 
-enum class AppIconGroup(val label: String) {
-    OFFICIAL("Official Theme")
-}
-
 enum class AppIcon(
     val key: String,
     val title: String,
-    val subtitle: String,
-    val group: AppIconGroup,
     val aliasName: String,
     @DrawableRes val previewDrawableRes: Int
 ) {
     OFFICIAL(
-        key = "official",
-        title = "MKR Music (Official)",
-        subtitle = "Authentic emblem with signature colors & musical note",
-        group = AppIconGroup.OFFICIAL,
+        key = "mkr_official",
+        title = "MKR Official",
         aliasName = "com.music.mkr.icon.LineNote",
-        previewDrawableRes = R.drawable.icon
+        previewDrawableRes = R.drawable.ic_icon_mkr_official
+    ),
+    NEON_BEAT(
+        key = "neon_beat",
+        title = "Neon Beat",
+        aliasName = "com.music.mkr.icon.NeonBeat",
+        previewDrawableRes = R.drawable.ic_icon_neon_beat
+    ),
+    MIDNIGHT_NOTE(
+        key = "midnight_note",
+        title = "Midnight Note",
+        aliasName = "com.music.mkr.icon.MidnightNote",
+        previewDrawableRes = R.drawable.ic_icon_midnight_note
+    ),
+    DREAMWAVE(
+        key = "dreamwave",
+        title = "Dreamwave",
+        aliasName = "com.music.mkr.icon.Dreamwave",
+        previewDrawableRes = R.drawable.ic_icon_dreamwave
+    ),
+    MINIMAL_NOTE(
+        key = "minimal_note",
+        title = "Minimal Note",
+        aliasName = "com.music.mkr.icon.MinimalNote",
+        previewDrawableRes = R.drawable.ic_icon_minimal_note
+    ),
+    PULSE_VINYL(
+        key = "pulse_vinyl",
+        title = "Pulse Vinyl",
+        aliasName = "com.music.mkr.icon.PulseVinyl",
+        previewDrawableRes = R.drawable.ic_icon_pulse_vinyl
+    ),
+    RETRO_MELODY(
+        key = "retro_melody",
+        title = "Retro Melody",
+        aliasName = "com.music.mkr.icon.RetroMelody",
+        previewDrawableRes = R.drawable.ic_icon_retro_melody
     );
 
     companion object {
@@ -38,9 +66,13 @@ enum class AppIcon(
 
         fun fromKey(key: String?): AppIcon {
             return when (key) {
-                "official", "line_note", "minimal_note", "pulse_vinyl", "spectrum_rhythm",
-                "m_note", "music_monogram", "neon_boy", "midnight_boy", "retro_boy",
-                "neon_girl", "dreamwave_girl", "retro_girl" -> OFFICIAL
+                "official", "mkr_official", "line_note" -> OFFICIAL
+                "neon_beat", "neon_boy" -> NEON_BEAT
+                "midnight_note", "midnight_boy" -> MIDNIGHT_NOTE
+                "dreamwave", "dreamwave_girl" -> DREAMWAVE
+                "minimal_note", "m_note" -> MINIMAL_NOTE
+                "pulse_vinyl", "neon_girl" -> PULSE_VINYL
+                "retro_melody", "retro_boy", "retro_girl" -> RETRO_MELODY
                 else -> entries.firstOrNull { it.key == key } ?: DEFAULT
             }
         }
