@@ -312,7 +312,7 @@
     <string name="wrapped_ready_title">LE TUE STATISTICHE D\'ASCOLTO SONO PRONTE!</string>
     <string name="wrapped_ready_subtitle">È l\'ora di vedere cosa hai amato quest\'anno.</string>
     <string name="wrapped_thank_you">Grazie per aver ascoltato</string>
-    <string name="wrapped_special_thanks">"Un ringraziamento speciale a MO Agami (https://github.com/mostafaalagamy) per aver creato MKR Music"</string>
+    <string name="wrapped_special_thanks">"Un ringraziamento speciale a Kaif per aver creato MKR Music"</string>
     <string name="wrapped_close">Chiudi wrapped</string>
     <string name="wrapped_playlist_title">Il tuo Wrapped %s</string>
     <string name="wrapped_create_playlist">Crea playlist</string>

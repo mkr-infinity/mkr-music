@@ -23,7 +23,7 @@ object ListenTogetherServers {
             "name": "Hugging Face Sync",
             "url": "wss://devilmi-vivi-music-listen-together.hf.space",
             "location": "Global",
-            "operator": "VIVIDH"
+            "operator": "KAIF"
           },
           {
             "name": "MKR Sync Server",

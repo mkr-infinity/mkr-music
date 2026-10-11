@@ -445,7 +445,7 @@
     <string name="wrapped_ready_title">あなたのWrappedが完成しました！</string>
     <string name="wrapped_ready_subtitle">今年あなたが夢中になった音楽を見てみましょう。</string>
     <string name="wrapped_thank_you">聴いてくれてありがとう</string>
-<string name="wrapped_special_thanks">MKR Musicを制作したMO Agamyに特別な感謝を</string>
+<string name="wrapped_special_thanks">MKR Musicを制作したKaifに特別な感謝を</string>
     <string name="wrapped_close">Wrappedを閉じる</string>
     <string name="wrapped_playlist_title">あなたの%sWrapped</string>
     <plurals name="profiles_count">

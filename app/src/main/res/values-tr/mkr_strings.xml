@@ -424,7 +424,7 @@
     <string name="wrapped_ready_title">ÖZETİNİZ HAZIR!</string>
     <string name="wrapped_ready_subtitle">Bu yıl neleri sevdiğini görme zamanı.</string>
     <string name="wrapped_thank_you">Dinlediğin için teşekkürler</string>
-    <string name="wrapped_special_thanks">MKR Music\'i oluşturduğu için MO Agamy\'ye özel teşekkürler</string>
+    <string name="wrapped_special_thanks">MKR Music\'i oluşturduğu için Kaif\'ye özel teşekkürler</string>
     <string name="wrapped_close">Özeti kapat</string>
     <string name="wrapped_playlist_title">%s Özetin</string>
     <string name="wrapped_create_playlist">Çalma listesi oluştur</string>
