@@ -1165,6 +1165,7 @@ fun AppearanceSettings(
             items = buildList {
                 add(
                     Material3SettingsItem(
+                        key = "appearance_theme_palette",
                         icon = painterResource(R.drawable.palette),
                         title = { Text(stringResource(R.string.theme)) },
                         onClick = { navController.navigate("settings/appearance/theme") }
@@ -1172,6 +1173,7 @@ fun AppearanceSettings(
                 )
                 add(
                     Material3SettingsItem(
+                        key = "appearance_icon_gallery",
                         icon = painterResource(R.drawable.ic_dynamic_icon),
                         title = { Text("App Icon") },
                         description = { Text(currentAppIcon.title) },
@@ -1294,6 +1296,7 @@ fun AppearanceSettings(
             items = buildList {
                 add(
                     Material3SettingsItem(
+                        key = "appearance_apple_player",
                         icon = painterResource(R.drawable.nav_bar),
                         title = { Text(stringResource(R.string.mini_player)) },
                         trailingContent = {
@@ -1310,6 +1313,7 @@ fun AppearanceSettings(
                 )
                 add(
                     Material3SettingsItem(
+                        key = "appearance_pure_black",
                         icon = painterResource(R.drawable.contrast),
                         title = { Text(stringResource(R.string.pure_black_mini_player)) },
                         trailingContent = {
@@ -1534,6 +1538,7 @@ fun AppearanceSettings(
                     onClick = { showPlayerButtonsStyleDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_slider_style",
                     icon = painterResource(R.drawable.sliders),
                     title = { Text(stringResource(R.string.player_slider_style)) },
                     trailingContent = {
@@ -1774,6 +1779,7 @@ fun AppearanceSettings(
                     onClick = { showLyricsPositionDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_lyrics_animation",
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text(stringResource(R.string.lyrics_animation_style)) },
                     description = {
@@ -2039,6 +2045,7 @@ fun AppearanceSettings(
                     onClick = { onSlimNavChange(!slimNav) }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_floating_nav",
                     icon = painterResource(R.drawable.nav_bar),
                     title = { Text(stringResource(R.string.floating_navbar)) },
                     description = { Text(stringResource(R.string.floating_navbar_desc)) },

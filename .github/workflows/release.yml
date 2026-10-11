@@ -75,35 +75,11 @@ jobs:
             -validity 10000 \
             -dname "CN=MKR Music,O=MKR,C=US"
 
-      - name: Build Three Release APK Variants
+      - name: Build Universal Release APK
         run: |
-          echo "Building ARMv7 (armeabi-v7a), ARMv8 (arm64-v8a), and Universal APK variants..."
-          ./gradlew assembleArmeabiGmsRelease assembleArm64GmsRelease assembleUniversalGmsRelease \
+          echo "Building single Universal APK variant (including all supported ABIs)..."
+          ./gradlew assembleUniversalGmsRelease \
             --no-configuration-cache --console=plain --warning-mode summary -x lint
-
-      - name: Sign ARMv7 APK with Custom Keystore
-        if: steps.check_keystore.outputs.has_keystore == 'true'
-        id: sign_armv7
-        uses: ilharp/sign-android-release@v2.0.0
-        with:
-          releaseDir: app/build/outputs/apk/armeabiGms/release/
-          signingKey: ${{ secrets.KEYSTORE }}
-          keyAlias: ${{ secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-          buildToolsVersion: 35.0.0
-
-      - name: Sign ARM64 APK with Custom Keystore
-        if: steps.check_keystore.outputs.has_keystore == 'true'
-        id: sign_arm64
-        uses: ilharp/sign-android-release@v2.0.0
-        with:
-          releaseDir: app/build/outputs/apk/arm64Gms/release/
-          signingKey: ${{ secrets.KEYSTORE }}
-          keyAlias: ${{ secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-          buildToolsVersion: 35.0.0
 
       - name: Sign Universal APK with Custom Keystore
         if: steps.check_keystore.outputs.has_keystore == 'true'
@@ -123,61 +99,36 @@ jobs:
           mkdir -p release_assets
 
           if [ "${{ steps.check_keystore.outputs.has_keystore }}" == "true" ]; then
-            ARMV7_SRC="${{ steps.sign_armv7.outputs.signedFile }}"
-            ARM64_SRC="${{ steps.sign_arm64.outputs.signedFile }}"
             UNIVERSAL_SRC="${{ steps.sign_universal.outputs.signedFile }}"
           else
-            ARMV7_SRC=$(find app/build/outputs/apk/armeabiGms/release/ -name "*.apk" | head -n 1)
-            ARM64_SRC=$(find app/build/outputs/apk/arm64Gms/release/ -name "*.apk" | head -n 1)
             UNIVERSAL_SRC=$(find app/build/outputs/apk/universalGms/release/ -name "*.apk" | head -n 1)
           fi
 
-          echo "ARMv7 source: $ARMV7_SRC"
-          echo "ARM64 source: $ARM64_SRC"
           echo "Universal source: $UNIVERSAL_SRC"
-
-          if [ -z "$ARMV7_SRC" ] || [ ! -f "$ARMV7_SRC" ]; then
-            echo "::error::Built ARMv7 APK file not found!"
-            exit 1
-          fi
-
-          if [ -z "$ARM64_SRC" ] || [ ! -f "$ARM64_SRC" ]; then
-            echo "::error::Built ARM64 APK file not found!"
-            exit 1
-          fi
 
           if [ -z "$UNIVERSAL_SRC" ] || [ ! -f "$UNIVERSAL_SRC" ]; then
             echo "::error::Built Universal APK file not found!"
             exit 1
           fi
 
-          # Copy and rename to exact required filenames
-          cp "$ARMV7_SRC" release_assets/mkr-music-armv7.apk
-          cp "$ARM64_SRC" release_assets/mkr-music-arm64.apk
+          # Copy and rename to exact required filename
           cp "$UNIVERSAL_SRC" release_assets/mkr-music-universal.apk
 
-          echo "=== Validating Generated APKs ==="
-          for apk in mkr-music-armv7.apk mkr-music-arm64.apk mkr-music-universal.apk; do
-            apk_path="release_assets/$apk"
-            if [ ! -f "$apk_path" ]; then
-              echo "::error::Required APK $apk is missing!"
-              exit 1
-            fi
-            size=$(wc -c < "$apk_path")
-            if [ "$size" -lt 1000000 ]; then
-              echo "::error::Required APK $apk is suspiciously small ($size bytes)!"
-              exit 1
-            fi
-            echo "✓ Verified $apk ($size bytes)"
-          done
+          echo "=== Validating Generated Universal APK ==="
+          apk_path="release_assets/mkr-music-universal.apk"
+          if [ ! -f "$apk_path" ]; then
+            echo "::error::Required APK mkr-music-universal.apk is missing!"
+            exit 1
+          fi
+          size=$(wc -c < "$apk_path")
+          if [ "$size" -lt 1000000 ]; then
+            echo "::error::Required APK mkr-music-universal.apk is suspiciously small ($size bytes)!"
+            exit 1
+          fi
+          echo "✓ Verified mkr-music-universal.apk ($size bytes)"
 
-          echo "=== Inspecting Native ABIs in APKs ==="
-          echo "--- ARMv7 (armeabi-v7a) ---"
-          unzip -l release_assets/mkr-music-armv7.apk | grep "lib/" | head -n 10 || echo "No lib entries"
-          echo "--- ARM64 (arm64-v8a) ---"
-          unzip -l release_assets/mkr-music-arm64.apk | grep "lib/" | head -n 10 || echo "No lib entries"
-          echo "--- Universal ---"
-          unzip -l release_assets/mkr-music-universal.apk | grep "lib/" | head -n 10 || echo "No lib entries"
+          echo "=== Inspecting Native ABIs in Universal APK ==="
+          unzip -l release_assets/mkr-music-universal.apk | grep "lib/" | head -n 15 || echo "No lib entries"
 
       - name: Generate changelog.json
         env:
@@ -280,33 +231,27 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mkr-music-apks
+          name: mkr-music-universal-apk
           path: |
-            release_assets/mkr-music-armv7.apk
-            release_assets/mkr-music-arm64.apk
             release_assets/mkr-music-universal.apk
             release_assets/changelog.json
           if-no-files-found: error
 
       - name: Write Step Summary
         run: |
-          ARMV7_SIZE=$(ls -lh release_assets/mkr-music-armv7.apk | awk '{print $5}')
-          ARM64_SIZE=$(ls -lh release_assets/mkr-music-arm64.apk | awk '{print $5}')
           UNIVERSAL_SIZE=$(ls -lh release_assets/mkr-music-universal.apk | awk '{print $5}')
 
           cat << EOF >> $GITHUB_STEP_SUMMARY
           ## 🚀 MKR Music Build Complete
 
-          The three requested APK variants have been generated and packaged successfully:
+          The single Universal APK has been generated and packaged successfully with all supported architectures:
 
           | Variant | Target ABI | Filename | Size |
           | :--- | :--- | :--- | :--- |
-          | **ARMv7 (32-bit)** | \`armeabi-v7a\` | \`mkr-music-armv7.apk\` | $ARMV7_SIZE |
-          | **ARMv8 (64-bit)** | \`arm64-v8a\` | \`mkr-music-arm64.apk\` | $ARM64_SIZE |
-          | **Universal** | All supported ABIs | \`mkr-music-universal.apk\` | $UNIVERSAL_SIZE |
+          | **Universal** | All Supported ABIs (\`arm64-v8a\`, \`armeabi-v7a\`, \`x86\`, \`x86_64\`) | \`mkr-music-universal.apk\` | $UNIVERSAL_SIZE |
 
           ### 📦 Download Artifacts
-          Download the compiled APKs directly from the **Artifacts** section at the top of this run (\`mkr-music-apks\`).
+          Download the compiled APK directly from the **Artifacts** section at the top of this run (\`mkr-music-universal-apk\`).
           EOF
 
       - name: Create GitHub Release & Upload Assets

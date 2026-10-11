@@ -171,6 +171,7 @@ fun UpdateSettings(
         ExpressiveSettingGroup(
             items = listOf(
                 Material3SettingsItem(
+                    key = "update_check",
                     icon = painterResource(R.drawable.network_update),
                     title = { Text(stringResource(R.string.system_update)) },
                     trailingContent = {
@@ -208,6 +209,7 @@ fun UpdateSettings(
         ExpressiveSettingGroup(
             items = listOf(
                 Material3SettingsItem(
+                    key = "update_auto_check",
                     icon = painterResource(R.drawable.update),
                     title = { Text(stringResource(R.string.auto_update_check)) },
                     trailingContent = {
@@ -306,6 +308,7 @@ fun UpdateSettings(
         ExpressiveSettingGroup(
             items = listOf(
                 Material3SettingsItem(
+                    key = "update_changelog",
                     icon = painterResource(R.drawable.history),
                     title = { Text(stringResource(R.string.changelog)) },
                     description = { Text(stringResource(R.string.view_version_history)) },

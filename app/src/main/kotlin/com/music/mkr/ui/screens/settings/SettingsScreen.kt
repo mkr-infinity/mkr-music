@@ -61,7 +61,10 @@ private data class SearchableSetting(
     val description: String,
     val category: String,
     val iconRes: Int,
-    val route: String
+    val route: String,
+    val targetKey: String,
+    val categoryKey: String? = null,
+    val keywords: List<String> = emptyList()
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,89 +82,315 @@ fun SettingsScreen(
 
     val searchableSettings = remember {
         listOf(
+            // --- Appearance & Theming ---
             SearchableSetting(
-                title = "System Update",
-                description = "Check for MKR Music updates and downloads",
-                category = "Account & Updates",
-                iconRes = R.drawable.system_update_uptodate,
-                route = "settings/update"
-            ),
-            SearchableSetting(
-                title = "Account",
-                description = "Google account integration and sync",
-                category = "Account & Updates",
-                iconRes = R.drawable.google,
-                route = "settings/account"
-            ),
-            SearchableSetting(
-                title = "Appearance",
-                description = "Dynamic themes, accent colors, custom app icons, floating navbar",
-                category = "Media & Player Experience",
+                title = "App Icon Gallery",
+                description = "Choose dynamic launcher icons to customize your home screen",
+                category = "Appearance",
                 iconRes = R.drawable.palette,
-                route = "settings/appearance"
+                route = "settings/appearance",
+                targetKey = "appearance_icon_gallery",
+                keywords = listOf("launcher", "icon", "logo", "adaptive", "aesthetic", "homescreen", "gallery")
             ),
             SearchableSetting(
-                title = "Player & Audio",
-                description = "Equalizer, crossfade, silence skipping, audio cache",
-                category = "Media & Player Experience",
+                title = "Themes & Accent Colors",
+                description = "Dynamic Material You colors, palettes, and pure dark mode",
+                category = "Appearance",
+                iconRes = R.drawable.palette,
+                route = "settings/appearance",
+                targetKey = "appearance_theme_palette",
+                keywords = listOf("monet", "color", "accent", "dynamic theme", "palette", "custom color", "dark mode")
+            ),
+            SearchableSetting(
+                title = "Pure Black Mini Player",
+                description = "OLED pitch black background for the player and miniplayer",
+                category = "Appearance",
+                iconRes = R.drawable.contrast,
+                route = "settings/appearance",
+                targetKey = "appearance_pure_black",
+                keywords = listOf("oled", "amoled", "black", "pure black", "miniplayer", "dark")
+            ),
+            SearchableSetting(
+                title = "Floating Navigation Bar",
+                description = "Floating pill-shaped navigation bar with smooth blur effect",
+                category = "Appearance",
+                iconRes = R.drawable.nav_bar,
+                route = "settings/appearance",
+                targetKey = "appearance_floating_nav",
+                keywords = listOf("navbar", "navigation", "floating", "bottom bar", "pill", "dock")
+            ),
+            SearchableSetting(
+                title = "Player Seekbar & Sliders",
+                description = "Animated wavy and squiggly player seekbar sliders",
+                category = "Appearance",
+                iconRes = R.drawable.linear_scale,
+                route = "settings/appearance",
+                targetKey = "appearance_slider_style",
+                keywords = listOf("wavy", "squiggly", "slider", "seekbar", "progress", "wave", "track")
+            ),
+            SearchableSetting(
+                title = "Apple-Style Player Design",
+                description = "Fluid gestures, apple miniplayer layout and modern typography",
+                category = "Appearance",
+                iconRes = R.drawable.lyrics_apple,
+                route = "settings/appearance",
+                targetKey = "appearance_apple_player",
+                keywords = listOf("apple", "player design", "miniplayer", "fluid", "gestures", "ios")
+            ),
+            SearchableSetting(
+                title = "Animated & Liquid Lyrics",
+                description = "Real-time glowing liquid lyrics animation with synchronized rhythm",
+                category = "Appearance",
+                iconRes = R.drawable.lyrics,
+                route = "settings/appearance",
+                targetKey = "appearance_lyrics_animation",
+                keywords = listOf("liquid", "lyrics animation", "glow", "animated lyrics", "karaoke", "blur")
+            ),
+
+            // --- Player & Audio Engine ---
+            SearchableSetting(
+                title = "Streaming Audio Quality",
+                description = "High-fidelity JioSaavn streaming (320kbps) & YouTube Music fallback",
+                category = "Player & Audio",
+                iconRes = R.drawable.graphic_eq,
+                route = "settings/player",
+                targetKey = "player_audio_quality",
+                keywords = listOf("bitrate", "high quality", "lossless", "audio quality", "320kbps", "sound quality", "saavn", "streaming")
+            ),
+            SearchableSetting(
+                title = "Crossfade Between Songs",
+                description = "Seamless DJ-style crossfade transitions and custom duration curves",
+                category = "Player & Audio",
+                iconRes = R.drawable.linear_scale,
+                route = "settings/player",
+                targetKey = "player_crossfade",
+                keywords = listOf("crossfade", "fade", "transition", "gapless", "mix", "dj", "duration")
+            ),
+            SearchableSetting(
+                title = "Skip Silence In Audio",
+                description = "Automatically skip silent gaps between songs instantly",
+                category = "Player & Audio",
+                iconRes = R.drawable.fast_forward,
+                route = "settings/player",
+                targetKey = "player_skip_silence",
+                keywords = listOf("skip silence", "silence", "quiet", "instant skip", "gaps", "fast forward")
+            ),
+            SearchableSetting(
+                title = "Axion Equalizer & Bass Boost",
+                description = "Parametric equalizer, bass boost & hardware loudness enhancement",
+                category = "Player & Audio",
+                iconRes = R.drawable.mkrequlizer,
+                route = "settings/player",
+                targetKey = "player_equalizer",
+                keywords = listOf("equalizer", "eq", "bass", "loudness", "bass boost", "dsp", "sound", "volume")
+            ),
+            SearchableSetting(
+                title = "SponsorBlock Integration",
+                description = "Skip sponsored segments, intros, music video sketches automatically",
+                category = "Player & Audio",
+                iconRes = R.drawable.fast_forward,
+                route = "settings/player",
+                targetKey = "player_sponsorblock",
+                keywords = listOf("sponsorblock", "sponsor", "skip ads", "intro", "outro", "video skip")
+            ),
+            SearchableSetting(
+                title = "Persistent Playback Queue",
+                description = "Preserve current listening queue across app restarts and app clears",
+                category = "Player & Audio",
+                iconRes = R.drawable.queue_music,
+                route = "settings/player",
+                targetKey = "player_persistent_queue",
+                keywords = listOf("queue", "persistent queue", "resume queue", "save queue", "tracks")
+            ),
+            SearchableSetting(
+                title = "Resume on Bluetooth Connect",
+                description = "Automatically resume audio playback when headphones or car connect",
+                category = "Player & Audio",
                 iconRes = R.drawable.earbud_case,
-                route = "settings/player"
+                route = "settings/player",
+                targetKey = "player_bluetooth_resume",
+                keywords = listOf("bluetooth", "headphones", "auto play", "connect", "car audio")
+            ),
+
+            // --- Content, Lyrics & AI ---
+            SearchableSetting(
+                title = "Content Language & Location",
+                description = "Customize recommendations, trending charts, and discovery language",
+                category = "Content",
+                iconRes = R.drawable.language,
+                route = "settings/content",
+                targetKey = "content_language",
+                keywords = listOf("language", "country", "region", "charts", "recommendations", "content")
+            ),
+            SearchableSetting(
+                title = "Lyrics Providers & LRCLIB",
+                description = "Real-time synchronized lyrics engine, romanization, and translations",
+                category = "Content",
+                iconRes = R.drawable.lyrics,
+                route = "settings/content",
+                targetKey = "content_lyrics",
+                keywords = listOf("lrclib", "lyrics", "synced lyrics", "subtitles", "lyrics provider")
+            ),
+            SearchableSetting(
+                title = "AI Lyrics Translation",
+                description = "Translate song lyrics on-the-fly using intelligent AI models",
+                category = "Content",
+                iconRes = R.drawable.translate,
+                route = "settings/ai",
+                targetKey = "content_ai_lyrics",
+                keywords = listOf("ai", "translation", "translator", "ai lyrics", "translate")
+            ),
+            SearchableSetting(
+                title = "Explicit Content Filter",
+                description = "Toggle filtering and playback of explicit or mature audio tracks",
+                category = "Content",
+                iconRes = R.drawable.security,
+                route = "settings/content",
+                targetKey = "content_explicit",
+                keywords = listOf("explicit", "clean", "mature", "curse", "parental filter")
+            ),
+
+            // --- Storage & Cache ---
+            SearchableSetting(
+                title = "Audio Cache Size Limit",
+                description = "Configurable offline memory buffer up to 10GB for instant playback",
+                category = "Storage & Cache",
+                iconRes = R.drawable.storage,
+                route = "settings/storage",
+                targetKey = "storage_cache_limit",
+                keywords = listOf("cache", "song cache", "buffer", "10gb", "cache size", "memory")
+            ),
+            SearchableSetting(
+                title = "Offline Downloads Library",
+                description = "Manage downloaded songs, storage location, and unmetered play",
+                category = "Storage & Cache",
+                iconRes = R.drawable.download,
+                route = "settings/storage",
+                targetKey = "storage_downloads",
+                keywords = listOf("download", "offline", "saved tracks", "offline music", "downloads")
+            ),
+            SearchableSetting(
+                title = "Clear Cache & Temporary Files",
+                description = "Purge cached album artwork and audio chunks to reclaim free space",
+                category = "Storage & Cache",
+                iconRes = R.drawable.clear_all,
+                route = "settings/storage",
+                targetKey = "storage_clear_cache",
+                keywords = listOf("clear cache", "purge", "free space", "delete cache", "cleanup")
+            ),
+
+            // --- Privacy & Community ---
+            SearchableSetting(
+                title = "Playback History Tracking",
+                description = "Pause or enable tracking of listened songs and music history",
+                category = "Privacy",
+                iconRes = R.drawable.history,
+                route = "settings/privacy",
+                targetKey = "privacy_history",
+                keywords = listOf("history", "listening history", "recently played", "pause history")
+            ),
+            SearchableSetting(
+                title = "Search History Logs",
+                description = "Manage search query suggestions and clear previous searches",
+                category = "Privacy",
+                iconRes = R.drawable.search,
+                route = "settings/privacy",
+                targetKey = "privacy_search_history",
+                keywords = listOf("search history", "queries", "clear search", "recent searches")
+            ),
+            SearchableSetting(
+                title = "Listening Summary & Recap",
+                description = "Weekly recap stats, top artists, top genres, and musical moods",
+                category = "Features & Data",
+                iconRes = R.drawable.history,
+                route = "settings/listening_summary",
+                targetKey = "privacy_listening_summary",
+                keywords = listOf("recap", "summary", "stats", "weekly stats", "genres", "artists")
+            ),
+            SearchableSetting(
+                title = "Discord Rich Presence",
+                description = "Display live playing song, artist, and album art on Discord status",
+                category = "Integrations",
+                iconRes = R.drawable.discord,
+                route = "settings/integrations",
+                targetKey = "privacy_discord_rpc",
+                keywords = listOf("discord", "rpc", "rich presence", "status", "listening on discord")
             ),
             SearchableSetting(
                 title = "Listen Together",
                 description = "Synchronized live group listening sessions with friends",
                 category = "Media & Player Experience",
                 iconRes = R.drawable.group,
-                route = Screens.ListenTogether.route
+                route = Screens.ListenTogether.route,
+                targetKey = "screen_listen_together",
+                keywords = listOf("listen together", "party", "group session", "sync listen", "friends")
+            ),
+
+            // --- Account & Updates ---
+            SearchableSetting(
+                title = "Google & YouTube Music Sync",
+                description = "Sync your liked songs, playlists, and subscriptions seamlessly",
+                category = "Account",
+                iconRes = R.drawable.google,
+                route = "settings/account",
+                targetKey = "account_login",
+                keywords = listOf("google", "account", "login", "youtube music", "sync", "playlists")
             ),
             SearchableSetting(
-                title = "Content",
-                description = "Content language, lyrics providers, LRCLIB",
-                category = "Media & Player Experience",
-                iconRes = R.drawable.language,
-                route = "settings/content"
+                title = "Check for System Updates",
+                description = "Check for MKR Music new releases and install latest universal APK",
+                category = "Updates",
+                iconRes = R.drawable.system_update_uptodate,
+                route = "settings/update",
+                targetKey = "update_check",
+                keywords = listOf("update", "upgrade", "check update", "new version", "apk", "system update")
             ),
             SearchableSetting(
-                title = "AI Lyrics Translation",
-                description = "Translate song lyrics using AI engines",
-                category = "Features & Data",
-                iconRes = R.drawable.translate,
-                route = "settings/ai"
+                title = "Automatic Update Check",
+                description = "Automatically check for updates and notify when a new release is available",
+                category = "Updates",
+                iconRes = R.drawable.system_update_uptodate,
+                route = "settings/update",
+                targetKey = "update_auto_check",
+                keywords = listOf("auto update", "notify", "update check", "background check")
             ),
             SearchableSetting(
-                title = "Privacy",
-                description = "Playback history, search logs, telemetry options",
-                category = "Features & Data",
-                iconRes = R.drawable.security,
-                route = "settings/privacy"
+                title = "Changelog & Release Notes",
+                description = "Read full version history and what's new in latest MKR Music releases",
+                category = "Updates",
+                iconRes = R.drawable.changelog_paper,
+                route = "settings/changelog",
+                targetKey = "update_changelog",
+                keywords = listOf("changelog", "release notes", "what's new", "version history")
             ),
-            SearchableSetting(
-                title = "Listening Summary",
-                description = "Weekly listening stats, musical moods recap",
-                category = "Features & Data",
-                iconRes = R.drawable.history,
-                route = "settings/listening_summary"
-            ),
-            SearchableSetting(
-                title = "Storage & Cache",
-                description = "Cached music, offline files, cache limit, purge",
-                category = "Features & Data",
-                iconRes = R.drawable.storage,
-                route = "settings/storage"
-            ),
+
+            // --- System & Support ---
             SearchableSetting(
                 title = "Backup & Restore",
-                description = "Export playlists, app settings, import backups",
+                description = "Export and import your playlists, preferences, and database backups",
                 category = "System & Support",
                 iconRes = R.drawable.restore,
-                route = "settings/backup_restore"
+                route = "settings/backup_restore",
+                targetKey = "backup_export_import",
+                keywords = listOf("backup", "restore", "export", "import", "data", "playlists")
             ),
             SearchableSetting(
                 title = "About MKR Music",
-                description = "Version v6.0.8 Stable, developer info, GitHub repository",
+                description = "Version v6.0.8 Stable, developer credits, licenses & GitHub repo",
                 category = "System & Support",
                 iconRes = R.drawable.info,
-                route = "settings/about"
+                route = "settings/about",
+                targetKey = "about_app",
+                keywords = listOf("about", "version", "developer", "mkr", "github", "source code")
+            ),
+            SearchableSetting(
+                title = "Support Developer / Buy Me a Coffee",
+                description = "Support ongoing development of MKR Music directly",
+                category = "System & Support",
+                iconRes = R.drawable.buymeacoffee,
+                route = "settings/about",
+                targetKey = "about_support",
+                keywords = listOf("support", "coffee", "buymeacoffee", "donate", "contribute")
             )
         )
     }
@@ -249,7 +478,8 @@ fun SettingsScreen(
                 searchableSettings.filter {
                     it.title.lowercase().contains(query) ||
                     it.description.lowercase().contains(query) ||
-                    it.category.lowercase().contains(query)
+                    it.category.lowercase().contains(query) ||
+                    it.keywords.any { kw -> kw.lowercase().contains(query) }
                 }
             }
 
@@ -292,8 +522,15 @@ fun SettingsScreen(
                         Material3SettingsItem(
                             icon = painterResource(item.iconRes),
                             title = { Text(item.title) },
-                            description = { Text(item.description) },
-                            onClick = { navController.navigate(item.route) }
+                            description = { Text("${item.category} • ${item.description}") },
+                            onClick = {
+                                SettingsHighlightManager.requestHighlight(item.targetKey, item.categoryKey)
+                                if (item.route == "settings") {
+                                    searchQuery = ""
+                                } else {
+                                    navController.navigate(item.route)
+                                }
+                            }
                         )
                     }
                 )
@@ -308,17 +545,20 @@ fun SettingsScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatusCapsulePill(
+                    key = "pill_update",
                     icon = if (isUpdateAvailable) R.drawable.update_alert else R.drawable.system_update_uptodate,
                     label = if (isUpdateAvailable) "Update Available" else "System Up to Date",
                     highlight = isUpdateAvailable,
                     onClick = { navController.navigate("settings/update") }
                 )
                 StatusCapsulePill(
+                    key = "privacy_listening_summary",
                     icon = R.drawable.history,
                     label = "Listening Recap",
                     onClick = { navController.navigate("settings/listening_summary") }
                 )
                 StatusCapsulePill(
+                    key = "account_login",
                     icon = R.drawable.google,
                     label = "Account & Sync",
                     onClick = { navController.navigate("settings/account") }
@@ -333,6 +573,7 @@ fun SettingsScreen(
                 ) {
                     SettingsGridCard(
                         modifier = Modifier.weight(1f),
+                        key = "appearance_theme_palette",
                         icon = R.drawable.palette,
                         title = "Appearance",
                         subtitle = "Themes, accents & launcher icons",
@@ -340,6 +581,7 @@ fun SettingsScreen(
                     )
                     SettingsGridCard(
                         modifier = Modifier.weight(1f),
+                        key = "player_audio_quality",
                         icon = R.drawable.earbud_case,
                         title = "Player & Audio",
                         subtitle = "Dual engine, equalizer & sound",
@@ -352,6 +594,7 @@ fun SettingsScreen(
                 ) {
                     SettingsGridCard(
                         modifier = Modifier.weight(1f),
+                        key = "storage_downloads",
                         icon = R.drawable.storage,
                         title = "Storage & Cache",
                         subtitle = "Offline tracks & cache budgets",
@@ -359,6 +602,7 @@ fun SettingsScreen(
                     )
                     SettingsGridCard(
                         modifier = Modifier.weight(1f),
+                        key = "screen_listen_together",
                         icon = R.drawable.group,
                         title = "Listen Together",
                         subtitle = "Synchronized group sessions",
@@ -373,12 +617,14 @@ fun SettingsScreen(
                 itemMinHeight = 64.dp,
                 items = listOf(
                     Material3SettingsItem(
+                        key = "content_language",
                         icon = painterResource(R.drawable.language),
                         title = { Text(stringResource(R.string.content)) },
                         description = { Text(stringResource(R.string.setting_content_desc)) },
                         onClick = { navController.navigate("settings/content") }
                     ),
                     Material3SettingsItem(
+                        key = "content_ai_lyrics",
                         icon = painterResource(R.drawable.translate),
                         title = { Text(stringResource(R.string.ai_lyrics_translation)) },
                         description = { Text(stringResource(R.string.setting_ai_lyrics_translation_desc)) },
@@ -392,12 +638,14 @@ fun SettingsScreen(
                 itemMinHeight = 64.dp,
                 items = listOf(
                     Material3SettingsItem(
+                        key = "privacy_history",
                         icon = painterResource(R.drawable.security),
                         title = { Text(stringResource(R.string.privacy)) },
                         description = { Text(stringResource(R.string.setting_privacy_desc)) },
                         onClick = { navController.navigate("settings/privacy") }
                     ),
                     Material3SettingsItem(
+                        key = "backup_export_import",
                         icon = painterResource(R.drawable.restore),
                         title = { Text(stringResource(R.string.backup_restore)) },
                         description = { Text(stringResource(R.string.setting_backup_restore_desc)) },
@@ -411,6 +659,7 @@ fun SettingsScreen(
                 itemMinHeight = 64.dp,
                 items = listOf(
                     Material3SettingsItem(
+                        key = "about_app",
                         icon = painterResource(R.drawable.info),
                         title = { Text(stringResource(R.string.about)) },
                         description = { Text("v6.0.8 Stable • Developed by @mkr-infinity") },
@@ -476,6 +725,7 @@ fun SettingsScreen(
 @Composable
 private fun SettingsGridCard(
     modifier: Modifier = Modifier,
+    key: String? = null,
     icon: Int,
     title: String,
     subtitle: String,
@@ -483,6 +733,7 @@ private fun SettingsGridCard(
 ) {
     Surface(
         modifier = modifier
+            .settingsHighlight(key, RoundedCornerShape(22.dp))
             .clip(RoundedCornerShape(22.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(22.dp),
@@ -546,6 +797,7 @@ private fun SettingsGridCard(
 
 @Composable
 private fun StatusCapsulePill(
+    key: String? = null,
     icon: Int,
     label: String,
     highlight: Boolean = false,
@@ -553,6 +805,7 @@ private fun StatusCapsulePill(
 ) {
     Surface(
         modifier = Modifier
+            .settingsHighlight(key, RoundedCornerShape(50.dp))
             .clip(RoundedCornerShape(50.dp))
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(50.dp),

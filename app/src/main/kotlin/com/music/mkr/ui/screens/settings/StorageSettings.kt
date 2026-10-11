@@ -401,6 +401,7 @@ fun StorageSettings(
             title = stringResource(R.string.storage),
             items = listOf(
                 Material3SettingsItem(
+                    key = "storage_downloads",
                     icon = painterResource(R.drawable.storage),
                     title = { Text(stringResource(R.string.downloaded_songs)) },
                     trailingContent = {
@@ -421,6 +422,7 @@ fun StorageSettings(
             title = stringResource(R.string.song_cache),
             items = listOf(
                 Material3SettingsItem(
+                    key = "storage_cache_limit",
                     icon = painterResource(R.drawable.cached),
                     title = { Text(stringResource(R.string.max_song_cache_size)) },
                     description = {
@@ -603,6 +605,7 @@ fun StorageSettings(
                     }
                 ),
                 Material3SettingsItem(
+                    key = "storage_clear_cache",
                     icon = painterResource(R.drawable.clear_all),
                     title = { Text(stringResource(R.string.clear_image_cache)) },
                     onClick = {

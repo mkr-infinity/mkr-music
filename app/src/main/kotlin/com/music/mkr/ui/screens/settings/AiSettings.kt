@@ -393,6 +393,7 @@ fun AiSettings(
             title = stringResource(R.string.ai_provider),
             items = listOf(
                 Material3SettingsItem(
+                    key = "content_ai_lyrics",
                     icon = painterResource(R.drawable.explore_outlined),
                     title = { Text(stringResource(R.string.ai_provider)) },
                     description = { Text(aiProvider) },

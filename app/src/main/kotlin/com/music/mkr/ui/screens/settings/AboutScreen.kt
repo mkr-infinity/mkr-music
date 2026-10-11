@@ -195,6 +195,7 @@ fun AboutScreen(
                     isExternalLink = true
                 ),
                 Material3SettingsItem(
+                    key = "about_support",
                     icon = painterResource(R.drawable.buymeacoffee),
                     title = { Text("Support & Donate") },
                     description = { Text("Buy Me a Coffee (@mkr_infinity)") },
@@ -232,6 +233,7 @@ fun AboutScreen(
             title = "App Information",
             items = listOf(
                 Material3SettingsItem(
+                    key = "about_app",
                     icon = painterResource(R.drawable.deployed_app_update),
                     title = { Text(stringResource(R.string.installed_date_title)) },
                     trailingContent = { Text(installedDate) }

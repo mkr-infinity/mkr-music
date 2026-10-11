@@ -1158,39 +1158,56 @@ class MainActivity : ComponentActivity() {
                                             
                                             Box {
                                                 var showSettingsDropdown by remember { mutableStateOf(false) }
-                                                IconButton(onClick = { 
-                                                    if (enableSettingsPopup) {
-                                                        showSettingsDropdown = true 
-                                                    } else {
-                                                        navController.navigate("settings")
-                                                    }
-                                                }) {
-                                                    BadgedBox(badge = {}) {
-                                                        if (!enableSettingsPopup && accountImageUrl != null) {
-                                                            AsyncImage(
-                                                                model = accountImageUrl,
-                                                                contentDescription = stringResource(R.string.account),
-                                                                modifier = Modifier
-                                                                    .size(24.dp)
-                                                                    .clip(CircleShape)
-                                                            )
+                                                Surface(
+                                                    onClick = {
+                                                        if (enableSettingsPopup) {
+                                                            showSettingsDropdown = true
                                                         } else {
-                                                            val composition by rememberLottieComposition(
-                                                                LottieCompositionSpec.RawRes(R.raw.setting)
-                                                            )
-                                                            val progress by animateLottieCompositionAsState(
-                                                                composition = composition,
-                                                                isPlaying = true,
-                                                                iterations = 1,
-                                                                speed = 1.5f
-                                                            )
-    
-                                                            LottieAnimation(
-                                                                composition = composition,
-                                                                progress = { progress },
-                                                                modifier = Modifier.size(50.dp),
-                                                                contentScale = ContentScale.Fit
-                                                            )
+                                                            navController.navigate("settings")
+                                                        }
+                                                    },
+                                                    shape = CircleShape,
+                                                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f),
+                                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                                                    modifier = Modifier.size(42.dp)
+                                                ) {
+                                                    Box(contentAlignment = Alignment.Center) {
+                                                        BadgedBox(
+                                                            badge = {
+                                                                if (isUpdateAvailable.value) {
+                                                                    Badge(
+                                                                        containerColor = MaterialTheme.colorScheme.error,
+                                                                        modifier = Modifier.size(8.dp)
+                                                                    )
+                                                                }
+                                                            }
+                                                        ) {
+                                                            if (!enableSettingsPopup && accountImageUrl != null) {
+                                                                AsyncImage(
+                                                                    model = accountImageUrl,
+                                                                    contentDescription = stringResource(R.string.account),
+                                                                    modifier = Modifier
+                                                                        .size(24.dp)
+                                                                        .clip(CircleShape)
+                                                                )
+                                                            } else {
+                                                                val composition by rememberLottieComposition(
+                                                                    LottieCompositionSpec.RawRes(R.raw.setting)
+                                                                )
+                                                                val progress by animateLottieCompositionAsState(
+                                                                    composition = composition,
+                                                                    isPlaying = true,
+                                                                    iterations = 1,
+                                                                    speed = 1.5f
+                                                                )
+
+                                                                LottieAnimation(
+                                                                    composition = composition,
+                                                                    progress = { progress },
+                                                                    modifier = Modifier.size(36.dp),
+                                                                    contentScale = ContentScale.Fit
+                                                                )
+                                                            }
                                                         }
                                                     }
                                                 }

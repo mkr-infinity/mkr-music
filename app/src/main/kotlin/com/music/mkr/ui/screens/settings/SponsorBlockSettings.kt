@@ -122,7 +122,9 @@ fun SponsorBlockSettings(
             onClick = { onSponsorBlockEnabledChange(!sponsorBlockEnabled) },
             shape = RoundedCornerShape(50),
             colors = CardDefaults.cardColors(containerColor = containerColor),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier
+                .fillMaxWidth()
+                .settingsHighlight("player_sponsorblock", RoundedCornerShape(50))
         ) {
             Row(
                 modifier = Modifier

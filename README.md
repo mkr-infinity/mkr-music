@@ -97,15 +97,14 @@ MKR Music implements full Android 8.0+ (`API 26`) adaptive icon specifications a
 
 ---
 
-## 📦 Release APK Variants
+## 📦 Universal Release APK
 
-MKR Music builds and distributes three targeted APK variants via GitHub Actions:
+MKR Music distributes a single, highly-optimized Universal APK via GitHub Actions that natively bundles and supports all Android architectures:
 
-| Variant | Target Architecture | Filename | Description |
+| Package | Supported Architectures | Filename | Description |
 | :--- | :--- | :--- | :--- |
-| **ARMv7 (32-bit)** | `armeabi-v7a` | `mkr-music-armv7.apk` | Optimized for legacy 32-bit Android devices |
-| **ARMv8 (64-bit)** | `arm64-v8a` | `mkr-music-arm64.apk` | Peak performance on modern 64-bit Android smartphones |
-| **Universal** | All Architectures | `mkr-music-universal.apk` | All-in-one package supporting `arm64-v8a`, `armeabi-v7a`, `x86`, and `x86_64` |
+| **Universal APK** | `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64` | `mkr-music-universal.apk` | Fast, lightweight all-in-one APK compatible with every Android device |
+
 
 ---
 

@@ -652,6 +652,7 @@ fun ContentSettings(
             title = stringResource(R.string.general),
             items = listOf(
                 Material3SettingsItem(
+                    key = "content_language",
                     icon = painterResource(R.drawable.language),
                     title = { Text(stringResource(R.string.content_language)) },
                     trailingContent = {
@@ -682,6 +683,7 @@ fun ContentSettings(
                     onClick = { showSuggestionSheet = true }
                 ),
                 Material3SettingsItem(
+                    key = "content_explicit",
                     icon = painterResource(R.drawable.explicit),
                     title = { Text(stringResource(R.string.hide_explicit)) },
                     trailingContent = {
@@ -1161,6 +1163,7 @@ fun ContentSettings(
                     onClick = { onEnableBiniLyricsChange(!enableBiniLyrics) }
                 ),
                 Material3SettingsItem(
+                    key = "content_lyrics",
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text(stringResource(R.string.lyrics_provider_priority)) },
                     description = { Text(stringResource(R.string.lyrics_provider_priority_desc)) },

@@ -258,6 +258,7 @@ fun AccountSettingsScreen(
                     ExpressiveSettingGroup(
                         items = listOf(
                             Material3SettingsItem(
+                                key = "account_login",
                                 icon = painterResource(R.drawable.add_circle),
                                 title = { Text(stringResource(R.string.more_content)) },
                                 trailingContent = {
@@ -408,6 +409,7 @@ fun AccountSettingsScreen(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
+                            .settingsHighlight("account_login", RoundedCornerShape(24.dp))
                             .clip(RoundedCornerShape(24.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f))
                             .padding(20.dp)

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.music.mkr.R
 import com.music.mkr.utils.listItemShape
+import com.music.mkr.ui.screens.settings.settingsHighlight
 
 /**
  * A group of setting items styled exactly like WeatherMaster's SettingSection:
@@ -64,6 +65,7 @@ fun ExpressiveSettingGroup(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .settingsHighlight(item.key, shape)
                     .animateContentSize(),
                 shape = shape,
                 color = if (androidx.compose.foundation.isSystemInDarkTheme()) {

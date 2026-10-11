@@ -94,7 +94,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.util.lerp
+import kotlin.math.absoluteValue
 
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -150,6 +153,15 @@ import kotlinx.coroutines.delay
 
 data class OnboardingPageInfo(
     val content: @Composable (onUpdateScrollState: (Boolean) -> Unit) -> Unit
+)
+
+private data class OnboardingFeatureItem(
+    val title: String,
+    val description: String,
+    val tag: String,
+    val iconRes: Int,
+    val iconColor: Color,
+    val iconTint: Color
 )
 
 class WelcomeActivity : ComponentActivity() {
@@ -627,13 +639,93 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
         ),
         OnboardingPageInfo(
             content = { onUpdateScroll ->
+                LaunchedEffect(Unit) {
+                    onUpdateScroll(true)
+                }
+
+                val features = remember {
+                    listOf(
+                        OnboardingFeatureItem(
+                            title = "Apple-Style Player",
+                            description = "Fluid gestures, animated liquid lyrics and floating miniplayer crafted with pure elegance.",
+                            tag = "EXPERIENCE",
+                            iconRes = R.drawable.lyrics_apple,
+                            iconColor = Color(0xFFffaee4),
+                            iconTint = Color(0xFF8d0053)
+                        ),
+                        OnboardingFeatureItem(
+                            title = "Dual Engine Streaming",
+                            description = "High-fidelity JioSaavn audio streaming paired with seamless YouTube Music fallback.",
+                            tag = "AUDIO CORE",
+                            iconRes = R.drawable.high_quality,
+                            iconColor = Color(0xFFffb683),
+                            iconTint = Color(0xFF753403)
+                        ),
+                        OnboardingFeatureItem(
+                            title = "Synced & Liquid Lyrics",
+                            description = "Real-time synchronized lyric scrolls with translation, romanization and word highlights.",
+                            tag = "LYRICS",
+                            iconRes = R.drawable.lyrics,
+                            iconColor = Color(0xFF80da88),
+                            iconTint = Color(0xFF00522c)
+                        ),
+                        OnboardingFeatureItem(
+                            title = "Axion DSP Equalizer",
+                            description = "Full parametric equalizer, bass boost and hardware loudness enhancement engine.",
+                            tag = "DSP SOUND",
+                            iconRes = R.drawable.equalizer,
+                            iconColor = Color(0xFFcabeff),
+                            iconTint = Color(0xFF1c0062)
+                        ),
+                        OnboardingFeatureItem(
+                            title = "Offline Downloads",
+                            description = "Download tracks, albums and entire playlists for unmetered, lossless offline listening anywhere.",
+                            tag = "OFFLINE",
+                            iconRes = R.drawable.download,
+                            iconColor = Color(0xFF67d4ff),
+                            iconTint = Color(0xFF004e5d)
+                        ),
+                        OnboardingFeatureItem(
+                            title = "Dynamic Launcher Icons",
+                            description = "Choose from exclusive adaptive app icon styles to match your home screen aesthetic.",
+                            tag = "CUSTOMIZATION",
+                            iconRes = R.drawable.palette,
+                            iconColor = Color(0xFFffb0cd),
+                            iconTint = Color(0xFF7b003a)
+                        ),
+                        OnboardingFeatureItem(
+                            title = "Discord Rich Presence",
+                            description = "Broadcast your real-time song playback status, album art and artist details on Discord.",
+                            tag = "COMMUNITY",
+                            iconRes = R.drawable.discord,
+                            iconColor = Color(0xFFb6c6ed),
+                            iconTint = Color(0xFF001b3f)
+                        ),
+                        OnboardingFeatureItem(
+                            title = "Smart Audio Caching",
+                            description = "Intelligent prefetching and customizable cache storage up to 10GB for instant zero-lag playback.",
+                            tag = "PERFORMANCE",
+                            iconRes = R.drawable.storage,
+                            iconColor = Color(0xFFb5e48c),
+                            iconTint = Color(0xFF1b4332)
+                        )
+                    )
+                }
+
+                val featureCount = features.size
+                val virtualStart = remember { 1000 * featureCount }
+                val featurePagerState = rememberPagerState(
+                    initialPage = virtualStart,
+                    pageCount = { Int.MAX_VALUE }
+                )
+
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(80.dp))
+                    Spacer(modifier = Modifier.height(64.dp))
 
-                    Column(modifier = Modifier.padding(bottom = 16.dp)) {
+                    Column(modifier = Modifier.padding(bottom = 12.dp)) {
                         Text(
                             text = stringResource(com.music.mkr.R.string.feat_discover),
                             style = thinHeaderStyle,
@@ -643,135 +735,182 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                             text = stringResource(com.music.mkr.R.string.feat_features),
                             fontFamily = GoogleSansFlex,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 48.sp,
+                            fontSize = 44.sp,
                             color = MaterialTheme.colorScheme.primary,
-                            lineHeight = 56.sp
+                            lineHeight = 50.sp
                         )
 
-                        Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
                         Text(
-                            text = stringResource(com.music.mkr.R.string.feat_intro),
-                            style = MaterialTheme.typography.bodyLarge.copy(
+                            text = "Slide smoothly across features crafted for the ultimate music journey.",
+                            style = MaterialTheme.typography.bodyMedium.copy(
                                 fontFamily = GoogleSansFlex
                             ),
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
 
-                    Box(modifier = Modifier.weight(1f)) {
-                        val scrollState = rememberScrollState()
+                    Spacer(modifier = Modifier.height(8.dp))
 
-                        val isAtBottom by remember {
-                            derivedStateOf {
-                                val layoutInfo = scrollState.maxValue
-                                layoutInfo == 0 || scrollState.value >= (layoutInfo - 20)
-                            }
-                        }
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        HorizontalPager(
+                            state = featurePagerState,
+                            contentPadding = PaddingValues(horizontal = 36.dp),
+                            pageSpacing = 16.dp,
+                            modifier = Modifier.fillMaxWidth()
+                        ) { page ->
+                            val actualIndex = (page % featureCount + featureCount) % featureCount
+                            val item = features[actualIndex]
 
-                        LaunchedEffect(isAtBottom) {
-                            onUpdateScroll(isAtBottom)
-                        }
+                            val pageOffset = ((featurePagerState.currentPage - page) + featurePagerState.currentPageOffsetFraction).absoluteValue
+                            val scale = lerp(0.88f, 1f, 1f - pageOffset.coerceIn(0f, 1f))
+                            val alpha = lerp(0.50f, 1f, 1f - pageOffset.coerceIn(0f, 1f))
 
-                        Column(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .verticalScroll(scrollState),
-                            verticalArrangement = Arrangement.spacedBy(10.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            Card(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(310.dp)
+                                    .graphicsLayer {
+                                        scaleX = scale
+                                        scaleY = scale
+                                        this.alpha = alpha
+                                    },
+                                shape = RoundedCornerShape(32.dp),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                ),
+                                border = BorderStroke(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                                )
                             ) {
-                                FeatureGridCard(
-                                    modifier = Modifier.weight(1f),
-                                    icon = painterResource(id = R.drawable.lyrics_apple),
-                                    iconColor = Color(0xFFffaee4),
-                                    iconTint = Color(0xFF8d0053),
-                                    title = "Apple-Style Player",
-                                    description = "Fluid gestures, animated liquid lyrics & floating miniplayer"
-                                )
-                                FeatureGridCard(
-                                    modifier = Modifier.weight(1f),
-                                    icon = painterResource(id = R.drawable.high_quality),
-                                    iconColor = Color(0xFFffb683),
-                                    iconTint = Color(0xFF753403),
-                                    title = "Dual Engine",
-                                    description = "High-fidelity JioSaavn streaming with YouTube Music fallback"
-                                )
-                            }
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .padding(24.dp),
+                                    verticalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Surface(
+                                            shape = RoundedCornerShape(18.dp),
+                                            color = item.iconColor,
+                                            modifier = Modifier.size(54.dp)
+                                        ) {
+                                            Box(contentAlignment = Alignment.Center) {
+                                                Icon(
+                                                    painter = painterResource(id = item.iconRes),
+                                                    contentDescription = null,
+                                                    tint = item.iconTint,
+                                                    modifier = Modifier.size(28.dp)
+                                                )
+                                            }
+                                        }
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                FeatureGridCard(
-                                    modifier = Modifier.weight(1f),
-                                    icon = painterResource(id = R.drawable.lyrics),
-                                    iconColor = Color(0xFF80da88),
-                                    iconTint = Color(0xFF00522c),
-                                    title = "Synced Lyrics",
-                                    description = "Real-time synchronized lyrics with translation & romanization"
-                                )
-                                FeatureGridCard(
-                                    modifier = Modifier.weight(1f),
-                                    icon = painterResource(id = R.drawable.download),
-                                    iconColor = Color(0xFF67d4ff),
-                                    iconTint = Color(0xFF004e5d),
-                                    title = "Offline Play",
-                                    description = "Download tracks and playlists for unmetered offline listening"
-                                )
-                            }
+                                        Surface(
+                                            shape = CircleShape,
+                                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                                        ) {
+                                            Text(
+                                                text = item.tag,
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontFamily = GoogleSansFlex,
+                                                    fontWeight = FontWeight.Bold,
+                                                    letterSpacing = 1.1.sp
+                                                ),
+                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                            )
+                                        }
+                                    }
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                FeatureGridCard(
-                                    modifier = Modifier.weight(1f),
-                                    icon = painterResource(id = R.drawable.equalizer),
-                                    iconColor = Color(0xFFcabeff),
-                                    iconTint = Color(0xFF1c0062),
-                                    title = "Axion Equalizer",
-                                    description = "Parametric equalizer, bass boost & loudness enhancement engine"
-                                )
-                                FeatureGridCard(
-                                    modifier = Modifier.weight(1f),
-                                    icon = painterResource(id = R.drawable.palette),
-                                    iconColor = Color(0xFFffb0cd),
-                                    iconTint = Color(0xFF7b003a),
-                                    title = "Adaptive Icons",
-                                    description = "Dynamic launcher icon gallery to customize your home screen"
-                                )
-                            }
+                                    Column(modifier = Modifier.padding(vertical = 12.dp)) {
+                                        Text(
+                                            text = item.title,
+                                            fontWeight = FontWeight.Bold,
+                                            fontFamily = GoogleSansFlex,
+                                            fontSize = 21.sp,
+                                            lineHeight = 27.sp,
+                                            color = MaterialTheme.colorScheme.onSurface
+                                        )
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
-                            ) {
-                                FeatureGridCard(
-                                    modifier = Modifier.weight(1f),
-                                    icon = painterResource(id = R.drawable.discord),
-                                    iconColor = Color(0xFFb6c6ed),
-                                    iconTint = Color(0xFF001b3f),
-                                    title = "Discord RPC",
-                                    description = "Share playback status and album covers with friends live"
-                                )
-                                FeatureGridCard(
-                                    modifier = Modifier.weight(1f),
-                                    icon = painterResource(id = R.drawable.storage),
-                                    iconColor = Color(0xFFb5e48c),
-                                    iconTint = Color(0xFF1b4332),
-                                    title = "Smart Caching",
-                                    description = "Prefetching and configurable budgets up to 10GB storage"
-                                )
-                            }
+                                        Spacer(modifier = Modifier.height(10.dp))
 
-                            Spacer(modifier = Modifier.height(100.dp))
+                                        Text(
+                                            text = item.description,
+                                            fontFamily = GoogleSansFlex,
+                                            fontSize = 14.sp,
+                                            lineHeight = 21.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    }
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.End,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "${actualIndex + 1} / $featureCount",
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontFamily = GoogleSansFlex,
+                                                fontWeight = FontWeight.Medium
+                                            ),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val currentRealIndex = (featurePagerState.currentPage % featureCount + featureCount) % featureCount
+                        repeat(featureCount) { idx ->
+                            val isSelected = idx == currentRealIndex
+                            val dotWidth by animateDpAsState(
+                                targetValue = if (isSelected) 24.dp else 8.dp,
+                                animationSpec = tween(280),
+                                label = "featureDotWidth"
+                            )
+                            val dotColor = if (isSelected) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
+                            }
+
+                            Box(
+                                modifier = Modifier
+                                    .padding(horizontal = 3.dp)
+                                    .height(8.dp)
+                                    .width(dotWidth)
+                                    .clip(CircleShape)
+                                    .background(dotColor)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
                 }
             }
+        )
         )
     )
 

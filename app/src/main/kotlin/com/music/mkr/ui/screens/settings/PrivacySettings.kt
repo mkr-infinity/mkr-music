@@ -137,6 +137,7 @@ fun PrivacySettings(
             title = stringResource(R.string.listen_history),
             items = listOf(
                 Material3SettingsItem(
+                    key = "privacy_history",
                     icon = painterResource(R.drawable.history),
                     title = { Text(stringResource(R.string.pause_listen_history)) },
                     trailingContent = {
@@ -170,6 +171,7 @@ fun PrivacySettings(
             title = stringResource(R.string.search_history),
             items = listOf(
                 Material3SettingsItem(
+                    key = "privacy_search_history",
                     icon = painterResource(R.drawable.search_off),
                     title = { Text(stringResource(R.string.pause_search_history)) },
                     trailingContent = {

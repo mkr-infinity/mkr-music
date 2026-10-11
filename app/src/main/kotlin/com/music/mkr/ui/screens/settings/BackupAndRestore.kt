@@ -155,6 +155,7 @@ fun BackupAndRestore(
                     }
                 ),
                 Material3SettingsItem(
+                    key = "backup_export_import",
                     title = { Text(stringResource(R.string.action_backup)) },
                     icon = painterResource(R.drawable.backup),
                     onClick = {

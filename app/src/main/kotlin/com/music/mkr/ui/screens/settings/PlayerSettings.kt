@@ -312,6 +312,7 @@ fun PlayerSettings(
             title = stringResource(R.string.player),
             items = buildList {
                 add(Material3SettingsItem(
+                    key = "player_audio_quality",
                     icon = painterResource(R.drawable.graphic_eq),
                     title = { Text(stringResource(R.string.audio_quality)) },
                     trailingContent = {
@@ -342,6 +343,7 @@ fun PlayerSettings(
                 ))
                 // SponsorBlock settings navigation
                 add(Material3SettingsItem(
+                    key = "player_sponsorblock",
                     icon = painterResource(R.drawable.fast_forward),
                     title = { Text(stringResource(R.string.sponsorblock)) },
                     description = { Text(stringResource(R.string.sponsorblock_desc)) },
@@ -375,6 +377,7 @@ fun PlayerSettings(
                     onClick = { navController.navigate("settings/player/canvas") }
                 ))
                 add(Material3SettingsItem(
+                    key = "player_crossfade",
                     icon = painterResource(R.drawable.linear_scale),
                     title = { Text(stringResource(R.string.crossfade)) },
                     description = { Text(stringResource(R.string.crossfade_desc)) },
@@ -504,6 +507,7 @@ fun PlayerSettings(
                     }
                 ))
                 add(Material3SettingsItem(
+                    key = "player_skip_silence",
                     icon = painterResource(R.drawable.fast_forward),
                     title = { Text(stringResource(R.string.skip_silence)) },
                     description = { Text(stringResource(R.string.skip_silence_desc)) },
@@ -639,6 +643,7 @@ fun PlayerSettings(
                     onClick = { onSeekExtraSeconds(!seekExtraSeconds) }
                 ))
                 add(Material3SettingsItem(
+                    key = "player_equalizer",
                     icon = painterResource(R.drawable.mkrequlizer),
                     title = { Text(stringResource(R.string.vivi_equalizer)) },
                     description = { Text(stringResource(R.string.vivi_equalizer_desc)) },
@@ -653,6 +658,7 @@ fun PlayerSettings(
             title = stringResource(R.string.queue),
             items = listOf(
                 Material3SettingsItem(
+                    key = "player_persistent_queue",
                     icon = painterResource(R.drawable.queue_music),
                     title = { Text(stringResource(R.string.persistent_queue)) },
                     description = { Text(stringResource(R.string.persistent_queue_desc)) },
@@ -911,6 +917,7 @@ fun PlayerSettings(
                     onClick = { onPauseOnMuteChange(!pauseOnMute) }
                 ),
                 Material3SettingsItem(
+                    key = "player_bluetooth_resume",
                     icon = painterResource(R.drawable.bluetooth),
                     title = { Text(stringResource(R.string.resume_on_bluetooth_connect)) },
                     trailingContent = {

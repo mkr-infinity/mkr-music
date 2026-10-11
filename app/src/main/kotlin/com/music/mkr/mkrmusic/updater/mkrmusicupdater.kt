@@ -317,7 +317,7 @@ fun UpdateScreen(navController: NavHostController) {
                                                     }
                                                     ContextCompat.startActivity(context, installIntent, null)
                                                 }
-                                                val targetApkName = "mkr-music-universal-release.apk"
+                                                val targetApkName = "mkr-music-universal.apk"
                                                 val urlToDownload = currentStatus.apkUrl ?: "https://github.com/mkr-infinity/mkr-music/releases/download/${currentStatus.version}/$targetApkName"
                                                 
                                                 val downloadRequest = OneTimeWorkRequestBuilder<UpdateDownloadWorker>()
@@ -957,7 +957,7 @@ suspend fun checkForUpdate(
 
                     var apkSizeInMB = ""
                     var apkDownloadUrl = ""
-                    val expectedApkName = "mkr-music-universal-release.apk"
+                    val expectedApkName = "mkr-music-universal.apk"
                     for (j in 0 until assets.length()) {
                         val asset = assets.getJSONObject(j)
                         val assetName = asset.getString("name")

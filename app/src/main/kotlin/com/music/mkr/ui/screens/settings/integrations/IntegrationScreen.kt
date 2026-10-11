@@ -44,6 +44,7 @@ fun IntegrationScreen(
             title = stringResource(R.string.general),
             items = listOf(
                 Material3SettingsItem(
+                    key = "privacy_discord_rpc",
                     icon = painterResource(R.drawable.discord),
                     title = { Text(stringResource(R.string.discord_integration)) },
                     onClick = {
