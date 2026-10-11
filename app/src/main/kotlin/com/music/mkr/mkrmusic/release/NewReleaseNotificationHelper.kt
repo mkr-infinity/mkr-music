@@ -75,8 +75,11 @@ object NewReleaseNotificationHelper {
             }
         }
 
+        val resolvedLargeIcon = largeIcon ?: BitmapFactory.decodeResource(context.resources, R.drawable.icon)
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.mkrmusicnotification)
+            .setLargeIcon(resolvedLargeIcon)
             .setContentTitle(title)
             .setContentText(releaseTitle)
             .setContentIntent(pendingIntent)
@@ -84,7 +87,6 @@ object NewReleaseNotificationHelper {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .apply {
                 if (largeIcon != null) {
-                    setLargeIcon(largeIcon)
                     // BigPictureStyle shows the album art expanded in the notification shade
                     setStyle(
                         NotificationCompat.BigPictureStyle()

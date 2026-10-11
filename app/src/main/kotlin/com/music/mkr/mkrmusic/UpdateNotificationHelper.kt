@@ -47,8 +47,11 @@ object UpdateNotificationHelper {
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         val pending = PendingIntent.getActivity(context, NOTIFICATION_ID, intent, flags)
 
+        val largeIcon = android.graphics.BitmapFactory.decodeResource(context.resources, R.drawable.icon)
+
         val notif = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.mkrmusicnotification)
+            .setLargeIcon(largeIcon)
             .setContentTitle(context.getString(R.string.update_available_title))
             .setContentText(versionName)
             .setContentIntent(pending)

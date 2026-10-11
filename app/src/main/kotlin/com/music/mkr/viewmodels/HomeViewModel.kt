@@ -41,6 +41,7 @@ import com.music.mkr.db.entities.SpeedDialItem
 import com.music.mkr.extensions.filterVideoSongs
 import com.music.mkr.extensions.toEnum
 import com.music.mkr.models.SimilarRecommendation
+import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.ui.screens.wrapped.WrappedAudioService
 import com.music.mkr.ui.screens.wrapped.WrappedManager
 import com.music.mkr.utils.SyncUtils
@@ -469,35 +470,45 @@ class HomeViewModel @Inject constructor(
             return
         }
 
-        val recentSong = database.events().first().firstOrNull()?.song
-        if (recentSong == null) {
-            android.util.Log.w("QP_TIMING", "[Phase2] no recent song in events — skipping network enrichment")
+        val recentEvents = database.events().first().take(3)
+        val seedSongs = recentEvents.mapNotNull { it.song }.distinctBy { it.id }.ifEmpty {
+            database.mostPlayedSongs(System.currentTimeMillis() - 86400000L * 7, limit = 5).first().take(1)
+        }
+
+        if (seedSongs.isEmpty()) {
+            android.util.Log.w("QP_TIMING", "[Phase2] no seed song in events — skipping network enrichment")
             return
         }
-        android.util.Log.d("QP_TIMING", "[Phase2] seed song=${recentSong.id} (${recentSong.title})")
 
-        val tNext = System.currentTimeMillis()
         val ytSimilarSongs = mutableListOf<Song>()
-        val endpoint = YouTube.next(WatchEndpoint(videoId = recentSong.id)).getOrNull()?.relatedEndpoint
-        android.util.Log.d("QP_TIMING", "[Phase2] YouTube.next() took ${System.currentTimeMillis() - tNext}ms | endpoint=${endpoint?.browseId}")
+        for (seedSong in seedSongs) {
+            val tNext = System.currentTimeMillis()
+            val endpoint = YouTube.next(WatchEndpoint(videoId = seedSong.id)).getOrNull()?.relatedEndpoint
+            android.util.Log.d("QP_TIMING", "[Phase2] YouTube.next() took ${System.currentTimeMillis() - tNext}ms | endpoint=${endpoint?.browseId}")
 
-        if (endpoint == null) {
-            android.util.Log.w("QP_TIMING", "[Phase2] no relatedEndpoint returned — skipping")
-            return
-        }
-
-        val tRelated = System.currentTimeMillis()
-        YouTube.related(endpoint).onSuccess { page ->
-            android.util.Log.d("QP_TIMING", "[Phase2] YouTube.related() took ${System.currentTimeMillis() - tRelated}ms | page.songs=${page.songs.size}")
-            page.songs.take(10).forEach { ytSong ->
-                database.song(ytSong.id).first()?.let { localSong ->
-                    if (!hideVideoSongs || !localSong.song.isVideo) {
-                        ytSimilarSongs.add(localSong)
+            if (endpoint != null) {
+                val tRelated = System.currentTimeMillis()
+                YouTube.related(endpoint).onSuccess { page ->
+                    android.util.Log.d("QP_TIMING", "[Phase2] YouTube.related() took ${System.currentTimeMillis() - tRelated}ms | page.songs=${page.songs.size}")
+                    page.songs.take(10).forEach { ytSong ->
+                        var localSong = database.song(ytSong.id).first()
+                        if (localSong == null) {
+                            try {
+                                val mediaMetadata = ytSong.toMediaMetadata()
+                                database.insert(mediaMetadata)
+                                localSong = database.song(ytSong.id).first()
+                            } catch (_: Exception) {}
+                        }
+                        localSong?.let {
+                            if (!hideVideoSongs || !it.song.isVideo) {
+                                ytSimilarSongs.add(it)
+                            }
+                        }
                     }
+                }.onFailure {
+                    android.util.Log.e("QP_TIMING", "[Phase2] YouTube.related() FAILED after ${System.currentTimeMillis() - tRelated}ms", it)
                 }
             }
-        }.onFailure {
-            android.util.Log.e("QP_TIMING", "[Phase2] YouTube.related() FAILED after ${System.currentTimeMillis() - tRelated}ms", it)
         }
 
         if (ytSimilarSongs.isNotEmpty()) {
@@ -668,10 +679,13 @@ class HomeViewModel @Inject constructor(
                     }
                 }
 
-            val songDeferreds = database.mostPlayedSongs(fromTimeStamp, limit = 15).first()
+            val recentSongSeeds = database.events().first().take(3).mapNotNull { it.song }.distinctBy { it.id }
+            val mostPlayedSeeds = database.mostPlayedSongs(fromTimeStamp, limit = 15).first()
                 .filter { it.album != null }
-                .shuffled().take(3)
-                .map { song ->
+                .shuffled()
+            val songSeeds = (recentSongSeeds + mostPlayedSeeds).distinctBy { it.id }.take(3)
+
+            val songDeferreds = songSeeds.map { song ->
                     async(Dispatchers.IO) {
                         val endpoint = YouTube.next(WatchEndpoint(videoId = song.id)).getOrNull()?.relatedEndpoint
                             ?: return@async null

@@ -247,13 +247,6 @@ fun AboutScreen(
                     description = { Text("GNU General Public License v3.0") },
                     onClick = { uriHandler.safeOpenUri(context, "${GitHubConfig.REPO_URL}/blob/main/LICENSE") },
                     isExternalLink = true
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.github_main),
-                    title = { Text("Upstream Project") },
-                    description = { Text("Based on ViVi Music (GPL-3.0)") },
-                    onClick = { uriHandler.safeOpenUri(context, "https://github.com/vivizzz007/vivi-music") },
-                    isExternalLink = true
                 )
             )
         )
@@ -296,7 +289,7 @@ private fun DeveloperHeroCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(72.dp)
+                    .size(68.dp)
                     .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
                     .padding(3.dp)
             ) {
@@ -317,26 +310,36 @@ private fun DeveloperHeroCard(
 
             Spacer(modifier = Modifier.width(16.dp))
 
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = GitHubConfig.DEV_NAME,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                ) {
                     Text(
-                        text = GitHubConfig.DEV_NAME,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onSurface
+                        text = "A Tech Enthusiast",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
                     )
                 }
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = GitHubConfig.DEV_HANDLE,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = GitHubConfig.DEV_ROLE,
+                    text = GitHubConfig.VERSION_LABEL,
                     style = MaterialTheme.typography.bodySmall,
+                    fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -359,7 +362,7 @@ private fun AppVersionTile(
         ListItem(
             leadingContent = {
                 Image(
-                    painter = painterResource(R.drawable.mkr_music_icon),
+                    painter = painterResource(R.drawable.icon),
                     contentDescription = null,
                     modifier = Modifier
                         .size(46.dp)

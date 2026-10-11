@@ -13,5 +13,5 @@ object GitHubConfig {
     const val DEV_INSTAGRAM_URL = "https://www.instagram.com/mkr_infinity"
     const val DEV_TELEGRAM_URL = "https://t.me/mkr_infinity"
     const val DEV_BUYMEACOFFEE_URL = "https://buymeacoffee.com/mkr_infinity"
-    const val VERSION_LABEL = "v1.0 Stable"
+    const val VERSION_LABEL = "v6.0.8 Stable"
 }

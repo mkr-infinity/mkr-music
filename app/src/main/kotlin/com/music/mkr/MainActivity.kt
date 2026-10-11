@@ -231,6 +231,7 @@ import com.music.mkr.ui.screens.search.suggestions.SuggestionsViewModel
 import com.valentinilk.shimmer.LocalShimmerTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -748,7 +749,7 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
-                val (floatingNav) = rememberPreference(FloatingNavBarKey, defaultValue = false)
+                val (floatingNav) = rememberPreference(FloatingNavBarKey, defaultValue = true)
                 val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
                 val (useAppleMiniPlayer) = rememberPreference(UseAppleMiniPlayerKey, defaultValue = false)
                 val defaultOpenTab = remember {
@@ -1033,6 +1034,9 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 var logoClickCount by remember { mutableIntStateOf(0) }
                                 var lastClickTime by remember { mutableLongStateOf(0L) }
+                                val logoScope = rememberCoroutineScope()
+                                var resetJob by remember { mutableStateOf<Job?>(null) }
+                                var currentToast by remember { mutableStateOf<Toast?>(null) }
 
                                 Row {
                                     TopAppBar(
@@ -1043,29 +1047,49 @@ class MainActivity : ComponentActivity() {
                                                     .clip(CircleShape)
                                                     .clickable {
                                                         val currentTime = System.currentTimeMillis()
-                                                        if (currentTime - lastClickTime > 2500L) {
+                                                        if (currentTime - lastClickTime > 3000L) {
                                                             logoClickCount = 1
                                                         } else {
                                                             logoClickCount++
                                                         }
                                                         lastClickTime = currentTime
 
-                                                        when (logoClickCount) {
-                                                            3 -> Toast.makeText(this@MainActivity, "Hey, what are you doing? 👀", Toast.LENGTH_SHORT).show()
-                                                            4 -> Toast.makeText(this@MainActivity, "Stop poking the MKR logo bro! 😅", Toast.LENGTH_SHORT).show()
-                                                            5 -> Toast.makeText(this@MainActivity, "One more click and something wild might happen... ⚠️💥", Toast.LENGTH_SHORT).show()
-                                                            6 -> Toast.makeText(this@MainActivity, "Bro please don't do it bro! 😂 What are you looking for?! There's no secret menu here! 🎵✨", Toast.LENGTH_LONG).show()
-                                                            7 -> Toast.makeText(this@MainActivity, "Bro really has too much free time today! 💀🎧", Toast.LENGTH_SHORT).show()
-                                                            8 -> Toast.makeText(this@MainActivity, "Are you testing my screen refresh rate or what?! 🤣", Toast.LENGTH_SHORT).show()
-                                                            else -> if (logoClickCount > 8) {
-                                                                val funnyQuotes = listOf(
-                                                                    "Go listen to some bangers instead bro! 🔥🎶",
-                                                                    "MKR Music loves you, but please spare the logo! 💖🙏",
-                                                                    "Still clicking?! You must really love this note! 🎵😎",
-                                                                    "Achievement unlocked: Professional Logo Tapper 🏆😂"
-                                                                )
-                                                                Toast.makeText(this@MainActivity, funnyQuotes[logoClickCount % funnyQuotes.size], Toast.LENGTH_SHORT).show()
+                                                        // Cancel previous inactivity timer
+                                                        resetJob?.cancel()
+
+                                                        // First toast activates strictly at 5 clicks
+                                                        if (logoClickCount >= 5) {
+                                                            // Cancel previous toast immediately so clicks don't queue up
+                                                            currentToast?.cancel()
+
+                                                            val toastMessage = when (logoClickCount) {
+                                                                5 -> "Hey, what are you doing? 👀"
+                                                                6 -> "Stop poking the MKR logo bro! 😅"
+                                                                7 -> "One more click and something wild might happen... ⚠️💥"
+                                                                8 -> "Bro please don't do it bro! 😂 What are you looking for?! There's no secret menu here! 🎵✨"
+                                                                9 -> "Bro really has too much free time today! 💀🎧"
+                                                                10 -> "Are you testing my screen refresh rate or what?! 🤣"
+                                                                else -> {
+                                                                    val funnyQuotes = listOf(
+                                                                        "Go listen to some bangers instead bro! 🔥🎶",
+                                                                        "MKR Music loves you, but please spare the logo! 💖🙏",
+                                                                        "Still clicking?! You must really love this note! 🎵😎",
+                                                                        "Achievement unlocked: Professional Logo Tapper 🏆😂"
+                                                                    )
+                                                                    funnyQuotes[logoClickCount % funnyQuotes.size]
+                                                                }
                                                             }
+
+                                                            currentToast = Toast.makeText(this@MainActivity, toastMessage, Toast.LENGTH_SHORT)
+                                                            currentToast?.show()
+                                                        }
+
+                                                        // Stop toast and reset clicks if user is not clicking for 3 seconds
+                                                        resetJob = logoScope.launch {
+                                                            delay(3000L)
+                                                            currentToast?.cancel()
+                                                            currentToast = null
+                                                            logoClickCount = 0
                                                         }
                                                     }
                                             ) {

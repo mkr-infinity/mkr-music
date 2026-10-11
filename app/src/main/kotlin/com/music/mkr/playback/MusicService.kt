@@ -520,7 +520,8 @@ class MusicService :
             val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
                 .setContentTitle(getString(R.string.music_player))
                 .setContentText("")
-                .setSmallIcon(R.drawable.mkrmusicnotification)  //vivimusicnotification
+                .setSmallIcon(R.drawable.mkrmusicnotification)
+                .setLargeIcon(android.graphics.BitmapFactory.decodeResource(resources, R.drawable.icon))
                 .setContentIntent(pending)
                 .setOngoing(true)
                 .build()
@@ -3189,17 +3190,22 @@ class MusicService :
     }
 
     private suspend fun performInstantSilenceSkip() {
+        if (player.playbackState == Player.STATE_BUFFERING || !player.isPlaying) return
         val duration = player.duration.takeIf { it != C.TIME_UNSET && it > 0 } ?: return
-        if (duration <= INSTANT_SILENCE_SKIP_STEP_MS) return
+        if (duration <= INSTANT_SILENCE_SKIP_STEP_MS * 2) return
 
         isSilenceSkipping = true
         try {
             var hops = 0
             val silenceProcessor = playerSilenceProcessors[player] ?: return
             while (coroutineContext.isActive && instantSilenceSkipEnabled.value && silenceProcessor.isCurrentlySilent()) {
+                if (player.playbackState == Player.STATE_BUFFERING || !player.isPlaying) break
                 val current = player.currentPosition
-                val target = (current + INSTANT_SILENCE_SKIP_STEP_MS).coerceAtMost(duration - 500)
+                // Never skip into the final 15 seconds of the song to avoid premature track transitions
+                val maxTarget = duration - 15_000L
+                if (current >= maxTarget) break
 
+                val target = (current + INSTANT_SILENCE_SKIP_STEP_MS).coerceAtMost(maxTarget)
                 if (target <= current) break
 
                 // Reset silence tracking before seeking to prevent immediate re-trigger
@@ -3207,7 +3213,7 @@ class MusicService :
                 player.seekTo(target)
                 hops++
 
-                if (hops >= 80 || target >= duration - 500) break
+                if (hops >= 20 || target >= maxTarget) break
 
                 delay(INSTANT_SILENCE_SKIP_SETTLE_MS)
             }
@@ -3430,6 +3436,29 @@ class MusicService :
                 } catch (_: SQLException) {
                 }
             }
+
+            // Automatically cache songs recorded in listening history so they are available offline
+            scope.launch(Dispatchers.IO) {
+                try {
+                    if (!downloadCache.isCached(mediaItem.mediaId, 0, 1024)) {
+                        val downloadRequest =
+                            androidx.media3.exoplayer.offline.DownloadRequest
+                                .Builder(mediaItem.mediaId, mediaItem.mediaId.toUri())
+                                .setCustomCacheKey(mediaItem.mediaId)
+                                .setData((mediaItem.mediaMetadata.title?.toString() ?: mediaItem.mediaId).toByteArray())
+                                .build()
+                        androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
+                            this@MusicService,
+                            ExoDownloadService::class.java,
+                            downloadRequest,
+                            false
+                        )
+                        Timber.tag(TAG).d("Auto-cached listening history song ${mediaItem.mediaId} for offline playback")
+                    }
+                } catch (e: Exception) {
+                    Timber.tag(TAG).w(e, "Could not auto-cache history song ${mediaItem.mediaId}")
+                }
+            }
         }
 
         if (playbackStats.totalPlayTimeMs >= historyDurationMs) {
@@ -3573,6 +3602,7 @@ class MusicService :
         if (dataStore.get(StopMusicOnTaskClearKey, false)) {
             Timber.d("Task cleared with stopMusicOnTaskClear enabled - stopping music and terminating process")
             try {
+                abandonAudioFocus()
                 player.pause()
                 player.stop()
                 player.clearMediaItems()

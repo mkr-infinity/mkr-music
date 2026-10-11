@@ -13,7 +13,7 @@
   <a href="https://github.com/mkr-infinity/mkr-music/actions"><img src="https://github.com/mkr-infinity/mkr-music/actions/workflows/build.yml/badge.svg" alt="Build Status"/></a>
   <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-blue.svg" alt="License: GPL v3"/></a>
   <a href="https://github.com/mkr-infinity"><img src="https://img.shields.io/badge/Developer-%40mkr--infinity-orange" alt="Developer"/></a>
-  <a href="https://github.com/mkr-infinity/mkr-music/releases"><img src="https://img.shields.io/badge/Version-v1.0%20Stable-success" alt="Version"/></a>
+  <a href="https://github.com/mkr-infinity/mkr-music/releases"><img src="https://img.shields.io/badge/Version-v6.0.8%20Stable-success" alt="Version"/></a>
   <img src="https://img.shields.io/badge/Android-8.0%2B-brightgreen" alt="Android 8.0+"/>
 </p>
 

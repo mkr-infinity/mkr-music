@@ -80,7 +80,6 @@ fun UpdateSettings(
 ) {
     val context = LocalContext.current
     var autoUpdateEnabled by remember { mutableStateOf(getAutoUpdateCheckSetting(context)) }
-    var betaUpdatesEnabled by remember { mutableStateOf(getBetaUpdatesSetting(context)) }
     var isUpdateAvailable by remember { mutableStateOf(getUpdateAvailableState(context)) }
     var apkCount by remember { mutableStateOf(getDownloadedApkCount(context)) }
     var showInfoDialog by remember { mutableStateOf(false) }
@@ -241,32 +240,7 @@ fun UpdateSettings(
                     }
                 ),
 
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.biotech),
-                    title = { Text(stringResource(R.string.beta_updates)) },
-                    trailingContent = {
-                        Switch(
-                            checked = betaUpdatesEnabled,
-                            onCheckedChange = { enabled ->
-                                betaUpdatesEnabled = enabled
-                                saveBetaUpdatesSetting(context, enabled)
-                            },
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (betaUpdatesEnabled) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = {
-                        betaUpdatesEnabled = !betaUpdatesEnabled
-                        saveBetaUpdatesSetting(context, betaUpdatesEnabled)
-                    }
-                ),
+
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.notification),
                     title = { Text(stringResource(R.string.notification_settings)) },

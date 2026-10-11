@@ -362,7 +362,7 @@ fun AppearanceSettings(
     )
     val (floatingNavBar, onFloatingNavBarChange) = rememberPreference(
         FloatingNavBarKey,
-        defaultValue = false
+        defaultValue = true
     )
 
     // Density scale preferences
