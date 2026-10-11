@@ -214,7 +214,7 @@ fun PlayerSettings(
     )
     val (sponsorBlockEnabled, _) = rememberPreference(
         EnableSponsorBlockKey,
-        defaultValue = true
+        defaultValue = false
     )
     val (canvasThumbnailAnimation, onCanvasThumbnailAnimationChange) = rememberPreference(
         CanvasThumbnailAnimationKey,

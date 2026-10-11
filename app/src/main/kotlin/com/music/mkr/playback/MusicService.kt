@@ -796,7 +796,7 @@ class MusicService :
             currentMediaMetadata,
             dataStore.data.map { prefs ->
                 SponsorBlockConfig(
-                    enabled = prefs[EnableSponsorBlockKey] ?: true,
+                    enabled = prefs[EnableSponsorBlockKey] ?: false,
                     serverUrl = prefs[SponsorBlockServerUrlKey] ?: "https://sponsor.ajay.app",
                     skipNonMusic = prefs[SponsorBlockSkipNonMusicKey] ?: true,
                     skipSponsor = prefs[SponsorBlockSkipSponsorKey] ?: true,

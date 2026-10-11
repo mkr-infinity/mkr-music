@@ -58,7 +58,7 @@ fun SponsorBlockSettings(
 ) {
     val (sponsorBlockEnabled, onSponsorBlockEnabledChange) = rememberPreference(
         EnableSponsorBlockKey,
-        defaultValue = true
+        defaultValue = false
     )
     val (skipNonMusic, onSkipNonMusicChange) = rememberPreference(
         SponsorBlockSkipNonMusicKey,
