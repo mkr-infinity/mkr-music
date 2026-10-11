@@ -1064,8 +1064,8 @@ class MainActivity : ComponentActivity() {
                                                         currentToast?.cancel()
 
                                                         if (logoClickCount == 1) {
-                                                            // Display the meaning of MKR in English & Urdu with proper BiDi isolation
-                                                            val mkrExplanation = "MKR Music — MKR stands for Mohammad Kaif Raja (\u200Fمحمد کیف رجہ\u200E)"
+                                                            // Display the meaning of MKR in English
+                                                            val mkrExplanation = "MKR Music — MKR stands for Mohammad Kaif Raja"
                                                             currentToast = Toast.makeText(this@MainActivity, mkrExplanation, Toast.LENGTH_LONG)
                                                             currentToast?.show()
                                                         } else if (logoClickCount >= 5) {
