@@ -121,7 +121,7 @@
     <string name="canvas_source_apple_music">Apple Music</string>
     <string name="canvas_source_apple_music_desc">Använder endast Apple Musics canvas</string>
     <string name="canvas_source_vivimusic">MKR Music</string>
-    <string name="canvas_source_vivimusic_desc">Använder endast ViviMusics canvasbibliotek</string>
+<string name="canvas_source_vivimusic_desc">Använder endast MKR Music canvasbibliotek</string>
     <string name="canvas_source_tidal">Tidal</string>
     <string name="canvas_source_tidal_desc">Använder endast Tidals canvas</string>
     <string name="show_album_canvas">Visa albumcanvas</string>
@@ -544,7 +544,7 @@
     <string name="error_eq_apply_failed">Kunde inte tillämpa EQ‑profil: %1$s</string>
 
     <!-- ViviEqualizer Strings -->
-    <string name="vivi_equalizer">ViviEqualizer</string>
+<string name="vivi_equalizer">MKR Equalizer</string>
     <string name="vivi_equalizer_desc">Pro‑klass akustisk tuning &amp; effekter</string>
     <string name="eq_simple">Enkel</string>
     <string name="eq_advanced">Avancerad</string>
@@ -552,7 +552,7 @@
     <string name="eq_label_mid">Mellanregister</string>
     <string name="eq_label_treble">Diskant</string>
     <string name="eq_preset_flat">Platt</string>
-    <string name="eq_preset_vivi_signature">Vivi‑signatur</string>
+<string name="eq_preset_vivi_signature">MKR‑signatur</string>
     <string name="eq_preset_acoustic">Akustisk</string>
     <string name="eq_preset_spatial">3D‑scen</string>
     <string name="eq_preset_bass_boost">Basförstärkning</string>
@@ -569,9 +569,9 @@
     <string name="eq_preset_dirac_music">Dirac Music</string>
     <string name="eq_preset_dirac_movie">Dirac Movie</string>
     <string name="eq_preset_dirac_game">Dirac Game</string>
-    <string name="eq_enable_title">ViviEqualizer</string>
+<string name="eq_enable_title">MKR Equalizer</string>
     <string name="eq_enable_summary">Aktivera professionell ljudbearbetning</string>
-    <string name="eq_label_vivi">Vivi‑signatur</string>
+<string name="eq_label_vivi">MKR‑signatur</string>
     <string name="eq_label_dolby">Dolby Atmos</string>
     <string name="eq_label_dirac">Dirac Audio</string>
     <string name="eq_reset">Återställ</string>
@@ -922,7 +922,7 @@
 
     <!-- Onboarding -->
     <string name="welcome_to">Välkommen till</string>
-    <string name="welcome_to_vivi">Välkommen till Vivi</string>
+<string name="welcome_to_vivi">Välkommen till MKR Music</string>
     <string name="accessibility">Tillgänglighet</string>
     <string name="welcome_preparing_subtitle">Vi förbereder allt åt dig.</string>
     <string name="get_started">Kom igång</string>
@@ -1053,9 +1053,9 @@
     <string name="error_invalid_font">Ogiltig typsnittsfil vald.</string>
 
     <!-- YouTube Decryption / Cipher Settings -->
-    <string name="youtube_decryption_settings">Vivi‑Extractor</string>
+<string name="youtube_decryption_settings">MKR‑Extractor</string>
     <string name="youtube_decryption_desc">Konfigurera extractor‑inställningar</string>
-    <string name="youtube_decryption_support">Vivi‑Extractor</string>
+<string name="youtube_decryption_support">MKR‑Extractor</string>
     <string name="youtube_decryption_support_desc">Extraherar automatiskt YouTube‑uppspelningskonfigurationer. Låst till aktivt läge.</string>
     <string name="auto_cipher_fetching">Automatiska uppdateringar</string>
     <string name="auto_cipher_fetching_desc">Hämta nya extractor‑mappningar i bakgrunden när problem upptäcks.</string>

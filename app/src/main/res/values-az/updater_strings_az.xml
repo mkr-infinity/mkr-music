@@ -35,7 +35,7 @@
     <string name="mobile_network_warning">Yüklənir updates over bir mobil şəbəkə və ya while roaming may cause additional charges.</string>
     <string name="update_size">Yeniləmə ölçü: %1$s MB</string>
     <string name="check_internet_connection">Check sizin internet bağlantı və try yenidən.</string>
-    <string name="vivi_music_version">VIVI Musiqi versiya %1$s</string>
+<string name="vivi_music_version">MKR Music versiya %1$s</string>
     <string name="last_checked">Last checked: %1$s</string>
     <string name="install">Quraşdır</string>
     <string name="check_for_update">Yeniləməni yoxla</string>

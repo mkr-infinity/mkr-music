@@ -32,8 +32,12 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -268,14 +272,6 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
         )
     }
 
-    var canInstallPackages by remember {
-        mutableStateOf(
-            if (BuildConfig.FLAVOR.contains("gms") && Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                runCatching { context.packageManager.canRequestPackageInstalls() }.getOrDefault(false)
-            } else true
-        )
-    }
-
     var isLastPageScrolledToEnd by remember { mutableStateOf(true) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -287,9 +283,6 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         context,
                         Manifest.permission.POST_NOTIFICATIONS
                     ) == PackageManager.PERMISSION_GRANTED
-                }
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    canInstallPackages = runCatching { context.packageManager.canRequestPackageInstalls() }.getOrDefault(false)
                 }
             }
         }
@@ -303,14 +296,6 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
             hasNotificationPermission = isGranted
         }
     )
-
-    val installParamsLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.StartActivityForResult()
-    ) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            canInstallPackages = runCatching { context.packageManager.canRequestPackageInstalls() }.getOrDefault(false)
-        }
-    }
 
     val pages = listOf(
         OnboardingPageInfo(
@@ -362,13 +347,13 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    val flavorSuffix = "Official Edition"
                     AssistChip(
                         onClick = {},
                         label = {
                             Text(
-                                text = "$flavorSuffix v${BuildConfig.VERSION_NAME}",
-                                fontFamily = GoogleSansFlex
+                                text = "Stable v${BuildConfig.VERSION_NAME}",
+                                fontFamily = GoogleSansFlex,
+                                fontWeight = FontWeight.SemiBold
                             )
                         },
                         leadingIcon = {
@@ -462,7 +447,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                             iconTint = Color(0xFF8d0053),
                             title = stringResource(com.music.mkr.R.string.perm_notif_title),
                             description = stringResource(com.music.mkr.R.string.perm_notif_desc),
-                            shape = if (BuildConfig.FLAVOR.contains("gms", ignoreCase = true)) topCardShape else RoundedCornerShape(20.dp),
+                            shape = RoundedCornerShape(24.dp),
                             control = {
                                 Switch(
                                     checked = hasNotificationPermission,
@@ -508,35 +493,6 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                                 }
                             }
                         )
-
-                        if (BuildConfig.FLAVOR.contains("gms", ignoreCase = true)) {
-                            Spacer(modifier = Modifier.height(2.dp))
-
-                            PermissionCard(
-                                icon = painterResource(id = R.drawable.update),
-                                iconColor = Color(0xFFffb683),
-                                iconTint = Color(0xFF753403),
-                                title = stringResource(com.music.mkr.R.string.perm_install_title),
-                                description = stringResource(com.music.mkr.R.string.perm_install_desc),
-                                shape = bottomCardShape,
-                                control = {
-                                    Icon(
-                                        painter = painterResource(if (canInstallPackages) R.drawable.check else R.drawable.navigate_next),
-                                        contentDescription = null,
-                                        tint = if (canInstallPackages) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                },
-                                onClick = {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                        val intent =
-                                            Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                                                data = Uri.parse("package:${context.packageName}")
-                                            }
-                                        installParamsLauncher.launch(intent)
-                                    }
-                                }
-                            )
-                        }
 
                         Spacer(modifier = Modifier.height(100.dp))
                     }
@@ -598,27 +554,6 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                             },
                             onClick = {
                                 uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.REPO_URL)
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        PermissionCard(
-                            icon = painterResource(com.music.mkr.R.drawable.telegram),
-                            iconColor = Color(0xFF67d4ff),
-                            iconTint = Color(0xFF004e5d),
-                            title = "Join Telegram",
-                            description = "Get the latest updates, releases & chat with users.",
-                            shape = middleCardShape,
-                            control = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.navigate_next),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            },
-                            onClick = {
-                                uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.DEV_TELEGRAM_URL)
                             }
                         )
 
@@ -741,73 +676,96 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .verticalScroll(scrollState)
+                                .verticalScroll(scrollState),
+                            verticalArrangement = Arrangement.spacedBy(10.dp)
                         ) {
-                            FeatureCard(
-                                icon = painterResource(id = R.drawable.lyrics),
-                                iconColor = Color(0xFFffaee4),
-                                iconTint = Color(0xFF8d0053),
-                                title = stringResource(com.music.mkr.R.string.feat_lyrics_title),
-                                description = stringResource(com.music.mkr.R.string.feat_lyrics_desc),
-                                shape = topCardShape
-                            )
-
-                            Spacer(modifier = Modifier.height(2.dp))
-
-                            FeatureCard(
-                                icon = painterResource(id = R.drawable.download),
-                                iconColor = Color(0xFF80da88),
-                                iconTint = Color(0xFF00522c),
-                                shape = middleCardShape,
-                                title = stringResource(com.music.mkr.R.string.feat_download_title),
-                                description = stringResource(com.music.mkr.R.string.feat_download_desc)
-                            )
-
-                            Spacer(modifier = Modifier.height(2.dp))
-
-                            FeatureCard(
-                                icon = painterResource(id = R.drawable.high_quality),
-                                iconColor = Color(0xFFffb683),
-                                iconTint = Color(0xFF753403),
-                                title = stringResource(com.music.mkr.R.string.feat_quality_title),
-                                description = stringResource(com.music.mkr.R.string.feat_quality_desc),
-                                shape = middleCardShape
-                            )
-
-                            if (BuildConfig.FLAVOR.contains("gms", ignoreCase = true)) {
-                                Spacer(modifier = Modifier.height(2.dp))
-
-                                FeatureCard(
-                                    icon = painterResource(id = R.drawable.update),
-                                    iconColor = Color(0xFF67d4ff),
-                                    iconTint = Color(0xFF004e5d),
-                                    title = stringResource(com.music.mkr.R.string.feat_update_title),
-                                    description = stringResource(com.music.mkr.R.string.feat_update_desc),
-                                    shape = middleCardShape
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                FeatureGridCard(
+                                    modifier = Modifier.weight(1f),
+                                    icon = painterResource(id = R.drawable.lyrics_apple),
+                                    iconColor = Color(0xFFffaee4),
+                                    iconTint = Color(0xFF8d0053),
+                                    title = "Apple-Style Player",
+                                    description = "Fluid gestures, animated liquid lyrics & floating miniplayer"
+                                )
+                                FeatureGridCard(
+                                    modifier = Modifier.weight(1f),
+                                    icon = painterResource(id = R.drawable.high_quality),
+                                    iconColor = Color(0xFFffb683),
+                                    iconTint = Color(0xFF753403),
+                                    title = "Dual Engine",
+                                    description = "High-fidelity JioSaavn streaming with YouTube Music fallback"
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(2.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                FeatureGridCard(
+                                    modifier = Modifier.weight(1f),
+                                    icon = painterResource(id = R.drawable.lyrics),
+                                    iconColor = Color(0xFF80da88),
+                                    iconTint = Color(0xFF00522c),
+                                    title = "Synced Lyrics",
+                                    description = "Real-time synchronized lyrics with translation & romanization"
+                                )
+                                FeatureGridCard(
+                                    modifier = Modifier.weight(1f),
+                                    icon = painterResource(id = R.drawable.download),
+                                    iconColor = Color(0xFF67d4ff),
+                                    iconTint = Color(0xFF004e5d),
+                                    title = "Offline Play",
+                                    description = "Download tracks and playlists for unmetered offline listening"
+                                )
+                            }
 
-                            FeatureCard(
-                                icon = painterResource(id = R.drawable.gavel),
-                                iconColor = Color(0xFFb6c6ed),
-                                iconTint = Color(0xFF001b3f),
-                                title = stringResource(com.music.mkr.R.string.feat_license_title),
-                                description = stringResource(com.music.mkr.R.string.feat_license_desc),
-                                shape = middleCardShape
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                FeatureGridCard(
+                                    modifier = Modifier.weight(1f),
+                                    icon = painterResource(id = R.drawable.equalizer),
+                                    iconColor = Color(0xFFcabeff),
+                                    iconTint = Color(0xFF1c0062),
+                                    title = "Axion Equalizer",
+                                    description = "Parametric equalizer, bass boost & loudness enhancement engine"
+                                )
+                                FeatureGridCard(
+                                    modifier = Modifier.weight(1f),
+                                    icon = painterResource(id = R.drawable.palette),
+                                    iconColor = Color(0xFFffb0cd),
+                                    iconTint = Color(0xFF7b003a),
+                                    title = "Adaptive Icons",
+                                    description = "Dynamic launcher icon gallery to customize your home screen"
+                                )
+                            }
 
-                            Spacer(modifier = Modifier.height(2.dp))
-
-                            FeatureCard(
-                                icon = painterResource(id = R.drawable.terminal),
-                                iconColor = Color(0xFFcabeff),
-                                iconTint = Color(0xFF1c0062),
-                                title = stringResource(com.music.mkr.R.string.feat_github_title),
-                                description = stringResource(com.music.mkr.R.string.feat_github_desc),
-                                shape = bottomCardShape
-                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                            ) {
+                                FeatureGridCard(
+                                    modifier = Modifier.weight(1f),
+                                    icon = painterResource(id = R.drawable.discord),
+                                    iconColor = Color(0xFFb6c6ed),
+                                    iconTint = Color(0xFF001b3f),
+                                    title = "Discord RPC",
+                                    description = "Share playback status and album covers with friends live"
+                                )
+                                FeatureGridCard(
+                                    modifier = Modifier.weight(1f),
+                                    icon = painterResource(id = R.drawable.storage),
+                                    iconColor = Color(0xFFb5e48c),
+                                    iconTint = Color(0xFF1b4332),
+                                    title = "Smart Caching",
+                                    description = "Prefetching and configurable budgets up to 10GB storage"
+                                )
+                            }
 
                             Spacer(modifier = Modifier.height(100.dp))
                         }
@@ -1316,6 +1274,69 @@ fun FeatureCard(
             },
             colors = androidx.compose.material3.ListItemDefaults.colors(containerColor = Color.Transparent)
         )
+    }
+}
+
+@Composable
+fun FeatureGridCard(
+    icon: Painter,
+    iconColor: Color,
+    iconTint: Color,
+    title: String,
+    description: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.heightIn(min = 120.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = iconColor,
+                modifier = Modifier.size(38.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = icon,
+                        contentDescription = null,
+                        tint = iconTint,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Column {
+                Text(
+                    text = title,
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 13.5.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = description,
+                    fontFamily = GoogleSansFlex,
+                    fontSize = 11.sp,
+                    lineHeight = 15.sp,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
     }
 }
 

@@ -369,7 +369,7 @@
     <string name="new_release_notifications_subtitle">Notify when bookmarked ifaçılar buraxmaq yeni mahnılar və ya albomlar (beta)</string>
     <string name="new_release_channel_name">Yeni Releases</string>
     <string name="new_release_channel_desc">Bildirişlər üçün yeni releases -dan sizin bookmarked ifaçılar</string>
-    <string name="new_release_notifications_info">Açıq some cihazlar (Samsung, Xiaomi, etc.), batareya optimization may delay və ya block arxa fon bildirişlər. -a ensure timely xəbərdarlıqlar, set Vivi Musiqi -a Unrestricted batareya usage in sizin cihaz parametrlər.</string>
+<string name="new_release_notifications_info">Açıq some cihazlar (Samsung, Xiaomi, etc.), batareya optimization may delay və ya block arxa fon bildirişlər. -a ensure timely xəbərdarlıqlar, set MKR Music -a Unrestricted batareya usage in sizin cihaz parametrlər.</string>
     <string name="taste_based_release_notifications">Zövq-əsaslanan buraxmaq xəbərdarlıqlar</string>
     <string name="taste_based_release_notifications_subtitle">Notify when ifaçılar siz tez-tez listen -a buraxmaq yeni mahnılar və ya albomlar</string>
 </resources>

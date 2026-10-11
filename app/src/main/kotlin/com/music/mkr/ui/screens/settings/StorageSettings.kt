@@ -102,6 +102,7 @@ fun StorageSettings(
         defaultValue = 100
     )
     var showCustomCountDialog by remember { mutableStateOf(false) }
+    var showCustomSizeDialog by remember { mutableStateOf(false) }
 
     var clearDownloads by remember { mutableStateOf(false) }
     var clearCacheDialog by remember { mutableStateOf(false) }
@@ -293,6 +294,54 @@ fun StorageSettings(
         )
     }
 
+    if (showCustomSizeDialog) {
+        var tempInput by remember { mutableStateOf(if (maxSongCacheSize > 0) maxSongCacheSize.toString() else "1000") }
+        AlertDialog(
+            onDismissRequest = { showCustomSizeDialog = false },
+            title = { Text("Custom Cache Size Limit") },
+            text = {
+                Column {
+                    Text("Enter maximum cache size in megabytes (1 - 10000 MB):")
+                    Spacer(Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = tempInput,
+                        onValueChange = { if (it.all { char -> char.isDigit() }) tempInput = it },
+                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                        ),
+                        singleLine = true,
+                        suffix = { Text("MB") }
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        val sizeMb = tempInput.toIntOrNull() ?: 1000
+                        val clamped = sizeMb.coerceIn(1, 10000)
+                        val newLimitInBytes = clamped * 1024 * 1024L
+                        if (newLimitInBytes < playerCacheSize) {
+                            cacheUsage = playerCacheSize
+                            cacheType = songCacheString
+                            onConfirmAction = { onMaxSongCacheSizeChange(clamped) }
+                            showCacheWarningDialog = true
+                        } else {
+                            onMaxSongCacheSizeChange(clamped)
+                        }
+                        showCustomSizeDialog = false
+                    }
+                ) {
+                    Text("Apply")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCustomSizeDialog = false }) {
+                    Text(stringResource(id = android.R.string.cancel))
+                }
+            }
+        )
+    }
+
     if (showCustomCountDialog) {
         var tempInput by remember { mutableStateOf(if (maxSongCacheCount > 0) maxSongCacheCount.toString() else "100") }
         AlertDialog(
@@ -376,17 +425,34 @@ fun StorageSettings(
                     title = { Text(stringResource(R.string.max_song_cache_size)) },
                     description = {
                         val songCacheValues =
-                            remember { listOf(0, 128, 256, 512, 1024, 2048, 4096, 8192, -1) }
+                            remember { listOf(0, 50, 100, 200, 500, 1000, 2048, 4096, -1) }
+                        val isPreset = maxSongCacheSize in songCacheValues
                         Column {
-                            Text(
-                                text = when (maxSongCacheSize) {
-                                    0 -> stringResource(R.string.disable)
-                                    -1 -> stringResource(R.string.unlimited)
-                                    else -> formatFileSize(maxSongCacheSize * 1024 * 1024L)
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = when {
+                                        maxSongCacheSize == 0 -> stringResource(R.string.disable)
+                                        maxSongCacheSize == -1 -> stringResource(R.string.unlimited)
+                                        !isPreset -> "Custom: ${formatFileSize(maxSongCacheSize * 1024 * 1024L)}"
+                                        else -> formatFileSize(maxSongCacheSize * 1024 * 1024L)
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                                TextButton(onClick = { showCustomSizeDialog = true }) {
+                                    Text("Custom")
                                 }
-                            )
+                            }
+                            val sliderIndex = if (isPreset) {
+                                songCacheValues.indexOf(maxSongCacheSize).toFloat()
+                            } else {
+                                songCacheValues.indexOf(1000).toFloat()
+                            }
                             Slider(
-                                value = songCacheValues.indexOf(maxSongCacheSize).toFloat(),
+                                value = sliderIndex,
                                 onValueChange = {
                                     val newValue = songCacheValues[it.roundToInt()]
                                     val newLimitInBytes = if (newValue == -1) {

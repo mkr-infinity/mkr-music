@@ -67,6 +67,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import com.music.mkr.constants.LastSeenStarPromptVersionKey
 import com.music.mkr.constants.HasStarredRepoKey
+import com.music.mkr.constants.HasShownSupportPromptKey
 import com.music.mkr.ui.component.ActionPromptDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.text.style.TextAlign
@@ -393,7 +394,7 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
-            vivimusicApp(
+            mkrMusicApp(
                 playerConnection = playerConnection,
                 database = database,
                 downloadUtil = downloadUtil,
@@ -405,7 +406,7 @@ class MainActivity : ComponentActivity() {
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class)
     @Composable
-    private fun vivimusicApp(
+    private fun mkrMusicApp(
         playerConnection: PlayerConnection?,
         database: MusicDatabase,
         downloadUtil: DownloadUtil,
@@ -501,10 +502,12 @@ class MainActivity : ComponentActivity() {
 
         val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
 
-        val (lastSeenStarPromptVersion, setLastSeenStarPromptVersion) = rememberPreference(LastSeenStarPromptVersionKey, "")
+        val (hasShownSupportPrompt, setHasShownSupportPrompt) = rememberPreference(HasShownSupportPromptKey, defaultValue = false)
         val (hasStarredRepo) = rememberPreference(HasStarredRepoKey, false)
         val uriHandler = LocalUriHandler.current
-        val currentVersion = BuildConfig.VERSION_NAME
+        val playbackEventCount by database.eventCount().collectAsState(initial = 0)
+        val totalListenTime by database.totalListenTime().collectAsState(initial = 0L)
+        val reachedSupportMilestone = (playbackEventCount >= 10 || totalListenTime >= 36_000_000L)
 
 
         val isSystemInDarkTheme = isSystemInDarkTheme()
@@ -580,15 +583,15 @@ class MainActivity : ComponentActivity() {
             pureBlack = pureBlack,
             themeColor = themeColor,
         ) {
-            if (lastSeenStarPromptVersion != currentVersion && !hasStarredRepo && !isStarred) {
+            if (!hasShownSupportPrompt && !hasStarredRepo && !isStarred && reachedSupportMilestone) {
                 ActionPromptDialog(
                     title = "Support MKR Music 🌟",
-                    onDismiss = { setLastSeenStarPromptVersion(currentVersion) },
+                    onDismiss = { setHasShownSupportPrompt(true) },
                     onConfirm = {
-                        setLastSeenStarPromptVersion(currentVersion)
+                        setHasShownSupportPrompt(true)
                         uriHandler.openUri(com.music.mkr.github.GitHubConfig.REPO_URL)
                     },
-                    onCancel = { setLastSeenStarPromptVersion(currentVersion) },
+                    onCancel = { setHasShownSupportPrompt(true) },
                     content = {
                         Column(
                             modifier = Modifier
@@ -631,7 +634,7 @@ class MainActivity : ComponentActivity() {
                             ) {
                                 Button(
                                     onClick = {
-                                        setLastSeenStarPromptVersion(currentVersion)
+                                        setHasShownSupportPrompt(true)
                                         uriHandler.openUri(com.music.mkr.github.GitHubConfig.REPO_URL)
                                     },
                                     modifier = Modifier.weight(1f),
@@ -647,8 +650,8 @@ class MainActivity : ComponentActivity() {
                                 }
                                 OutlinedButton(
                                     onClick = {
-                                        setLastSeenStarPromptVersion(currentVersion)
-                                        uriHandler.openUri(com.music.mkr.github.GitHubConfig.DEV_BUYMEACOFFEE_URL)
+                                        setHasShownSupportPrompt(true)
+                                        uriHandler.openUri(com.music.mkr.github.DEV_BUYMEACOFFEE_URL)
                                     },
                                     modifier = Modifier.weight(1f)
                                 ) {

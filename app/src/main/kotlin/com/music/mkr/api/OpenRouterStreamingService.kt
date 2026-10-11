@@ -120,8 +120,8 @@ Output MUST be a JSON array with EXACTLY $lineCount strings."""
                     }
                 }
                 .addHeader("Content-Type", "application/json")
-                .addHeader("HTTP-Referer", "https://github.com/CryptoLiveApp/vivimusic")
-                .addHeader("X-Title", "vivimusic")
+                .addHeader("HTTP-Referer", "https://github.com/mkr-infinity/mkr-music")
+                .addHeader("X-Title", "MKR Music")
                 .post(jsonBody.toString().toRequestBody(JSON))
                 .build()
 

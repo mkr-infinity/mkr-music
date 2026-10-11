@@ -82,23 +82,32 @@ enum class AppIcon(
 object IconUtils {
     fun setIcon(context: Context, targetIcon: AppIcon) {
         val pm = context.packageManager
+        val pkg = context.packageName
         for (icon in AppIcon.entries) {
-            val component = ComponentName(context, icon.aliasName)
             val desiredState = if (icon == targetIcon) {
                 PackageManager.COMPONENT_ENABLED_STATE_ENABLED
             } else {
                 PackageManager.COMPONENT_ENABLED_STATE_DISABLED
             }
-            try {
-                if (pm.getComponentEnabledSetting(component) != desiredState) {
-                    pm.setComponentEnabledSetting(
-                        component,
-                        desiredState,
-                        PackageManager.DONT_KILL_APP
-                    )
+            val aliasShort = icon.aliasName.substringAfterLast(".")
+            val targetClasses = listOf(
+                icon.aliasName,
+                "$pkg.icon.$aliasShort"
+            ).distinct()
+
+            for (className in targetClasses) {
+                val component = ComponentName(pkg, className)
+                try {
+                    if (pm.getComponentEnabledSetting(component) != desiredState) {
+                        pm.setComponentEnabledSetting(
+                            component,
+                            desiredState,
+                            PackageManager.DONT_KILL_APP
+                        )
+                    }
+                } catch (e: Exception) {
+                    // Ignore non-matching class name variant
                 }
-            } catch (e: Exception) {
-                Timber.e(e, "Failed to update component state for ${icon.aliasName}")
             }
         }
     }

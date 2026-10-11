@@ -205,8 +205,8 @@ fun AppearanceSettings(
                 snackbarHostState.currentSnackbarData?.dismiss()
             }
             val result = snackbarHostState.showSnackbar(
-                message = "This app will restart to change the logo.",
-                actionLabel = "Restart app",
+                message = "Launcher icon updated. Restart app to apply on your home screen.",
+                actionLabel = "Restart Now",
                 duration = SnackbarDuration.Indefinite
             )
             autoDismissJob.cancel()
@@ -231,8 +231,8 @@ fun AppearanceSettings(
                 snackbarHostState.currentSnackbarData?.dismiss()
             }
             val result = snackbarHostState.showSnackbar(
-                message = "This app will restart to change the logo.",
-                actionLabel = "Restart app",
+                message = "Launcher icon updated. Restart app to apply on your home screen.",
+                actionLabel = "Restart Now",
                 duration = SnackbarDuration.Indefinite
             )
             autoDismissJob.cancel()

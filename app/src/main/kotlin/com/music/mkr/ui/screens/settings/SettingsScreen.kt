@@ -11,15 +11,16 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
@@ -42,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.ui.component.IconButton
@@ -195,18 +197,11 @@ fun SettingsScreen(
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(14.dp)
     ) {
-        Text(
-            text = stringResource(R.string.settings),
-            style = MaterialTheme.typography.headlineLarge.copy(
-                fontWeight = FontWeight.Bold
-            ),
-            color = MaterialTheme.colorScheme.onBackground,
-            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 4.dp)
-        )
+        Spacer(modifier = Modifier.height(4.dp))
 
-        // Capsule Search Bar
+        // Top Search Bar (Capsule Style)
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -245,9 +240,7 @@ fun SettingsScreen(
                 focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
                 unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
             ),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 2.dp)
+            modifier = Modifier.fillMaxWidth()
         )
 
         if (searchQuery.isNotBlank()) {
@@ -306,248 +299,137 @@ fun SettingsScreen(
                 )
             }
         } else {
-            // MKR Music Hero Header Card (Capsule Style)
-            Surface(
+            // Status Capsule Pills (Capsule Style)
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { navController.navigate("settings/about") },
-                shape = RoundedCornerShape(26.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 3.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 18.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Image(
-                        painter = painterResource(R.drawable.icon),
-                        contentDescription = null,
-                        modifier = Modifier
-                            .size(54.dp)
-                            .clip(RoundedCornerShape(16.dp))
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = "MKR Music",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Surface(
-                                shape = RoundedCornerShape(50.dp),
-                                color = MaterialTheme.colorScheme.primaryContainer
-                            ) {
-                                Text(
-                                    text = "v6.0.8 Stable",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(3.dp))
-                        Text(
-                            text = "Crafted by @mkr-infinity",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    Icon(
-                        painter = painterResource(R.drawable.navigate_next),
-                        contentDescription = "About",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
-
-            // Discovery Grid - Quick Capsule Hubs (no emojis)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                DiscoveryCapsuleCard(
-                    modifier = Modifier.weight(1f),
-                    icon = R.drawable.palette,
-                    title = "Appearance",
-                    subtitle = "Theme & Icons",
-                    onClick = { navController.navigate("settings/appearance") }
+                StatusCapsulePill(
+                    icon = if (isUpdateAvailable) R.drawable.update_alert else R.drawable.system_update_uptodate,
+                    label = if (isUpdateAvailable) "Update Available" else "System Up to Date",
+                    highlight = isUpdateAvailable,
+                    onClick = { navController.navigate("settings/update") }
                 )
-                DiscoveryCapsuleCard(
-                    modifier = Modifier.weight(1f),
-                    icon = R.drawable.earbud_case,
-                    title = "Player & Audio",
-                    subtitle = "Equalizer & Sound",
-                    onClick = { navController.navigate("settings/player") }
-                )
-            }
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                DiscoveryCapsuleCard(
-                    modifier = Modifier.weight(1f),
-                    icon = R.drawable.storage,
-                    title = "Storage",
-                    subtitle = "Cache & Offline",
-                    onClick = { navController.navigate("settings/storage") }
-                )
-                DiscoveryCapsuleCard(
-                    modifier = Modifier.weight(1f),
+                StatusCapsulePill(
                     icon = R.drawable.history,
-                    title = "Summary",
-                    subtitle = "Stats & Moods",
+                    label = "Listening Recap",
                     onClick = { navController.navigate("settings/listening_summary") }
                 )
+                StatusCapsulePill(
+                    icon = R.drawable.google,
+                    label = "Account & Sync",
+                    onClick = { navController.navigate("settings/account") }
+                )
             }
 
-            Spacer(modifier = Modifier.height(2.dp))
-
-            // Group 1: Important / Account
-            ExpressiveSettingGroup(
-                title = "Account & Updates",
-                itemMinHeight = 64.dp,
-                items = buildList {
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(if (isUpdateAvailable) R.drawable.update_alert else R.drawable.system_update_uptodate),
-                            title = { Text(stringResource(R.string.system_update)) },
-                            description = {
-                                if (isUpdateAvailable) {
-                                    Text(
-                                        text = stringResource(R.string.update_available),
-                                        color = MaterialTheme.colorScheme.error
-                                    )
-                                } else {
-                                    Text(stringResource(R.string.app_update_uptodate))
-                                }
-                            },
-                            onClick = { navController.navigate("settings/update") }
-                        )
+            // Core 2x2 Grid Hubs (Grid Style Settings)
+            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SettingsGridCard(
+                        modifier = Modifier.weight(1f),
+                        icon = R.drawable.palette,
+                        title = "Appearance",
+                        subtitle = "Themes, accents & launcher icons",
+                        onClick = { navController.navigate("settings/appearance") }
                     )
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(R.drawable.google),
-                            title = { Text(stringResource(R.string.account)) },
-                            description = { Text(stringResource(R.string.setting_account_desc)) },
-                            onClick = { navController.navigate("settings/account") }
-                        )
+                    SettingsGridCard(
+                        modifier = Modifier.weight(1f),
+                        icon = R.drawable.earbud_case,
+                        title = "Player & Audio",
+                        subtitle = "Dual engine, equalizer & sound",
+                        onClick = { navController.navigate("settings/player") }
                     )
                 }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SettingsGridCard(
+                        modifier = Modifier.weight(1f),
+                        icon = R.drawable.storage,
+                        title = "Storage & Cache",
+                        subtitle = "Offline tracks & cache budgets",
+                        onClick = { navController.navigate("settings/storage") }
+                    )
+                    SettingsGridCard(
+                        modifier = Modifier.weight(1f),
+                        icon = R.drawable.group,
+                        title = "Listen Together",
+                        subtitle = "Synchronized group sessions",
+                        onClick = { navController.navigate(Screens.ListenTogether.route) }
+                    )
+                }
+            }
+
+            // Remaining Settings: Expressive Setting Groups ("some as it is")
+            ExpressiveSettingGroup(
+                title = "Content & AI Experience",
+                itemMinHeight = 64.dp,
+                items = listOf(
+                    Material3SettingsItem(
+                        icon = painterResource(R.drawable.language),
+                        title = { Text(stringResource(R.string.content)) },
+                        description = { Text(stringResource(R.string.setting_content_desc)) },
+                        onClick = { navController.navigate("settings/content") }
+                    ),
+                    Material3SettingsItem(
+                        icon = painterResource(R.drawable.translate),
+                        title = { Text(stringResource(R.string.ai_lyrics_translation)) },
+                        description = { Text(stringResource(R.string.setting_ai_lyrics_translation_desc)) },
+                        onClick = { navController.navigate("settings/ai") }
+                    )
+                )
             )
 
-            // Group 2: Media & Player Experience
             ExpressiveSettingGroup(
+                title = "Security & Data",
                 itemMinHeight = 64.dp,
-                items = buildList {
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(R.drawable.palette),
-                            title = { Text(stringResource(R.string.appearance)) },
-                            description = { Text(stringResource(R.string.setting_appearance_desc)) },
-                            onClick = { navController.navigate("settings/appearance") }
-                        )
+                items = listOf(
+                    Material3SettingsItem(
+                        icon = painterResource(R.drawable.security),
+                        title = { Text(stringResource(R.string.privacy)) },
+                        description = { Text(stringResource(R.string.setting_privacy_desc)) },
+                        onClick = { navController.navigate("settings/privacy") }
+                    ),
+                    Material3SettingsItem(
+                        icon = painterResource(R.drawable.restore),
+                        title = { Text(stringResource(R.string.backup_restore)) },
+                        description = { Text(stringResource(R.string.setting_backup_restore_desc)) },
+                        onClick = { navController.navigate("settings/backup_restore") }
                     )
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(R.drawable.earbud_case),
-                            title = { Text(stringResource(R.string.player_and_audio)) },
-                            description = { Text(stringResource(R.string.setting_player_desc)) },
-                            onClick = { navController.navigate("settings/player") }
-                        )
-                    )
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(R.drawable.group),
-                            title = { Text(stringResource(R.string.listen_together)) },
-                            description = { Text(stringResource(R.string.setting_listen_together_desc)) },
-                            onClick = { navController.navigate(Screens.ListenTogether.route) }
-                        )
-                    )
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(R.drawable.language),
-                            title = { Text(stringResource(R.string.content)) },
-                            description = { Text(stringResource(R.string.setting_content_desc)) },
-                            onClick = { navController.navigate("settings/content") }
-                        )
-                    )
-                }
+                )
             )
 
-            // Group 3: Features & Data
             ExpressiveSettingGroup(
+                title = "About MKR Music",
                 itemMinHeight = 64.dp,
-                items = buildList {
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(R.drawable.translate),
-                            title = { Text(stringResource(R.string.ai_lyrics_translation)) },
-                            description = { Text(stringResource(R.string.setting_ai_lyrics_translation_desc)) },
-                            onClick = { navController.navigate("settings/ai") }
-                        )
+                items = listOf(
+                    Material3SettingsItem(
+                        icon = painterResource(R.drawable.info),
+                        title = { Text(stringResource(R.string.about)) },
+                        description = { Text("v6.0.8 Stable • Developed by @mkr-infinity") },
+                        onClick = { navController.navigate("settings/about") }
                     )
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(R.drawable.security),
-                            title = { Text(stringResource(R.string.privacy)) },
-                            description = { Text(stringResource(R.string.setting_privacy_desc)) },
-                            onClick = { navController.navigate("settings/privacy") }
-                        )
-                    )
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(R.drawable.history),
-                            title = { Text(stringResource(R.string.listening_summary)) },
-                            description = { Text(stringResource(R.string.setting_listening_summary_desc)) },
-                            onClick = { navController.navigate("settings/listening_summary") }
-                        )
-                    )
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(R.drawable.storage),
-                            title = { Text(stringResource(R.string.storage)) },
-                            description = { Text(stringResource(R.string.setting_storage_desc)) },
-                            onClick = { navController.navigate("settings/storage") }
-                        )
-                    )
-                }
-            )
-
-            // Group 4: System & Support
-            ExpressiveSettingGroup(
-                itemMinHeight = 64.dp,
-                items = buildList {
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(R.drawable.restore),
-                            title = { Text(stringResource(R.string.backup_restore)) },
-                            description = { Text(stringResource(R.string.setting_backup_restore_desc)) },
-                            onClick = { navController.navigate("settings/backup_restore") }
-                        )
-                    )
-                    add(
-                        Material3SettingsItem(
-                            icon = painterResource(R.drawable.info),
-                            title = { Text(stringResource(R.string.about)) },
-                            description = { Text(stringResource(R.string.setting_about_desc)) },
-                            onClick = { navController.navigate("settings/about") }
-                        )
-                    )
-                }
+                )
             )
         }
-        
+
         Spacer(modifier = Modifier.height(50.dp))
     }
 
     TopAppBar(
-        title = { },
+        title = {
+            Text(
+                text = stringResource(R.string.settings),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+            )
+        },
         navigationIcon = {
             IconButton(
                 onClick = navController::navigateUp,
@@ -555,15 +437,44 @@ fun SettingsScreen(
             ) {
                 Icon(
                     painterResource(R.drawable.arrow_back),
-                    contentDescription = null
+                    contentDescription = "Back"
                 )
+            }
+        },
+        actions = {
+            Surface(
+                shape = RoundedCornerShape(50.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier
+                    .padding(end = 12.dp)
+                    .clickable { navController.navigate("settings/about") }
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.icon),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clip(RoundedCornerShape(4.dp))
+                    )
+                    Text(
+                        text = "v6.0.8",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
         }
     )
 }
 
 @Composable
-private fun DiscoveryCapsuleCard(
+private fun SettingsGridCard(
     modifier: Modifier = Modifier,
     icon: Int,
     title: String,
@@ -572,49 +483,106 @@ private fun DiscoveryCapsuleCard(
 ) {
     Surface(
         modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
+            .clip(RoundedCornerShape(22.dp))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
-        tonalElevation = 1.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 2.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
     ) {
-        Row(
-            modifier = Modifier.padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier.padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Box(
-                modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(13.dp))
+                        .background(MaterialTheme.colorScheme.primaryContainer),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(icon),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
                 Icon(
-                    painter = painterResource(icon),
+                    painter = painterResource(R.drawable.navigate_next),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
+                    modifier = Modifier.size(18.dp)
                 )
             }
-            Spacer(modifier = Modifier.width(10.dp))
-            Column(modifier = Modifier.weight(1f)) {
+            Spacer(modifier = Modifier.height(12.dp))
+            Column {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
+                    maxLines = 2,
+                    lineHeight = 15.sp,
                     overflow = TextOverflow.Ellipsis
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun StatusCapsulePill(
+    icon: Int,
+    label: String,
+    highlight: Boolean = false,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = Modifier
+            .clip(RoundedCornerShape(50.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(50.dp),
+        color = if (highlight) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f)
+                else MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(
+            1.dp,
+            if (highlight) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
+            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+        )
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                tint = if (highlight) MaterialTheme.colorScheme.onErrorContainer
+                       else MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = if (highlight) MaterialTheme.colorScheme.onErrorContainer
+                        else MaterialTheme.colorScheme.onSurface
+            )
         }
     }
 }

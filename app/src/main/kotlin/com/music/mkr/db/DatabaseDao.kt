@@ -1192,6 +1192,9 @@ interface DatabaseDao {
     @Query("SELECT COUNT(*) FROM event")
     fun eventCount(): Flow<Int>
 
+    @Query("SELECT COALESCE(SUM(playTime), 0) FROM event")
+    fun totalListenTime(): Flow<Long>
+
     @Transaction
     @Query("DELETE FROM event")
     fun clearListenHistory()

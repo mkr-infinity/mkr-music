@@ -714,7 +714,7 @@
     <string name="apple_music_lyrics_blur_desc">Aplicar o borrão nas linhas de letras inativas para um efeito de foco premium</string>
     <string name="lyrics_v2_fluid">Letra V2 (Fluida)</string>
     <string name="lyrics_animation_metro">MetroLyrics</string>
-    <string name="vivi_equalizer">ViviEqualizer</string>
+<string name="vivi_equalizer">MKR Equalizer</string>
     <string name="vivi_equalizer_desc">Afinação e efeitos acústicos pró-grau</string>
     <string name="eq_simple">Simples</string>
     <string name="eq_advanced">Avançado</string>
@@ -722,7 +722,7 @@
     <string name="eq_label_mid">Meios</string>
     <string name="eq_label_treble">Treble</string>
     <string name="eq_preset_flat">Plano</string>
-    <string name="eq_preset_vivi_signature">Assinatura Vivi</string>
+    <string name="eq_preset_vivi_signature">Assinatura MKR</string>
     <string name="eq_preset_acoustic">Acústica</string>
     <string name="eq_preset_spatial">Etapa 3D</string>
     <string name="eq_preset_bass_boost">Baixo Boost</string>
@@ -739,9 +739,9 @@
     <string name="eq_preset_dirac_music">Dirac Music</string>
     <string name="eq_preset_dirac_movie">Filme Dirac</string>
     <string name="eq_preset_dirac_game">Jogo Dirac</string>
-    <string name="eq_enable_title">ViviEqualizer</string>
+<string name="eq_enable_title">MKR Equalizer</string>
     <string name="eq_enable_summary">Alternar o processamento de áudio profissional</string>
-    <string name="eq_label_vivi">Assinatura Vivi</string>
+    <string name="eq_label_vivi">Assinatura MKR</string>
     <string name="eq_label_dolby">Dolby Atmos</string>
     <string name="eq_label_dirac">Áudio Dirac</string>
     <string name="eq_reset">Reiniciar</string>
@@ -800,7 +800,7 @@
     <string name="flavour">Sabor</string>
     <string name="version_title">Versão</string>
     <string name="welcome_to">Bem- vindo a</string>
-    <string name="welcome_to_vivi">Bem-vindo à Vivi</string>
+    <string name="welcome_to_vivi">Bem-vindo ao MKR Music</string>
     <string name="accessibility">acessibilidade</string>
     <string name="welcome_preparing_subtitle">Vamos começar tudo pronto para você.</string>
     <string name="get_started">Começar</string>
@@ -906,9 +906,9 @@
     <string name="font_sans_flex_desc">Um sans-serif flexível versátil moderno.</string>
     <string name="font_outfit_desc">Um sans-serif geométrico limpo e moderno.</string>
     <string name="font_plus_jakarta_sans_desc">Um premium quente geométrico sans-serif tipoface.</string>
-    <string name="youtube_decryption_settings">Vivi-Extrator</string>
+    <string name="youtube_decryption_settings">MKR-Extrator</string>
     <string name="youtube_decryption_desc">Configurar as configurações do extrator</string>
-    <string name="youtube_decryption_support">Vivi-Extrator</string>
+    <string name="youtube_decryption_support">MKR-Extrator</string>
     <string name="youtube_decryption_support_desc">Extrai automaticamente as configurações de reprodução do YouTube. Travado em Active.</string>
     <string name="auto_cipher_fetching">Atualizações Automáticas</string>
     <string name="auto_cipher_fetching_desc">Obter novos mapeamentos do extrator em segundo plano quando os problemas são detectados.</string>

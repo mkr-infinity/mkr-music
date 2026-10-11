@@ -544,7 +544,7 @@ est irréversible.
     <string name="error_eq_apply_failed">Échec de l\'application du profil d\'égalisation : %1$s</string>
 
 	<!-- ViviEqualizer Strings -->
-    <string name="vivi_equalizer">Vivi Equalizer</string>
+<string name="vivi_equalizer">MKR Equalizer</string>
     <string name="vivi_equalizer_desc">Réglage acoustique de qualité professionnelle &amp; Effets</string>
     <string name="eq_simple">Simple</string>
     <string name="eq_advanced">Avancé</string>
@@ -552,7 +552,7 @@ est irréversible.
     <string name="eq_label_mid">Milieux</string>
     <string name="eq_label_treble">Aigus</string>
     <string name="eq_preset_flat">Plat</string>
-    <string name="eq_preset_vivi_signature">Vivi Signature</string>
+<string name="eq_preset_vivi_signature">MKR Signature</string>
     <string name="eq_preset_acoustic">Acoustique</string>
     <string name="eq_preset_spatial">Scène 3D</string>
     <string name="eq_preset_bass_boost">Amplification des Basses</string>
@@ -569,9 +569,9 @@ est irréversible.
     <string name="eq_preset_dirac_music">Dirac Music</string>
     <string name="eq_preset_dirac_movie">Dirac Movie</string>
     <string name="eq_preset_dirac_game">Dirac Game</string>
-    <string name="eq_enable_title">Vivi Equalizer</string>
+<string name="eq_enable_title">MKR Equalizer</string>
     <string name="eq_enable_summary">Activer le traitement audio professionnel</string>
-    <string name="eq_label_vivi">Vivi Signature</string>
+<string name="eq_label_vivi">MKR Signature</string>
     <string name="eq_label_dolby">Dolby Atmos</string>
     <string name="eq_label_dirac">Dirac Audio</string>
     <string name="eq_reset">Réinitialiser</string>
@@ -1050,9 +1050,9 @@ est irréversible.
     <string name="error_invalid_font">Fichier de police non valide sélectionné.</string>
 
 	<!-- YouTube Decryption / Cipher Settings -->
-    <string name="youtube_decryption_settings">Vivi Extracteur</string>
+<string name="youtube_decryption_settings">MKR Extracteur</string>
     <string name="youtube_decryption_desc">Configurer les paramètres de l\'extracteur</string>
-    <string name="youtube_decryption_support">Vivi Extracteur</string>
+<string name="youtube_decryption_support">MKR Extracteur</string>
     <string name="youtube_decryption_support_desc">Extrait automatiquement les paramètres de lecture YouTube. Verrouillé sur « Actif ».</string>
     <string name="auto_cipher_fetching">Mises à jour automatiques</string>
     <string name="auto_cipher_fetching_desc">Récupérer les nouveaux mappages d\'extracteurs en arrière-plan lorsque des problèmes sont détectés.</string>
