@@ -55,7 +55,9 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -108,74 +110,19 @@ fun AboutScreen(
     ) {
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Top Hero Section: Developer Profile & Branding
-        DeveloperHeroCard(
-            onDeveloperClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_GITHUB_URL) }
-        )
+        // Top Hero Section: Developer Profile & Social Media Hub
+        DeveloperHeroCard()
 
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        // App Version Card
+        // App Information Card with Default App Logo
         AppVersionTile(
             appName = "MKR Music",
-            versionLabel = GitHubConfig.VERSION_LABEL,
-            buildDetails = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) • ${if (BuildConfig.IS_NIGHTLY) "Nightly" else "Stable"}",
+            buildDetails = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) • Stable Universal Release",
             onGithubClick = { uriHandler.safeOpenUri(context, GitHubConfig.REPO_URL) }
         )
 
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Connect & Developer Links
-        ExpressiveSettingGroup(
-            title = "Connect & Support",
-            items = listOf(
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.github),
-                    title = { Text("Developer GitHub") },
-                    description = { Text(GitHubConfig.DEV_HANDLE) },
-                    onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_GITHUB_URL) },
-                    isExternalLink = true
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.github_main),
-                    title = { Text("Official Repository") },
-                    description = { Text("mkr-infinity/mkr-music") },
-                    onClick = { uriHandler.safeOpenUri(context, GitHubConfig.REPO_URL) },
-                    isExternalLink = true
-                ),
-                Material3SettingsItem(
-                    key = "about_support",
-                    icon = painterResource(R.drawable.buymeacoffee),
-                    title = { Text("Support & Donate") },
-                    description = { Text("Buy Me a Coffee (@mkr_infinity)") },
-                    onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_BUYMEACOFFEE_URL) },
-                    isExternalLink = true
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.web_link),
-                    title = { Text("Developer Website") },
-                    description = { Text("mkr-infinity.github.io") },
-                    onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_WEBSITE_URL) },
-                    isExternalLink = true
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.telegram),
-                    title = { Text("Telegram Channel") },
-                    description = { Text("t.me/mkr_infinity") },
-                    onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_TELEGRAM_URL) },
-                    isExternalLink = true
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.instagram),
-                    title = { Text("Instagram") },
-                    description = { Text("@mkr_infinity") },
-                    onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_INSTAGRAM_URL) },
-                    isExternalLink = true
-                )
-            )
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // Application Details & Legal
         ExpressiveSettingGroup(
@@ -188,21 +135,30 @@ fun AboutScreen(
                     trailingContent = { Text(installedDate) }
                 ),
                 Material3SettingsItem(
-                    icon = painterResource(R.drawable.info),
-                    title = { Text(stringResource(R.string.version_code)) },
-                    trailingContent = { Text(BuildConfig.VERSION_CODE.toString()) }
+                    icon = painterResource(R.drawable.github_main),
+                    title = { Text("Source Code & Repository") },
+                    description = { Text("mkr-infinity/mkr-music") },
+                    onClick = { uriHandler.safeOpenUri(context, GitHubConfig.REPO_URL) },
+                    isExternalLink = true
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.license_mkr),
-                    title = { Text("License (GPL-3.0)") },
-                    description = { Text("GNU General Public License v3.0") },
+                    title = { Text("Open Source License") },
+                    description = { Text("GNU General Public License v3.0 (GPL-3.0)") },
                     onClick = { uriHandler.safeOpenUri(context, "${GitHubConfig.REPO_URL}/blob/main/LICENSE") },
+                    isExternalLink = true
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.favorite),
+                    title = { Text("Credits & Inspiration") },
+                    description = { Text("ViVi Music, Zion Huang, vfsfitvnm") },
+                    onClick = { uriHandler.safeOpenUri(context, GitHubConfig.REPO_URL) },
                     isExternalLink = true
                 )
             )
         )
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(28.dp))
     }
 
     TopAppBar(
@@ -222,31 +178,33 @@ fun AboutScreen(
 }
 
 @Composable
-private fun DeveloperHeroCard(
-    onDeveloperClick: () -> Unit
-) {
+private fun DeveloperHeroCard() {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
+
     Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onDeveloperClick),
-        shape = RoundedCornerShape(24.dp),
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(28.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 2.dp
+        tonalElevation = 2.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
     ) {
-        Row(
-            modifier = Modifier.padding(18.dp),
-            verticalAlignment = Alignment.CenterVertically
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // 1. Top Avatar with app logo badge
             Box(
-                modifier = Modifier.size(72.dp)
+                modifier = Modifier.size(86.dp)
             ) {
                 Box(
                     modifier = Modifier
-                        .size(68.dp)
-                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                        .padding(3.dp)
-                        .align(Alignment.CenterStart)
+                        .size(82.dp)
+                        .border(2.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                        .padding(4.dp)
+                        .align(Alignment.Center)
                 ) {
                     AsyncImage(
                         model = ImageRequest.Builder(context)
@@ -257,16 +215,16 @@ private fun DeveloperHeroCard(
                         error = painterResource(R.drawable.dev),
                         contentDescription = GitHubConfig.DEV_NAME,
                         modifier = Modifier
-                            .matchParentSize()
+                            .fillMaxSize()
                             .clip(CircleShape),
                         contentScale = ContentScale.Crop
                     )
                 }
 
-                // Official MKR Music logo badge
+                // Official MKR Music badge
                 Box(
                     modifier = Modifier
-                        .size(24.dp)
+                        .size(26.dp)
                         .align(Alignment.BottomEnd)
                         .clip(CircleShape)
                         .background(MaterialTheme.colorScheme.surface)
@@ -274,65 +232,194 @@ private fun DeveloperHeroCard(
                     contentAlignment = Alignment.Center
                 ) {
                     Image(
-                        painter = painterResource(R.drawable.mkr_music_icon),
+                        painter = painterResource(R.drawable.icon),
                         contentDescription = "MKR Music Badge",
                         modifier = Modifier
-                            .size(18.dp)
+                            .size(20.dp)
                             .clip(CircleShape)
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.width(16.dp))
+            Spacer(modifier = Modifier.height(14.dp))
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
+            // 2. Developer Name (Centered, Bold, Never truncated)
+            Text(
+                text = GitHubConfig.DEV_NAME,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // 3. Role pill: Tech Enthusiast & Android Developer
+            Surface(
+                shape = RoundedCornerShape(50.dp),
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
+                tonalElevation = 1.dp
             ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primary)
+                    )
+                    Text(
+                        text = GitHubConfig.DEV_ROLE,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary,
+                        letterSpacing = 0.2.sp
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            // 4. Social Links Box: 2 in one line (2x2 grid)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SocialLinkPill(
+                        modifier = Modifier.weight(1f),
+                        icon = R.drawable.github,
+                        title = "GitHub",
+                        subtitle = GitHubConfig.DEV_HANDLE,
+                        onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_GITHUB_URL) }
+                    )
+                    SocialLinkPill(
+                        modifier = Modifier.weight(1f),
+                        icon = R.drawable.instagram,
+                        title = "Instagram",
+                        subtitle = "@mkr_infinity",
+                        onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_INSTAGRAM_URL) }
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SocialLinkPill(
+                        modifier = Modifier.weight(1f),
+                        icon = R.drawable.telegram,
+                        title = "Telegram",
+                        subtitle = "@mkr_infinity",
+                        onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_TELEGRAM_URL) }
+                    )
+                    SocialLinkPill(
+                        modifier = Modifier.weight(1f),
+                        icon = R.drawable.globe,
+                        title = "Website",
+                        subtitle = "mkr-infinity",
+                        onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_WEBSITE_URL) }
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // 5. Support Capsule inside the card
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable { uriHandler.safeOpenUri(context, GitHubConfig.DEV_BUYMEACOFFEE_URL) },
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.primaryContainer,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.buymeacoffee),
+                        contentDescription = "Buy Me a Coffee",
+                        tint = Color.Unspecified,
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Support on Buy Me a Coffee",
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SocialLinkPill(
+    modifier: Modifier = Modifier,
+    icon: Int,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainer,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = title,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = GitHubConfig.DEV_NAME,
-                    style = MaterialTheme.typography.titleLarge,
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = GitHubConfig.DEV_HANDLE,
+                    text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                Surface(
-                    shape = RoundedCornerShape(50.dp),
-                    color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                    tonalElevation = 1.dp
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(7.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary)
-                        )
-                        Text(
-                            text = GitHubConfig.DEV_ROLE,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            letterSpacing = 0.2.sp
-                        )
-                    }
-                }
             }
         }
     }
@@ -341,44 +428,44 @@ private fun DeveloperHeroCard(
 @Composable
 private fun AppVersionTile(
     appName: String,
-    versionLabel: String,
     buildDetails: String,
     onGithubClick: () -> Unit
 ) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.primaryContainer
+        shape = RoundedCornerShape(22.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
     ) {
         ListItem(
             leadingContent = {
                 Image(
-                    painter = painterResource(R.drawable.mkr_music_icon),
-                    contentDescription = null,
+                    painter = painterResource(R.drawable.icon),
+                    contentDescription = "MKR Music",
                     modifier = Modifier
                         .size(46.dp)
                         .clip(RoundedCornerShape(12.dp))
                 )
             },
             colors = ListItemDefaults.colors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
             ),
             headlineContent = {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = appName,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        color = MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Surface(
-                        shape = RoundedCornerShape(8.dp),
-                        color = MaterialTheme.colorScheme.primary
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primaryContainer
                     ) {
                         Text(
-                            text = versionLabel,
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            text = "Universal",
+                            color = MaterialTheme.colorScheme.onPrimaryContainer,
                             style = MaterialTheme.typography.labelSmall,
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
@@ -389,7 +476,7 @@ private fun AppVersionTile(
             supportingContent = {
                 Text(
                     text = buildDetails,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(top = 2.dp)
                 )
@@ -398,13 +485,13 @@ private fun AppVersionTile(
                 IconButton(
                     onClick = onGithubClick,
                     colors = IconButtonDefaults.iconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.1f)
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest
                     )
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.github),
                         contentDescription = "GitHub Repository",
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        tint = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }

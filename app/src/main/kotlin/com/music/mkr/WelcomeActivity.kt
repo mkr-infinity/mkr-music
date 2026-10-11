@@ -33,6 +33,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -369,10 +370,12 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                             )
                         },
                         leadingIcon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.info),
+                            Image(
+                                painter = painterResource(id = R.drawable.icon),
                                 contentDescription = null,
-                                modifier = Modifier.size(AssistChipDefaults.IconSize)
+                                modifier = Modifier
+                                    .size(AssistChipDefaults.IconSize)
+                                    .clip(CircleShape)
                             )
                         },
                         shape = CircleShape,
@@ -1248,11 +1251,12 @@ fun RotatingShapeContainer(modifier: Modifier = Modifier, rotate: Boolean = true
                 .rotate(rotation)
         )
 
-        Icon(
-            painter = painterResource(com.music.mkr.R.drawable.ic_mkr_logo_line_note),
-            contentDescription = null,
-            modifier = Modifier.size(220.dp),
-            tint = backgroundColor
+        Image(
+            painter = painterResource(com.music.mkr.R.drawable.icon),
+            contentDescription = "MKR Music",
+            modifier = Modifier
+                .size(190.dp)
+                .clip(CircleShape)
         )
     }
 }

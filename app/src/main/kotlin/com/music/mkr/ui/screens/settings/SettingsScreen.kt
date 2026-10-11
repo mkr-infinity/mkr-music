@@ -397,6 +397,24 @@ fun SettingsScreen(
                 route = "settings/about",
                 targetKey = "about_support",
                 keywords = listOf("support", "coffee", "buymeacoffee", "donate", "contribute")
+            ),
+            SearchableSetting(
+                title = "Request a Feature",
+                description = "Propose new ideas & enhancements on GitHub",
+                category = "Feedback & Community",
+                iconRes = R.drawable.support_mkr,
+                route = "settings",
+                targetKey = "support_request_feature",
+                keywords = listOf("feature", "request", "idea", "suggestion", "github", "proposal")
+            ),
+            SearchableSetting(
+                title = "Report a Problem",
+                description = "Submit issue report with device & version details on GitHub",
+                category = "Feedback & Community",
+                iconRes = R.drawable.bug_report,
+                route = "settings",
+                targetKey = "support_report_problem",
+                keywords = listOf("bug", "issue", "problem", "error", "crash", "report", "github")
             )
         )
     }
@@ -542,14 +560,14 @@ fun SettingsScreen(
                 )
             }
         } else {
-            // Section 2 — Four settings grid cards (adaptive 2-by-2 grid)
+            // Section 2 — Four settings grid cards (adaptive 2-by-2 grid with fixed height alignment)
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(124.dp),
                         key = "appearance_theme_palette",
                         icon = R.drawable.palette,
                         title = "Appearance",
@@ -557,7 +575,7 @@ fun SettingsScreen(
                         onClick = { navController.navigate("settings/appearance") }
                     )
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(124.dp),
                         key = "player_audio_quality",
                         icon = R.drawable.earbud_case,
                         title = "Player & Audio",
@@ -570,7 +588,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(124.dp),
                         key = "storage_downloads",
                         icon = R.drawable.storage,
                         title = "Storage & Cache",
@@ -578,7 +596,7 @@ fun SettingsScreen(
                         onClick = { navController.navigate("settings/storage") }
                     )
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(1f).height(124.dp),
                         key = "account_login",
                         icon = R.drawable.google,
                         title = "Account & Sync",
@@ -588,100 +606,40 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Section 3 — Two capsule actions on one line (50/50 balanced layout)
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                StatusCapsulePill(
-                    modifier = Modifier.weight(1f),
-                    key = "update_check",
-                    icon = if (isUpdateAvailable) R.drawable.update_alert else R.drawable.system_update_uptodate,
-                    label = if (isUpdateAvailable) "Update Available" else "System Up to Date",
-                    highlight = isUpdateAvailable,
-                    onClick = { navController.navigate("settings/update") }
-                )
-                StatusCapsulePill(
-                    modifier = Modifier.weight(1f),
-                    key = "privacy_listening_summary",
-                    icon = R.drawable.history,
-                    label = "Listening Recap",
-                    onClick = { navController.navigate("settings/listening_summary") }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Section 4 — Listen Together capsule (Single full-width capsule)
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .settingsHighlight("screen_listen_together", RoundedCornerShape(20.dp))
-                    .clip(RoundedCornerShape(20.dp))
-                    .clickable { navController.navigate(Screens.ListenTogether.route) },
-                shape = RoundedCornerShape(20.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 2.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(40.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.group),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = "Listen Together",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "Synchronized live group listening sessions with friends",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                    Icon(
-                        painter = painterResource(R.drawable.navigate_next),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        modifier = Modifier.size(20.dp)
+            // Section 3 — Features & Updates (Grouped like Security & Data)
+            ExpressiveSettingGroup(
+                title = "Features & Updates",
+                itemMinHeight = 64.dp,
+                items = listOf(
+                    Material3SettingsItem(
+                        key = "update_check",
+                        icon = painterResource(if (isUpdateAvailable) R.drawable.update_alert else R.drawable.system_update_uptodate),
+                        title = { Text(if (isUpdateAvailable) "Update Available" else "System Updates") },
+                        description = { Text(if (isUpdateAvailable) "New MKR Music release is ready to install" else "MKR Music is up to date • Check for updates") },
+                        onClick = { navController.navigate("settings/update") }
+                    ),
+                    Material3SettingsItem(
+                        key = "privacy_listening_summary",
+                        icon = painterResource(R.drawable.history),
+                        title = { Text("Listening Recap") },
+                        description = { Text("Weekly listening stats, top artists, moods & highlights") },
+                        onClick = { navController.navigate("settings/listening_summary") }
+                    ),
+                    Material3SettingsItem(
+                        key = "screen_listen_together",
+                        icon = painterResource(R.drawable.group),
+                        title = { Text("Listen Together") },
+                        description = { Text("Synchronized live group listening sessions with friends") },
+                        onClick = { navController.navigate(Screens.ListenTogether.route) }
                     )
-                }
-            }
+                )
+            )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Section 5 — Security & Data
+            // Section 4 — Security & Data
             ExpressiveSettingGroup(
                 title = "Security & Data",
                 itemMinHeight = 64.dp,
@@ -703,140 +661,87 @@ fun SettingsScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Section 6 — Request a Feature and Report a Problem (Two support capsules)
-            Text(
-                text = "Feedback & Community",
-                style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
+            // Section 5 — Feedback & Community
+            ExpressiveSettingGroup(
+                title = "Feedback & Community",
+                itemMinHeight = 64.dp,
+                items = listOf(
+                    Material3SettingsItem(
+                        key = "support_request_feature",
+                        icon = painterResource(R.drawable.support_mkr),
+                        title = { Text("Request a Feature") },
+                        description = { Text("Propose new ideas & enhancements on GitHub") },
+                        onClick = {
+                            val featureTitle = "Feature Request: "
+                            val featureBody = """
+                                ### Feature Description
+                                Please describe the feature you would like to see in MKR Music.
+
+                                ### Benefit & Use Case
+                                Explain how this enhancement benefits listeners.
+                            """.trimIndent()
+                            val url = "https://github.com/mkr-infinity/mkr-music/issues/new?title=" +
+                                URLEncoder.encode(featureTitle, StandardCharsets.UTF_8.name()) +
+                                "&body=" + URLEncoder.encode(featureBody, StandardCharsets.UTF_8.name())
+                            uriHandler.safeOpenUri(context, url)
+                        },
+                        isExternalLink = true
+                    ),
+                    Material3SettingsItem(
+                        key = "support_report_problem",
+                        icon = painterResource(R.drawable.bug_report),
+                        title = { Text("Report a Problem") },
+                        description = { Text("Submit issue report with device & version details") },
+                        onClick = {
+                            val bugTitle = "Bug Report: "
+                            val bugBody = """
+                                ### Device & App Information
+                                - App Version: v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})
+                                - Android Version: Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})
+                                - Device: ${Build.MANUFACTURER} ${Build.MODEL}
+
+                                ### Description of the Issue
+                                Please describe what occurred.
+
+                                ### Steps to Reproduce
+                                1.
+                                2.
+                                3.
+
+                                ### Expected Behavior
+                                What should have happened.
+
+                                ### Actual Behavior
+                                What actually happened.
+                            """.trimIndent()
+                            val url = "https://github.com/mkr-infinity/mkr-music/issues/new?title=" +
+                                URLEncoder.encode(bugTitle, StandardCharsets.UTF_8.name()) +
+                                "&body=" + URLEncoder.encode(bugBody, StandardCharsets.UTF_8.name())
+                            uriHandler.safeOpenUri(context, url)
+                        },
+                        isExternalLink = true
+                    )
+                )
             )
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                SupportCapsuleCard(
-                    modifier = Modifier.weight(1f),
-                    icon = R.drawable.support_mkr,
-                    title = "Request Feature",
-                    subtitle = "Propose new ideas",
-                    onClick = {
-                        val featureTitle = "Feature Request: "
-                        val featureBody = """
-                            ### Feature Description
-                            Please describe the feature you would like to see in MKR Music.
+            Spacer(modifier = Modifier.height(6.dp))
 
-                            ### Benefit & Use Case
-                            Explain how this enhancement benefits listeners.
-                        """.trimIndent()
-                        val url = "https://github.com/mkr-infinity/mkr-music/issues/new?title=" +
-                            URLEncoder.encode(featureTitle, StandardCharsets.UTF_8.name()) +
-                            "&body=" + URLEncoder.encode(featureBody, StandardCharsets.UTF_8.name())
-                        uriHandler.safeOpenUri(context, url)
-                    }
-                )
-
-                SupportCapsuleCard(
-                    modifier = Modifier.weight(1f),
-                    icon = R.drawable.bug_report,
-                    title = "Report Problem",
-                    subtitle = "Submit issue report",
-                    onClick = {
-                        val bugTitle = "Bug Report: "
-                        val bugBody = """
-                            ### Device & App Information
-                            - App Version: v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})
-                            - Android Version: Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})
-                            - Device: ${Build.MANUFACTURER} ${Build.MODEL}
-
-                            ### Description of the Issue
-                            Please describe what occurred.
-
-                            ### Steps to Reproduce
-                            1.
-                            2.
-                            3.
-
-                            ### Expected Behavior
-                            What should have happened.
-
-                            ### Actual Behavior
-                            What actually happened.
-                        """.trimIndent()
-                        val url = "https://github.com/mkr-infinity/mkr-music/issues/new?title=" +
-                            URLEncoder.encode(bugTitle, StandardCharsets.UTF_8.name()) +
-                            "&body=" + URLEncoder.encode(bugBody, StandardCharsets.UTF_8.name())
-                        uriHandler.safeOpenUri(context, url)
-                    }
-                )
-            }
-
-            Spacer(modifier = Modifier.height(14.dp))
-
-            // Section 7 — About action
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .settingsHighlight("about_app", RoundedCornerShape(22.dp))
-                    .clip(RoundedCornerShape(22.dp))
-                    .clickable { navController.navigate("settings/about") },
-                shape = RoundedCornerShape(22.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                tonalElevation = 2.dp,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 14.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(14.dp),
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .clip(RoundedCornerShape(14.dp))
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.mkr_music_icon),
-                                contentDescription = "MKR Music",
-                                modifier = Modifier.size(26.dp)
-                            )
-                        }
-                        Column {
-                            Text(
-                                text = "About MKR Music",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = "v${BuildConfig.VERSION_NAME} Stable • Developed by Mohammad Kaif Raja",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    }
-                    Icon(
-                        painter = painterResource(R.drawable.navigate_next),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                        modifier = Modifier.size(20.dp)
+            // Section 6 — About MKR Music
+            ExpressiveSettingGroup(
+                title = "About",
+                itemMinHeight = 64.dp,
+                items = listOf(
+                    Material3SettingsItem(
+                        key = "about_app",
+                        icon = painterResource(R.drawable.icon),
+                        title = { Text("About MKR Music") },
+                        description = { Text("v${BuildConfig.VERSION_NAME} Stable • Developed by Mohammad Kaif Raja") },
+                        onClick = { navController.navigate("settings/about") }
                     )
-                }
-            }
+                )
+            )
         }
 
         Spacer(modifier = Modifier.height(50.dp))
@@ -912,7 +817,9 @@ private fun SettingsGridCard(
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
     ) {
         Column(
-            modifier = Modifier.padding(14.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(14.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -958,112 +865,6 @@ private fun SettingsGridCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                     lineHeight = 15.sp,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun StatusCapsulePill(
-    modifier: Modifier = Modifier,
-    key: String? = null,
-    icon: Int,
-    label: String,
-    highlight: Boolean = false,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = modifier
-            .settingsHighlight(key, RoundedCornerShape(50.dp))
-            .clip(RoundedCornerShape(50.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(50.dp),
-        color = if (highlight) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.85f)
-                else MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(
-            1.dp,
-            if (highlight) MaterialTheme.colorScheme.error.copy(alpha = 0.5f)
-            else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
-        )
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                painter = painterResource(icon),
-                contentDescription = null,
-                tint = if (highlight) MaterialTheme.colorScheme.onErrorContainer
-                       else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(18.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = if (highlight) MaterialTheme.colorScheme.onErrorContainer
-                        else MaterialTheme.colorScheme.onSurface,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis
-            )
-        }
-    }
-}
-
-@Composable
-private fun SupportCapsuleCard(
-    modifier: Modifier = Modifier,
-    icon: Int,
-    title: String,
-    subtitle: String,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 2.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(36.dp)
-                    .clip(RoundedCornerShape(11.dp))
-                    .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(icon),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }
