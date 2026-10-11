@@ -12,124 +12,89 @@
 
 <div align="center">
 
-# MKR Music
+# 🎵 MKR Music
 
-### *Elevate Your Soundscape — Elegant, Lightweight & Boundless*
+### *Not just a music player — an intelligent, private sonic sanctuary.* ✨
 
-**MKR Music** is a premier open-source, ad-free music streaming and offline player crafted for Android.  
-Engineered with **Jetpack Compose**, **Material 3 Expressive**, and **AndroidX Media3 ExoPlayer**, MKR Music merges studio-grade acoustics with modern visual aesthetics.
+**MKR Music** is a premier open-source, ad-free music streaming and offline audio player for Android.
+Crafted with **Jetpack Compose**, **Material 3 Expressive**, and **AndroidX Media3 ExoPlayer**, MKR Music merges studio-grade acoustics with modern visuals.
 
-Featuring seamless **dual-engine streaming** (JioSaavn & YouTube Music), a full **Android adaptive icon system**, smart **offline caching**, real-time **synchronized lyrics**, and tailored **acoustic enhancements**.
+[**Download APK**](https://github.com/mkr-infinity/mkr-music/releases) • [**Report Issue**](https://github.com/mkr-infinity/mkr-music/issues) • [**Request Feature**](https://github.com/mkr-infinity/mkr-music/issues/new) • [**Developer Website**](https://mkr-infinity.github.io)
 
-[**Download Latest APK**](https://github.com/mkr-infinity/mkr-music/releases) • [**Report an Issue**](https://github.com/mkr-infinity/mkr-music/issues) • [**Developer Website**](https://mkr-infinity.github.io)
+</div>
 
 ---
 
-</div>
+## 🌟 Key Highlights
 
-<div align="center">
-
-### 🌟 Key Highlights
-
-| Dual Streaming Engines | Adaptive Launcher Icons | Pro-Grade Acoustics |
-| :---: | :---: | :---: |
-| **JioSaavn & YouTube Music** with automatic fallback for uninterrupted listening | **7 Handcrafted Themes** adapting naturally to any launcher mask shape | **Loudness Enhancer & MKR EQ** tuned for acoustic clarity and deep bass |
-
-| Smart Offline Caching | Synchronized Lyrics | Modern Expressive UI |
-| :---: | :---: | :---: |
-| Automatically caches tracks so your history is always available offline | Word-by-word and line-by-line synchronized lyrics with Apple-style glow | Floating navigation capsule, dynamic color palettes, and AMOLED pure black |
-
-</div>
+| Feature | Description |
+| :--- | :--- |
+| 🎧 **Dual-Engine Streaming** | High-fidelity audio powered by JioSaavn & YouTube Music with seamless fallback |
+| 🎨 **12 Adaptive Icons** | 5 Human-Made + 7 AI-Made themes adapting naturally to any device launcher shape |
+| 🧠 **Smart Recommendations** | Intelligent Quick Picks that learn your musical style, artists, and release eras |
+| 🔍 **Smart Jump Search** | Instant setting search with smooth scroll positioning and spotlight glow animation |
+| 📜 **Synchronized Lyrics** | Real-time word-by-word scrolling lyrics with dynamic Apple Music-style glow |
+| 🎚️ **Axion Equalizer** | Studio acoustic tuning with presets: *MKR Signature, 3D Stage, Bass Boost, Dolby Atmos* |
+| 👥 **Listen Together** | Real-time shared streaming sessions with friends across devices |
+| 🛡️ **Zero Telemetry** | 100% private — no trackers, no ads, and all library data stays on your device |
 
 ---
 
 ## 🚀 Key Features
 
-### 🎧 Dual-Engine High-Fidelity Playback
-- **JioSaavn & YouTube Music Integration**: Stream from either source or let MKR Music intelligently fallback if a track isn't reachable on one platform.
-- **Media3 ExoPlayer Backbone**: Ultra-fast buffering, gapless transitions, audio crossfade, and background streaming.
-- **Tuned Acoustic Equalizer**: Custom `LoudnessEnhancer` calibrated to eliminate muddy distortion while preserving vocal punch, alongside parametric EQ presets (*MKR Signature, 3D Stage, Bass Boost, Dolby Atmos, Dirac Audio*).
-
-### 🎨 Handcrafted Adaptive Icon Suite
-MKR Music implements full Android 8.0+ (`API 26`) adaptive icon specifications across all selectable themes:
-- **MKR Official**: The signature gold emblem with musical notes & headphones (*Default*).
-- **Neon Beat**: Vibrant emerald character styling.
-- **Midnight Note**: Warm bronze acoustic aesthetic.
-- **Dreamwave**: Crimson character art.
-- **Minimal Note**: Sleek monochrome silver note.
-- **Pulse Vinyl**: Cool mint vinyl aesthetic.
-- **Retro Melody**: Electric sapphire character art.
-- *Adapts naturally to device masks (Circle, Squircle, Rounded Square, Teardrop) with zero forced cropping.*
-
-### 💾 Smart Offline Caching & Data Protection
-- **Automatic Audio Caching**: Streamed tracks are cached locally, allowing you to replay songs anytime without consuming data.
-- **System Update Safety**: Built-in "Before updating" warning screen with direct links to Backup & Restore, safeguarding your playlists and settings before in-place APK updates.
-- **External Exporting**: Easily export your library to `Downloads/mkrmusic` for easy migration across devices.
-
-### 📜 Real-Time Synced Lyrics
-- Word-by-word and line-by-line synchronized scrolling lyrics powered by **LRCLIB**, **KuGou**, and **BetterLyrics**.
-- Dynamic glowing effects, background blur, and customizable typography.
-
-### 🌐 Discord Rich Presence & Connected Features
-- Real-time **Discord RPC** showing your currently playing track, artist, album art, and elapsed time with customizable activities (*Playing, Listening, Watching, Competing*).
-- **Listen Together**: Stream simultaneously with friends via synced web sessions.
-- **Weekly Listening Summary & Moods**: Discover your listening stats categorized into dynamic musical moods.
-
-### 🧹 Battery & Performance Efficiency
-- **Stop Music on Task Clear**: Swiping MKR Music away from your recent apps terminates background processes cleanly, conserving battery on older devices.
-- **Ultra-Light Footprint**: Optimized image caching pipeline via Coil 3 and memory management for smooth performance on 2GB+ devices.
+- ⚡ **High-Fidelity Audio**: Ultra-fast buffering, gapless playback, crossfade transitions, and background streaming.
+- 🎨 **Adaptive Launcher Icons**: Categorized into **Human Made** (*Cyber Dots, Sunset Pastel, Retro Synthwave, Aurora Glow, Matte Obsidian*) and **AI Made** (*MKR Official, Neon Beat, Midnight Note, Dreamwave, Minimal Note, Pulse Vinyl, Retro Melody*).
+- 🎯 **Redesigned Settings**: Clean top search capsule, 2x2 quick hub grid, dual 50/50 status capsules, and separate Privacy & Backup vaults.
+- 💾 **Smart Offline Vault**: Automatic background audio caching, lossless local downloads, and one-tap library backup.
+- 🎮 **Discord Rich Presence**: Live status showing your currently playing track, artist, album art, and duration.
+- 🔋 **Battery Efficient**: Automatic process cleanup on app swipe to conserve battery and memory on all devices.
 
 ---
 
-## 📱 System Requirements
-
-<div align="center">
-
-| Specification | Requirement |
-| :--- | :--- |
-| **Minimum OS** | Android 8.0 (API Level 26) |
-| **Target OS** | Android 15 / 16 (API Level 35+) |
-| **Architectures** | `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64` |
-| **Memory** | Optimized for devices with 2GB RAM or higher |
-| **Google Services** | Not required — operates completely independently |
-
-</div>
+> ### 💖 Support the Project
+>
+> If you love **MKR Music** and want to support its maintenance and active development, please consider buying me a coffee! Your support helps keep this premium audio experience completely active, clean, and ad-free.
+>
+> <a href="https://buymeacoffee.com/mkr_infinity"><img src="https://img.shields.io/badge/Support_on-Buy_Me_A_Coffee-FFDD00?style=for-the-badge&logo=buymeacoffee&logoColor=black" alt="Support on Buy Me A Coffee"/></a>
 
 ---
 
-## 📦 Universal Release APK
+## 🤝 Contributing
 
-MKR Music distributes a single, highly-optimized Universal APK via GitHub Actions that natively bundles and supports all Android architectures:
+Contributions make the open-source community an incredible place to learn, inspire, and create. Any contributions you make are **greatly appreciated**!
 
-| Package | Supported Architectures | Filename | Description |
-| :--- | :--- | :--- | :--- |
-| **Universal APK** | `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64` | `mkr-music-universal.apk` | Fast, lightweight all-in-one APK compatible with every Android device |
-
-
----
-
-## 🛠️ Architecture & Tech Stack
-
-```
-MKR Music
- ├── UI Layer        ── Jetpack Compose • Material 3 Expressive • Navigation Compose
- ├── Audio Core      ── AndroidX Media3 ExoPlayer • MediaSession • LoudnessEnhancer
- ├── Data Engine     ── Room Database • DataStore Preferences • SQLCipher
- ├── Network Layer   ── Ktor Client • OkHttp • Kotlinx Serialization
- ├── Image Engine    ── Coil 3 with low-RAM downsampling
- └── Background      ── Android WorkManager • AutoBackupWorker
-```
+1. **Fork the Project**
+2. **Create your Feature Branch**
+   ```bash
+   git checkout -b feature/AmazingFeature
+   ```
+3. **Commit your Changes**
+   ```bash
+   git commit -m "feat: add amazing feature"
+   ```
+4. **Push to the Branch**
+   ```bash
+   git push origin feature/AmazingFeature
+   ```
+5. **Open a Pull Request**
 
 ---
 
-## 🚀 Building & CI/CD via GitHub Actions
+## 🛡️ Privacy & Data Protection
 
-To ensure reproducible builds, MKR Music is configured to build exclusively via GitHub Actions:
+Your privacy is fundamental:
+- 🚫 **Zero Data Collection**: MKR Music collects absolutely no personal data, diagnostics, or usage metrics.
+- 🕵️ **No Third-Party Trackers**: Zero advertising SDKs, tracking pixels, or telemetry services.
+- 📱 **Device-Only Storage**: All listening history, playlists, cached songs, and preferences reside strictly on your local device.
 
-1. Navigate to the **[Actions tab](https://github.com/mkr-infinity/mkr-music/actions)**.
-2. Select the **Production Release Build** workflow.
-3. Click **Run workflow** on the `main` branch.
-4. Download the compiled release APK artifacts directly from the workflow run or GitHub Releases.
+---
+
+## ⚠️ Disclaimer
+
+**MKR Music** is an independent open-source project developed solely by **Mohammad Kaif Raja**.
+- MKR Music is **not affiliated with, endorsed by, sponsored by, or funded by Google LLC, YouTube, JioSaavn, or any of their subsidiaries**.
+- All music content, audio streams, logos, artist names, and trademarks belong to their respective copyright owners.
+- This software is distributed strictly for personal, educational, and non-commercial use under the GPL-3.0 license.
 
 ---
 
@@ -152,9 +117,9 @@ Crafted with dedication by **Mohammad Kaif Raja**:
 
 ## 🙏 Credits & Inspiration
 
-MKR Music was inspired by and builds upon the ideas and codebases of these open-source projects:
+MKR Music was inspired by and builds upon the ideas of these open-source projects:
 
-- **ViVi Music**: Created with passion by **vivizzz007** and community contributors. Sincere thanks for the wonderful inspiration and foundations!
+- **ViVi Music**: Created with passion by **vivizzz007** and community contributors.
 - **InnerTune**: Developed by **Zion Huang** and contributors.
 - **ViMusic**: Developed by **vfsfitvnm** and contributors.
 
