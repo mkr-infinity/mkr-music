@@ -433,10 +433,11 @@ class SpotifyImportViewModel @Inject constructor(
 
                                     if (candidates.isEmpty()) {
                                         val fallbackResult = YouTube.search(
-                                            query = query,
-                                        ).getOrNull() ?: YouTube.search(
                                             query = songTitle,
                                             filter = YouTube.SearchFilter.FILTER_SONG,
+                                        ).getOrNull() ?: YouTube.search(
+                                            query = query,
+                                            filter = YouTube.SearchFilter.FILTER_VIDEO,
                                         ).getOrNull()
 
                                         candidates = fallbackResult?.items
