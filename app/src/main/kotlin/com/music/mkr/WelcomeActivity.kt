@@ -362,7 +362,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
 
                     Spacer(modifier = Modifier.height(32.dp))
 
-                    val flavorSuffix = if (BuildConfig.FLAVOR.contains("gms", ignoreCase = true)) "Gms Edition" else "Foss Edition"
+                    val flavorSuffix = "Official Edition"
                     AssistChip(
                         onClick = {},
                         label = {

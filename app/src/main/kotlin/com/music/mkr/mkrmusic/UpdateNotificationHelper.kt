@@ -37,11 +37,7 @@ object UpdateNotificationHelper {
         }
 
         // Direct download URL format from mkrmusicupdater - use the full tag (vX.X.X or bX.X.X) or nightly link
-        val apkUrl = if (versionName.contains("nightly", ignoreCase = true)) {
-            "https://nightly.link/mkr-infinity/mkr-music/workflows/build.yml/main/mkr-music-gms.zip"
-        } else {
-            "https://github.com/mkr-infinity/mkr-music/releases/download/$versionName/mkrmusic-universal.apk"
-        }
+        val apkUrl = "https://github.com/mkr-infinity/mkr-music/releases/download/$versionName/mkr-music-universal-release.apk"
         val intent = Intent(Intent.ACTION_VIEW, apkUrl.toUri())
 
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE

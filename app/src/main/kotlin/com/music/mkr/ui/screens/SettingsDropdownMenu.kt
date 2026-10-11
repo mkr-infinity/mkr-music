@@ -156,7 +156,7 @@ fun SettingsDropdownMenu(
             IconButton(
                 onClick = { 
                     onDismissRequest()
-                    val targetApkName = if (BuildConfig.FLAVOR.contains("foss", ignoreCase = true)) "mkrmusic-foss-release.apk" else "mkrmusic-universal.apk"
+                    val targetApkName = "mkr-music-universal-release.apk"
                     val shareUrl = "https://github.com/mkr-infinity/mkr-music/releases/latest/download/$targetApkName"
                     val sendIntent = Intent(Intent.ACTION_SEND).apply {
                         putExtra(Intent.EXTRA_TEXT, shareUrl)

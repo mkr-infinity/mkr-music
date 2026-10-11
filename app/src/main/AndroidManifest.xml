@@ -65,9 +65,9 @@
         <activity
             android:name=".WelcomeActivity"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_line_note"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_line_note_round"
+            android:roundIcon="@mipmap/ic_launcher_round"
             android:theme="@style/Theme.mkrmusic" />
 
         <activity
@@ -191,144 +191,14 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <!-- App Launcher Icon Aliases -->
-        <!-- Group C: Minimal Logos -->
+        <!-- Main App Launcher Icon Alias -->
         <activity-alias
             android:name=".icon.LineNote"
             android:enabled="true"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_line_note"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_line_note_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.MNote"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_m_note"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_m_note_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.MusicMonogram"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_music_monogram"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_music_monogram_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <!-- Legacy alias disabled for backward compatibility -->
-        <activity-alias
-            android:name=".icon.MinimalNote"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_line_note"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_line_note_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <!-- Group A: Anime Boys -->
-        <activity-alias
-            android:name=".icon.NeonBoy"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_neon_boy"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_neon_boy_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.MidnightBoy"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_midnight_boy"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_midnight_boy_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.RetroBoy"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_retro_boy"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_retro_boy_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <!-- Group B: Anime Girls -->
-        <activity-alias
-            android:name=".icon.NeonGirl"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_neon_girl"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_neon_girl_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.DreamwaveGirl"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_dreamwave_girl"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_dreamwave_girl_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.RetroGirl"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_retro_girl"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_retro_girl_round"
+            android:roundIcon="@mipmap/ic_launcher_round"
             android:targetActivity=".WelcomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

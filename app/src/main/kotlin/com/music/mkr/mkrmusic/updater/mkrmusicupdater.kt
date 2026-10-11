@@ -313,21 +313,15 @@ fun UpdateScreen(navController: NavHostController) {
                                                     }
                                                     ContextCompat.startActivity(context, installIntent, null)
                                                 }
-                                            } else {
-                                                val targetApkName = if (BuildConfig.FLAVOR.contains("foss", ignoreCase = true)) "mkrmusic-foss-release.apk" else "mkrmusic-universal.apk"
+                                                val targetApkName = "mkr-music-universal-release.apk"
                                                 val urlToDownload = currentStatus.apkUrl ?: "https://github.com/mkr-infinity/mkr-music/releases/download/${currentStatus.version}/$targetApkName"
                                                 
-                                                if (BuildConfig.FLAVOR.contains("foss", ignoreCase = true)) {
-                                                    val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(urlToDownload))
-                                                    ContextCompat.startActivity(context, browserIntent, null)
-                                                } else {
-                                                    val downloadRequest = OneTimeWorkRequestBuilder<UpdateDownloadWorker>()
-                                                        .setInputData(workDataOf("apk_url" to urlToDownload, "version" to currentStatus.version, "file_size" to currentStatus.size))
-                                                        .addTag("update_download")
-                                                        .build()
-                                                    WorkManager.getInstance(context).enqueueUniqueWork("update_download", ExistingWorkPolicy.REPLACE, downloadRequest)
-                                                    isDownloading = true
-                                                }
+                                                val downloadRequest = OneTimeWorkRequestBuilder<UpdateDownloadWorker>()
+                                                    .setInputData(workDataOf("apk_url" to urlToDownload, "version" to currentStatus.version, "file_size" to currentStatus.size))
+                                                    .addTag("update_download")
+                                                    .build()
+                                                WorkManager.getInstance(context).enqueueUniqueWork("update_download", ExistingWorkPolicy.REPLACE, downloadRequest)
+                                                isDownloading = true
                                             }
                                         },
                                         modifier = Modifier.fillMaxWidth().height(56.dp)
@@ -903,11 +897,11 @@ suspend fun checkForUpdate(
 
                     var apkSizeInMB = ""
                     var apkDownloadUrl = ""
-                    val expectedApkName = if (BuildConfig.FLAVOR.contains("foss", ignoreCase = true)) "izzydroid-universal-foss-release.apk" else "vivi.apk"
+                    val expectedApkName = "mkr-music-universal-release.apk"
                     for (j in 0 until assets.length()) {
                         val asset = assets.getJSONObject(j)
                         val assetName = asset.getString("name")
-                        if (assetName == expectedApkName) {
+                        if (assetName == expectedApkName || assetName.endsWith(".apk")) {
                             val apkSizeInBytes = asset.getLong("size")
                             apkSizeInMB = String.format("%.1f", apkSizeInBytes / (1024.0 * 1024.0))
                             apkDownloadUrl = asset.getString("browser_download_url")

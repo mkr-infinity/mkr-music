@@ -51,21 +51,16 @@ android {
 
     flavorDimensions += listOf("abi", "variant")
     productFlavors {
-        // FOSS variant (default) - F-Droid compatible, no Google Play Services
-        create("foss") {
-            dimension = "variant"
-            isDefault = true
-            buildConfigField("Boolean", "CAST_AVAILABLE", "false")
-        }
-
-        // GMS variant - with Google Cast support (requires Google Play Services)
+        // GMS variant (main production app with Google Cast support)
         create("gms") {
             dimension = "variant"
+            isDefault = true
             buildConfigField("Boolean", "CAST_AVAILABLE", "true")
         }
         
         create("universal") {
             dimension = "abi"
+            isDefault = true
             buildConfigField("String", "ARCHITECTURE", "\"universal\"")
         }
         create("arm64") {
@@ -87,12 +82,6 @@ android {
     }
 
    signingConfigs {
-    create("persistentDebug") {
-        storeFile = file("persistent-debug.keystore")
-        storePassword = "android"
-        keyAlias = "androiddebugkey"
-        keyPassword = "android"
-    }
     create("release") {
         val keystoreFile = file("keystore/release.keystore")
         if (keystoreFile.exists()) {

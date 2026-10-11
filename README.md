@@ -35,24 +35,19 @@ Whether you're streaming top charts or listening to cached playlists on the go, 
 - 🎚️ **MKR Equalizer**: Pro-grade acoustic tuning with presets including MKR Signature, Bass Boost, 3D Stage, Dolby Atmos, and Dirac Audio.
 - 📊 **Listening Summary & Musical Moods**: Weekly listening stats with smart musical mood analysis (*Melancholic, High Voltage, Chill, Romantic, Playful, Eclectic*).
 - 🎨 **Dynamic Theming**: Full Material You dynamic color extraction, customizable accent palettes, and true AMOLED pure black mode.
-- 🎭 **9 Selectable App Icons**: Choose between Music silhouettes, Anime boys, and Anime girls directly from the Appearance settings.
+- 🏷️ **Signature Brand Identity**: Authentic emblem with clean modular icon support.
 - 👥 **Listen Together**: Synchronized real-time listening sessions with friends.
 - 🧹 **Stop Music on Task Clear**: Free system memory immediately on swiping the app from recent tasks.
 - 🥚 **Hidden Easter Egg**: Tap the top-left logo on the home screen to unlock quirky responses!
 
 ---
 
-## 🎨 Selectable App Icons
+## 🎨 Brand Identity
 
-MKR Music features nine distinct launcher icon identities crafted directly from the official showcase sheet:
-
-| Line Note *(Default)* | M Note | Music Monogram |
-| :---: | :---: | :---: |
-| <img src="assets/logo/9_line_note.png" width="90" height="90"/> | <img src="assets/logo/7_m_note.png" width="90" height="90"/> | <img src="assets/logo/8_music_monogram.png" width="90" height="90"/> |
-| **Gojo Inspired** | **Thorfinn Inspired** | **Anime Boy (Original)** |
-| <img src="assets/logo/1_gojo_boy.png" width="90" height="90"/> | <img src="assets/logo/2_thorfinn_boy.png" width="90" height="90"/> | <img src="assets/logo/3_original_boy.png" width="90" height="90"/> |
-| **Suzuka Inspired** | **Anime Girl (Red)** | **Anime Girl (Blue)** |
-| <img src="assets/logo/4_suzuka_girl.png" width="90" height="90"/> | <img src="assets/logo/5_red_girl.png" width="90" height="90"/> | <img src="assets/logo/6_blue_girl.png" width="90" height="90"/> |
+<p align="center">
+  <img src="assets/logo/mkr_music_logo.png" width="160" height="160" alt="MKR Music Official Emblem" /><br/>
+  <em>Official MKR Music Signature Emblem</em>
+</p>
 
 ---
 
