@@ -267,7 +267,7 @@ class App : Application(), SingletonImageLoader.Factory {
 
     override fun newImageLoader(context: PlatformContext): ImageLoader {
         val cacheSize = runBlocking {
-            dataStore.data.map { it[MaxImageCacheSizeKey] ?: 512 }.first()
+            dataStore.data.map { it[MaxImageCacheSizeKey] ?: 250 }.first()
         }
         val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
         val isLowRam = activityManager?.isLowRamDevice == true || Runtime.getRuntime().maxMemory() < 192 * 1024 * 1024L

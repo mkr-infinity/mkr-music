@@ -120,15 +120,6 @@ fun AboutScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // App Information Card with Default App Logo
-        AppVersionTile(
-            appName = "MKR Music",
-            buildDetails = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) • Stable Universal Release",
-            onGithubClick = { uriHandler.safeOpenUri(context, GitHubConfig.REPO_URL) }
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Application Details & Legal
         ExpressiveSettingGroup(
             title = "App Information",
@@ -147,13 +138,6 @@ fun AboutScreen(
                     trailingContent = { Text(installedDate) }
                 ),
                 Material3SettingsItem(
-                    icon = painterResource(R.drawable.github_main),
-                    title = { Text("Source Code & Repository") },
-                    description = { Text("mkr-infinity/mkr-music") },
-                    onClick = { uriHandler.safeOpenUri(context, GitHubConfig.REPO_URL) },
-                    isExternalLink = true
-                ),
-                Material3SettingsItem(
                     icon = painterResource(R.drawable.license_mkr),
                     title = { Text("Open Source License") },
                     description = { Text("GNU General Public License v3.0 (GPL-3.0)") },
@@ -168,6 +152,15 @@ fun AboutScreen(
                     isExternalLink = true
                 )
             )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // App Information Card with Default App Logo placed at the last of About section
+        AppVersionTile(
+            appName = "MKR Music",
+            buildDetails = "v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE}) • Stable Universal Release",
+            onGithubClick = { uriHandler.safeOpenUri(context, GitHubConfig.REPO_URL) }
         )
 
         Spacer(modifier = Modifier.height(28.dp))
@@ -227,6 +220,7 @@ private fun DeveloperHeroCard(
                             .build(),
                         placeholder = painterResource(R.drawable.dev),
                         error = painterResource(R.drawable.dev),
+                        fallback = painterResource(R.drawable.dev),
                         contentDescription = GitHubConfig.DEV_NAME,
                         modifier = Modifier
                             .fillMaxSize()
@@ -349,29 +343,30 @@ private fun DeveloperHeroCard(
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(50.dp))
                     .clickable(onClick = onSupportClick),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(50.dp),
                 color = MaterialTheme.colorScheme.primaryContainer,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
+                tonalElevation = 2.dp
             ) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                        .padding(horizontal = 20.dp, vertical = 13.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.buymeacoffee),
-                        contentDescription = "Donate",
-                        tint = Color.Unspecified,
+                        contentDescription = "Support",
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
                     Text(
-                        text = "Donate / Support",
-                        style = MaterialTheme.typography.labelLarge,
+                        text = "Donate & Support",
+                        style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onPrimaryContainer
                     )

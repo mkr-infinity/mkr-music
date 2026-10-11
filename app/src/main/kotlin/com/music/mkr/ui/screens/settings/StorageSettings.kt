@@ -95,11 +95,11 @@ fun StorageSettings(
     val imageCacheString = stringResource(R.string.image_cache).lowercase()
     val (maxImageCacheSize, onMaxImageCacheSizeChange) = rememberPreference(
         key = MaxImageCacheSizeKey,
-        defaultValue = 512
+        defaultValue = 250
     )
     val (maxSongCacheSize, onMaxSongCacheSizeChange) = rememberPreference(
         key = MaxSongCacheSizeKey,
-        defaultValue = 1024
+        defaultValue = 500
     )
     val (disableSongCache, onDisableSongCacheChange) = rememberPreference(
         key = DisableSongCacheKey,
@@ -319,7 +319,7 @@ fun StorageSettings(
     }
 
     if (showCustomSizeDialog) {
-        var tempInput by remember { mutableStateOf(if (maxSongCacheSize > 0) maxSongCacheSize.toString() else "1000") }
+        var tempInput by remember { mutableStateOf(if (maxSongCacheSize > 0) maxSongCacheSize.toString() else "500") }
         AlertDialog(
             onDismissRequest = { showCustomSizeDialog = false },
             title = { Text("Custom Cache Size Limit") },
@@ -341,7 +341,7 @@ fun StorageSettings(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        val sizeMb = tempInput.toIntOrNull() ?: 1000
+                        val sizeMb = tempInput.toIntOrNull() ?: 500
                         val clamped = sizeMb.coerceIn(1, 10000)
                         val newLimitInBytes = clamped * 1024 * 1024L
                         if (newLimitInBytes < playerCacheSize) {
@@ -543,7 +543,7 @@ fun StorageSettings(
                                 val sliderIndex = if (isPreset) {
                                     songCacheValues.indexOf(maxSongCacheSize).toFloat()
                                 } else {
-                                    songCacheValues.indexOf(1000).toFloat()
+                                    songCacheValues.indexOf(500).toFloat()
                                 }
                                 Slider(
                                     value = sliderIndex,
@@ -664,7 +664,7 @@ fun StorageSettings(
                     title = { Text(stringResource(R.string.max_image_cache_size)) },
                     description = {
                         val imageCacheValues =
-                            remember { listOf(0, 128, 256, 512, 1024, 2048, 4096, 8192) }
+                            remember { listOf(0, 50, 100, 250, 500, 1024, 2048, 4096) }
                         Column {
                             Text(
                                 text = when (maxImageCacheSize) {
@@ -672,8 +672,13 @@ fun StorageSettings(
                                     else -> formatFileSize(maxImageCacheSize * 1024 * 1024L)
                                 }
                             )
+                            val sliderIndex = if (imageCacheValues.contains(maxImageCacheSize)) {
+                                imageCacheValues.indexOf(maxImageCacheSize).toFloat()
+                            } else {
+                                imageCacheValues.indexOf(250).toFloat().coerceAtLeast(0f)
+                            }
                             Slider(
-                                value = imageCacheValues.indexOf(maxImageCacheSize).toFloat(),
+                                value = sliderIndex,
                                 onValueChange = {
                                     val newValue = imageCacheValues[it.roundToInt()]
                                     val newLimitInBytes = newValue * 1024 * 1024L

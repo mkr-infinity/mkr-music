@@ -321,15 +321,15 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         .padding(bottom = 32.dp),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(28.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     RotatingShapeContainer(
                         modifier = Modifier
-                            .size(190.dp)
+                            .size(160.dp)
                             .align(Alignment.CenterHorizontally)
                     )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     val welcomeString = stringResource(id = com.music.mkr.R.string.welcome_to_vivi)
                     val annotatedWelcome = remember(welcomeString, primaryColor) {
@@ -1243,16 +1243,14 @@ fun RotatingShapeContainer(modifier: Modifier = Modifier, rotate: Boolean = true
     val backgroundColor = MaterialTheme.colorScheme.background
 
     Box(
-        modifier = modifier,
+        modifier = modifier.rotate(rotation),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             painter = painterResource(id = com.music.mkr.R.drawable.ic_ten_sided_cookie),
             contentDescription = null,
             tint = primaryColor,
-            modifier = Modifier
-                .fillMaxSize()
-                .rotate(rotation)
+            modifier = Modifier.fillMaxSize()
         )
 
         Surface(
