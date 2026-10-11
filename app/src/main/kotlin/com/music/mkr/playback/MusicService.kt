@@ -2182,9 +2182,16 @@ class MusicService :
                             Timber.tag(TAG).d("Calculated raw normalization gain: $targetGain mB (from loudness: $loudnessDb)")
 
                             try {
-                                loudnessEnhancer?.setTargetGain(clampedGain)
-                                loudnessEnhancer?.enabled = true
-                                Timber.tag(TAG).i("LoudnessEnhancer gain applied: $clampedGain mB")
+                                if (clampedGain < 0) {
+                                    // Attenuate overly loud tracks cleanly to prevent digital clipping
+                                    loudnessEnhancer?.setTargetGain(clampedGain)
+                                    loudnessEnhancer?.enabled = true
+                                    Timber.tag(TAG).i("LoudnessEnhancer attenuation applied: $clampedGain mB")
+                                } else {
+                                    // Bypass LoudnessEnhancer for normal tracks to avoid Android DSP compressor bloating bass and muddying clarity
+                                    loudnessEnhancer?.enabled = false
+                                    Timber.tag(TAG).i("LoudnessEnhancer bypassed for clean, transparent audio output")
+                                }
                             } catch (e: Exception) {
                                 Timber.tag(TAG).e(e, "Failed to apply loudness enhancement")
                                 reportException(e)
@@ -4219,7 +4226,8 @@ class MusicService :
         const val MAX_CONSECUTIVE_ERR = 5
         const val MAX_RETRY_COUNT = 10
         // Constants for audio normalization
-        private const val MAX_GAIN_MB = 300 // Maximum gain in millibels (3 dB)
+        // Cap positive gain at 0 mB so LoudnessEnhancer never acts as a boomy bass compressor
+        private const val MAX_GAIN_MB = 0
         private const val MIN_GAIN_MB = -1500 // Minimum gain in millibels (-15 dB)
 
         private const val TAG = "MusicService"
