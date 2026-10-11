@@ -16,49 +16,95 @@ enum class AppIcon(
     val key: String,
     val title: String,
     val aliasName: String,
-    @DrawableRes val previewDrawableRes: Int
+    @DrawableRes val previewDrawableRes: Int,
+    val isHumanMade: Boolean = false
 ) {
+    // Human Made Icons (at the top)
+    DOT_MATRIX(
+        key = "dot_matrix",
+        title = "Cyber Dots",
+        aliasName = "com.music.mkr.icon.DotMatrix",
+        previewDrawableRes = R.drawable.ic_icon_dot_matrix,
+        isHumanMade = true
+    ),
+    SUNSET_PASTEL(
+        key = "sunset_pastel",
+        title = "Sunset Pastel",
+        aliasName = "com.music.mkr.icon.SunsetPastel",
+        previewDrawableRes = R.drawable.ic_icon_sunset_pastel,
+        isHumanMade = true
+    ),
+    RETRO_SYNTHWAVE(
+        key = "retro_synthwave",
+        title = "Retro Synthwave",
+        aliasName = "com.music.mkr.icon.RetroSynthwave",
+        previewDrawableRes = R.drawable.ic_icon_retro_synthwave,
+        isHumanMade = true
+    ),
+    AURORA_GLOW(
+        key = "aurora_glow",
+        title = "Aurora Glow",
+        aliasName = "com.music.mkr.icon.AuroraGlow",
+        previewDrawableRes = R.drawable.ic_icon_aurora_glow,
+        isHumanMade = true
+    ),
+    MATTE_OBSIDIAN(
+        key = "matte_obsidian",
+        title = "Matte Obsidian",
+        aliasName = "com.music.mkr.icon.MatteObsidian",
+        previewDrawableRes = R.drawable.ic_icon_matte_obsidian,
+        isHumanMade = true
+    ),
+
+    // AI Made Icons
     OFFICIAL(
         key = "mkr_official",
         title = "MKR Official",
         aliasName = "com.music.mkr.icon.LineNote",
-        previewDrawableRes = R.drawable.ic_icon_mkr_official
+        previewDrawableRes = R.drawable.ic_icon_mkr_official,
+        isHumanMade = false
     ),
     NEON_BEAT(
         key = "neon_beat",
         title = "Neon Beat",
         aliasName = "com.music.mkr.icon.NeonBeat",
-        previewDrawableRes = R.drawable.ic_icon_neon_beat
+        previewDrawableRes = R.drawable.ic_icon_neon_beat,
+        isHumanMade = false
     ),
     MIDNIGHT_NOTE(
         key = "midnight_note",
         title = "Midnight Note",
         aliasName = "com.music.mkr.icon.MidnightNote",
-        previewDrawableRes = R.drawable.ic_icon_midnight_note
+        previewDrawableRes = R.drawable.ic_icon_midnight_note,
+        isHumanMade = false
     ),
     DREAMWAVE(
         key = "dreamwave",
         title = "Dreamwave",
         aliasName = "com.music.mkr.icon.Dreamwave",
-        previewDrawableRes = R.drawable.ic_icon_dreamwave
+        previewDrawableRes = R.drawable.ic_icon_dreamwave,
+        isHumanMade = false
     ),
     MINIMAL_NOTE(
         key = "minimal_note",
         title = "Minimal Note",
         aliasName = "com.music.mkr.icon.MinimalNote",
-        previewDrawableRes = R.drawable.ic_icon_minimal_note
+        previewDrawableRes = R.drawable.ic_icon_minimal_note,
+        isHumanMade = false
     ),
     PULSE_VINYL(
         key = "pulse_vinyl",
         title = "Pulse Vinyl",
         aliasName = "com.music.mkr.icon.PulseVinyl",
-        previewDrawableRes = R.drawable.ic_icon_pulse_vinyl
+        previewDrawableRes = R.drawable.ic_icon_pulse_vinyl,
+        isHumanMade = false
     ),
     RETRO_MELODY(
         key = "retro_melody",
         title = "Retro Melody",
         aliasName = "com.music.mkr.icon.RetroMelody",
-        previewDrawableRes = R.drawable.ic_icon_retro_melody
+        previewDrawableRes = R.drawable.ic_icon_retro_melody,
+        isHumanMade = false
     );
 
     companion object {
@@ -66,6 +112,11 @@ enum class AppIcon(
 
         fun fromKey(key: String?): AppIcon {
             return when (key) {
+                "dot_matrix", "cyber_dots" -> DOT_MATRIX
+                "sunset_pastel" -> SUNSET_PASTEL
+                "retro_synthwave", "synthwave_sun" -> RETRO_SYNTHWAVE
+                "aurora_glow" -> AURORA_GLOW
+                "matte_obsidian" -> MATTE_OBSIDIAN
                 "official", "mkr_official", "line_note" -> OFFICIAL
                 "neon_beat", "neon_boy" -> NEON_BEAT
                 "midnight_note", "midnight_boy" -> MIDNIGHT_NOTE
