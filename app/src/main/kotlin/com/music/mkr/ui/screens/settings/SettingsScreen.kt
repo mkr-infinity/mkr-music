@@ -258,6 +258,15 @@ fun SettingsScreen(
 
             // --- Storage & Cache ---
             SearchableSetting(
+                title = "Disable Song Caching",
+                description = "Play songs directly without saving to offline cache storage",
+                category = "Storage & Cache",
+                iconRes = R.drawable.cached,
+                route = "settings/storage",
+                targetKey = "storage_disable_song_cache",
+                keywords = listOf("disable cache", "cache", "offline cache", "storage", "no cache", "clear cache")
+            ),
+            SearchableSetting(
                 title = "Audio Cache Size Limit",
                 description = "Configurable offline memory buffer up to 10GB for instant playback",
                 category = "Storage & Cache",

@@ -236,6 +236,7 @@ enum class CrossfadeCurve {
 val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
 val MaxSongCacheSizeKey = intPreferencesKey("maxSongCacheSize")
 val MaxSongCacheCountKey = intPreferencesKey("maxSongCacheCount")
+val DisableSongCacheKey = booleanPreferencesKey("disableSongCache")
 
 val AlwaysShowSkipNextKey = booleanPreferencesKey("alwaysShowSkipNext")
 val DisableScreenTimeoutKey = booleanPreferencesKey("disableScreenTimeout")

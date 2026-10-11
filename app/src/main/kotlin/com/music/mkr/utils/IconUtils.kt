@@ -108,7 +108,7 @@ enum class AppIcon(
     );
 
     companion object {
-        val DEFAULT = OFFICIAL
+        val DEFAULT = DOT_MATRIX
 
         fun fromKey(key: String?): AppIcon {
             return when (key) {

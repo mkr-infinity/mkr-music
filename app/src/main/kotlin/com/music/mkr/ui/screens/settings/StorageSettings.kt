@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.ui.Alignment
 import androidx.compose.foundation.rememberScrollState
@@ -25,6 +26,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.OutlinedTextField
@@ -53,6 +56,7 @@ import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
+import com.music.mkr.constants.DisableSongCacheKey
 import com.music.mkr.constants.MaxImageCacheSizeKey
 import com.music.mkr.constants.MaxSongCacheSizeKey
 import com.music.mkr.constants.MaxSongCacheCountKey
@@ -97,6 +101,10 @@ fun StorageSettings(
         key = MaxSongCacheSizeKey,
         defaultValue = 1024
     )
+    val (disableSongCache, onDisableSongCacheChange) = rememberPreference(
+        key = DisableSongCacheKey,
+        defaultValue = false
+    )
     val (maxSongCacheCount, onMaxSongCacheCountChange) = rememberPreference(
         key = MaxSongCacheCountKey,
         defaultValue = 100
@@ -139,6 +147,22 @@ fun StorageSettings(
         ),
         label = "playerCacheProgress",
     )
+
+    LaunchedEffect(disableSongCache) {
+        if (disableSongCache) {
+            coroutineScope.launch(Dispatchers.IO) {
+                try {
+                    playerCache.keys.forEach { key ->
+                        playerCache.removeResource(key)
+                    }
+                    val nonDownloaded = database.downloadedSongsByNameAsc().first().filter { !it.song.isDownloaded }
+                    nonDownloaded.forEach { song ->
+                        database.query { update(song.song.copy(dateDownload = null)) }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
+    }
 
     LaunchedEffect(maxImageCacheSize) {
         SingletonImageLoader.reset()
@@ -422,130 +446,209 @@ fun StorageSettings(
             title = stringResource(R.string.song_cache),
             items = listOf(
                 Material3SettingsItem(
-                    key = "storage_cache_limit",
+                    key = "storage_disable_song_cache",
                     icon = painterResource(R.drawable.cached),
-                    title = { Text(stringResource(R.string.max_song_cache_size)) },
+                    title = { Text("Disable Song Caching") },
                     description = {
-                        val songCacheValues =
-                            remember { listOf(0, 50, 100, 200, 500, 1000, 2048, 4096, -1) }
-                        val isPreset = maxSongCacheSize in songCacheValues
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = when {
-                                        maxSongCacheSize == 0 -> stringResource(R.string.disable)
-                                        maxSongCacheSize == -1 -> stringResource(R.string.unlimited)
-                                        !isPreset -> "Custom: ${formatFileSize(maxSongCacheSize * 1024 * 1024L)}"
-                                        else -> formatFileSize(maxSongCacheSize * 1024 * 1024L)
-                                    },
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                TextButton(onClick = { showCustomSizeDialog = true }) {
-                                    Text("Custom")
+                        Text(
+                            if (disableSongCache)
+                                "Caching is disabled. Songs stream directly without saving to offline storage."
+                            else
+                                "Streamed songs are cached to disk for offline listening"
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = disableSongCache,
+                            onCheckedChange = { checked ->
+                                onDisableSongCacheChange(checked)
+                                if (checked) {
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        playerCache.keys.forEach { key ->
+                                            playerCache.removeResource(key)
+                                        }
+                                        try {
+                                            val nonDownloaded = database.downloadedSongsByNameAsc().first().filter { !it.song.isDownloaded }
+                                            nonDownloaded.forEach { song ->
+                                                database.query { update(song.song.copy(dateDownload = null)) }
+                                            }
+                                        } catch (_: Exception) {}
+                                    }
                                 }
+                            },
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (disableSongCache) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
                             }
-                            val sliderIndex = if (isPreset) {
-                                songCacheValues.indexOf(maxSongCacheSize).toFloat()
-                            } else {
-                                songCacheValues.indexOf(1000).toFloat()
+                        )
+                    },
+                    onClick = {
+                        val newState = !disableSongCache
+                        onDisableSongCacheChange(newState)
+                        if (newState) {
+                            coroutineScope.launch(Dispatchers.IO) {
+                                playerCache.keys.forEach { key ->
+                                    playerCache.removeResource(key)
+                                }
+                                try {
+                                    val nonDownloaded = database.downloadedSongsByNameAsc().first().filter { !it.song.isDownloaded }
+                                    nonDownloaded.forEach { song ->
+                                        database.query { update(song.song.copy(dateDownload = null)) }
+                                    }
+                                } catch (_: Exception) {}
                             }
-                            Slider(
-                                value = sliderIndex,
-                                onValueChange = {
-                                    val newValue = songCacheValues[it.roundToInt()]
-                                    val newLimitInBytes = if (newValue == -1) {
-                                        Long.MAX_VALUE
-                                    } else {
-                                        newValue * 1024 * 1024L
-                                    }
-
-                                    if (newLimitInBytes < playerCacheSize) {
-                                        cacheUsage = playerCacheSize
-                                        cacheType = songCacheString
-                                        onConfirmAction = { onMaxSongCacheSizeChange(newValue) }
-                                        showCacheWarningDialog = true
-                                    } else {
-                                        onMaxSongCacheSizeChange(newValue)
-                                    }
-                                },
-                                steps = songCacheValues.size - 2,
-                                valueRange = 0f..(songCacheValues.size - 1).toFloat()
-                            )
-                            LinearProgressIndicator(
-                                progress = { playerCacheProgress },
-                                modifier = Modifier.fillMaxWidth(),
-                                strokeCap = StrokeCap.Round
-                            )
-                            Spacer(modifier = Modifier.padding(2.dp))
-                            Text(
-                                text = if (maxSongCacheSize == -1) {
-                                    formatFileSize(playerCacheSize)
-                                } else {
-                                    "${formatFileSize(playerCacheSize)} / ${
-                                        formatFileSize(
-                                            maxSongCacheSize * 1024 * 1024L
-                                        )
-                                    }"
-                                },
-                                style = MaterialTheme.typography.bodyMedium,
-                             )
                         }
                     }
                 ),
                 Material3SettingsItem(
+                    key = "storage_cache_limit",
+                    enabled = !disableSongCache,
+                    icon = painterResource(R.drawable.cached),
+                    title = { Text(stringResource(R.string.max_song_cache_size)) },
+                    description = {
+                        if (disableSongCache) {
+                            Text(
+                                text = "Inactive (Song caching is disabled)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
+                        } else {
+                            val songCacheValues =
+                                remember { listOf(0, 50, 100, 200, 500, 1000, 2048, 4096, -1) }
+                            val isPreset = maxSongCacheSize in songCacheValues
+                            Column {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = when {
+                                            maxSongCacheSize == 0 -> stringResource(R.string.disable)
+                                            maxSongCacheSize == -1 -> stringResource(R.string.unlimited)
+                                            !isPreset -> "Custom: ${formatFileSize(maxSongCacheSize * 1024 * 1024L)}"
+                                            else -> formatFileSize(maxSongCacheSize * 1024 * 1024L)
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    TextButton(onClick = { showCustomSizeDialog = true }) {
+                                        Text("Custom")
+                                    }
+                                }
+                                val sliderIndex = if (isPreset) {
+                                    songCacheValues.indexOf(maxSongCacheSize).toFloat()
+                                } else {
+                                    songCacheValues.indexOf(1000).toFloat()
+                                }
+                                Slider(
+                                    value = sliderIndex,
+                                    onValueChange = {
+                                        val newValue = songCacheValues[it.roundToInt()]
+                                        val newLimitInBytes = if (newValue == -1) {
+                                            Long.MAX_VALUE
+                                        } else {
+                                            newValue * 1024 * 1024L
+                                        }
+
+                                        if (newLimitInBytes < playerCacheSize) {
+                                            cacheUsage = playerCacheSize
+                                            cacheType = songCacheString
+                                            onConfirmAction = { onMaxSongCacheSizeChange(newValue) }
+                                            showCacheWarningDialog = true
+                                        } else {
+                                            onMaxSongCacheSizeChange(newValue)
+                                        }
+                                    },
+                                    steps = songCacheValues.size - 2,
+                                    valueRange = 0f..(songCacheValues.size - 1).toFloat()
+                                )
+                                LinearProgressIndicator(
+                                    progress = { playerCacheProgress },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    strokeCap = StrokeCap.Round
+                                )
+                                Spacer(modifier = Modifier.padding(2.dp))
+                                Text(
+                                    text = if (maxSongCacheSize == -1) {
+                                        formatFileSize(playerCacheSize)
+                                    } else {
+                                        "${formatFileSize(playerCacheSize)} / ${
+                                            formatFileSize(
+                                                maxSongCacheSize * 1024 * 1024L
+                                            )
+                                        }"
+                                    },
+                                    style = MaterialTheme.typography.bodyMedium,
+                                )
+                            }
+                        }
+                    }
+                ),
+                Material3SettingsItem(
+                    enabled = !disableSongCache,
                     icon = painterResource(R.drawable.queue_music),
                     title = { Text("Max Cached Songs (Count Limit)") },
                     description = @Composable {
-                        val countPresets = remember { listOf(50, 100, 200, 500, 1000, -1) }
-                        val isPreset = maxSongCacheCount in countPresets
-                        Column {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = when {
-                                        maxSongCacheCount == -1 -> "Unlimited"
-                                        maxSongCacheCount == 100 -> "100 songs (Default)"
-                                        !isPreset -> "Custom: $maxSongCacheCount songs"
-                                        else -> "$maxSongCacheCount songs"
-                                    },
-                                    style = MaterialTheme.typography.bodyMedium
-                                )
-                                TextButton(onClick = { showCustomCountDialog = true }) {
-                                    Text("Custom")
-                                }
-                            }
-                            val sliderIndex = if (isPreset) {
-                                countPresets.indexOf(maxSongCacheCount).toFloat()
-                            } else {
-                                countPresets.indexOf(100).toFloat()
-                            }
-                            Slider(
-                                value = sliderIndex,
-                                onValueChange = {
-                                    val newValue = countPresets[it.roundToInt()]
-                                    onMaxSongCacheCountChange(newValue)
-                                },
-                                steps = countPresets.size - 2,
-                                valueRange = 0f..(countPresets.size - 1).toFloat()
-                            )
+                        if (disableSongCache) {
                             Text(
-                                text = "Currently cached: ${playerCache.keys.size} items in streaming cache",
+                                text = "Inactive (Song caching is disabled)",
                                 style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             )
+                        } else {
+                            val countPresets = remember { listOf(50, 100, 200, 500, 1000, -1) }
+                            val isPreset = maxSongCacheCount in countPresets
+                            Column {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = when {
+                                            maxSongCacheCount == -1 -> "Unlimited"
+                                            maxSongCacheCount == 100 -> "100 songs (Default)"
+                                            !isPreset -> "Custom: $maxSongCacheCount songs"
+                                            else -> "$maxSongCacheCount songs"
+                                        },
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    TextButton(onClick = { showCustomCountDialog = true }) {
+                                        Text("Custom")
+                                    }
+                                }
+                                val sliderIndex = if (isPreset) {
+                                    countPresets.indexOf(maxSongCacheCount).toFloat()
+                                } else {
+                                    countPresets.indexOf(100).toFloat()
+                                }
+                                Slider(
+                                    value = sliderIndex,
+                                    onValueChange = {
+                                        val newValue = countPresets[it.roundToInt()]
+                                        onMaxSongCacheCountChange(newValue)
+                                    },
+                                    steps = countPresets.size - 2,
+                                    valueRange = 0f..(countPresets.size - 1).toFloat()
+                                )
+                                Text(
+                                    text = "Currently cached: ${playerCache.keys.size} items in streaming cache",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
                     }
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.clear_all),
                     title = { Text(stringResource(R.string.clear_song_cache)) },
+                    description = if (disableSongCache) { { Text("Cache is currently disabled") } } else null,
                     onClick = {
                         clearCacheDialog = true
                     }

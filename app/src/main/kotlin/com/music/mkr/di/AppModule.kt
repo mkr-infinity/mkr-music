@@ -12,6 +12,7 @@ import androidx.media3.datasource.cache.LeastRecentlyUsedCacheEvictor
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.room.Room
+import com.music.mkr.constants.DisableSongCacheKey
 import com.music.mkr.constants.MaxSongCacheSizeKey
 import com.music.mkr.db.InternalDatabase
 import com.music.mkr.db.MusicDatabase
@@ -73,10 +74,12 @@ object AppModule {
         @ApplicationContext context: Context,
         databaseProvider: DatabaseProvider,
     ): SimpleCache {
-        val cacheSize = context.dataStore[MaxSongCacheSizeKey] ?: 1024
+        val disableSongCache = context.dataStore[DisableSongCacheKey] ?: false
+        val cacheSize = if (disableSongCache) 0 else (context.dataStore[MaxSongCacheSizeKey] ?: 1024)
         return SimpleCache(
             context.filesDir.resolve("exoplayer"),
             when (cacheSize) {
+                0 -> LeastRecentlyUsedCacheEvictor(0)
                 -1 -> NoOpCacheEvictor()
                 else -> LeastRecentlyUsedCacheEvictor(cacheSize * 1024 * 1024L)
             },

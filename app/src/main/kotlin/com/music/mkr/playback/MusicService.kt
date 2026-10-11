@@ -94,6 +94,7 @@ import com.music.mkr.constants.CrossfadeEnabledKey
 import com.music.mkr.constants.CrossfadeGaplessKey
 import com.music.mkr.constants.CrossfadeManualSkipKey
 import com.music.mkr.constants.DisableLoadMoreWhenRepeatAllKey
+import com.music.mkr.constants.DisableSongCacheKey
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
@@ -2038,6 +2039,12 @@ class MusicService :
      */
 
     private suspend fun markCachedIfFullyDownloaded(mediaId: String) {
+        if (dataStore.get(DisableSongCacheKey, false)) {
+            try {
+                playerCache.removeResource(mediaId)
+            } catch (_: Exception) {}
+            return
+        }
         val song = database.song(mediaId).first() ?: return
         if (song.song.dateDownload != null || song.song.isDownloaded) return
         val contentLength = song.format?.contentLength ?: return
@@ -2271,6 +2278,13 @@ class MusicService :
                 previousMediaItemIndex != player.currentMediaItemIndex) {
 
                 player.seekTo(previousMediaItemIndex, 0)
+            }
+        } else if (dataStore.get(DisableSongCacheKey, false)) {
+            if (previousMediaItemIndex != C.INDEX_UNSET && previousMediaItemIndex < player.mediaItemCount) {
+                val skippedMediaId = player.getMediaItemAt(previousMediaItemIndex).mediaId
+                scope.launch(Dispatchers.IO) {
+                    try { playerCache.removeResource(skippedMediaId) } catch (_: Exception) {}
+                }
             }
         }
         previousMediaItemIndex = player.currentMediaItemIndex
@@ -3143,44 +3157,56 @@ class MusicService :
         }
     }
 
-    private fun createCacheDataSource(): CacheDataSource.Factory =
-        CacheDataSource
-            .Factory()
-            .setCache(downloadCache)
-            .setUpstreamDataSourceFactory(
-                CacheDataSource
-                    .Factory()
-                    .setCache(playerCache)
-                    .setUpstreamDataSourceFactory(
-                        DefaultDataSource.Factory(
-                            this,
-                            OkHttpDataSource.Factory(
-                                OkHttpClient
-                                    .Builder()
-                                    .dns(object : Dns {
-                                        override fun lookup(hostname: String): List<InetAddress> {
-                                            val addresses = Dns.SYSTEM.lookup(hostname)
-                                            return when (this@MusicService.ipVersion) {
-                                                IpVersion.IPV4 -> addresses.filter { it is Inet4Address }.ifEmpty { addresses }
-                                                IpVersion.IPV6 -> addresses.filter { it is Inet6Address }.ifEmpty { addresses }
-                                                IpVersion.AUTO -> addresses
-                                            }
-                                        }
-                                    })
-                                    .proxy(YouTube.proxy)
-                                    .proxyAuthenticator { _, response ->
-                                        YouTube.proxyAuth?.let { auth ->
-                                            response.request.newBuilder()
-                                                .header("Proxy-Authorization", auth)
-                                                .build()
-                                        } ?: response.request
-                                    }
-                                    .build(),
-                            ),
-                        ),
-                    ),
-            ).setCacheWriteDataSinkFactory(null)
-            .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
+    private fun createCacheDataSource(): CacheDataSource.Factory {
+        val disableSongCache = dataStore.get(DisableSongCacheKey, false)
+        val upstreamFactory = DefaultDataSource.Factory(
+            this,
+            OkHttpDataSource.Factory(
+                OkHttpClient
+                    .Builder()
+                    .dns(object : Dns {
+                        override fun lookup(hostname: String): List<InetAddress> {
+                            val addresses = Dns.SYSTEM.lookup(hostname)
+                            return when (this@MusicService.ipVersion) {
+                                IpVersion.IPV4 -> addresses.filter { it is Inet4Address }.ifEmpty { addresses }
+                                IpVersion.IPV6 -> addresses.filter { it is Inet6Address }.ifEmpty { addresses }
+                                IpVersion.AUTO -> addresses
+                            }
+                        }
+                    })
+                    .proxy(YouTube.proxy)
+                    .proxyAuthenticator { _, response ->
+                        YouTube.proxyAuth?.let { auth ->
+                            response.request.newBuilder()
+                                .header("Proxy-Authorization", auth)
+                                .build()
+                        } ?: response.request
+                    }
+                    .build(),
+            ),
+        )
+
+        return if (disableSongCache) {
+            CacheDataSource
+                .Factory()
+                .setCache(downloadCache)
+                .setUpstreamDataSourceFactory(upstreamFactory)
+                .setCacheWriteDataSinkFactory(null)
+                .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
+        } else {
+            CacheDataSource
+                .Factory()
+                .setCache(downloadCache)
+                .setUpstreamDataSourceFactory(
+                    CacheDataSource
+                        .Factory()
+                        .setCache(playerCache)
+                        .setUpstreamDataSourceFactory(upstreamFactory)
+                )
+                .setCacheWriteDataSinkFactory(null)
+                .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
+        }
+    }
 
     // Flag to prevent queue saving during silence skip operations
     private var isSilenceSkipping = false
@@ -3286,8 +3312,9 @@ class MusicService :
                     else -> CHUNK_LENGTH
                 }
 
+                val isCachingDisabled = dataStore.get(DisableSongCacheKey, false)
                 if (downloadCache.isCached(mediaId, dataSpec.position, requiredLength) ||
-                    playerCache.isCached(mediaId, dataSpec.position, CHUNK_LENGTH)
+                    (!isCachingDisabled && playerCache.isCached(mediaId, dataSpec.position, CHUNK_LENGTH))
                 ) {
                     scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
                     return@Factory dataSpec
@@ -3445,25 +3472,27 @@ class MusicService :
             }
 
             // Automatically cache songs recorded in listening history so they are available offline
-            scope.launch(Dispatchers.IO) {
-                try {
-                    if (!downloadCache.isCached(mediaItem.mediaId, 0, 1024)) {
-                        val downloadRequest =
-                            androidx.media3.exoplayer.offline.DownloadRequest
-                                .Builder(mediaItem.mediaId, mediaItem.mediaId.toUri())
-                                .setCustomCacheKey(mediaItem.mediaId)
-                                .setData((mediaItem.mediaMetadata.title?.toString() ?: mediaItem.mediaId).toByteArray())
-                                .build()
-                        androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
-                            this@MusicService,
-                            ExoDownloadService::class.java,
-                            downloadRequest,
-                            false
-                        )
-                        Timber.tag(TAG).d("Auto-cached listening history song ${mediaItem.mediaId} for offline playback")
+            if (!dataStore.get(DisableSongCacheKey, false)) {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        if (!downloadCache.isCached(mediaItem.mediaId, 0, 1024)) {
+                            val downloadRequest =
+                                androidx.media3.exoplayer.offline.DownloadRequest
+                                    .Builder(mediaItem.mediaId, mediaItem.mediaId.toUri())
+                                    .setCustomCacheKey(mediaItem.mediaId)
+                                    .setData((mediaItem.mediaMetadata.title?.toString() ?: mediaItem.mediaId).toByteArray())
+                                    .build()
+                            androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
+                                this@MusicService,
+                                ExoDownloadService::class.java,
+                                downloadRequest,
+                                false
+                            )
+                            Timber.tag(TAG).d("Auto-cached listening history song ${mediaItem.mediaId} for offline playback")
+                        }
+                    } catch (e: Exception) {
+                        Timber.tag(TAG).w(e, "Could not auto-cache history song ${mediaItem.mediaId}")
                     }
-                } catch (e: Exception) {
-                    Timber.tag(TAG).w(e, "Could not auto-cache history song ${mediaItem.mediaId}")
                 }
             }
         }

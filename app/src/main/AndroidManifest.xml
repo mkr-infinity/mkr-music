@@ -191,14 +191,14 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <!-- Main App Launcher Icon Alias (Default: MKR Official) -->
+        <!-- Main App Launcher Icon Alias -->
         <activity-alias
             android:name=".icon.LineNote"
-            android:enabled="true"
+            android:enabled="false"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher"
+            android:icon="@mipmap/ic_launcher_mkr_official"
             android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_round"
+            android:roundIcon="@mipmap/ic_launcher_mkr_official_round"
             android:targetActivity=".WelcomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -290,14 +290,14 @@
             </intent-filter>
         </activity-alias>
 
-        <!-- Human Made Icon Aliases -->
+        <!-- Human Made Icon Aliases (Default: Cyber Dots) -->
         <activity-alias
             android:name=".icon.DotMatrix"
-            android:enabled="false"
+            android:enabled="true"
             android:exported="true"
-            android:icon="@mipmap/ic_launcher_dot_matrix"
+            android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_dot_matrix_round"
+            android:roundIcon="@mipmap/ic_launcher_round"
             android:targetActivity=".WelcomeActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
