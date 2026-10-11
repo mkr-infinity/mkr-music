@@ -60,6 +60,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.layout.ContentScale
 import com.music.mkr.ui.theme.mkrMusicTheme
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -314,18 +315,21 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
         OnboardingPageInfo(
             content = { _ ->
                 Column(
-                    modifier = Modifier.fillMaxSize(),
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(bottom = 32.dp),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(48.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
 
                     RotatingShapeContainer(
                         modifier = Modifier
-                            .size(280.dp)
+                            .size(190.dp)
                             .align(Alignment.CenterHorizontally)
                     )
 
-                    Spacer(modifier = Modifier.weight(1f))
+                    Spacer(modifier = Modifier.height(32.dp))
 
                     val welcomeString = stringResource(id = com.music.mkr.R.string.welcome_to_vivi)
                     val annotatedWelcome = remember(welcomeString, primaryColor) {
@@ -354,11 +358,11 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
 
                     Text(
                         text = annotatedWelcome,
-                        style = thinHeaderStyle.copy(fontSize = 56.sp, lineHeight = 64.sp),
+                        style = thinHeaderStyle.copy(fontSize = 44.sp, lineHeight = 52.sp),
                         color = MaterialTheme.colorScheme.onBackground
                     )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
                     AssistChip(
                         onClick = {},
@@ -1251,13 +1255,21 @@ fun RotatingShapeContainer(modifier: Modifier = Modifier, rotate: Boolean = true
                 .rotate(rotation)
         )
 
-        Image(
-            painter = painterResource(com.music.mkr.R.drawable.icon),
-            contentDescription = "MKR Music",
-            modifier = Modifier
-                .size(190.dp)
-                .clip(CircleShape)
-        )
+        Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.surface,
+            shadowElevation = 4.dp,
+            modifier = Modifier.fillMaxSize(0.68f)
+        ) {
+            Image(
+                painter = painterResource(com.music.mkr.R.drawable.icon),
+                contentDescription = "MKR Music",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(CircleShape)
+            )
+        }
     }
 }
 

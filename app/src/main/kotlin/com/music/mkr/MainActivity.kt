@@ -1101,14 +1101,20 @@ class MainActivity : ComponentActivity() {
                                                         }
                                                     }
                                             ) {
-                                                Image(
-                                                    painter = painterResource(R.drawable.icon),
-                                                    contentDescription = null,
-                                                    modifier = Modifier
-                                                        .size(32.dp)
-                                                        .clip(CircleShape),
-                                                    contentScale = ContentScale.Crop
-                                                )
+                                                Surface(
+                                                    shape = CircleShape,
+                                                    color = Color.Transparent,
+                                                    modifier = Modifier.size(36.dp)
+                                                ) {
+                                                    Image(
+                                                        painter = painterResource(R.drawable.icon),
+                                                        contentDescription = "MKR Music",
+                                                        modifier = Modifier
+                                                            .fillMaxSize()
+                                                            .clip(CircleShape),
+                                                        contentScale = ContentScale.Crop
+                                                    )
+                                                }
                                             }
                                         },
                                         title = {

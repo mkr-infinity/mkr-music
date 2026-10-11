@@ -60,15 +60,25 @@ constructor(
          }
     }
 
+    private val refreshTrigger = MutableStateFlow(0)
+
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing
 
     fun forceRefresh() {
         viewModelScope.launch(Dispatchers.IO) {
             _isSyncing.value = true
+            val startTime = System.currentTimeMillis()
             try {
+                refreshTrigger.value++
                 syncUtils.forceSyncAll()
+            } catch (e: Exception) {
+                reportException(e)
             } finally {
+                val elapsed = System.currentTimeMillis() - startTime
+                if (elapsed < 800L) {
+                    delay(800L - elapsed)
+                }
                 _isSyncing.value = false
             }
         }
@@ -97,18 +107,20 @@ constructor(
         .map { songs -> songs.take(3).mapNotNull { it.thumbnailUrl } }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    var artists =
-        database
-            .artistsBookmarked(
-                ArtistSortType.CREATE_DATE,
-                true,
-            ).stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    var artists = refreshTrigger.flatMapLatest {
+        database.artistsBookmarked(
+            ArtistSortType.CREATE_DATE,
+            true,
+        )
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     var albums = context.dataStore.data
         .map { it[HideExplicitKey] ?: false }
         .distinctUntilChanged()
         .flatMapLatest { hideExplicit ->
-            database.albumsLiked(AlbumSortType.CREATE_DATE, true).map { it.filterExplicitAlbums(hideExplicit) }
+            refreshTrigger.flatMapLatest {
+                database.albumsLiked(AlbumSortType.CREATE_DATE, true).map { it.filterExplicitAlbums(hideExplicit) }
+            }
         }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     val recentAlbumsThumbnails = context.dataStore.data
@@ -127,8 +139,9 @@ constructor(
         }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val playlists = database.playlists(PlaylistSortType.CREATE_DATE, true)
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+    val playlists = refreshTrigger.flatMapLatest {
+        database.playlists(PlaylistSortType.CREATE_DATE, true)
+    }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
 
 
@@ -174,10 +187,10 @@ constructor(
             MixSortType.CREATE_DATE ->
                 mergedList.sortedBy { item ->
                     when (item) {
-                        is Album -> item.album.bookmarkedAt
-                        is Artist -> item.artist.bookmarkedAt
-                        is Playlist -> item.playlist.createdAt
-                        else -> LocalDateTime.now()
+                        is Album -> item.album.bookmarkedAt ?: LocalDateTime.MIN
+                        is Artist -> item.artist.bookmarkedAt ?: LocalDateTime.MIN
+                        is Playlist -> item.playlist.bookmarkedAt ?: item.playlist.createdAt ?: LocalDateTime.MIN
+                        else -> LocalDateTime.MIN
                     }
                 }
 
@@ -196,10 +209,10 @@ constructor(
             MixSortType.LAST_UPDATED ->
                 mergedList.sortedBy { item ->
                     when (item) {
-                        is Album -> item.album.lastUpdateTime
-                        is Artist -> item.artist.lastUpdateTime
-                        is Playlist -> item.playlist.lastUpdateTime
-                        else -> LocalDateTime.now()
+                        is Album -> item.album.lastUpdateTime ?: item.album.bookmarkedAt ?: LocalDateTime.MIN
+                        is Artist -> item.artist.lastUpdateTime ?: item.artist.bookmarkedAt ?: LocalDateTime.MIN
+                        is Playlist -> item.playlist.lastUpdateTime ?: item.playlist.bookmarkedAt ?: item.playlist.createdAt ?: LocalDateTime.MIN
+                        else -> LocalDateTime.MIN
                     }
                 }
         }

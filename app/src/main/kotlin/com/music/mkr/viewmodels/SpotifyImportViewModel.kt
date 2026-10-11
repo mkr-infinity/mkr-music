@@ -20,11 +20,13 @@ import com.music.mkr.models.MediaMetadata
 import com.music.mkr.models.toMediaMetadata
 import com.music.innertube.YouTube
 import com.music.innertube.models.SongItem
+import com.music.mkr.R
+import com.music.mkr.di.ApplicationScope
 import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.reportException
-import com.music.mkr.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -84,6 +86,7 @@ private data class PlaylistImportData(
 class SpotifyImportViewModel @Inject constructor(
     @ApplicationContext private val context: Context,
     private val database: MusicDatabase,
+    @ApplicationScope private val appScope: CoroutineScope,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SpotifyImportUiState(isLoading = true))
@@ -315,7 +318,7 @@ class SpotifyImportViewModel @Inject constructor(
             val page = spotifyCallWithTokenRetry {
                 Spotify.likedSongs(limit = limit, offset = offset).getOrThrow()
             }
-            tracks.addAll(page.items.map { it.track })
+            tracks.addAll(page.items.mapNotNull { it.track })
             offset += limit
             if (offset >= page.total) break
         }
@@ -335,7 +338,7 @@ class SpotifyImportViewModel @Inject constructor(
 
     fun startImport(selectedIds: List<String>) {
         importJob?.cancel()
-        importJob = viewModelScope.launch(Dispatchers.IO) {
+        importJob = appScope.launch(Dispatchers.IO) {
             _importProgress.update { null }
 
             try {
@@ -366,13 +369,13 @@ class SpotifyImportViewModel @Inject constructor(
                     val totalSongs = importData.songs.size
                     if (totalSongs == 0) {
                         database.withTransaction {
-                            val existing = playlist(importData.localPlaylistId).first()
+                            val existing = getPlaylistEntity(importData.localPlaylistId)
                             val now = LocalDateTime.now()
-                            val entity = existing?.playlist?.copy(
+                            val entity = existing?.copy(
                                 name = importData.title,
-                                bookmarkedAt = existing.playlist.bookmarkedAt ?: now,
+                                bookmarkedAt = existing.bookmarkedAt ?: now,
                                 lastUpdateTime = now,
-                                thumbnailUrl = importData.thumbnailUrl,
+                                thumbnailUrl = importData.thumbnailUrl ?: existing.thumbnailUrl,
                                 isEditable = true,
                             ) ?: PlaylistEntity(
                                 id = importData.localPlaylistId,
@@ -423,10 +426,24 @@ class SpotifyImportViewModel @Inject constructor(
                                         filter = YouTube.SearchFilter.FILTER_SONG,
                                     ).getOrNull()
 
-                                    val candidates = searchResult?.items
+                                    var candidates = searchResult?.items
                                         ?.filterIsInstance<SongItem>()
                                         ?.distinctBy { it.id }
                                         .orEmpty()
+
+                                    if (candidates.isEmpty()) {
+                                        val fallbackResult = YouTube.search(
+                                            query = query,
+                                        ).getOrNull() ?: YouTube.search(
+                                            query = songTitle,
+                                            filter = YouTube.SearchFilter.FILTER_SONG,
+                                        ).getOrNull()
+
+                                        candidates = fallbackResult?.items
+                                            ?.filterIsInstance<SongItem>()
+                                            ?.distinctBy { it.id }
+                                            .orEmpty()
+                                    }
 
                                     val best = candidates.maxByOrNull { candidate ->
                                         SpotifyMapper.matchScore(
@@ -437,7 +454,7 @@ class SpotifyImportViewModel @Inject constructor(
                                             candidateArtist = candidate.artists.joinToString(" ") { it.name },
                                             candidateDurationSec = candidate.duration,
                                         )
-                                    }
+                                    } ?: candidates.firstOrNull()
 
                                     if (best != null) {
                                         resultMedia = best.toMediaMetadata()
@@ -461,13 +478,13 @@ class SpotifyImportViewModel @Inject constructor(
                     }.awaitAll().filterNotNull()
 
                     database.withTransaction {
-                        val existing = playlist(importData.localPlaylistId).first()
+                        val existing = getPlaylistEntity(importData.localPlaylistId)
                         val now = LocalDateTime.now()
-                        val entity = existing?.playlist?.copy(
+                        val entity = existing?.copy(
                             name = importData.title,
-                            bookmarkedAt = existing.playlist.bookmarkedAt ?: now,
+                            bookmarkedAt = existing.bookmarkedAt ?: now,
                             lastUpdateTime = now,
-                            thumbnailUrl = importData.thumbnailUrl,
+                            thumbnailUrl = importData.thumbnailUrl ?: existing.thumbnailUrl,
                             isEditable = true,
                         ) ?: PlaylistEntity(
                             id = importData.localPlaylistId,
@@ -485,7 +502,15 @@ class SpotifyImportViewModel @Inject constructor(
                         }
 
                         matchedMedia.forEach { metadata ->
-                            insert(metadata)
+                            if (importData.localPlaylistId == "SPOTIFY_LIKED_SONGS") {
+                                insert(metadata) { it.copy(liked = true, likedDate = now, inLibrary = now) }
+                                val existingSong = getSongByIdBlocking(metadata.id)
+                                if (existingSong != null && !existingSong.song.liked) {
+                                    update(existingSong.song.copy(liked = true, likedDate = now, inLibrary = existingSong.song.inLibrary ?: now))
+                                }
+                            } else {
+                                insert(metadata) { it.copy(inLibrary = it.inLibrary ?: now) }
+                            }
                         }
 
                         clearPlaylist(importData.localPlaylistId)
