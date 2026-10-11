@@ -129,7 +129,7 @@ fun PlayerMenu(
     
     val librarySong by database.song(mediaMetadata.id).collectAsState(initial = null)
     val coroutineScope = rememberCoroutineScope()
-    val (saavnEnabled) = rememberPreference(EnableSaavnStreamingKey, defaultValue = false)
+    val (saavnEnabled) = rememberPreference(EnableSaavnStreamingKey, defaultValue = true)
 
     val download by LocalDownloadUtil.current.getDownload(mediaMetadata.id)
         .collectAsState(initial = null)

@@ -661,7 +661,7 @@ fun DiscordSettings(
                         Material3SettingsItem(
                             title = { Text(stringResource(R.string.discord_button_2)) },
                             description = {
-                                Text(button2Text.ifEmpty { "Visit vivimusic" })
+                                Text(button2Text.ifEmpty { "Visit MKR Music" })
                             },
                             trailingContent = {
                                 Switch(
@@ -901,7 +901,7 @@ fun RichPresence(
             if (button2Visible) {
                 val resolvedButton2 = if (song != null) {
                     DiscordRPC.resolveVariables(
-                        button2Text.ifEmpty { "Visit vivimusic" }, song
+                        button2Text.ifEmpty { "Visit MKR Music" }, song
                     )
                 } else {
                     button2Text.ifEmpty { "Visit MKR Music" }

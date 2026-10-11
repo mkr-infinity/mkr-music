@@ -134,7 +134,7 @@ object YTPlayerUtils {
         // URL from JioSaavn first. We fall through to YouTube on ANY failure so
         // the user always hears audio.
         if (context != null) {
-            val saavnEnabled = context.dataStore.get(EnableSaavnStreamingKey, false)
+            val saavnEnabled = context.dataStore.get(EnableSaavnStreamingKey, true)
             if (saavnEnabled) {
                 Timber.tag(TAG).d("JioSaavn streaming enabled — trying Saavn for videoId=$videoId")
                 val saavnResult = runCatching {

@@ -206,7 +206,7 @@ fun PlayerSettings(
     )
     val (saavnEnabled, _) = rememberPreference(
         EnableSaavnStreamingKey,
-        defaultValue = false
+        defaultValue = true
     )
     val (saavnQuality, _) = rememberEnumPreference(
         SaavnAudioQualityKey,
