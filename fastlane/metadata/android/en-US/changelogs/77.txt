@@ -1,7 +1,7 @@
 We are constantly working to improve your MKR Music experience!
 
 This update includes:
-• Complete transformation to MKR Music by Mohammad Kaif Raja (@mkr-infinity).
+• Brand new expressive UI and adaptive Material 3 theme styling.
 • 9 selectable app icons in Appearance settings (Anime Boys, Anime Girls, Music Logos).
 • Refined storage cache management with configurable song-count and MB quotas.
 • Live GitHub repository metrics, recent commits, and developer profile integration.

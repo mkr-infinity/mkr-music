@@ -4,9 +4,8 @@ All notable changes to **MKR Music** are documented in this file.
 
 ## [v1.0 Stable] - 2026-10-10
 
-### Rebranding & Visual Identity
-- Complete rebranding to **MKR Music** by **Mohammad Kaif Raja (@mkr-infinity)**.
-- Brand new minimal musical-note primary logo in vector and adaptive-icon formats.
+### Visual Design & Themes
+- Brand new adaptive icon and expressive Material 3 design system.
 - Modernized theme palettes with amber, warm orange, and lime accents alongside pure black AMOLED support.
 
 ### App Icons Gallery
