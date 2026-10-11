@@ -5,9 +5,6 @@
 
 package com.music.mkr.ui.screens.settings
 
-import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateIntAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -44,8 +41,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,7 +53,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -73,14 +67,12 @@ import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.R
 import com.music.mkr.github.GitHubConfig
 import com.music.mkr.github.GitHubViewModel
-import com.music.mkr.github.network.GitHubCommitDto
 import com.music.mkr.ui.component.DialogBasic
 import com.music.mkr.ui.component.ExpressiveSettingGroup
 import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.safeOpenUri
-import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -93,18 +85,9 @@ fun AboutScreen(
     onBack: (() -> Unit)? = null,
     gitHubViewModel: GitHubViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(Unit) {
-        gitHubViewModel.fetchRepoStats()
-    }
-
     val uriHandler = LocalUriHandler.current
     val context = LocalContext.current
     var showSupportDialog by remember { mutableStateOf(false) }
-
-    val starCount by gitHubViewModel.starCount.collectAsState()
-    val forksCount by gitHubViewModel.forksCount.collectAsState()
-    val issuesCount by gitHubViewModel.issuesCount.collectAsState()
-    val recentCommits by gitHubViewModel.recentCommits.collectAsState()
 
     val installedDate = remember {
         try {
@@ -140,41 +123,6 @@ fun AboutScreen(
         )
 
         Spacer(modifier = Modifier.height(14.dp))
-
-        // Live GitHub Repo Metrics
-        Text(
-            text = "Repository Activity",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.padding(start = 4.dp, bottom = 8.dp)
-        )
-
-        RepoMetricsRow(
-            stars = starCount,
-            forks = forksCount,
-            issues = issuesCount,
-            onStarsClick = { uriHandler.safeOpenUri(context, GitHubConfig.REPO_URL) },
-            onForksClick = { uriHandler.safeOpenUri(context, "${GitHubConfig.REPO_URL}/network/members") },
-            onIssuesClick = { uriHandler.safeOpenUri(context, "${GitHubConfig.REPO_URL}/issues") }
-        )
-
-        Spacer(modifier = Modifier.height(14.dp))
-
-        // Recent Commits Section
-        if (recentCommits.isNotEmpty()) {
-            RecentCommitsSection(
-                commits = recentCommits.take(5),
-                onCommitClick = { commit ->
-                    val url = commit.htmlUrl ?: "${GitHubConfig.REPO_URL}/commit/${commit.sha}"
-                    uriHandler.safeOpenUri(context, url)
-                },
-                onViewAllClick = {
-                    uriHandler.safeOpenUri(context, "${GitHubConfig.REPO_URL}/commits")
-                }
-            )
-            Spacer(modifier = Modifier.height(14.dp))
-        }
 
         // Connect & Developer Links
         ExpressiveSettingGroup(
@@ -290,24 +238,48 @@ private fun DeveloperHeroCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Box(
-                modifier = Modifier
-                    .size(68.dp)
-                    .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
-                    .padding(3.dp)
+                modifier = Modifier.size(72.dp)
             ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(GitHubConfig.DEV_AVATAR_URL)
-                        .crossfade(true)
-                        .build(),
-                    placeholder = painterResource(R.drawable.dev),
-                    error = painterResource(R.drawable.dev),
-                    contentDescription = GitHubConfig.DEV_NAME,
+                Box(
                     modifier = Modifier
-                        .matchParentSize()
-                        .clip(CircleShape),
-                    contentScale = ContentScale.Crop
-                )
+                        .size(68.dp)
+                        .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                        .padding(3.dp)
+                        .align(Alignment.CenterStart)
+                ) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(context)
+                            .data(GitHubConfig.DEV_AVATAR_URL)
+                            .crossfade(true)
+                            .build(),
+                        placeholder = painterResource(R.drawable.dev),
+                        error = painterResource(R.drawable.dev),
+                        contentDescription = GitHubConfig.DEV_NAME,
+                        modifier = Modifier
+                            .matchParentSize()
+                            .clip(CircleShape),
+                        contentScale = ContentScale.Crop
+                    )
+                }
+
+                // Official MKR Music logo badge
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .align(Alignment.BottomEnd)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surface)
+                        .border(1.5.dp, MaterialTheme.colorScheme.primary, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.mkr_music_icon),
+                        contentDescription = "MKR Music Badge",
+                        modifier = Modifier
+                            .size(18.dp)
+                            .clip(CircleShape)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))
@@ -318,32 +290,44 @@ private fun DeveloperHeroCard(
             ) {
                 Text(
                     text = GitHubConfig.DEV_NAME,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                Text(
+                    text = "\u200F${GitHubConfig.DEV_NAME_URDU}\u200E",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
                 Spacer(modifier = Modifier.height(4.dp))
-                Surface(
-                    shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    ) {
+                        Text(
+                            text = GitHubConfig.DEV_ROLE,
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
                     Text(
-                        text = "A Tech Enthusiast",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
+                        text = GitHubConfig.DEV_HANDLE,
+                        style = MaterialTheme.typography.bodySmall,
+                        fontWeight = FontWeight.Medium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = GitHubConfig.VERSION_LABEL,
-                    style = MaterialTheme.typography.bodySmall,
-                    fontWeight = FontWeight.Medium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }
@@ -364,7 +348,7 @@ private fun AppVersionTile(
         ListItem(
             leadingContent = {
                 Image(
-                    painter = painterResource(R.drawable.icon),
+                    painter = painterResource(R.drawable.mkr_music_icon),
                     contentDescription = null,
                     modifier = Modifier
                         .size(46.dp)
@@ -420,188 +404,5 @@ private fun AppVersionTile(
                 }
             }
         )
-    }
-}
-
-@Composable
-private fun RepoMetricsRow(
-    stars: Int?,
-    forks: Int?,
-    issues: Int?,
-    onStarsClick: () -> Unit,
-    onForksClick: () -> Unit,
-    onIssuesClick: () -> Unit
-) {
-    val animatedStars by animateIntAsState(
-        targetValue = stars ?: 0,
-        animationSpec = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
-        label = "starsAnimation"
-    )
-    val animatedForks by animateIntAsState(
-        targetValue = forks ?: 0,
-        animationSpec = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
-        label = "forksAnimation"
-    )
-    val animatedIssues by animateIntAsState(
-        targetValue = issues ?: 0,
-        animationSpec = tween(durationMillis = 1500, easing = FastOutSlowInEasing),
-        label = "issuesAnimation"
-    )
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(10.dp)
-    ) {
-        MetricCard(
-            label = "Stars",
-            count = if (stars != null) NumberFormat.getInstance().format(animatedStars) else "—",
-            iconRes = R.drawable.star,
-            modifier = Modifier.weight(1f),
-            onClick = onStarsClick
-        )
-        MetricCard(
-            label = "Forks",
-            count = if (forks != null) NumberFormat.getInstance().format(animatedForks) else "—",
-            iconRes = R.drawable.network_node,
-            modifier = Modifier.weight(1f),
-            onClick = onForksClick
-        )
-        MetricCard(
-            label = "Issues",
-            count = if (issues != null) NumberFormat.getInstance().format(animatedIssues) else "—",
-            iconRes = R.drawable.info,
-            modifier = Modifier.weight(1f),
-            onClick = onIssuesClick
-        )
-    }
-}
-
-@Composable
-private fun MetricCard(
-    label: String,
-    count: String,
-    iconRes: Int,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
-) {
-    Surface(
-        modifier = modifier.clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh
-    ) {
-        Column(
-            modifier = Modifier.padding(14.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Icon(
-                painter = painterResource(iconRes),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(22.dp)
-            )
-            Spacer(modifier = Modifier.height(6.dp))
-            Text(
-                text = count,
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-            Spacer(modifier = Modifier.height(2.dp))
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
-    }
-}
-
-@Composable
-private fun RecentCommitsSection(
-    commits: List<GitHubCommitDto>,
-    onCommitClick: (GitHubCommitDto) -> Unit,
-    onViewAllClick: () -> Unit
-) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Recent Commits",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = "View All",
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable(onClick = onViewAllClick)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            commits.forEachIndexed { index, commit ->
-                val shortSha = commit.sha.take(7)
-                val message = commit.commit?.message?.lines()?.firstOrNull() ?: "Commit $shortSha"
-                val author = commit.commit?.author?.name ?: "mkr-infinity"
-
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onCommitClick(commit) }
-                        .padding(vertical = 8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        shape = RoundedCornerShape(6.dp),
-                        color = MaterialTheme.colorScheme.secondaryContainer
-                    ) {
-                        Text(
-                            text = shortSha,
-                            fontFamily = FontFamily.Monospace,
-                            style = MaterialTheme.typography.labelSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSecondaryContainer,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(10.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = message,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = "by $author",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                if (index < commits.lastIndex) {
-                    androidx.compose.material3.HorizontalDivider(
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                        modifier = Modifier.padding(vertical = 2.dp)
-                    )
-                }
-            }
-        }
     }
 }

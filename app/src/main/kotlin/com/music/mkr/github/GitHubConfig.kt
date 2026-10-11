@@ -5,6 +5,7 @@ object GitHubConfig {
     const val REPO_NAME = "mkr-music"
     const val REPO_URL = "https://github.com/$REPO_OWNER/$REPO_NAME"
     const val DEV_NAME = "Mohammad Kaif Raja"
+    const val DEV_NAME_URDU = "محمد کیف رجہ"
     const val DEV_HANDLE = "@mkr-infinity"
     const val DEV_ROLE = "Independent Android Developer"
     const val DEV_AVATAR_URL = "https://github.com/$REPO_OWNER.png"

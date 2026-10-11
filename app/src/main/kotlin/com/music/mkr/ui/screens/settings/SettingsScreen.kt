@@ -51,6 +51,11 @@ import com.music.mkr.ui.component.ExpressiveSettingGroup
 import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.ui.screens.Screens
 import com.music.mkr.ui.utils.backToMain
+import androidx.compose.ui.platform.LocalUriHandler
+import com.music.mkr.ui.utils.safeOpenUri
+import com.music.mkr.BuildConfig
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import com.music.mkr.mkrmusic.updater.getUpdateAvailableState
 import com.music.mkr.mkrmusic.updater.getAutoUpdateCheckSetting
 import com.music.mkr.mkrmusic.updater.checkForUpdate
@@ -74,6 +79,7 @@ fun SettingsScreen(
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val isAndroid12OrLater = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     val autoUpdateSetting = remember { getAutoUpdateCheckSetting(context) }
@@ -536,36 +542,7 @@ fun SettingsScreen(
                 )
             }
         } else {
-            // Status Capsule Pills (Capsule Style)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                StatusCapsulePill(
-                    key = "pill_update",
-                    icon = if (isUpdateAvailable) R.drawable.update_alert else R.drawable.system_update_uptodate,
-                    label = if (isUpdateAvailable) "Update Available" else "System Up to Date",
-                    highlight = isUpdateAvailable,
-                    onClick = { navController.navigate("settings/update") }
-                )
-                StatusCapsulePill(
-                    key = "privacy_listening_summary",
-                    icon = R.drawable.history,
-                    label = "Listening Recap",
-                    onClick = { navController.navigate("settings/listening_summary") }
-                )
-                StatusCapsulePill(
-                    key = "account_login",
-                    icon = R.drawable.google,
-                    label = "Account & Sync",
-                    onClick = { navController.navigate("settings/account") }
-                )
-            }
-
-            // Core 2x2 Grid Hubs (Grid Style Settings)
+            // Section 2 — Four settings grid cards (adaptive 2-by-2 grid)
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -602,37 +579,109 @@ fun SettingsScreen(
                     )
                     SettingsGridCard(
                         modifier = Modifier.weight(1f),
-                        key = "screen_listen_together",
-                        icon = R.drawable.group,
-                        title = "Listen Together",
-                        subtitle = "Synchronized group sessions",
-                        onClick = { navController.navigate(Screens.ListenTogether.route) }
+                        key = "account_login",
+                        icon = R.drawable.google,
+                        title = "Account & Sync",
+                        subtitle = "Sync playlists & library",
+                        onClick = { navController.navigate("settings/account") }
                     )
                 }
             }
 
-            // Remaining Settings: Expressive Setting Groups ("some as it is")
-            ExpressiveSettingGroup(
-                title = "Content & AI Experience",
-                itemMinHeight = 64.dp,
-                items = listOf(
-                    Material3SettingsItem(
-                        key = "content_language",
-                        icon = painterResource(R.drawable.language),
-                        title = { Text(stringResource(R.string.content)) },
-                        description = { Text(stringResource(R.string.setting_content_desc)) },
-                        onClick = { navController.navigate("settings/content") }
-                    ),
-                    Material3SettingsItem(
-                        key = "content_ai_lyrics",
-                        icon = painterResource(R.drawable.translate),
-                        title = { Text(stringResource(R.string.ai_lyrics_translation)) },
-                        description = { Text(stringResource(R.string.setting_ai_lyrics_translation_desc)) },
-                        onClick = { navController.navigate("settings/ai") }
-                    )
-                )
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
+            // Section 3 — Two capsule actions on one line (50/50 balanced layout)
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                StatusCapsulePill(
+                    modifier = Modifier.weight(1f),
+                    key = "update_check",
+                    icon = if (isUpdateAvailable) R.drawable.update_alert else R.drawable.system_update_uptodate,
+                    label = if (isUpdateAvailable) "Update Available" else "System Up to Date",
+                    highlight = isUpdateAvailable,
+                    onClick = { navController.navigate("settings/update") }
+                )
+                StatusCapsulePill(
+                    modifier = Modifier.weight(1f),
+                    key = "privacy_listening_summary",
+                    icon = R.drawable.history,
+                    label = "Listening Recap",
+                    onClick = { navController.navigate("settings/listening_summary") }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Section 4 — Listen Together capsule (Single full-width capsule)
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .settingsHighlight("screen_listen_together", RoundedCornerShape(20.dp))
+                    .clip(RoundedCornerShape(20.dp))
+                    .clickable { navController.navigate(Screens.ListenTogether.route) },
+                shape = RoundedCornerShape(20.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 2.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(40.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.group),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "Listen Together",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Synchronized live group listening sessions with friends",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    Icon(
+                        painter = painterResource(R.drawable.navigate_next),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Section 5 — Security & Data
             ExpressiveSettingGroup(
                 title = "Security & Data",
                 itemMinHeight = 64.dp,
@@ -641,32 +690,153 @@ fun SettingsScreen(
                         key = "privacy_history",
                         icon = painterResource(R.drawable.security),
                         title = { Text(stringResource(R.string.privacy)) },
-                        description = { Text(stringResource(R.string.setting_privacy_desc)) },
+                        description = { Text("History tracking, search logs & permission controls") },
                         onClick = { navController.navigate("settings/privacy") }
                     ),
                     Material3SettingsItem(
                         key = "backup_export_import",
                         icon = painterResource(R.drawable.restore),
                         title = { Text(stringResource(R.string.backup_restore)) },
-                        description = { Text(stringResource(R.string.setting_backup_restore_desc)) },
+                        description = { Text("Export & import playlists, data & settings backups") },
                         onClick = { navController.navigate("settings/backup_restore") }
                     )
                 )
             )
 
-            ExpressiveSettingGroup(
-                title = "About MKR Music",
-                itemMinHeight = 64.dp,
-                items = listOf(
-                    Material3SettingsItem(
-                        key = "about_app",
-                        icon = painterResource(R.drawable.info),
-                        title = { Text(stringResource(R.string.about)) },
-                        description = { Text("v6.0.8 Stable • Developed by @mkr-infinity") },
-                        onClick = { navController.navigate("settings/about") }
-                    )
-                )
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Section 6 — Request a Feature and Report a Problem (Two support capsules)
+            Text(
+                text = "Feedback & Community",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(start = 4.dp, bottom = 4.dp)
             )
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                SupportCapsuleCard(
+                    modifier = Modifier.weight(1f),
+                    icon = R.drawable.support_mkr,
+                    title = "Request Feature",
+                    subtitle = "Propose new ideas",
+                    onClick = {
+                        val featureTitle = "Feature Request: "
+                        val featureBody = """
+                            ### Feature Description
+                            Please describe the feature you would like to see in MKR Music.
+
+                            ### Benefit & Use Case
+                            Explain how this enhancement benefits listeners.
+                        """.trimIndent()
+                        val url = "https://github.com/mkr-infinity/mkr-music/issues/new?title=" +
+                            URLEncoder.encode(featureTitle, StandardCharsets.UTF_8.name()) +
+                            "&body=" + URLEncoder.encode(featureBody, StandardCharsets.UTF_8.name())
+                        uriHandler.safeOpenUri(context, url)
+                    }
+                )
+
+                SupportCapsuleCard(
+                    modifier = Modifier.weight(1f),
+                    icon = R.drawable.bug_report,
+                    title = "Report Problem",
+                    subtitle = "Submit issue report",
+                    onClick = {
+                        val bugTitle = "Bug Report: "
+                        val bugBody = """
+                            ### Device & App Information
+                            - App Version: v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})
+                            - Android Version: Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})
+                            - Device: ${Build.MANUFACTURER} ${Build.MODEL}
+
+                            ### Description of the Issue
+                            Please describe what occurred.
+
+                            ### Steps to Reproduce
+                            1.
+                            2.
+                            3.
+
+                            ### Expected Behavior
+                            What should have happened.
+
+                            ### Actual Behavior
+                            What actually happened.
+                        """.trimIndent()
+                        val url = "https://github.com/mkr-infinity/mkr-music/issues/new?title=" +
+                            URLEncoder.encode(bugTitle, StandardCharsets.UTF_8.name()) +
+                            "&body=" + URLEncoder.encode(bugBody, StandardCharsets.UTF_8.name())
+                        uriHandler.safeOpenUri(context, url)
+                    }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            // Section 7 — About action
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .settingsHighlight("about_app", RoundedCornerShape(22.dp))
+                    .clip(RoundedCornerShape(22.dp))
+                    .clickable { navController.navigate("settings/about") },
+                shape = RoundedCornerShape(22.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                tonalElevation = 2.dp,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(14.dp),
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(44.dp)
+                                .clip(RoundedCornerShape(14.dp))
+                                .background(MaterialTheme.colorScheme.primaryContainer),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.mkr_music_icon),
+                                contentDescription = "MKR Music",
+                                modifier = Modifier.size(26.dp)
+                            )
+                        }
+                        Column {
+                            Text(
+                                text = "About MKR Music",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "v${BuildConfig.VERSION_NAME} Stable • Developed by Mohammad Kaif Raja",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                    Icon(
+                        painter = painterResource(R.drawable.navigate_next),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(50.dp))
@@ -797,6 +967,7 @@ private fun SettingsGridCard(
 
 @Composable
 private fun StatusCapsulePill(
+    modifier: Modifier = Modifier,
     key: String? = null,
     icon: Int,
     label: String,
@@ -804,7 +975,7 @@ private fun StatusCapsulePill(
     onClick: () -> Unit
 ) {
     Surface(
-        modifier = Modifier
+        modifier = modifier
             .settingsHighlight(key, RoundedCornerShape(50.dp))
             .clip(RoundedCornerShape(50.dp))
             .clickable(onClick = onClick),
@@ -818,24 +989,84 @@ private fun StatusCapsulePill(
         )
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            horizontalArrangement = Arrangement.Center
         ) {
             Icon(
                 painter = painterResource(icon),
                 contentDescription = null,
                 tint = if (highlight) MaterialTheme.colorScheme.onErrorContainer
                        else MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp)
+                modifier = Modifier.size(18.dp)
             )
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = if (highlight) MaterialTheme.colorScheme.onErrorContainer
-                        else MaterialTheme.colorScheme.onSurface
+                        else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+@Composable
+private fun SupportCapsuleCard(
+    modifier: Modifier = Modifier,
+    icon: Int,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit
+) {
+    Surface(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .clickable(onClick = onClick),
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        tonalElevation = 2.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
     }
 }

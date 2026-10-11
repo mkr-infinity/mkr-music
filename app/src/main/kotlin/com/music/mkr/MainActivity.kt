@@ -1060,11 +1060,15 @@ class MainActivity : ComponentActivity() {
                                                         // Cancel previous inactivity timer
                                                         resetJob?.cancel()
 
-                                                        // First toast activates strictly at 5 clicks
-                                                        if (logoClickCount >= 5) {
-                                                            // Cancel previous toast immediately so clicks don't queue up
-                                                            currentToast?.cancel()
+                                                        // Cancel previous toast immediately so clicks don't queue up
+                                                        currentToast?.cancel()
 
+                                                        if (logoClickCount == 1) {
+                                                            // Display the meaning of MKR in English & Urdu with proper BiDi isolation
+                                                            val mkrExplanation = "MKR Music — MKR stands for Mohammad Kaif Raja (\u200Fمحمد کیف رجہ\u200E)"
+                                                            currentToast = Toast.makeText(this@MainActivity, mkrExplanation, Toast.LENGTH_LONG)
+                                                            currentToast?.show()
+                                                        } else if (logoClickCount >= 5) {
                                                             val toastMessage = when (logoClickCount) {
                                                                 5 -> "Hey, what are you doing? 👀"
                                                                 6 -> "Stop poking the MKR logo bro! 😅"
