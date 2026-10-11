@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.clip
@@ -576,7 +578,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f).height(124.dp),
+                        modifier = Modifier.weight(1f).height(126.dp),
                         key = "appearance_theme_palette",
                         icon = R.drawable.palette,
                         title = "Appearance",
@@ -584,7 +586,7 @@ fun SettingsScreen(
                         onClick = { navController.navigate("settings/appearance") }
                     )
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f).height(124.dp),
+                        modifier = Modifier.weight(1f).height(126.dp),
                         key = "player_audio_quality",
                         icon = R.drawable.earbud_case,
                         title = "Player & Audio",
@@ -597,7 +599,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f).height(124.dp),
+                        modifier = Modifier.weight(1f).height(126.dp),
                         key = "storage_downloads",
                         icon = R.drawable.storage,
                         title = "Storage & Cache",
@@ -605,7 +607,7 @@ fun SettingsScreen(
                         onClick = { navController.navigate("settings/storage") }
                     )
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f).height(124.dp),
+                        modifier = Modifier.weight(1f).height(126.dp),
                         key = "account_login",
                         icon = R.drawable.google,
                         title = "Account & Sync",
@@ -615,9 +617,7 @@ fun SettingsScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Section 3 — Features & Updates (Grouped like Security & Data)
+            // Section 3 — Features & Updates
             ExpressiveSettingGroup(
                 title = "Features & Updates",
                 itemMinHeight = 64.dp,
@@ -646,9 +646,29 @@ fun SettingsScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            // Section 4 — Content & Lyrics
+            ExpressiveSettingGroup(
+                title = "Content & Lyrics",
+                itemMinHeight = 64.dp,
+                items = listOf(
+                    Material3SettingsItem(
+                        key = "content_language",
+                        icon = painterResource(R.drawable.language),
+                        title = { Text(stringResource(R.string.content)) },
+                        description = { Text("Language, country, lyrics providers & explicit filter") },
+                        onClick = { navController.navigate("settings/content") }
+                    ),
+                    Material3SettingsItem(
+                        key = "content_ai_lyrics",
+                        icon = painterResource(R.drawable.translate),
+                        title = { Text(stringResource(R.string.ai_lyrics_translation)) },
+                        description = { Text("Real-time song lyrics translation using intelligent AI") },
+                        onClick = { navController.navigate("settings/ai") }
+                    )
+                )
+            )
 
-            // Section 4 — Security & Data
+            // Section 5 — Security & Data
             ExpressiveSettingGroup(
                 title = "Security & Data",
                 itemMinHeight = 64.dp,
@@ -670,9 +690,7 @@ fun SettingsScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Section 5 — Feedback & Community
+            // Section 6 — Feedback & Community
             ExpressiveSettingGroup(
                 title = "Feedback & Community",
                 itemMinHeight = 64.dp,
@@ -735,9 +753,7 @@ fun SettingsScreen(
                 )
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Section 6 — About
+            // Section 7 — About
             ExpressiveSettingGroup(
                 title = "About",
                 itemMinHeight = 64.dp,
@@ -753,7 +769,7 @@ fun SettingsScreen(
             )
         }
 
-        Spacer(modifier = Modifier.height(50.dp))
+        Spacer(modifier = Modifier.height(48.dp))
     }
 
     TopAppBar(
@@ -828,7 +844,7 @@ private fun SettingsGridCard(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(14.dp),
+                .padding(horizontal = 14.dp, vertical = 13.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -838,8 +854,8 @@ private fun SettingsGridCard(
             ) {
                 Box(
                     modifier = Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(13.dp))
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(12.dp))
                         .background(MaterialTheme.colorScheme.primaryContainer),
                     contentAlignment = Alignment.Center
                 ) {
@@ -857,7 +873,6 @@ private fun SettingsGridCard(
                     modifier = Modifier.size(18.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(12.dp))
             Column {
                 Text(
                     text = title,
@@ -872,6 +887,7 @@ private fun SettingsGridCard(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    minLines = 2,
                     maxLines = 2,
                     lineHeight = 15.sp,
                     overflow = TextOverflow.Ellipsis
