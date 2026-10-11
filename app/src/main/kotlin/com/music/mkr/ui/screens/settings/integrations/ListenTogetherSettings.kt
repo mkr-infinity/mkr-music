@@ -141,7 +141,6 @@ fun ListenTogetherSettings(
             R.drawable.woman_1,
             R.drawable.woman_2,
             R.drawable.woman_3,
-            R.drawable.woman_4,
             R.drawable.luxury_women
         )
     }

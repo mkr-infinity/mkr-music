@@ -878,7 +878,7 @@ private fun UserAvatar(
                     modifier = Modifier.fillMaxSize()
                 ) {
                     val resolvedAvatarIndex = user.avatarIndex
-                    val avatarOptions = remember { listOf(R.drawable.person, R.drawable.man, R.drawable.woman, R.drawable.man_1, R.drawable.man_2, R.drawable.man_3, R.drawable.man_4, R.drawable.man_5, R.drawable.man_6, R.drawable.woman_1, R.drawable.woman_2, R.drawable.woman_3, R.drawable.woman_4, R.drawable.luxury_women) }
+                    val avatarOptions = remember { listOf(R.drawable.person, R.drawable.man, R.drawable.woman, R.drawable.man_1, R.drawable.man_2, R.drawable.man_3, R.drawable.man_4, R.drawable.man_5, R.drawable.man_6, R.drawable.woman_1, R.drawable.woman_2, R.drawable.woman_3, R.drawable.luxury_women) }
                     
                     if (resolvedAvatarIndex == 0) {
                         Text(
@@ -988,7 +988,7 @@ private fun PendingJoinRequestsSection(
                         .padding(vertical = 8.dp)
                 ) {
                     val resolvedAvatarIndex = request.avatarIndex
-                    val avatarOptions = remember { listOf(R.drawable.person, R.drawable.man, R.drawable.woman, R.drawable.man_1, R.drawable.man_2, R.drawable.man_3, R.drawable.man_4, R.drawable.man_5, R.drawable.man_6, R.drawable.woman_1, R.drawable.woman_2, R.drawable.woman_3, R.drawable.woman_4, R.drawable.luxury_women) }
+                    val avatarOptions = remember { listOf(R.drawable.person, R.drawable.man, R.drawable.woman, R.drawable.man_1, R.drawable.man_2, R.drawable.man_3, R.drawable.man_4, R.drawable.man_5, R.drawable.man_6, R.drawable.woman_1, R.drawable.woman_2, R.drawable.woman_3, R.drawable.luxury_women) }
                     
                     Surface(
                         modifier = Modifier.size(40.dp),
@@ -1141,7 +1141,7 @@ private fun JoinCreateRoomSection(
     onFieldFocused: () -> Unit = {}
 ) {
     val avatarIndex by rememberPreference(ListenTogetherAvatarIndexKey, 0)
-    val avatarOptions = remember { listOf(R.drawable.person, R.drawable.man, R.drawable.woman, R.drawable.man_1, R.drawable.man_2, R.drawable.man_3, R.drawable.man_4, R.drawable.man_5, R.drawable.man_6, R.drawable.woman_1, R.drawable.woman_2, R.drawable.woman_3, R.drawable.woman_4, R.drawable.luxury_women) }
+    val avatarOptions = remember { listOf(R.drawable.person, R.drawable.man, R.drawable.woman, R.drawable.man_1, R.drawable.man_2, R.drawable.man_3, R.drawable.man_4, R.drawable.man_5, R.drawable.man_6, R.drawable.woman_1, R.drawable.woman_2, R.drawable.woman_3, R.drawable.luxury_women) }
     
     Card(
         modifier = Modifier
