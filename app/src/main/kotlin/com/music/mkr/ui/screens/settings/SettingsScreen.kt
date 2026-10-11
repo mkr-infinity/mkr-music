@@ -760,9 +760,9 @@ fun SettingsScreen(
                 items = listOf(
                     Material3SettingsItem(
                         key = "about_app",
-                        icon = painterResource(R.drawable.icon),
+                        icon = painterResource(R.drawable.info),
                         title = { Text("About") },
-                        description = { Text("v${BuildConfig.VERSION_NAME}") },
+                        description = { Text("About and information") },
                         onClick = { navController.navigate("settings/about") }
                     )
                 )
@@ -803,12 +803,11 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Image(
-                        painter = painterResource(R.drawable.icon),
+                    Icon(
+                        painter = painterResource(R.drawable.info),
                         contentDescription = null,
-                        modifier = Modifier
-                            .size(16.dp)
-                            .clip(CircleShape)
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer
                     )
                     Text(
                         text = "About",

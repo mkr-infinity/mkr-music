@@ -126,13 +126,6 @@ fun AboutScreen(
             title = "App Information",
             items = listOf(
                 Material3SettingsItem(
-                    key = "about_donate",
-                    icon = painterResource(R.drawable.buymeacoffee),
-                    title = { Text(stringResource(R.string.donate)) },
-                    description = { Text("Support ongoing development (UPI, Coffee, Tea)") },
-                    onClick = { showSupportDialog = true }
-                ),
-                Material3SettingsItem(
                     key = "about_app",
                     icon = painterResource(R.drawable.deployed_app_update),
                     title = { Text(stringResource(R.string.installed_date_title)) },
@@ -143,13 +136,6 @@ fun AboutScreen(
                     title = { Text("Open Source License") },
                     description = { Text("GNU General Public License v3.0 (GPL-3.0)") },
                     onClick = { uriHandler.safeOpenUri(context, "${GitHubConfig.REPO_URL}/blob/main/LICENSE") },
-                    isExternalLink = true
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.favorite),
-                    title = { Text("Credits & Inspiration") },
-                    description = { Text("ViVi Music, Zion Huang, vfsfitvnm") },
-                    onClick = { uriHandler.safeOpenUri(context, GitHubConfig.REPO_URL) },
                     isExternalLink = true
                 )
             )
