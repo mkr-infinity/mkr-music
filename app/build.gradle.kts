@@ -66,18 +66,30 @@ android {
         create("arm64") {
             dimension = "abi"
             buildConfigField("String", "ARCHITECTURE", "\"arm64\"")
+            ndk {
+                abiFilters.add("arm64-v8a")
+            }
         }
         create("armeabi") {
             dimension = "abi"
             buildConfigField("String", "ARCHITECTURE", "\"armeabi\"")
+            ndk {
+                abiFilters.add("armeabi-v7a")
+            }
         }
         create("x86") {
             dimension = "abi"
             buildConfigField("String", "ARCHITECTURE", "\"x86\"")
+            ndk {
+                abiFilters.add("x86")
+            }
         }
         create("x86_64") {
             dimension = "abi"
             buildConfigField("String", "ARCHITECTURE", "\"x86_64\"")
+            ndk {
+                abiFilters.add("x86_64")
+            }
         }
     }
 
