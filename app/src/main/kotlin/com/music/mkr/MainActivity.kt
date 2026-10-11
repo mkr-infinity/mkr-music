@@ -651,7 +651,7 @@ class MainActivity : ComponentActivity() {
                                 OutlinedButton(
                                     onClick = {
                                         setHasShownSupportPrompt(true)
-                                        uriHandler.openUri(com.music.mkr.github.DEV_BUYMEACOFFEE_URL)
+                                        uriHandler.openUri(com.music.mkr.github.GitHubConfig.DEV_BUYMEACOFFEE_URL)
                                     },
                                     modifier = Modifier.weight(1f)
                                 ) {
