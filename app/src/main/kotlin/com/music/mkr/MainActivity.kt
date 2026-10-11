@@ -1179,7 +1179,7 @@ class MainActivity : ComponentActivity() {
                                                     },
                                                     shape = CircleShape,
                                                     color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f),
-                                                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                                                    border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.35f)),
                                                     modifier = Modifier.size(42.dp)
                                                 ) {
                                                     Box(contentAlignment = Alignment.Center) {

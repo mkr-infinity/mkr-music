@@ -93,7 +93,7 @@ fun SettingsDropdownMenu(
             .border(
                 BorderStroke(
                     1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                    Color.Black.copy(alpha = 0.35f)
                 ),
                 RoundedCornerShape(32.dp)
             )
@@ -107,6 +107,7 @@ fun SettingsDropdownMenu(
             } else {
                 MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
             },
+            border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.2f)),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 4.dp),
@@ -216,6 +217,7 @@ fun SettingsDropdownMenu(
                 },
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.2f)),
                 modifier = quickActionModifier
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -240,6 +242,7 @@ fun SettingsDropdownMenu(
                 } else {
                     MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
                 },
+                border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.2f)),
                 modifier = quickActionModifier
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -271,6 +274,7 @@ fun SettingsDropdownMenu(
                 },
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.2f)),
                 modifier = quickActionModifier
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -297,6 +301,7 @@ fun SettingsDropdownMenu(
                 },
                 shape = RoundedCornerShape(16.dp),
                 color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.2f)),
                 modifier = quickActionModifier
             ) {
                 Box(contentAlignment = Alignment.Center) {
@@ -395,6 +400,7 @@ fun DropdownMenuIconItem(
     Surface(
         shape = shape,
         color = containerColor,
+        border = BorderStroke(0.8.dp, Color.Black.copy(alpha = 0.15f)),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 1.dp)

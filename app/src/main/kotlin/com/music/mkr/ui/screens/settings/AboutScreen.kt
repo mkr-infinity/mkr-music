@@ -377,7 +377,7 @@ private fun SocialLinkPill(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+        border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.35f))
     ) {
         Row(
             modifier = Modifier
