@@ -11,6 +11,7 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -30,6 +31,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -73,7 +75,8 @@ private val APPRECIATION_MESSAGES = listOf(
 
 /**
  * Centered native Donate Dialog for MKR Music.
- * Presents manual UPI transfer with copy features and Buy Me a Coffee.
+ * Features official payment platform logos, left-aligned INR icon,
+ * copyable verified credentials, and tactile touch feedback.
  */
 @Composable
 fun DonateDialog(
@@ -136,35 +139,41 @@ fun DonateDialog(
                         .padding(22.dp)
                         .verticalScroll(rememberScrollState())
                 ) {
-                    // Header
+                    // Dialog Header with Title and Close Action
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = "Donate & Support",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primaryContainer),
-                            contentAlignment = Alignment.Center
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Donate & Support",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(modifier = Modifier.height(2.dp))
+                            Text(
+                                text = "Keep MKR Music free, open & ad-free",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        IconButton(
+                            onClick = onDismiss,
+                            modifier = Modifier.size(36.dp)
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.ic_currency_rupee),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
+                                painter = painterResource(id = R.drawable.close),
+                                contentDescription = "Close",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(20.dp)
                             )
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(18.dp))
 
                     // 1. UPI Manual Payment Card
                     Surface(
@@ -178,46 +187,129 @@ fun DonateDialog(
                                 .fillMaxWidth()
                                 .padding(16.dp)
                         ) {
-                            Text(
-                                text = "Pay via UPI",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.onSurface
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Copy the UPI ID below and pay manually using PhonePe, Google Pay, Paytm, BHIM, or your bank app.",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Supported UPI apps badges
+                            // Section Header with INR icon on the LEFT (aligned with Buy Me a Coffee)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                AppBadge(label = "PhonePe", color = Color(0xFF5F259F))
-                                AppBadge(label = "Google Pay", color = Color(0xFF1A73E8))
-                                AppBadge(label = "Paytm", color = Color(0xFF00B9F5))
-                                AppBadge(label = "BHIM / Bank Apps", color = Color(0xFF00796B))
+                                Box(
+                                    modifier = Modifier
+                                        .size(42.dp)
+                                        .background(
+                                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                            shape = CircleShape
+                                        ),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.ic_currency_rupee),
+                                        contentDescription = "UPI Transfer",
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(22.dp)
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.width(14.dp))
+
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = "Pay via UPI",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = "Instant transfer with 0% platform fee",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
 
                             Spacer(modifier = Modifier.height(14.dp))
 
-                            // UPI ID & Name Card
+                            // Instructional message banner
+                            Surface(
+                                shape = RoundedCornerShape(12.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.85f),
+                                border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.info),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                    Text(
+                                        text = "Copy the UPI ID below and paste into PhonePe, Google Pay, Paytm, BHIM, or any bank app to pay.",
+                                        style = MaterialTheme.typography.bodySmall.copy(lineHeight = 18.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // Official platform logos
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                PaymentAppLogoTile(
+                                    iconRes = R.drawable.ic_phonepe,
+                                    name = "PhonePe",
+                                    brandColor = Color(0xFF5F259F),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                PaymentAppLogoTile(
+                                    iconRes = R.drawable.ic_googlepay,
+                                    name = "GPay",
+                                    brandColor = Color(0xFF1A73E8),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                PaymentAppLogoTile(
+                                    iconRes = R.drawable.ic_paytm,
+                                    name = "Paytm",
+                                    brandColor = Color(0xFF00B9F5),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                PaymentAppLogoTile(
+                                    iconRes = R.drawable.ic_bhim,
+                                    name = "BHIM",
+                                    brandColor = Color(0xFFF37021),
+                                    modifier = Modifier.weight(1f)
+                                )
+                                PaymentAppLogoTile(
+                                    iconRes = R.drawable.ic_bank,
+                                    name = "Bank",
+                                    brandColor = Color(0xFF00796B),
+                                    modifier = Modifier.weight(1f)
+                                )
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            // UPI ID Card
                             Surface(
                                 shape = RoundedCornerShape(16.dp),
                                 color = MaterialTheme.colorScheme.surfaceContainer,
-                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f)),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(12.dp)
+                                        .padding(14.dp)
                                 ) {
                                     Row(
                                         modifier = Modifier.fillMaxWidth(),
@@ -228,11 +320,13 @@ fun DonateDialog(
                                             Text(
                                                 text = "UPI ID",
                                                 style = MaterialTheme.typography.labelSmall,
+                                                fontWeight = FontWeight.Medium,
                                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
+                                            Spacer(modifier = Modifier.height(2.dp))
                                             Text(
                                                 text = GitHubConfig.DEV_UPI_ID,
-                                                style = MaterialTheme.typography.bodyLarge,
+                                                style = MaterialTheme.typography.titleMedium,
                                                 fontWeight = FontWeight.Bold,
                                                 color = MaterialTheme.colorScheme.primary
                                             )
@@ -244,7 +338,7 @@ fun DonateDialog(
                                         )
                                     }
 
-                                    Spacer(modifier = Modifier.height(8.dp))
+                                    Spacer(modifier = Modifier.height(10.dp))
 
                                     Row(
                                         verticalAlignment = Alignment.CenterVertically,
@@ -252,9 +346,9 @@ fun DonateDialog(
                                     ) {
                                         Icon(
                                             painter = painterResource(id = R.drawable.check),
-                                            contentDescription = "Verified Name",
+                                            contentDescription = "Verified Banking Name",
                                             tint = Color(0xFF388E3C),
-                                            modifier = Modifier.size(14.dp)
+                                            modifier = Modifier.size(15.dp)
                                         )
                                         Text(
                                             text = "Banking Name: ${GitHubConfig.DEV_UPI_NAME}",
@@ -266,12 +360,12 @@ fun DonateDialog(
                                 }
                             }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(10.dp))
 
                             // Custom remark / message row
                             Surface(
                                 shape = RoundedCornerShape(14.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.7f),
+                                color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.75f),
                                 border = BorderStroke(0.8.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
                                 modifier = Modifier.fillMaxWidth()
                             ) {
@@ -288,6 +382,7 @@ fun DonateDialog(
                                             style = MaterialTheme.typography.labelSmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
+                                        Spacer(modifier = Modifier.height(2.dp))
                                         Text(
                                             text = "\"${GitHubConfig.DEV_UPI_NOTE}\"",
                                             style = MaterialTheme.typography.bodyMedium,
@@ -305,7 +400,7 @@ fun DonateDialog(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(14.dp))
 
                     // 2. Buy Me a Coffee Option
                     Surface(
@@ -381,7 +476,7 @@ fun DonateDialog(
                             shape = RoundedCornerShape(100)
                         ) {
                             Text(
-                                text = "Close",
+                                text = "Done",
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.primary
@@ -421,21 +516,42 @@ fun DonateDialog(
 }
 
 @Composable
-private fun AppBadge(
-    label: String,
-    color: Color
+private fun PaymentAppLogoTile(
+    iconRes: Int,
+    name: String,
+    brandColor: Color,
+    modifier: Modifier = Modifier
 ) {
-    Surface(
-        shape = RoundedCornerShape(6.dp),
-        color = color.copy(alpha = 0.12f),
-        border = BorderStroke(0.6.dp, color.copy(alpha = 0.35f))
+    Column(
+        modifier = modifier.padding(horizontal = 2.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
+        Box(
+            modifier = Modifier
+                .size(44.dp)
+                .clip(RoundedCornerShape(14.dp))
+                .background(brandColor.copy(alpha = 0.08f))
+                .border(
+                    BorderStroke(1.dp, brandColor.copy(alpha = 0.22f)),
+                    RoundedCornerShape(14.dp)
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(id = iconRes),
+                contentDescription = name,
+                tint = Color.Unspecified,
+                modifier = Modifier.size(26.dp)
+            )
+        }
         Text(
-            text = label,
-            fontSize = 10.sp,
+            text = name,
+            style = MaterialTheme.typography.labelSmall.copy(fontSize = 11.sp),
             fontWeight = FontWeight.SemiBold,
-            color = color,
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            textAlign = TextAlign.Center
         )
     }
 }
