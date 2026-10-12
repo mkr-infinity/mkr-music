@@ -416,11 +416,9 @@ class HomeViewModel @Inject constructor(
             .map { (it / 10) * 10 }
             .toSet()
 
-        val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val currentHour = java.time.LocalDateTime.now().hour
         val timeBlockEvents = events.filter {
-            val cal = java.util.Calendar.getInstance().apply { timeInMillis = it.event.timestamp }
-            val h = cal.get(java.util.Calendar.HOUR_OF_DAY)
-            kotlin.math.abs(h - currentHour) <= 2
+            kotlin.math.abs(it.event.timestamp.hour - currentHour) <= 2
         }.map { it.song.id }.toSet()
 
         for (eventWithSong in events) {
@@ -603,7 +601,7 @@ class HomeViewModel @Inject constructor(
                 } else if (song != null) {
                     val artistId = song.artists.firstOrNull()?.id.orEmpty()
                     if (artistId.isNotEmpty()) {
-                        database.artistSongs(artistId).first().filterVideoSongs(hideVideoSongs)
+                        database.artistSongsByCreateDateAsc(artistId).first().filterVideoSongs(hideVideoSongs)
                     } else {
                         emptyList()
                     }
