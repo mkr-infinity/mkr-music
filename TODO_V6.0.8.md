@@ -8,7 +8,7 @@
 - [x] `.github/workflows/release.yml`: ensure version extraction and release tags dynamically support `v6.0.8`.
 
 ## 2. Notification Icon & App Small Logo Harmonization
-- [x] Ensure `R.drawable.mkrmusicnotification` and all notification handlers (`MusicService`, `UpdateNotificationHelper`, `NewReleaseNotificationHelper`, `ViviNotificationProvider`) strictly use the authentic MKR Line Note logo monochrome asset.
+- [x] Ensure `R.drawable.mkrmusicnotification` and all notification handlers (`MusicService`, `UpdateNotificationHelper`, `NewReleaseNotificationHelper`) strictly use the authentic MKR Line Note logo monochrome asset.
 - [x] Replace any leftover `R.drawable.icon` or generic notification icon usages with the authentic `R.drawable.mkrmusicnotification` for notifications and authentic high-res largeIcon.
 
 ## 3. Settings UI: Capsule Header & Top Search Bar
