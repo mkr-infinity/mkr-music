@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -71,6 +72,7 @@ import com.music.mkr.ui.utils.safeOpenUri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -104,45 +106,77 @@ fun ChangelogScreen(
         hasError = false
         coroutineScope.launch(Dispatchers.IO) {
             try {
-                // 1. Fetch latest release from GitHub API
-                val url = URL("https://api.github.com/repos/mkr-infinity/mkr-music/releases/latest")
-                val connection = url.openConnection() as HttpURLConnection
-                connection.setRequestProperty("User-Agent", "MKRMusic-App")
-                connection.setRequestProperty("Accept", "application/vnd.github+json")
-                connection.connectTimeout = 8000
-                connection.readTimeout = 8000
+                var releaseBody: String? = null
+                var tag: String? = null
 
-                if (connection.responseCode == 200) {
-                    val jsonStr = connection.inputStream.bufferedReader().use { it.readText() }
-                    val json = JSONObject(jsonStr)
-                    val body = json.optString("body", "").trim()
-                    val tag = json.optString("tag_name", "").trim()
+                // 1. Primary Priority: GitHub Releases API (latest release)
+                try {
+                    val url = URL("https://api.github.com/repos/mkr-infinity/mkr-music/releases/latest")
+                    val connection = url.openConnection() as HttpURLConnection
+                    connection.setRequestProperty("User-Agent", "MKRMusic-App")
+                    connection.setRequestProperty("Accept", "application/vnd.github+json")
+                    connection.connectTimeout = 8000
+                    connection.readTimeout = 8000
 
-                    withContext(Dispatchers.Main) {
-                        releaseTag = tag
-                        releaseMarkdown = if (body.isNotBlank()) body else getDefaultReleaseNotes()
-                        isLoading = false
-                    }
-                } else {
-                    // Fallback to raw CHANGELOG.md
-                    val changelogUrl = URL("https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/CHANGELOG.md")
-                    val changelogConn = changelogUrl.openConnection() as HttpURLConnection
-                    changelogConn.setRequestProperty("User-Agent", "MKRMusic-App")
-                    changelogConn.connectTimeout = 8000
-                    changelogConn.readTimeout = 8000
-
-                    if (changelogConn.responseCode == 200) {
-                        val md = changelogConn.inputStream.bufferedReader().use { it.readText() }
-                        withContext(Dispatchers.Main) {
-                            releaseMarkdown = md
-                            isLoading = false
-                        }
-                    } else {
-                        withContext(Dispatchers.Main) {
-                            releaseMarkdown = getDefaultReleaseNotes()
-                            isLoading = false
+                    if (connection.responseCode == 200) {
+                        val jsonStr = connection.inputStream.bufferedReader().use { it.readText() }
+                        val json = JSONObject(jsonStr)
+                        val body = json.optString("body", "").trim()
+                        if (body.isNotBlank()) {
+                            releaseBody = body
+                            tag = json.optString("tag_name", "").trim()
                         }
                     }
+                } catch (_: Exception) {}
+
+                // If latest release returned empty body or 404, check releases list
+                if (releaseBody.isNullOrBlank()) {
+                    try {
+                        val url = URL("https://api.github.com/repos/mkr-infinity/mkr-music/releases")
+                        val connection = url.openConnection() as HttpURLConnection
+                        connection.setRequestProperty("User-Agent", "MKRMusic-App")
+                        connection.setRequestProperty("Accept", "application/vnd.github+json")
+                        connection.connectTimeout = 8000
+                        connection.readTimeout = 8000
+
+                        if (connection.responseCode == 200) {
+                            val jsonStr = connection.inputStream.bufferedReader().use { it.readText() }
+                            val jsonArr = JSONArray(jsonStr)
+                            for (i in 0 until jsonArr.length()) {
+                                val item = jsonArr.getJSONObject(i)
+                                val body = item.optString("body", "").trim()
+                                if (body.isNotBlank()) {
+                                    releaseBody = body
+                                    tag = item.optString("tag_name", "").trim()
+                                    break
+                                }
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+
+                // 2. Secondary Priority: Fallback to raw CHANGELOG.md if no release notes available
+                if (releaseBody.isNullOrBlank()) {
+                    try {
+                        val changelogUrl = URL("https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/CHANGELOG.md")
+                        val changelogConn = changelogUrl.openConnection() as HttpURLConnection
+                        changelogConn.setRequestProperty("User-Agent", "MKRMusic-App")
+                        changelogConn.connectTimeout = 8000
+                        changelogConn.readTimeout = 8000
+
+                        if (changelogConn.responseCode == 200) {
+                            val md = changelogConn.inputStream.bufferedReader().use { it.readText() }.trim()
+                            if (md.isNotBlank()) {
+                                releaseBody = md
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+
+                withContext(Dispatchers.Main) {
+                    releaseTag = tag
+                    releaseMarkdown = if (!releaseBody.isNullOrBlank()) releaseBody else getDefaultReleaseNotes()
+                    isLoading = false
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -213,10 +247,10 @@ fun ChangelogScreen(
                             .crossfade(true)
                             .build(),
                         contentDescription = "MKR Music Project Poster",
-                        contentScale = ContentScale.Crop,
+                        contentScale = ContentScale.FillWidth,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .aspectRatio(16f / 9f),
+                            .wrapContentHeight(),
                         error = painterResource(R.drawable.icon)
                     )
                 }
@@ -253,20 +287,36 @@ fun ChangelogScreen(
 }
 
 /**
- * Beautiful, lightweight Markdown renderer tailored for release notes.
+ * Beautiful, lightweight Markdown preview renderer tailored for release notes.
+ * Fenced code blocks are excluded so the view stays purely user-facing preview text.
  */
 @Composable
 private fun MarkdownContent(
     markdown: String,
     onLinkClick: (String) -> Unit
 ) {
-    val lines = remember(markdown) { markdown.lines() }
+    val cleanLines = remember(markdown) {
+        val list = mutableListOf<String>()
+        var inCodeFence = false
+        for (line in markdown.lines()) {
+            val trimmed = line.trim()
+            if (trimmed.startsWith("```")) {
+                inCodeFence = !inCodeFence
+                continue
+            }
+            if (inCodeFence) {
+                continue // Skip lines inside code fences
+            }
+            list.add(line)
+        }
+        list
+    }
 
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        for (line in lines) {
+        for (line in cleanLines) {
             val trimmed = line.trim()
             when {
                 trimmed.isEmpty() -> {
@@ -274,7 +324,7 @@ private fun MarkdownContent(
                 }
                 trimmed.startsWith("# ") -> {
                     Text(
-                        text = trimmed.removePrefix("# ").trim(),
+                        text = trimmed.removePrefix("# ").replace("`", "").trim(),
                         style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -283,7 +333,7 @@ private fun MarkdownContent(
                 }
                 trimmed.startsWith("## ") -> {
                     Text(
-                        text = trimmed.removePrefix("## ").trim(),
+                        text = trimmed.removePrefix("## ").replace("`", "").trim(),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary,
@@ -292,7 +342,7 @@ private fun MarkdownContent(
                 }
                 trimmed.startsWith("### ") -> {
                     Text(
-                        text = trimmed.removePrefix("### ").trim(),
+                        text = trimmed.removePrefix("### ").replace("`", "").trim(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurface,
@@ -321,7 +371,7 @@ private fun MarkdownContent(
                     }
                 }
                 trimmed.startsWith("![](") || trimmed.startsWith("![") -> {
-                    // Poster is already prominently shown first; skip raw banner images in body
+                    // Skip inline markdown images; top banner handles visual branding
                 }
                 else -> {
                     ClickableMarkdownText(
@@ -344,38 +394,39 @@ private fun ClickableMarkdownText(
     val primaryColor = MaterialTheme.colorScheme.primary
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 
+    val sanitizedText = remember(rawText) { rawText.replace("`", "") }
     val linkRegex = remember { Regex("\\[([^\\]]+)\\]\\(([^\\)]+)\\)") }
     val boldRegex = remember { Regex("\\*\\*([^*]+)\\*\\*") }
 
-    val annotated = remember(rawText, primaryColor, onSurfaceColor) {
+    val annotated = remember(sanitizedText, primaryColor, onSurfaceColor) {
         buildAnnotatedString {
             var currentIndex = 0
-            val matches = linkRegex.findAll(rawText).toList()
+            val matches = linkRegex.findAll(sanitizedText).toList()
 
             if (matches.isEmpty()) {
                 // Parse bold tokens
                 var textIndex = 0
-                val boldMatches = boldRegex.findAll(rawText).toList()
+                val boldMatches = boldRegex.findAll(sanitizedText).toList()
                 if (boldMatches.isEmpty()) {
-                    append(rawText)
+                    append(sanitizedText)
                 } else {
                     for (bMatch in boldMatches) {
                         if (bMatch.range.first > textIndex) {
-                            append(rawText.substring(textIndex, bMatch.range.first))
+                            append(sanitizedText.substring(textIndex, bMatch.range.first))
                         }
                         withStyle(SpanStyle(fontWeight = FontWeight.Bold, color = onSurfaceColor)) {
                             append(bMatch.groupValues[1])
                         }
                         textIndex = bMatch.range.last + 1
                     }
-                    if (textIndex < rawText.length) {
-                        append(rawText.substring(textIndex))
+                    if (textIndex < sanitizedText.length) {
+                        append(sanitizedText.substring(textIndex))
                     }
                 }
             } else {
                 for (match in matches) {
                     if (match.range.first > currentIndex) {
-                        append(rawText.substring(currentIndex, match.range.first))
+                        append(sanitizedText.substring(currentIndex, match.range.first))
                     }
                     val label = match.groupValues[1]
                     val url = match.groupValues[2]
@@ -392,8 +443,8 @@ private fun ClickableMarkdownText(
                     pop()
                     currentIndex = match.range.last + 1
                 }
-                if (currentIndex < rawText.length) {
-                    append(rawText.substring(currentIndex))
+                if (currentIndex < sanitizedText.length) {
+                    append(sanitizedText.substring(currentIndex))
                 }
             }
         }
@@ -421,9 +472,9 @@ private fun getDefaultReleaseNotes(): String {
 
 - ⚡ **Instant Playback Start**: Direct low-latency audio streaming without pre-caching buffer lag.
 - ⏱️ **Delayed Song Caching**: Automatically starts background caching only after listening for your configured duration (5s–90s).
-- 💸 **Seamless UPI Support**: Copy UPI ID (`mkr-infinity@ybl`) with one-touch tactile feedback and random appreciation toasts.
-- ⚙️ **Granular Settings Search**: Search any keyword directly (e.g., "hide") to quickly find specific options with zero duplicates.
+- 🎵 **Adaptive Sound Quality**: Dynamic bitrate reporting with exact kbps indicator in the player.
+- ⚙️ **Granular Settings Search**: Search any keyword directly to quickly find specific options with zero duplicates.
 - 🚀 **Manual Update Workflow**: Seamless GitHub release updates with built-in backup instructions.
-- 🎨 **Visual Refinements**: Designer chainsaw-spike animated button border and streamlined onboarding interface.
+- 🎨 **Visual Refinements**: Beautiful streamlined UI with responsive banners and smooth transitions.
     """.trimIndent()
 }

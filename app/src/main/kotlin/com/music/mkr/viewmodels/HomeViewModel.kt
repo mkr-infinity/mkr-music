@@ -387,7 +387,9 @@ class HomeViewModel @Inject constructor(
     private suspend fun personalizeQuickPicks(candidates: List<Song>): List<Song> {
         if (candidates.isEmpty()) return emptyList()
 
-        val uniqueCandidates = candidates.distinctBy { it.id }
+        val uniqueCandidates = candidates
+            .distinctBy { it.id }
+            .distinctBy { "${it.song.title.lowercase().trim()}|${it.artists.firstOrNull()?.name?.lowercase()?.trim()}" }
         if (uniqueCandidates.size <= 1) return uniqueCandidates
 
         val events = try {
@@ -401,10 +403,25 @@ class HomeViewModel @Inject constructor(
             return uniqueCandidates.shuffled().take(20)
         }
 
-        // Build preference models from history
+        // Build preference models and session mood indicators from history
         val artistFrequency = mutableMapOf<String, Int>()
         val decadeFrequency = mutableMapOf<Int, Int>()
         val songPlayCounts = mutableMapOf<String, Int>()
+
+        // Recent session tracks (last 5 plays) capture current musical mood and theme
+        val recentSessionEvents = events.take(5)
+        val recentSessionArtistIds = recentSessionEvents.flatMap { it.song.artists.map { a -> a.id } }.toSet()
+        val recentSessionDecades = recentSessionEvents.mapNotNull { it.song.song.year ?: it.song.album?.year }
+            .filter { it in 1940..2040 }
+            .map { (it / 10) * 10 }
+            .toSet()
+
+        val currentHour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+        val timeBlockEvents = events.filter {
+            val cal = java.util.Calendar.getInstance().apply { timeInMillis = it.event.timestamp }
+            val h = cal.get(java.util.Calendar.HOUR_OF_DAY)
+            kotlin.math.abs(h - currentHour) <= 2
+        }.map { it.song.id }.toSet()
 
         for (eventWithSong in events) {
             val song = eventWithSong.song
@@ -423,51 +440,66 @@ class HomeViewModel @Inject constructor(
             }
         }
 
-        // Score candidates based on history affinity
+        // Score candidates based on history affinity, mood synergy, and theme
         val scoredCandidates = uniqueCandidates.map { song ->
             var score = 1.0 // Baseline discovery score
 
-            // Artist affinity (+1.5 per past play, up to +6.0)
-            val artistPlays = song.artists.sumOf { artistFrequency[it.id] ?: 0 }
-            if (artistPlays > 0) {
-                score += minOf(artistPlays * 1.5, 6.0)
+            // 1. Session Mood Synergy (+3.0 if matching recent session vibe/artist)
+            val matchesSessionArtist = song.artists.any { it.id in recentSessionArtistIds }
+            val songYear = song.song.year ?: song.album?.year
+            val songDecade = if (songYear != null && songYear in 1940..2040) (songYear / 10) * 10 else null
+            val matchesSessionDecade = songDecade != null && songDecade in recentSessionDecades
+
+            if (matchesSessionArtist) {
+                score += 3.0
+            } else if (matchesSessionDecade) {
+                score += 1.5
             }
 
-            // Era/decade affinity (+0.5 per past play in decade, up to +3.0)
-            val songYear = song.song.year ?: song.album?.year
-            if (songYear != null && songYear in 1940..2040) {
-                val decade = (songYear / 10) * 10
-                val decadePlays = decadeFrequency[decade] ?: 0
+            // 2. Artist taste affinity (+2.0 per past play, up to +8.0)
+            val artistPlays = song.artists.sumOf { artistFrequency[it.id] ?: 0 }
+            if (artistPlays > 0) {
+                score += minOf(artistPlays * 2.0, 8.0)
+            }
+
+            // 3. Era/decade affinity (+0.5 per past play in decade, up to +3.0)
+            if (songDecade != null) {
+                val decadePlays = decadeFrequency[songDecade] ?: 0
                 if (decadePlays > 0) {
                     score += minOf(decadePlays * 0.5, 3.0)
                 }
             }
 
-            // Liked song bonus (+3.0)
+            // 4. Liked song bonus (+4.0) — direct user taste declaration
             if (song.song.liked) {
-                score += 3.0
+                score += 4.0
             }
 
-            // Past play count (+0.5 per play, up to +2.5)
+            // 5. Past play count (+0.6 per play, up to +3.5)
             val pastPlays = songPlayCounts[song.id] ?: 0
             if (pastPlays > 0) {
-                score += minOf(pastPlays * 0.5, 2.5)
+                score += minOf(pastPlays * 0.6, 3.5)
             }
 
-            // Slight random jitter so recommendations feel fresh on each launch
+            // 6. Time-of-day / theme consistency bonus (+1.5)
+            if (song.id in timeBlockEvents) {
+                score += 1.5
+            }
+
+            // Slight random jitter so recommendations feel fresh on each refresh
             val jitter = Random.nextFloat() * 0.8
             Pair(song, score + jitter)
         }
 
-        // Partition into Familiar (affinity score > 2.0) and Discovery pools
+        // Partition into Familiar (affinity score > 2.5) and Discovery pools
         val familiarPool = scoredCandidates
-            .filter { it.second > 2.0 }
+            .filter { it.second > 2.5 }
             .sortedByDescending { it.second }
             .map { it.first }
             .toMutableList()
 
         val discoveryPool = scoredCandidates
-            .filter { it.second <= 2.0 }
+            .filter { it.second <= 2.5 }
             .shuffled()
             .map { it.first }
             .toMutableList()
@@ -475,21 +507,17 @@ class HomeViewModel @Inject constructor(
         // Weighted interleaving: 2 familiar items to 1 discovery item
         val result = mutableListOf<Song>()
         while (result.size < 20 && (familiarPool.isNotEmpty() || discoveryPool.isNotEmpty())) {
-            // Take up to 2 familiar items
             var takenFamiliar = 0
             while (takenFamiliar < 2 && familiarPool.isNotEmpty() && result.size < 20) {
                 result.add(familiarPool.removeAt(0))
                 takenFamiliar++
             }
-            // Take 1 discovery item
             if (discoveryPool.isNotEmpty() && result.size < 20) {
                 result.add(discoveryPool.removeAt(0))
             }
-            // If familiar pool is exhausted, take from discovery
             if (familiarPool.isEmpty() && discoveryPool.isNotEmpty() && result.size < 20) {
                 result.add(discoveryPool.removeAt(0))
             }
-            // If discovery pool is exhausted, take from familiar
             if (discoveryPool.isEmpty() && familiarPool.isNotEmpty() && result.size < 20) {
                 result.add(familiarPool.removeAt(0))
             }
@@ -523,8 +551,6 @@ class HomeViewModel @Inject constructor(
                 var rawCandidates = (relatedSongs + forgotten).distinctBy { it.id }
 
                 // ── Fallback Tier 1: liked songs ──────────────────────────────────────
-                // quickPicks uses related_song_map which is empty until songs are played
-                // via the related pipeline. Fall back to liked songs for new/fresh users.
                 if (rawCandidates.isEmpty()) {
                     val tLiked = System.currentTimeMillis()
                     val likedSongs = database.likedSongsByCreateDateAsc().first()
@@ -534,7 +560,6 @@ class HomeViewModel @Inject constructor(
                 }
 
                 // ── Fallback Tier 2: most-played songs (any time window) ───────────────
-                // If user has neither related nor liked songs, use play history.
                 if (rawCandidates.isEmpty()) {
                     val tPlayed = System.currentTimeMillis()
                     val fromTimeStamp = System.currentTimeMillis() - 86400000L * 365 // past year
@@ -545,7 +570,6 @@ class HomeViewModel @Inject constructor(
                 }
 
                 // ── Fallback Tier 3: any song in library ─────────────────────────────
-                // Last resort — at minimum show something from the library.
                 if (rawCandidates.isEmpty()) {
                     val tLib = System.currentTimeMillis()
                     val librarySongs = database.songsByCreateDateAsc().first()
@@ -554,10 +578,19 @@ class HomeViewModel @Inject constructor(
                     rawCandidates = librarySongs
                 }
 
+                // ── Fallback Tier 4: recent playback events ─────────────────────────
+                if (rawCandidates.isEmpty()) {
+                    rawCandidates = database.events().first().take(30)
+                        .mapNotNull { it.song }
+                        .filterVideoSongs(hideVideoSongs)
+                }
+
                 android.util.Log.d("QP_TIMING", "[Phase1] final source for candidates: ${rawCandidates.size} songs")
 
-                val personalized = personalizeQuickPicks(rawCandidates)
-                quickPicks.value = personalized.ifEmpty { rawCandidates.shuffled().take(20) }
+                if (rawCandidates.isNotEmpty()) {
+                    val personalized = personalizeQuickPicks(rawCandidates)
+                    quickPicks.value = personalized.ifEmpty { rawCandidates.shuffled().take(20) }
+                }
                 android.util.Log.d("QP_TIMING", "[Phase1] quickPicks.value SET with ${quickPicks.value?.size} items — total elapsed ${System.currentTimeMillis() - t0}ms")
             }
             QuickPicks.LAST_LISTEN -> {
@@ -565,14 +598,34 @@ class HomeViewModel @Inject constructor(
                 val song = database.events().first().firstOrNull()?.song
                 android.util.Log.d("QP_TIMING", "[Phase1][LAST_LISTEN] events query: ${System.currentTimeMillis() - tEvent}ms | recentSong=${song?.id}")
 
-                if (song != null && database.hasRelatedSongs(song.id)) {
-                    val tRelated = System.currentTimeMillis()
-                    val related = database.getRelatedSongs(song.id).first().filterVideoSongs(hideVideoSongs)
-                    val personalized = personalizeQuickPicks(related)
-                    quickPicks.value = personalized.ifEmpty { related.shuffled().take(20) }
-                    android.util.Log.d("QP_TIMING", "[Phase1][LAST_LISTEN] relatedSongs query: ${System.currentTimeMillis() - tRelated}ms | count=${quickPicks.value?.size}")
+                val related = if (song != null && database.hasRelatedSongs(song.id)) {
+                    database.getRelatedSongs(song.id).first().filterVideoSongs(hideVideoSongs)
+                } else if (song != null) {
+                    val artistId = song.artists.firstOrNull()?.id.orEmpty()
+                    if (artistId.isNotEmpty()) {
+                        database.artistSongs(artistId).first().filterVideoSongs(hideVideoSongs)
+                    } else {
+                        emptyList()
+                    }
                 } else {
-                    android.util.Log.w("QP_TIMING", "[Phase1][LAST_LISTEN] no related songs found for song=${song?.id} — quickPicks stays null")
+                    emptyList()
+                }
+
+                val candidates = if (related.isNotEmpty()) {
+                    related
+                } else {
+                    val liked = database.likedSongsByCreateDateAsc().first().filterVideoSongs(hideVideoSongs)
+                    if (liked.isNotEmpty()) {
+                        liked
+                    } else {
+                        database.mostPlayedSongs(System.currentTimeMillis() - 86400000L * 30, limit = 20)
+                            .first().filterVideoSongs(hideVideoSongs)
+                    }
+                }
+
+                if (candidates.isNotEmpty()) {
+                    val personalized = personalizeQuickPicks(candidates)
+                    quickPicks.value = personalized.ifEmpty { candidates.shuffled().take(20) }
                 }
             }
         }
@@ -598,22 +651,59 @@ class HomeViewModel @Inject constructor(
             database.mostPlayedSongs(System.currentTimeMillis() - 86400000L * 7, limit = 5).first().take(1)
         }
 
-        if (seedSongs.isEmpty()) {
-            android.util.Log.w("QP_TIMING", "[Phase2] no seed song in events — skipping network enrichment")
-            return
+        val ytSimilarSongs = mutableListOf<Song>()
+        if (seedSongs.isNotEmpty()) {
+            for (seedSong in seedSongs) {
+                val tNext = System.currentTimeMillis()
+                val nextResult = YouTube.next(WatchEndpoint(
+                    videoId = seedSong.id,
+                    playlistId = "RDAMVM${seedSong.id}"
+                )).getOrNull()
+                android.util.Log.d("QP_TIMING", "[Phase2] YouTube.next() took ${System.currentTimeMillis() - tNext}ms")
+
+                val candidateSongs = mutableListOf<SongItem>()
+                nextResult?.items?.let { items ->
+                    candidateSongs.addAll(items.take(8))
+                }
+
+                val endpoint = nextResult?.relatedEndpoint
+                if (endpoint != null) {
+                    val tRelated = System.currentTimeMillis()
+                    YouTube.related(endpoint).onSuccess { page ->
+                        android.util.Log.d("QP_TIMING", "[Phase2] YouTube.related() took ${System.currentTimeMillis() - tRelated}ms | page.songs=${page.songs.size}")
+                        candidateSongs.addAll(page.songs.take(8))
+                    }.onFailure {
+                        android.util.Log.e("QP_TIMING", "[Phase2] YouTube.related() FAILED after ${System.currentTimeMillis() - tRelated}ms", it)
+                    }
+                }
+
+                candidateSongs.distinctBy { it.id }.forEach { ytSong ->
+                    var localSong = database.song(ytSong.id).first()
+                    if (localSong == null) {
+                        try {
+                            val mediaMetadata = ytSong.toMediaMetadata()
+                            database.insert(mediaMetadata)
+                            localSong = database.song(ytSong.id).first()
+                        } catch (_: Exception) {}
+                    }
+                    localSong?.let {
+                        if (!hideVideoSongs || !it.song.isVideo) {
+                            ytSimilarSongs.add(it)
+                        }
+                    }
+                }
+            }
         }
 
-        val ytSimilarSongs = mutableListOf<Song>()
-        for (seedSong in seedSongs) {
-            val tNext = System.currentTimeMillis()
-            val endpoint = YouTube.next(WatchEndpoint(videoId = seedSong.id)).getOrNull()?.relatedEndpoint
-            android.util.Log.d("QP_TIMING", "[Phase2] YouTube.next() took ${System.currentTimeMillis() - tNext}ms | endpoint=${endpoint?.browseId}")
-
-            if (endpoint != null) {
-                val tRelated = System.currentTimeMillis()
-                YouTube.related(endpoint).onSuccess { page ->
-                    android.util.Log.d("QP_TIMING", "[Phase2] YouTube.related() took ${System.currentTimeMillis() - tRelated}ms | page.songs=${page.songs.size}")
-                    page.songs.take(10).forEach { ytSong ->
+        // If candidates are still low (< 5), fallback to YouTube Home native Quick Picks
+        if (ytSimilarSongs.size < 5) {
+            try {
+                YouTube.home().getOrNull()?.let { homePage ->
+                    val quickPickShelf = homePage.sections.firstOrNull {
+                        it.title.contains("Quick picks", ignoreCase = true) ||
+                        it.title.contains("Listen again", ignoreCase = true)
+                    }
+                    quickPickShelf?.items?.filterIsInstance<SongItem>()?.take(15)?.forEach { ytSong ->
                         var localSong = database.song(ytSong.id).first()
                         if (localSong == null) {
                             try {
@@ -628,10 +718,8 @@ class HomeViewModel @Inject constructor(
                             }
                         }
                     }
-                }.onFailure {
-                    android.util.Log.e("QP_TIMING", "[Phase2] YouTube.related() FAILED after ${System.currentTimeMillis() - tRelated}ms", it)
                 }
-            }
+            } catch (_: Exception) {}
         }
 
         if (ytSimilarSongs.isNotEmpty()) {

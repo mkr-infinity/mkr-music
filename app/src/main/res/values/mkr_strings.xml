@@ -1140,4 +1140,6 @@
     <string name="sponsorblock_skipped_intro">Skipped intro segment</string>
     <string name="sponsorblock_skipped_outro">Skipped outro segment</string>
     <string name="sponsorblock_skipped_segment">Skipped SponsorBlock segment</string>
+    <string name="hide_speed_dial">Hide Speed dial</string>
+    <string name="hide_speed_dial_desc">Hide the Speed dial section from the home screen</string>
 </resources>

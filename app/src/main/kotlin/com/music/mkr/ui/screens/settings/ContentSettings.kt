@@ -78,6 +78,7 @@ import com.music.mkr.constants.EnableBiniLyricsKey
 import com.music.mkr.constants.HideExplicitKey
 import com.music.mkr.constants.HideVideoSongsKey
 import com.music.mkr.constants.HideYoutubeShortsKey
+import com.music.mkr.constants.HideSpeedDialKey
 import com.music.mkr.constants.AlbumCanvasEnabledKey
 import com.music.mkr.constants.LanguageCodeToName
 import com.music.mkr.constants.LyricsProviderOrderKey
@@ -202,6 +203,10 @@ fun ContentSettings(
     val (randomizeHomeOrder, onRandomizeHomeOrderChange) = rememberPreference(
         RandomizeHomeOrderKey,
         defaultValue = true
+    )
+    val (hideSpeedDial, onHideSpeedDialChange) = rememberPreference(
+        HideSpeedDialKey,
+        defaultValue = false
     )
     val (ipVersion, onIpVersionChange) = rememberEnumPreference(
         IpVersionKey,
@@ -1251,6 +1256,27 @@ fun ContentSettings(
                         )
                     },
                     onClick = { onRandomizeHomeOrderChange(!randomizeHomeOrder) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.pin),
+                    title = { Text(stringResource(R.string.hide_speed_dial)) },
+                    description = { Text(stringResource(R.string.hide_speed_dial_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = hideSpeedDial,
+                            onCheckedChange = onHideSpeedDialChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (hideSpeedDial) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onHideSpeedDialChange(!hideSpeedDial) }
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.trending_up),

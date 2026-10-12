@@ -1912,6 +1912,91 @@ class MusicService :
         }
     }
 
+    private var moodRecommendationsJob: Job? = null
+
+    /**
+     * Dynamically loads recommendations strictly aligned with the mood, genre, tempo,
+     * and artist sphere of the currently playing track.
+     */
+    fun loadMoodRecommendations(videoId: String) {
+        if (!dataStore.get(SimilarContent, true) ||
+            (dataStore.get(DisableLoadMoreWhenRepeatAllKey, false) && player.repeatMode == REPEAT_MODE_ALL)) {
+            return
+        }
+
+        moodRecommendationsJob?.cancel()
+        moodRecommendationsJob = scope.launch(Dispatchers.IO + SilentHandler) {
+            try {
+                val hideExplicit = dataStore.get(HideExplicitKey, false)
+                val hideVideoSongs = dataStore.get(HideVideoSongsKey, false)
+
+                // 1. YouTube Radio Endpoint for the exact song:
+                // RDAMVM$videoId creates YouTube Music's mood-clustered radio stream
+                val radioResult = YouTube.next(WatchEndpoint(
+                    videoId = videoId,
+                    playlistId = "RDAMVM$videoId"
+                )).getOrNull()
+
+                val radioItems = radioResult?.items
+                    ?.filter { it.id != videoId }
+                    ?.map { it.toMediaItem() }
+                    ?.filterExplicit(hideExplicit)
+                    ?.filterVideoSongs(hideVideoSongs)
+                    ?: emptyList()
+
+                // 2. Related songs endpoint for genre and stylistic counterparts
+                val relatedItems = radioResult?.relatedEndpoint?.let { endpoint ->
+                    YouTube.related(endpoint).getOrNull()?.songs
+                        ?.filter { it.id != videoId }
+                        ?.map { it.toMediaItem() }
+                        ?.filterExplicit(hideExplicit)
+                        ?.filterVideoSongs(hideVideoSongs)
+                } ?: emptyList()
+
+                // 3. Combine mood cluster and related items
+                val combined = (radioItems + relatedItems).distinctBy { it.mediaId }
+
+                // 4. Boost songs from artists the user listens to frequently in this genre/mood
+                val lovedArtists = try {
+                    database.mostPlayedArtists(System.currentTimeMillis() - 86400000L * 60, limit = 20).first()
+                        .map { it.artist.name.lowercase().trim() }
+                        .filter { it.isNotEmpty() }
+                        .toSet()
+                } catch (_: Exception) {
+                    emptySet()
+                }
+
+                val resultList = if (lovedArtists.isNotEmpty() && combined.size > 4) {
+                    val familiar = combined.filter { item ->
+                        val artist = item.mediaMetadata.artist?.toString()?.lowercase() ?: ""
+                        lovedArtists.any { it in artist || artist in it }
+                    }
+                    val discovery = combined.filter { it !in familiar }
+                    // Weighted interleaving: 1 familiar artist in this mood : 2 fresh tracks in this mood
+                    val interleaved = mutableListOf<MediaItem>()
+                    var fIdx = 0
+                    var dIdx = 0
+                    while (interleaved.size < combined.size && (fIdx < familiar.size || dIdx < discovery.size)) {
+                        if (fIdx < familiar.size) interleaved.add(familiar[fIdx++])
+                        if (dIdx < discovery.size) interleaved.add(discovery[dIdx++])
+                        if (dIdx < discovery.size) interleaved.add(discovery[dIdx++])
+                    }
+                    if (interleaved.isNotEmpty()) interleaved else combined
+                } else {
+                    combined
+                }
+
+                if (resultList.isNotEmpty()) {
+                    withContext(Dispatchers.Main) {
+                        automixItems.value = resultList
+                    }
+                }
+            } catch (e: Exception) {
+                Timber.tag(TAG).w(e, "Failed to load mood recommendations for videoId: $videoId")
+            }
+        }
+    }
+
     fun addToQueueAutomix(
         item: MediaItem,
         position: Int,
@@ -2272,6 +2357,9 @@ class MusicService :
         delayedCacheJob?.cancel()
         if (player.isPlaying && mediaItem != null) {
             scheduleDelayedCache(mediaItem.mediaId)
+        }
+        if (mediaItem != null) {
+            loadMoodRecommendations(mediaItem.mediaId)
         }
         // Force Repeat One if the player ignored it and auto-advanced
         if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {

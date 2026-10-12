@@ -120,6 +120,7 @@ import com.music.mkr.constants.InnerTubeCookieKey
 import com.music.mkr.constants.ListItemHeight
 import com.music.mkr.constants.ListThumbnailSize
 import com.music.mkr.constants.RandomizeHomeOrderKey
+import com.music.mkr.constants.HideSpeedDialKey
 import com.music.mkr.constants.SmallGridThumbnailHeight
 import com.music.mkr.constants.ThumbnailCornerRadius
 import com.music.mkr.db.entities.Album
@@ -543,6 +544,7 @@ fun HomeScreen(
     val accountImageUrl by viewModel.accountImageUrl.collectAsState()
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
     val (randomizeHomeOrder) = rememberPreference(RandomizeHomeOrderKey, true)
+    val (hideSpeedDial) = rememberPreference(HideSpeedDialKey, false)
 
     val shouldShowWrappedCard by viewModel.showWrappedCard.collectAsState()
     val wrappedState by viewModel.wrappedManager.state.collectAsState()
@@ -757,6 +759,7 @@ fun HomeScreen(
 
     val homeSections = remember(
         randomizeHomeOrder,
+        hideSpeedDial,
         randomSeed,
         selectedChip,
         speedDialItems,
@@ -773,7 +776,7 @@ fun HomeScreen(
         val list = mutableListOf<HomeSection>()
         val chipActive = selectedChip != null
 
-        if (!chipActive && speedDialItems.isNotEmpty()) list.add(HomeSection.SpeedDial)
+        if (!chipActive && !hideSpeedDial && speedDialItems.isNotEmpty()) list.add(HomeSection.SpeedDial)
         if (!chipActive && quickPicks?.isNotEmpty() == true) list.add(HomeSection.QuickPicks)
         if (!chipActive && coversAndRemixes?.items?.isNotEmpty() == true) list.add(HomeSection.CoversAndRemixes)
         if (!chipActive && communityPlaylists?.isNotEmpty() == true) list.add(HomeSection.FromTheCommunity)

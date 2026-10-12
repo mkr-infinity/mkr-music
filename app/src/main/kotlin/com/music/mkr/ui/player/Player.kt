@@ -348,6 +348,7 @@ fun BottomSheetPlayer(
     val playbackState by playerConnection.playbackState.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val currentSong by playerConnection.currentSong.collectAsState(initial = null)
+    val currentFormat by playerConnection.currentFormat.collectAsState(initial = null)
     val automix by playerConnection.service.automixItems.collectAsState()
     val repeatMode by playerConnection.repeatMode.collectAsState()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
@@ -2078,47 +2079,24 @@ fun BottomSheetPlayer(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
-                                    val infiniteTransition = rememberInfiniteTransition(label = "QualityIconTransition")
-                                    val animatedRotation by infiniteTransition.animateFloat(
-                                        initialValue = 0f,
-                                        targetValue = 360f,
-                                        animationSpec = infiniteRepeatable(
-                                            animation = tween(2000, easing = LinearEasing),
-                                            repeatMode = RepeatMode.Restart
-                                        ),
-                                        label = "QualityIconRotation"
-                                    )
-
-                                    val iconBrush = Brush.sweepGradient(
-                                        colors = listOf(
-                                            Color.Transparent,
-                                            TextBackgroundColor.copy(alpha = 1.0f),
-                                            Color.Transparent
-                                        )
-                                    )
-
                                     Icon(
                                         painter = painterResource(R.drawable.stream_old_player),
                                         contentDescription = null,
-                                        tint = Color.Unspecified,
-                                        modifier = Modifier
-                                            .size(12.dp)
-                                            .graphicsLayer(alpha = 0.99f)
-                                            .drawWithCache {
-                                                onDrawWithContent {
-                                                    drawContent()
-                                                    rotate(animatedRotation) {
-                                                        drawRect(iconBrush, blendMode = BlendMode.SrcIn)
-                                                    }
-                                                }
-                                            }
+                                        tint = TextBackgroundColor.copy(alpha = 0.85f),
+                                        modifier = Modifier.size(12.dp)
                                     )
+                                    val bitrateKbps = currentFormat?.bitrate?.takeIf { it > 0 }?.let { it / 1000 }
+                                    val qualityText = if (bitrateKbps != null) {
+                                        "$bitrateKbps KBPS"
+                                    } else {
+                                        when (audioQuality) {
+                                            AudioQuality.AUTO -> stringResource(R.string.audio_quality_auto).uppercase()
+                                            AudioQuality.HIGH -> stringResource(R.string.audio_quality_high).uppercase()
+                                            AudioQuality.LOW -> stringResource(R.string.audio_quality_low).uppercase()
+                                        }
+                                    }
                                     Text(
-                                        text = when (audioQuality) {
-                                            AudioQuality.AUTO -> stringResource(R.string.audio_quality_auto)
-                                            AudioQuality.HIGH -> stringResource(R.string.audio_quality_high)
-                                            AudioQuality.LOW -> stringResource(R.string.audio_quality_low)
-                                        }.uppercase(),
+                                        text = qualityText,
                                         style = MaterialTheme.typography.labelSmall.copy(
                                             fontSize = 10.sp,
                                             fontWeight = FontWeight.Bold,

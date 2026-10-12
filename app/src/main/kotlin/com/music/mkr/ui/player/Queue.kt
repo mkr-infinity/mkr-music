@@ -1368,10 +1368,12 @@ fun Queue(
 
                     if (automix.isNotEmpty()) {
                         item(key = "automix_divider") {
-
                             Text(
                                 text = stringResource(R.string.similar_content),
-                                modifier = Modifier.padding(start = 16.dp),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
                             )
                         }
 
@@ -1419,7 +1421,14 @@ fun Queue(
                                         Modifier
                                             .fillMaxWidth()
                                             .combinedClickable(
-                                                onClick = {},
+                                                onClick = {
+                                                    if (!isListenTogetherGuest) {
+                                                        playerConnection.service.playNextAutomix(
+                                                            item,
+                                                            index,
+                                                        )
+                                                    }
+                                                },
                                                 onLongClick = {
                                                     menuState.show {
                                                         QueueMenu(
