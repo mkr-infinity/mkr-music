@@ -59,6 +59,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Fill
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -326,38 +339,169 @@ private fun DeveloperHeroCard(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 5. Support Capsule inside the card
-            Surface(
+            // 5. Support Button with animated chainsaw spike border inside the card
+            ChainsawSupportButton(onClick = onSupportClick)
+        }
+    }
+}
+
+@Composable
+private fun ChainsawSupportButton(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "chainsaw_transition")
+    val phase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2600, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "chainsaw_phase"
+    )
+
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val trackBorderColor = primaryColor.copy(alpha = 0.55f)
+    val spikeColor = primaryColor
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp, horizontal = 2.dp)
+            .drawWithContent {
+                drawContent()
+
+                val inset = 4.dp.toPx()
+                val w = size.width - 2 * inset
+                val h = size.height - 2 * inset
+                if (w > 0 && h > 0) {
+                    val r = h / 2f
+                    val straightLen = (w - 2 * r).coerceAtLeast(0f)
+                    val arcLen = Math.PI.toFloat() * r
+                    val perimeter = 2 * straightLen + 2 * arcLen
+
+                    // Draw the smooth guide track along the perimeter
+                    val strokeWidth = 1.5.dp.toPx()
+                    drawRoundRect(
+                        color = trackBorderColor,
+                        topLeft = Offset(inset, inset),
+                        size = Size(w, h),
+                        cornerRadius = CornerRadius(r, r),
+                        style = Stroke(width = strokeWidth)
+                    )
+
+                    // Draw moving chainsaw teeth/spikes around the track
+                    val toothSpacing = 16.dp.toPx()
+                    val toothCount = (perimeter / toothSpacing).toInt().coerceAtLeast(14)
+                    val step = perimeter / toothCount
+                    val toothHeight = 3.8.dp.toPx()
+                    val toothBack = 3.2.dp.toPx()
+                    val toothFwd = 2.2.dp.toPx()
+
+                    fun getTrackPoint(dist: Float): Triple<Offset, Offset, Offset> {
+                        val d = (dist % perimeter + perimeter) % perimeter
+                        return when {
+                            d <= straightLen -> {
+                                val pt = Offset(inset + r + d, inset)
+                                val tang = Offset(1f, 0f)
+                                val norm = Offset(0f, -1f)
+                                Triple(pt, tang, norm)
+                            }
+                            d <= straightLen + arcLen -> {
+                                val s = d - straightLen
+                                val theta = -Math.PI.toFloat() / 2f + (s / r)
+                                val cosT = kotlin.math.cos(theta)
+                                val sinT = kotlin.math.sin(theta)
+                                val pt = Offset(inset + (w - r) + r * cosT, inset + r + r * sinT)
+                                val tang = Offset(-sinT, cosT)
+                                val norm = Offset(cosT, sinT)
+                                Triple(pt, tang, norm)
+                            }
+                            d <= 2 * straightLen + arcLen -> {
+                                val s = d - (straightLen + arcLen)
+                                val pt = Offset(inset + (w - r) - s, inset + h)
+                                val tang = Offset(-1f, 0f)
+                                val norm = Offset(0f, 1f)
+                                Triple(pt, tang, norm)
+                            }
+                            else -> {
+                                val s = d - (2 * straightLen + arcLen)
+                                val theta = Math.PI.toFloat() / 2f + (s / r)
+                                val cosT = kotlin.math.cos(theta)
+                                val sinT = kotlin.math.sin(theta)
+                                val pt = Offset(inset + r + r * cosT, inset + r + r * sinT)
+                                val tang = Offset(-sinT, cosT)
+                                val norm = Offset(cosT, sinT)
+                                Triple(pt, tang, norm)
+                            }
+                        }
+                    }
+
+                    val spikePath = Path()
+                    for (i in 0 until toothCount) {
+                        val currentDist = (i + phase) * step
+                        val (basePt, tang, norm) = getTrackPoint(currentDist)
+
+                        val backPt = Offset(
+                            basePt.x - tang.x * toothBack,
+                            basePt.y - tang.y * toothBack
+                        )
+                        val tipPt = Offset(
+                            basePt.x + tang.x * (toothFwd * 0.45f) + norm.x * toothHeight,
+                            basePt.y + tang.y * (toothFwd * 0.45f) + norm.y * toothHeight
+                        )
+                        val frontPt = Offset(
+                            basePt.x + tang.x * toothFwd,
+                            basePt.y + tang.y * toothFwd
+                        )
+
+                        spikePath.reset()
+                        spikePath.moveTo(backPt.x, backPt.y)
+                        spikePath.lineTo(tipPt.x, tipPt.y)
+                        spikePath.lineTo(frontPt.x, frontPt.y)
+                        spikePath.close()
+
+                        drawPath(
+                            path = spikePath,
+                            color = spikeColor,
+                            style = Fill
+                        )
+                    }
+                }
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(4.dp)
+                .clip(RoundedCornerShape(50.dp))
+                .clickable(onClick = onClick),
+            shape = RoundedCornerShape(50.dp),
+            color = MaterialTheme.colorScheme.primaryContainer,
+            tonalElevation = 2.dp
+        ) {
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(50.dp))
-                    .clickable(onClick = onSupportClick),
-                shape = RoundedCornerShape(50.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
-                tonalElevation = 2.dp
+                    .padding(horizontal = 20.dp, vertical = 13.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 13.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.buymeacoffee),
-                        contentDescription = "Support",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Donate & Support",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
+                Icon(
+                    painter = painterResource(R.drawable.buymeacoffee),
+                    contentDescription = "Support",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    text = "Donate & Support",
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
         }
     }

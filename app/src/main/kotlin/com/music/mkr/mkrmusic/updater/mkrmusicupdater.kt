@@ -133,64 +133,10 @@ fun UpdateScreen(navController: NavHostController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf<ViviUpdateStatus>(ViviUpdateStatus.NoUpdate(BuildConfig.VERSION_NAME)) }
-    var isDownloading by remember { mutableStateOf(false) }
-    var downloadProgress by remember { mutableStateOf(0f) }
-    var isDownloadComplete by remember { mutableStateOf(false) }
-    var downloadedFile by remember { mutableStateOf<File?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     val currentVersion = BuildConfig.VERSION_NAME
     val autoUpdateCheckEnabled = getAutoUpdateCheckSetting(context)
-
-    LaunchedEffect(Unit) {
-        DownloadNotificationManager.initialize(context)
-    }
-
-    // Observe WorkManager for download progress
-    LaunchedEffect(Unit) {
-        WorkManager.getInstance(context)
-            .getWorkInfosForUniqueWorkLiveData("update_download")
-            .observeForever { workInfos ->
-                val workInfo = workInfos?.firstOrNull() ?: return@observeForever
-
-                when (workInfo.state) {
-                    WorkInfo.State.RUNNING -> {
-                        isDownloading = true
-                        downloadProgress = workInfo.progress.getFloat("progress", 0f)
-                    }
-                    WorkInfo.State.SUCCEEDED -> {
-                        isDownloading = false
-                        isDownloadComplete = true
-                        val filePath = workInfo.outputData.getString("file_path")
-                        if (filePath != null) {
-                            downloadedFile = File(filePath)
-                        }
-                    }
-                    WorkInfo.State.FAILED -> {
-                        isDownloading = false
-                        scope.launch {
-                            snackbarHostState.showSnackbar(context.getString(R.string.download_failed))
-                        }
-                    }
-                    WorkInfo.State.CANCELLED -> {
-                        isDownloading = false
-                        downloadProgress = 0f
-                    }
-                    else -> {}
-                }
-            }
-    }
-
-    // Check if downloaded file still exists
-    LaunchedEffect(isDownloadComplete, downloadedFile) {
-        if (isDownloadComplete && downloadedFile != null) {
-            if (!downloadedFile!!.exists()) {
-                isDownloadComplete = false
-                downloadedFile = null
-                downloadProgress = 0f
-            }
-        }
-    }
 
     fun triggerUpdateCheck() {
         status = ViviUpdateStatus.Checking
@@ -273,7 +219,7 @@ fun UpdateScreen(navController: NavHostController) {
                             val btnText = if (currentStatus is ViviUpdateStatus.Error) stringResource(R.string.try_again) else stringResource(R.string.check_for_update)
                             Button(
                                 onClick = { triggerUpdateCheck() },
-                                enabled = currentStatus !is ViviUpdateStatus.Checking && !isDownloading,
+                                enabled = currentStatus !is ViviUpdateStatus.Checking,
                                 modifier = Modifier.fillMaxWidth().height(56.dp)
                             ) {
                                 Text(
@@ -288,68 +234,37 @@ fun UpdateScreen(navController: NavHostController) {
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                if (!isDownloading || isDownloadComplete) {
-                                    Button(
-                                        onClick = {
-                                            if (isDownloadComplete) {
-                                                val file = downloadedFile
-                                                if (file == null || !file.exists()) {
-                                                    isDownloadComplete = false
-                                                    downloadedFile = null
-                                                    downloadProgress = 0f
-                                                    return@Button
-                                                }
-                                                file.let { f ->
-                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                                                        if (!context.packageManager.canRequestPackageInstalls()) {
-                                                            val intent = Intent(android.provider.Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES).apply {
-                                                                data = Uri.parse("package:${context.packageName}")
-                                                            }
-                                                            context.startActivity(intent)
-                                                            return@let
-                                                        }
-                                                    }
-                                                    val uri = FileProvider.getUriForFile(context, "${context.packageName}.FileProvider", file)
-                                                    val installIntent = Intent(Intent.ACTION_VIEW).apply {
-                                                        setDataAndType(uri, "application/vnd.android.package-archive")
-                                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                                        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                                                    }
-                                                    ContextCompat.startActivity(context, installIntent, null)
-                                                }
-                                                val targetApkName = "mkr-music-universal.apk"
-                                                val urlToDownload = currentStatus.apkUrl ?: "https://github.com/mkr-infinity/mkr-music/releases/download/${currentStatus.version}/$targetApkName"
-                                                
-                                                val downloadRequest = OneTimeWorkRequestBuilder<UpdateDownloadWorker>()
-                                                    .setInputData(workDataOf("apk_url" to urlToDownload, "version" to currentStatus.version, "file_size" to currentStatus.size))
-                                                    .addTag("update_download")
-                                                    .build()
-                                                WorkManager.getInstance(context).enqueueUniqueWork("update_download", ExistingWorkPolicy.REPLACE, downloadRequest)
-                                                isDownloading = true
-                                            }
-                                        },
-                                        modifier = Modifier.fillMaxWidth().height(56.dp)
-                                    ) {
-                                        Text(
-                                            text = if (isDownloadComplete) stringResource(R.string.install) else "Download and install",
-                                            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
-                                        )
-                                    }
-                                }
-
-                                OutlinedButton(
+                                Button(
                                     onClick = {
-                                        if (isDownloading && !isDownloadComplete) {
-                                            WorkManager.getInstance(context).cancelUniqueWork("update_download")
-                                            isDownloading = false
-                                        } else {
-                                            navController.navigateUp()
+                                        val releaseUrl = "https://github.com/mkr-infinity/mkr-music/releases/tag/${currentStatus.version}"
+                                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(releaseUrl))
+                                        try {
+                                            context.startActivity(intent)
+                                        } catch (_: Exception) {
+                                            val fallbackIntent = Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/mkr-infinity/mkr-music/releases"))
+                                            context.startActivity(fallbackIntent)
                                         }
                                     },
                                     modifier = Modifier.fillMaxWidth().height(56.dp)
                                 ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.open_in_new_icon),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = if (isDownloading && !isDownloadComplete) "Pause" else stringResource(R.string.later),
+                                        text = "View Release on GitHub",
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                                    )
+                                }
+
+                                OutlinedButton(
+                                    onClick = { navController.navigateUp() },
+                                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.later),
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                                     )
                                 }
@@ -379,7 +294,7 @@ fun UpdateScreen(navController: NavHostController) {
                 item {
                     val titleText = when (status) {
                         is ViviUpdateStatus.Checking -> "Checking for update..."
-                        is ViviUpdateStatus.Available -> if (isDownloading) "Installing system update..." else "System update\navailable"
+                        is ViviUpdateStatus.Available -> "System update\navailable"
                         is ViviUpdateStatus.NoUpdate -> "Your app is up to date"
                         is ViviUpdateStatus.Error -> "Update error"
                         else -> "System update"
@@ -433,28 +348,6 @@ fun UpdateScreen(navController: NavHostController) {
                                 modifier = Modifier.fillMaxWidth(),
                                 stroke = customStroke,
                                 trackStroke = customStroke
-                            )
-                        }
-                    }
-                } else if (status is ViviUpdateStatus.Available && isDownloading) {
-                    item {
-                        val strokeWidthPx = with(LocalDensity.current) { 6.dp.toPx() }
-                        val customStroke = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
-                        Column(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            LinearWavyProgressIndicator(
-                                modifier = Modifier.fillMaxWidth(),
-                                progress = { downloadProgress },
-                                stroke = customStroke,
-                                trackStroke = customStroke
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "Downloading and installing update",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
                     }

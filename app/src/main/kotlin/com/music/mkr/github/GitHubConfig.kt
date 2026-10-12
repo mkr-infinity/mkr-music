@@ -14,7 +14,7 @@ object GitHubConfig {
     const val DEV_TELEGRAM_URL = "https://t.me/mkr_infinity"
     const val DEV_BUYMEACOFFEE_URL = "https://buymeacoffee.com/mkr_infinity"
     const val DEV_BUYMEATEA_URL = "https://buymeatea.in/mkr_infinity"
-    const val DEV_UPI_ID = "9650753345@kotak"
+    const val DEV_UPI_ID = "mkr-infinity@ybl"
     const val DEV_UPI_NAME = "Mohammad Kaif Raja"
     const val DEV_UPI_NOTE = "Support MKR Music"
     const val VERSION_LABEL = "v6.0.8 Stable"

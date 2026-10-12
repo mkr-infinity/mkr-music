@@ -1,5 +1,8 @@
 package com.music.mkr.ui.screens.settings
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -10,6 +13,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -24,53 +28,33 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import android.content.Intent
-import android.net.Uri
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.navigation.NavController
+import com.music.mkr.BuildConfig
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.R
-import com.music.mkr.ui.component.IconButton
-import com.music.mkr.ui.component.ExpressiveSettingGroup
-import com.music.mkr.ui.component.Material3SettingsItem
-import com.music.mkr.mkrmusic.component.UpdateInfoDialog
-import com.music.mkr.ui.utils.backToMain
-import com.music.mkr.mkrmusic.updater.getAutoUpdateCheckSetting
-import com.music.mkr.mkrmusic.updater.saveAutoUpdateCheckSetting
-import com.music.mkr.mkrmusic.updater.getUpdateAvailableState
-import com.music.mkr.mkrmusic.updater.saveUpdateAvailableState
-import android.widget.Toast
-import androidx.compose.ui.res.pluralStringResource
-import com.music.mkr.mkrmusic.updater.getDownloadedApkCount
-import com.music.mkr.mkrmusic.updater.clearDownloadedApks
-import com.music.mkr.mkrmusic.updater.getBetaUpdatesSetting
-import com.music.mkr.mkrmusic.updater.saveBetaUpdatesSetting
-import com.music.mkr.mkrmusic.updater.autoClearOldApks
-import androidx.compose.material3.MaterialTheme
-import com.music.mkr.BuildConfig
-import com.music.mkr.utils.rememberPreference
 import com.music.mkr.constants.EnableNotificationsKey
-import android.os.Build
-import androidx.core.content.ContextCompat
-import android.content.pm.PackageManager
-import android.Manifest
-import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.Lifecycle
 import com.music.mkr.mkrmusic.updater.checkForUpdate
-
-//here b5.0.1 must be used for the beta tag
+import com.music.mkr.mkrmusic.updater.getAutoUpdateCheckSetting
+import com.music.mkr.mkrmusic.updater.getUpdateAvailableState
+import com.music.mkr.mkrmusic.updater.saveAutoUpdateCheckSetting
+import com.music.mkr.mkrmusic.updater.saveUpdateAvailableState
+import com.music.mkr.ui.component.ExpressiveSettingGroup
+import com.music.mkr.ui.component.IconButton
+import com.music.mkr.ui.component.Material3SettingsItem
+import com.music.mkr.ui.utils.backToMain
+import com.music.mkr.utils.rememberPreference
 
 /**
  * MKR Music Project (C) 2026
  * Licensed under GPL-3.0 | See git history for contributors
  */
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -81,8 +65,6 @@ fun UpdateSettings(
     val context = LocalContext.current
     var autoUpdateEnabled by remember { mutableStateOf(getAutoUpdateCheckSetting(context)) }
     var isUpdateAvailable by remember { mutableStateOf(getUpdateAvailableState(context)) }
-    var apkCount by remember { mutableStateOf(getDownloadedApkCount(context)) }
-    var showInfoDialog by remember { mutableStateOf(false) }
 
     // Detect system permission state dynamically
     var hasSystemPermission by remember {
@@ -136,8 +118,6 @@ fun UpdateSettings(
     }
 
     LaunchedEffect(Unit) {
-        autoClearOldApks(context)
-        apkCount = getDownloadedApkCount(context)
         if (autoUpdateEnabled) {
             checkForUpdate(
                 context = context,
@@ -147,10 +127,6 @@ fun UpdateSettings(
                 onError = {}
             )
         }
-    }
-
-    if (showInfoDialog) {
-        UpdateInfoDialog(onDismiss = { showInfoDialog = false })
     }
 
     Column(
@@ -192,14 +168,6 @@ fun UpdateSettings(
                     icon = painterResource(R.drawable.info),
                     title = { Text(stringResource(R.string.app_version)) },
                     trailingContent = { Text(BuildConfig.VERSION_NAME) }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.stockpot_flavour),
-                    title = { Text(stringResource(R.string.flavour)) },
-                    trailingContent = {
-                        val variant = if (BuildConfig.CAST_AVAILABLE) "GMS" else "FOSS"
-                        Text(variant)
-                    }
                 )
             )
         )
@@ -242,7 +210,6 @@ fun UpdateSettings(
                     }
                 ),
 
-
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.notification),
                     title = { Text(stringResource(R.string.notification_settings)) },
@@ -256,48 +223,6 @@ fun UpdateSettings(
                     },
                     onClick = {
                         navController.navigate("settings/update/notification_permission")
-                    }
-                )
-            )
-        )
-
-        Spacer(modifier = Modifier.height(10.dp))
-
-        ExpressiveSettingGroup(
-            items = listOf(
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.delete),
-                    title = { Text(stringResource(R.string.clear_downloaded_updates)) },
-                    description = if (apkCount > 0) {
-                        {
-                            Text(
-                                text = pluralStringResource(R.plurals.n_apk_found, apkCount, apkCount),
-                                color = MaterialTheme.colorScheme.error
-                            )
-                        }
-                    } else null,
-                    trailingContent = {
-                        IconButton(
-                            onClick = { showInfoDialog = true },
-                            onLongClick = {}
-                        ) {
-                            Icon(
-                                painterResource(R.drawable.info),
-                                contentDescription = null,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                    },
-                    onClick = {
-                        if (apkCount > 0) {
-                            if (clearDownloadedApks(context)) {
-                                apkCount = 0
-                                Toast.makeText(context, "Deleted successfully", Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(context, "Failed to delete some files", Toast.LENGTH_SHORT).show()
-                                apkCount = getDownloadedApkCount(context)
-                            }
-                        }
                     }
                 )
             )
@@ -327,9 +252,7 @@ fun UpdateSettings(
     }
 
     TopAppBar(
-        title = {
-//            Text(stringResource(R.string.update_settings_title))
-        },
+        title = {},
         navigationIcon = {
             IconButton(
                 onClick = navController::navigateUp,

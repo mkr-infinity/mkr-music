@@ -95,6 +95,9 @@ import com.music.mkr.constants.CrossfadeGaplessKey
 import com.music.mkr.constants.CrossfadeManualSkipKey
 import com.music.mkr.constants.DisableLoadMoreWhenRepeatAllKey
 import com.music.mkr.constants.DisableSongCacheKey
+import com.music.mkr.constants.SongCacheDelaySecondsKey
+import androidx.media3.datasource.DataSpec
+import androidx.media3.datasource.cache.CacheWriter
 import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
@@ -2265,6 +2268,10 @@ class MusicService :
         mediaItem: MediaItem?,
         reason: Int,
     ) {
+        delayedCacheJob?.cancel()
+        if (player.isPlaying && mediaItem != null) {
+            scheduleDelayedCache(mediaItem.mediaId)
+        }
         // Force Repeat One if the player ignored it and auto-advanced
         if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
             if (previousMediaItemIndex != C.INDEX_UNSET && previousMediaItemIndex < player.mediaItemCount) {
@@ -2476,6 +2483,17 @@ class MusicService :
 
         if (playWhenReady) {
             setupLoudnessEnhancer()
+        }
+    }
+
+    override fun onIsPlayingChanged(isPlaying: Boolean) {
+        if (isPlaying) {
+            val mediaId = player.currentMediaItem?.mediaId
+            if (mediaId != null) {
+                scheduleDelayedCache(mediaId)
+            }
+        } else {
+            delayedCacheJob?.cancel()
         }
     }
 
@@ -3202,9 +3220,66 @@ class MusicService :
                         .Factory()
                         .setCache(playerCache)
                         .setUpstreamDataSourceFactory(upstreamFactory)
+                        .setCacheWriteDataSinkFactory(null)
                 )
                 .setCacheWriteDataSinkFactory(null)
                 .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
+        }
+    }
+
+    private var delayedCacheJob: Job? = null
+
+    private fun scheduleDelayedCache(mediaId: String) {
+        delayedCacheJob?.cancel()
+        if (dataStore.get(DisableSongCacheKey, false)) return
+
+        val delaySeconds = dataStore.get(SongCacheDelaySecondsKey, 10).coerceIn(5, 90)
+        delayedCacheJob = scope.launch(Dispatchers.IO) {
+            delay(delaySeconds * 1000L)
+
+            val isStillPlaying = withContext(Dispatchers.Main) {
+                player.isPlaying && player.currentMediaItem?.mediaId == mediaId
+            }
+            if (!isStillPlaying) return@launch
+            if (playerCache.isCached(mediaId, 0, 1024) || downloadCache.isCached(mediaId, 0, 1024)) return@launch
+
+            val cachedUrl = songUrlCache[mediaId]?.first
+            val streamUrl = cachedUrl ?: try {
+                val playbackData = YTPlayerUtils.playerResponseForPlayback(mediaId, audioQuality = audioQuality).getOrNull()
+                playbackData?.streamUrl
+            } catch (_: Exception) {
+                null
+            }
+
+            if (streamUrl != null) {
+                try {
+                    val upstreamFactory = OkHttpDataSource.Factory(
+                        OkHttpClient.Builder()
+                            .proxy(YouTube.proxy)
+                            .build()
+                    )
+                    val cacheDataSource = CacheDataSource.Factory()
+                        .setCache(playerCache)
+                        .setUpstreamDataSourceFactory(upstreamFactory)
+                        .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
+                        .createDataSource()
+
+                    val dataSpec = DataSpec.Builder()
+                        .setUri(streamUrl.toUri())
+                        .setCustomCacheKey(mediaId)
+                        .build()
+
+                    val buffer = ByteArray(64 * 1024)
+                    val writer = CacheWriter(cacheDataSource, dataSpec, buffer, null)
+                    writer.cache()
+
+                    val maxSongCount = dataStore.get(MaxSongCacheCountKey, 100)
+                    SongCacheManager.trimStreamingCache(playerCache, database, maxSongCount)
+                    Timber.tag("MusicService").d("Successfully background-cached $mediaId after $delaySeconds seconds")
+                } catch (e: Exception) {
+                    Timber.tag("MusicService").w(e, "Background cacheWriter failed for $mediaId")
+                }
+            }
         }
     }
 

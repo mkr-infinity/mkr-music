@@ -57,6 +57,7 @@ import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.DisableSongCacheKey
+import com.music.mkr.constants.SongCacheDelaySecondsKey
 import com.music.mkr.constants.MaxImageCacheSizeKey
 import com.music.mkr.constants.MaxSongCacheSizeKey
 import com.music.mkr.constants.MaxSongCacheCountKey
@@ -104,6 +105,10 @@ fun StorageSettings(
     val (disableSongCache, onDisableSongCacheChange) = rememberPreference(
         key = DisableSongCacheKey,
         defaultValue = false
+    )
+    val (songCacheDelaySeconds, onSongCacheDelaySecondsChange) = rememberPreference(
+        key = SongCacheDelaySecondsKey,
+        defaultValue = 10
     )
     val (maxSongCacheCount, onMaxSongCacheCountChange) = rememberPreference(
         key = MaxSongCacheCountKey,
@@ -501,6 +506,55 @@ fun StorageSettings(
                                         database.query { update(song.song.copy(dateDownload = null)) }
                                     }
                                 } catch (_: Exception) {}
+                            }
+                        }
+                    }
+                ),
+                Material3SettingsItem(
+                    key = "storage_cache_delay",
+                    enabled = !disableSongCache,
+                    icon = painterResource(R.drawable.timer),
+                    title = { Text("Cache After Listening") },
+                    description = {
+                        if (disableSongCache) {
+                            Text(
+                                text = "Inactive (Song caching is disabled)",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
+                        } else {
+                            Column {
+                                val delaySec = songCacheDelaySeconds.coerceIn(5, 90)
+                                val formattedDelay = when {
+                                    delaySec == 10 -> "10 seconds (Default - Instant Start)"
+                                    delaySec < 60 -> "$delaySec seconds"
+                                    delaySec == 60 -> "1 minute"
+                                    delaySec == 90 -> "1.5 minutes (Max)"
+                                    else -> "1m ${delaySec - 60}s"
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = formattedDelay,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.primary
+                                    )
+                                }
+                                Slider(
+                                    value = delaySec.toFloat(),
+                                    onValueChange = { onSongCacheDelaySecondsChange(it.roundToInt()) },
+                                    valueRange = 5f..90f,
+                                    steps = 16
+                                )
+                                Text(
+                                    text = "Plays songs instantly without buffering lag. Caching begins in the background only after listening for the selected time.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                             }
                         }
                     }

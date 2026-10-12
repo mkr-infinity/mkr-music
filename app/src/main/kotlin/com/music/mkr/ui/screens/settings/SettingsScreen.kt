@@ -426,6 +426,62 @@ fun SettingsScreen(
                 route = "settings",
                 targetKey = "support_report_problem",
                 keywords = listOf("bug", "issue", "problem", "error", "crash", "report", "github")
+            ),
+
+            // --- Granular Content, Filters & Storage Controls ---
+            SearchableSetting(
+                title = "Hide Player Thumbnail",
+                description = "Hide album art thumbnail in player view",
+                category = "Appearance",
+                iconRes = R.drawable.hide_image,
+                route = "settings/appearance",
+                targetKey = "appearance_hide_thumbnail",
+                keywords = listOf("hide", "player", "thumbnail", "album art", "cover", "image")
+            ),
+            SearchableSetting(
+                title = "Hide Explicit Songs",
+                description = "Filter and hide songs with explicit content advisory",
+                category = "Content",
+                iconRes = R.drawable.explicit,
+                route = "settings/content",
+                targetKey = "content_hide_explicit",
+                keywords = listOf("hide", "explicit", "parental", "filter", "curse", "songs")
+            ),
+            SearchableSetting(
+                title = "Hide Video Songs",
+                description = "Filter out and hide music video tracks from results and feeds",
+                category = "Content",
+                iconRes = R.drawable.slow_motion_video,
+                route = "settings/content",
+                targetKey = "content_hide_video",
+                keywords = listOf("hide", "video", "songs", "music videos", "filter")
+            ),
+            SearchableSetting(
+                title = "Hide YouTube Shorts",
+                description = "Hide YouTube Shorts content from queries and home feed",
+                category = "Content",
+                iconRes = R.drawable.hide_image,
+                route = "settings/content",
+                targetKey = "content_hide_shorts",
+                keywords = listOf("hide", "youtube", "shorts", "reels", "filter")
+            ),
+            SearchableSetting(
+                title = "Cache After Listening",
+                description = "Delay song caching (5s–90s) for instant lag-free playback start",
+                category = "Storage & Cache",
+                iconRes = R.drawable.timer,
+                route = "settings/storage",
+                targetKey = "storage_cache_delay",
+                keywords = listOf("cache", "delay", "storage", "instant", "seconds", "fast", "buffer")
+            ),
+            SearchableSetting(
+                title = "Disable Song Caching",
+                description = "Prevent streaming tracks from caching to save disk space",
+                category = "Storage & Cache",
+                iconRes = R.drawable.cached,
+                route = "settings/storage",
+                targetKey = "storage_disable_cache",
+                keywords = listOf("disable", "cache", "song", "storage", "streaming", "disk")
             )
         )
     }
@@ -510,12 +566,14 @@ fun SettingsScreen(
         if (searchQuery.isNotBlank()) {
             val filtered = remember(searchQuery) {
                 val query = searchQuery.trim().lowercase()
-                searchableSettings.filter {
-                    it.title.lowercase().contains(query) ||
-                    it.description.lowercase().contains(query) ||
-                    it.category.lowercase().contains(query) ||
-                    it.keywords.any { kw -> kw.lowercase().contains(query) }
-                }
+                searchableSettings
+                    .filter {
+                        it.title.lowercase().contains(query) ||
+                        it.description.lowercase().contains(query) ||
+                        it.category.lowercase().contains(query) ||
+                        it.keywords.any { kw -> kw.lowercase().contains(query) }
+                    }
+                    .distinctBy { it.targetKey ?: (it.title + it.route) }
             }
 
             if (filtered.isEmpty()) {
@@ -788,34 +846,6 @@ fun SettingsScreen(
                     painterResource(R.drawable.arrow_back),
                     contentDescription = "Back"
                 )
-            }
-        },
-        actions = {
-            Surface(
-                shape = RoundedCornerShape(50.dp),
-                color = MaterialTheme.colorScheme.primaryContainer,
-                modifier = Modifier
-                    .padding(end = 12.dp)
-                    .clickable { navController.navigate("settings/about") }
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.info),
-                        contentDescription = null,
-                        modifier = Modifier.size(16.dp),
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    Text(
-                        text = "About",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                }
             }
         }
     )

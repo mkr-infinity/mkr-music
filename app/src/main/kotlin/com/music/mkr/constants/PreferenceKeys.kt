@@ -237,6 +237,7 @@ val MaxImageCacheSizeKey = intPreferencesKey("maxImageCacheSize")
 val MaxSongCacheSizeKey = intPreferencesKey("maxSongCacheSize")
 val MaxSongCacheCountKey = intPreferencesKey("maxSongCacheCount")
 val DisableSongCacheKey = booleanPreferencesKey("disableSongCache")
+val SongCacheDelaySecondsKey = intPreferencesKey("song_cache_delay_seconds")
 
 val AlwaysShowSkipNextKey = booleanPreferencesKey("alwaysShowSkipNext")
 val DisableScreenTimeoutKey = booleanPreferencesKey("disableScreenTimeout")
