@@ -95,6 +95,7 @@ import com.music.mkr.constants.CrossfadeGaplessKey
 import com.music.mkr.constants.CrossfadeManualSkipKey
 import com.music.mkr.constants.DisableLoadMoreWhenRepeatAllKey
 import com.music.mkr.constants.DisableSongCacheKey
+import com.music.mkr.constants.MaxSongCacheCountKey
 import com.music.mkr.constants.SongCacheDelaySecondsKey
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.cache.CacheWriter
@@ -3245,7 +3246,12 @@ class MusicService :
 
             val cachedUrl = songUrlCache[mediaId]?.first
             val streamUrl = cachedUrl ?: try {
-                val playbackData = YTPlayerUtils.playerResponseForPlayback(mediaId, audioQuality = audioQuality).getOrNull()
+                val playbackData = YTPlayerUtils.playerResponseForPlayback(
+                    videoId = mediaId,
+                    audioQuality = audioQuality,
+                    connectivityManager = connectivityManager,
+                    context = this@MusicService,
+                ).getOrNull()
                 playbackData?.streamUrl
             } catch (_: Exception) {
                 null
@@ -3266,7 +3272,7 @@ class MusicService :
 
                     val dataSpec = DataSpec.Builder()
                         .setUri(streamUrl.toUri())
-                        .setCustomCacheKey(mediaId)
+                        .setKey(mediaId)
                         .build()
 
                     val buffer = ByteArray(64 * 1024)
