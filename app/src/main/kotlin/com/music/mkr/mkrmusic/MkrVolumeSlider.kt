@@ -107,7 +107,7 @@ val MaterialStarShape: Shape = object : Shape {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ViviVolumeSlider(
+fun MkrVolumeSlider(
     value: Float,
     onValueChange: (Float) -> Unit,
     valueRange: ClosedFloatingPointRange<Float>,

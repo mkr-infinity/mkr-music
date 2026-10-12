@@ -360,7 +360,7 @@ fun PlayerSettings(
                 ))
                 add(Material3SettingsItem(
                     icon = painterResource(R.drawable.canvas_art),
-                    title = { Text(stringResource(R.string.vivimusic_canvas)) },
+                    title = { Text(stringResource(R.string.mkrmusic_canvas)) },
                     trailingContent = {
                         val summary = if (!canvasThumbnailAnimation) {
                             stringResource(R.string.disable)
@@ -368,7 +368,7 @@ fun PlayerSettings(
                             when (canvasSource) {
                                 CanvasSource.AUTO -> stringResource(R.string.canvas_source_auto)
                                 CanvasSource.APPLE_MUSIC -> stringResource(R.string.canvas_source_apple_music)
-                                CanvasSource.VIVIMUSIC -> stringResource(R.string.canvas_source_vivimusic)
+                                CanvasSource.MKRMUSIC -> stringResource(R.string.canvas_source_mkrmusic)
                                 CanvasSource.TIDAL -> stringResource(R.string.canvas_source_tidal)
                             }
                         }
@@ -645,8 +645,8 @@ fun PlayerSettings(
                 add(Material3SettingsItem(
                     key = "player_equalizer",
                     icon = painterResource(R.drawable.mkrequlizer),
-                    title = { Text(stringResource(R.string.vivi_equalizer)) },
-                    description = { Text(stringResource(R.string.vivi_equalizer_desc)) },
+                    title = { Text(stringResource(R.string.mkr_equalizer)) },
+                    description = { Text(stringResource(R.string.mkr_equalizer_desc)) },
                     onClick = { navController.navigate("settings/equalizer") }
                 ))
             }

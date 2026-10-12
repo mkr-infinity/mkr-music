@@ -132,14 +132,14 @@ import androidx.compose.ui.text.AnnotatedString
 fun UpdateScreen(navController: NavHostController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var status by remember { mutableStateOf<ViviUpdateStatus>(ViviUpdateStatus.NoUpdate(BuildConfig.VERSION_NAME)) }
+    var status by remember { mutableStateOf<MkrUpdateStatus>(MkrUpdateStatus.NoUpdate(BuildConfig.VERSION_NAME)) }
     val snackbarHostState = remember { SnackbarHostState() }
 
     val currentVersion = BuildConfig.VERSION_NAME
     val autoUpdateCheckEnabled = getAutoUpdateCheckSetting(context)
 
     fun triggerUpdateCheck() {
-        status = ViviUpdateStatus.Checking
+        status = MkrUpdateStatus.Checking
         scope.launch {
             // Add a small delay for visual feedback as in Med
             delay(1000L)
@@ -149,7 +149,7 @@ fun UpdateScreen(navController: NavHostController) {
                     saveLastCheckedTime(context, LocalDateTime.now().format(DateTimeFormatter.ofPattern("d MMMM yyyy, h:mm a")))
                     saveUpdateAvailableState(context, isAvailable)
                     status = if (isAvailable) {
-                        ViviUpdateStatus.Available(
+                        MkrUpdateStatus.Available(
                             version = tag,
                             changelog = changelog,
                             size = size,
@@ -159,11 +159,11 @@ fun UpdateScreen(navController: NavHostController) {
                             apkUrl = apkUrl
                         )
                     } else {
-                        ViviUpdateStatus.NoUpdate(tag)
+                        MkrUpdateStatus.NoUpdate(tag)
                     }
                 },
                 onError = {
-                    status = ViviUpdateStatus.Error(context.getString(R.string.cant_check_updates))
+                    status = MkrUpdateStatus.Error(context.getString(R.string.cant_check_updates))
                 }
             )
         }
@@ -215,11 +215,11 @@ fun UpdateScreen(navController: NavHostController) {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     when (val currentStatus = status) {
-                        is ViviUpdateStatus.Idle, is ViviUpdateStatus.Checking, is ViviUpdateStatus.NoUpdate, is ViviUpdateStatus.Error -> {
-                            val btnText = if (currentStatus is ViviUpdateStatus.Error) stringResource(R.string.try_again) else stringResource(R.string.check_for_update)
+                        is MkrUpdateStatus.Idle, is MkrUpdateStatus.Checking, is MkrUpdateStatus.NoUpdate, is MkrUpdateStatus.Error -> {
+                            val btnText = if (currentStatus is MkrUpdateStatus.Error) stringResource(R.string.try_again) else stringResource(R.string.check_for_update)
                             Button(
                                 onClick = { triggerUpdateCheck() },
-                                enabled = currentStatus !is ViviUpdateStatus.Checking,
+                                enabled = currentStatus !is MkrUpdateStatus.Checking,
                                 modifier = Modifier.fillMaxWidth().height(56.dp)
                             ) {
                                 Text(
@@ -229,7 +229,7 @@ fun UpdateScreen(navController: NavHostController) {
                             }
                         }
 
-                        is ViviUpdateStatus.Available -> {
+                        is MkrUpdateStatus.Available -> {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -293,15 +293,15 @@ fun UpdateScreen(navController: NavHostController) {
             ) {
                 item {
                     val titleText = when (status) {
-                        is ViviUpdateStatus.Checking -> "Checking for update..."
-                        is ViviUpdateStatus.Available -> "System update\navailable"
-                        is ViviUpdateStatus.NoUpdate -> "Your app is up to date"
-                        is ViviUpdateStatus.Error -> "Update error"
+                        is MkrUpdateStatus.Checking -> "Checking for update..."
+                        is MkrUpdateStatus.Available -> "System update\navailable"
+                        is MkrUpdateStatus.NoUpdate -> "Your app is up to date"
+                        is MkrUpdateStatus.Error -> "Update error"
                         else -> "System update"
                     }
                     Text(
                         text = titleText,
-                        style = if (status is ViviUpdateStatus.Checking || status is ViviUpdateStatus.Error) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge,
+                        style = if (status is MkrUpdateStatus.Checking || status is MkrUpdateStatus.Error) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge,
                         color = MaterialTheme.colorScheme.onBackground,
                         modifier = Modifier
                             .fillMaxWidth()
@@ -309,7 +309,7 @@ fun UpdateScreen(navController: NavHostController) {
                     )
                     
                     val currentStatus = status
-                    if (currentStatus is ViviUpdateStatus.Available) {
+                    if (currentStatus is MkrUpdateStatus.Available) {
                         val rawVersion = currentStatus.version
                         val displayVer = when {
                             rawVersion.startsWith("b", ignoreCase = true) -> rawVersion.uppercase()
@@ -336,7 +336,7 @@ fun UpdateScreen(navController: NavHostController) {
                     }
                 }
 
-                if (status is ViviUpdateStatus.Checking) {
+                if (status is MkrUpdateStatus.Checking) {
                     item {
                         val strokeWidthPx = with(LocalDensity.current) { 6.dp.toPx() }
                         val customStroke = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
@@ -368,7 +368,7 @@ fun UpdateScreen(navController: NavHostController) {
                             label = "statusTransition"
                         ) { currentStatus ->
                             when (currentStatus) {
-                                is ViviUpdateStatus.Checking -> {
+                                is MkrUpdateStatus.Checking -> {
                                     Column(horizontalAlignment = Alignment.Start) {
                                         Text(
                                             text = "Please wait while we check for the latest features.",
@@ -378,7 +378,7 @@ fun UpdateScreen(navController: NavHostController) {
                                     }
                                 }
 
-                                is ViviUpdateStatus.NoUpdate -> {
+                                is MkrUpdateStatus.NoUpdate -> {
                                     val checkTime = remember { LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")) }
                                     Column(
                                         horizontalAlignment = Alignment.Start,
@@ -425,7 +425,7 @@ fun UpdateScreen(navController: NavHostController) {
                                     }
                                 }
 
-                                is ViviUpdateStatus.Error -> {
+                                is MkrUpdateStatus.Error -> {
                                     Column(horizontalAlignment = Alignment.Start) {
                                         Text(
                                             text = currentStatus.message,
@@ -436,7 +436,7 @@ fun UpdateScreen(navController: NavHostController) {
                                     }
                                 }
 
-                                is ViviUpdateStatus.Available -> {
+                                is MkrUpdateStatus.Available -> {
                                     Column(
                                         modifier = Modifier.fillMaxWidth(),
                                         horizontalAlignment = Alignment.Start
@@ -566,7 +566,7 @@ fun UpdateScreen(navController: NavHostController) {
                                         }
                                     }
                                 }
-                                is ViviUpdateStatus.Idle -> {}
+                                is MkrUpdateStatus.Idle -> {}
                                 else -> {}
                             }
                         }

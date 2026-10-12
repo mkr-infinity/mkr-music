@@ -556,7 +556,7 @@ fun AudioDeviceBottomSheet(onDismiss: () -> Unit, modifier: Modifier = Modifier)
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
-                            ViviVolumeSlider(
+                            MkrVolumeSlider(
                                 modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
                                 value = volumeSliderValue,
                                 onValueChange = { newValue ->

@@ -112,16 +112,16 @@
     <string name="thumbnail_corner_radius_desc">Justera hörnradie</string>
     <string name="crop_album_art">Beskär albumomslag</string>
     <string name="crop_album_art_desc">Tvinga kvadratisk form genom beskärning</string>
-    <string name="vivimusic_canvas">Canvas</string>
+    <string name="mkrmusic_canvas">Canvas</string>
     <string name="use_canvas">Använd canvas</string>
-    <string name="vivimusic_canvas_desc">Ersätter statiskt albumomslag med en loopande video när tillgänglig</string>
+    <string name="mkrmusic_canvas_desc">Ersätter statiskt albumomslag med en loopande video när tillgänglig</string>
     <string name="canvas_source">Canvas‑källa</string>
     <string name="canvas_source_auto">Auto</string>
     <string name="canvas_source_auto_desc">Försöker Apple Music först, sedan MKR Music och Tidal</string>
     <string name="canvas_source_apple_music">Apple Music</string>
     <string name="canvas_source_apple_music_desc">Använder endast Apple Musics canvas</string>
-    <string name="canvas_source_vivimusic">MKR Music</string>
-<string name="canvas_source_vivimusic_desc">Använder endast MKR Music canvasbibliotek</string>
+    <string name="canvas_source_mkrmusic">MKR Music</string>
+<string name="canvas_source_mkrmusic_desc">Använder endast MKR Music canvasbibliotek</string>
     <string name="canvas_source_tidal">Tidal</string>
     <string name="canvas_source_tidal_desc">Använder endast Tidals canvas</string>
     <string name="show_album_canvas">Visa albumcanvas</string>
@@ -471,7 +471,7 @@
     <string name="karaoke">Karaoke</string>
     <string name="apple_music_style">Apple Music</string>
     <string name="apple_music_style_letter">Apple Music V2 (bokstav för bokstav)</string>
-    <string name="vivimusic_1">MKR Music (Fluid)</string>
+    <string name="mkrmusic_1">MKR Music (Fluid)</string>
     <string name="apple_music_lyrics_blur">Apple Music Lyrics Blur</string>
     <string name="apple_music_lyrics_blur_desc">Applicera suddighet på inaktiva textrader för en premiumfokuseffekt</string>
     <string name="lyrics_v2_fluid">Lyrics V2 (Fluid)</string>
@@ -543,16 +543,16 @@
     <string name="error_title">Fel</string>
     <string name="error_eq_apply_failed">Kunde inte tillämpa EQ‑profil: %1$s</string>
 
-    <!-- ViviEqualizer Strings -->
-<string name="vivi_equalizer">MKR Equalizer</string>
-    <string name="vivi_equalizer_desc">Pro‑klass akustisk tuning &amp; effekter</string>
+    <!-- MKREqualizer Strings -->
+<string name="mkr_equalizer">MKR Equalizer</string>
+    <string name="mkr_equalizer_desc">Pro‑klass akustisk tuning &amp; effekter</string>
     <string name="eq_simple">Enkel</string>
     <string name="eq_advanced">Avancerad</string>
     <string name="eq_label_bass">Bas</string>
     <string name="eq_label_mid">Mellanregister</string>
     <string name="eq_label_treble">Diskant</string>
     <string name="eq_preset_flat">Platt</string>
-<string name="eq_preset_vivi_signature">MKR‑signatur</string>
+<string name="eq_preset_mkr_signature">MKR‑signatur</string>
     <string name="eq_preset_acoustic">Akustisk</string>
     <string name="eq_preset_spatial">3D‑scen</string>
     <string name="eq_preset_bass_boost">Basförstärkning</string>
@@ -571,7 +571,7 @@
     <string name="eq_preset_dirac_game">Dirac Game</string>
 <string name="eq_enable_title">MKR Equalizer</string>
     <string name="eq_enable_summary">Aktivera professionell ljudbearbetning</string>
-<string name="eq_label_vivi">MKR‑signatur</string>
+<string name="eq_label_mkr">MKR‑signatur</string>
     <string name="eq_label_dolby">Dolby Atmos</string>
     <string name="eq_label_dirac">Dirac Audio</string>
     <string name="eq_reset">Återställ</string>
@@ -589,9 +589,9 @@
     <string name="plays">spelningar</string>
     <string name="casting_to">Castar till %s</string>
     <string name="progress_percent">Förlopp %s%%</string>
-    <string name="listening_to_vivimusic">Lyssnar på MKR Music</string>
+    <string name="listening_to_mkrmusic">Lyssnar på MKR Music</string>
     <string name="listen_on_youtube_music">Lyssna på YouTube Music</string>
-    <string name="visit_vivimusic">Besök MKR Music</string>
+    <string name="visit_mkrmusic">Besök MKR Music</string>
     <string name="open">Öppna</string>
     <string name="failed_to_create_image">Kunde inte skapa bild: %s</string>
     <string name="copied_title">Titel kopierad</string>
@@ -865,9 +865,9 @@
     <string name="discord_rpc_preview">Rich Presence‑förhandsvisning</string>
     <string name="discord_presence">Närvaro</string>
     <string name="discord_connect_description">Logga in med Discord för att dela vad du lyssnar på</string>
-    <string name="discord_playing_vivimusic">Spelar MKR Music</string>
-    <string name="discord_watching_vivimusic">Tittar på MKR Music</string>
-    <string name="discord_competing_vivimusic">Tävlar i MKR Music</string>
+    <string name="discord_playing_mkrmusic">Spelar MKR Music</string>
+    <string name="discord_watching_mkrmusic">Tittar på MKR Music</string>
+    <string name="discord_competing_mkrmusic">Tävlar i MKR Music</string>
     <string name="discord_activity_name">Aktivitetsnamn</string>
     <string name="discord_activity_name_description">Anpassat namn för aktiviteten (lämna tomt för standard)</string>
     <string name="discord_advanced_mode">Avancerat läge</string>
@@ -922,7 +922,7 @@
 
     <!-- Onboarding -->
     <string name="welcome_to">Välkommen till</string>
-<string name="welcome_to_vivi">Välkommen till MKR Music</string>
+<string name="welcome_to_mkr">Välkommen till MKR Music</string>
     <string name="accessibility">Tillgänglighet</string>
     <string name="welcome_preparing_subtitle">Vi förbereder allt åt dig.</string>
     <string name="get_started">Kom igång</string>
@@ -1080,7 +1080,7 @@
     <string name="disabled">Inaktiverad</string>
 
     <!-- Setup Wizard / Onboarding -->
-    <string name="setting_up_vivimusic">Konfigurerar MKR Music…</string>
+    <string name="setting_up_mkrmusic">Konfigurerar MKR Music…</string>
     <string name="skip">Hoppa över</string>
 
     <!-- Data Saver -->

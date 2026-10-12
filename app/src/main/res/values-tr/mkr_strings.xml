@@ -92,8 +92,8 @@
     <string name="thumbnail_corner_radius_desc">Albüm kapağı küçük resminin köşe yarıçapını değiştirin</string>
     <string name="crop_album_art">Albüm Resmini Kırp</string>
     <string name="crop_album_art_desc">Video küçük resimlerini kırparak kare en boy oranını zorlayın</string>
-    <string name="vivimusic_canvas">Canvas</string>
-    <string name="vivimusic_canvas_desc">Mevcut olduğunda hareketli albüm kapaklarını göster</string>
+    <string name="mkrmusic_canvas">Canvas</string>
+    <string name="mkrmusic_canvas_desc">Mevcut olduğunda hareketli albüm kapaklarını göster</string>
     <string name="already_in_playlist">Zaten çalma listesinde:</string>
 
     <plurals name="n_element">
@@ -383,7 +383,7 @@
     <string name="karaoke">Karaoke</string>
     <string name="apple_music_style">Apple Müzik</string>
     <string name="apple_music_style_letter">Apple Music V2 (Letter by Letter)</string>
-    <string name="vivimusic_1">MKR Music (Fluid)</string>
+    <string name="mkrmusic_1">MKR Music (Fluid)</string>
     <string name="apple_music_lyrics_blur">Apple Music Lyrics Blur</string>
     <string name="apple_music_lyrics_blur_desc">Premium bir odak efekti için pasif şarkı sözü satırlarına bulanıklık uygulayın</string>
     <string name="lyrics_v2_fluid">Şarkı Sözleri V2 (Akıcı)</string>
@@ -457,9 +457,9 @@
     <string name="plays">plays</string>
     <string name="casting_to">%s cihazına yansıtılıyor</string>
     <string name="progress_percent">İlerleme %s%%</string>
-    <string name="listening_to_vivimusic">MKR Music dinleniyor</string>
+    <string name="listening_to_mkrmusic">MKR Music dinleniyor</string>
     <string name="listen_on_youtube_music">YouTube Music\'te dinle</string>
-    <string name="visit_vivimusic">MKR Music\'i ziyaret et</string>
+    <string name="visit_mkrmusic">MKR Music\'i ziyaret et</string>
     <string name="open">Aç</string>
     <string name="failed_to_create_image">Görsel oluşturulamadı: %s</string>
     <string name="copied_title">Başlık kopyalandı</string>
@@ -730,9 +730,9 @@
     <string name="discord_rpc_preview">Zengin Görünüm Önizlemesi</string>
     <string name="discord_presence">Görünüm</string>
     <string name="discord_connect_description">Ne dinlediğini paylaşmak için Discord\'a giriş yap</string>
-    <string name="discord_playing_vivimusic">MKR Music oynatılıyor</string>
-    <string name="discord_watching_vivimusic">MKR Music izlenliyor</string>
-    <string name="discord_competing_vivimusic">MKR Music\'te yarış</string>
+    <string name="discord_playing_mkrmusic">MKR Music oynatılıyor</string>
+    <string name="discord_watching_mkrmusic">MKR Music izlenliyor</string>
+    <string name="discord_competing_mkrmusic">MKR Music\'te yarış</string>
     <string name="discord_activity_name">Aktivite adı</string>
     <string name="discord_activity_name_description">Aktivite için özel ad (boş bırakılırsa varsayılan kullanılır)</string>
     <string name="discord_advanced_mode">Gelişmiş seçenekler</string>

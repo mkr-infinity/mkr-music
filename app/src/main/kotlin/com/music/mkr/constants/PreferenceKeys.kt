@@ -560,7 +560,7 @@ enum class LyricsAnimationStyle {
     KARAOKE,
     APPLE,
     APPLE_V2,
-    VIVIMUSIC_1,
+    MKRMUSIC_1,
     LYRICS_V2,
     METRO_LYRICS,
 }
@@ -590,7 +590,7 @@ val DataSaverBackupAlbumCanvasKey   = booleanPreferencesKey("dataSaverBackupAlbu
 enum class CanvasSource {
     AUTO,
     APPLE_MUSIC,
-    VIVIMUSIC,
+    MKRMUSIC,
     TIDAL,
 }
 val SwipeSensitivityKey = floatPreferencesKey("swipeSensitivity")

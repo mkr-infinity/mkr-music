@@ -284,9 +284,9 @@
     <string name="error_title">Klaida</string>
     <string name="error_eq_apply_failed">Klaida, įkeliant ekvalaizerio profilį %1$s</string>
     <string name="progress_percent">Progresas %s%%</string>
-    <string name="listening_to_vivimusic">Klausomasi „MKR Music”</string>
+    <string name="listening_to_mkrmusic">Klausomasi „MKR Music”</string>
     <string name="listen_on_youtube_music">Klausyti per „YouTube Muzika”</string>
-    <string name="visit_vivimusic">Aplankyti „MKR Music”</string>
+    <string name="visit_mkrmusic">Aplankyti „MKR Music”</string>
     <string name="open">Atidaryti</string>
     <string name="failed_to_create_image">Klaida, kuriant nuotrauką %s</string>
     <string name="copied_title">Nukopijuotas pavadinimas</string>

@@ -376,9 +376,9 @@
     <string name="wrapped_thank_you">Σας ευχαριστούμε για την ακρόαση</string>
     <string name="wrapped_close">Κλείσιμο wrapped</string>
     <string name="wrapped_playlist_title">To Wrapped σας %s</string>
-    <string name="listening_to_vivimusic">Ακούτε το MKR Music</string>
+    <string name="listening_to_mkrmusic">Ακούτε το MKR Music</string>
     <string name="listen_on_youtube_music">Ακρόαση στο YouTube Music</string>
-    <string name="visit_vivimusic">Eπισκεφτείτε το MKR Music</string>
+    <string name="visit_mkrmusic">Eπισκεφτείτε το MKR Music</string>
     <string name="failed_to_create_image">Αποτυχία δημιουργίας εικόνας: %s</string>
     <string name="copied_title">Ο Τίτλος Αντιγράφηκε</string>
     <string name="copied_artist">Ο Καλλιτέχνης Αντιγράφηκε</string>

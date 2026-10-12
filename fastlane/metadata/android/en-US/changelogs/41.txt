@@ -1,3 +1,0 @@
-﻿• New home screen widgets
-• Fixed volume normalization issues
-• Stability and bug fixes

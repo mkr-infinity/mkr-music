@@ -32,9 +32,6 @@ data class MkrMusicCanvasItem(
     val album: String = "",
 )
 
-typealias ViviMusicCanvasManifest = MkrMusicCanvasManifest
-typealias ViviMusicCanvasItem = MkrMusicCanvasItem
-
 object MkrMusicCanvasProvider {
     private const val BASE_URL = "https://vivimusicanvas.mkmdevilmi.workers.dev/canvas.json"
 
@@ -126,5 +123,3 @@ object MkrMusicCanvasProvider {
         }
     }
 }
-
-typealias ViviMusicCanvasProvider = MkrMusicCanvasProvider

@@ -1,7 +1,7 @@
 /*
  * Derivative work based on ImageToolbox's FancySlider (Apache License 2.0)
  * Original Copyright (c) T8RIN (Malik Mukhametzyanov)
- * Modifications for ViviMusic Updater include custom sizing, track logic, and UI integration.
+ * Modifications for MkrMusic Updater include custom sizing, track logic, and UI integration.
  * Licensed under the Apache License, Version 2.0 (the "License")
  */
 

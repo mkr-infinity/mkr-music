@@ -1,3 +1,0 @@
-﻿• New swipe gestures in player screen
-• Fixed download progress indicator
-• Stability improvements

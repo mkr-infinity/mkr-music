@@ -62,14 +62,14 @@ class UpdateDownloadWorker(private val context: Context, workerParams: WorkerPar
 
             val downloadDir = File(
                 context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
-                "vivi_updates"
+                "mkr_updates"
             )
             if (!downloadDir.exists()) {
                 downloadDir.mkdirs()
             }
 
             val isZip = apkUrl.contains("nightly.link") || apkUrl.endsWith(".zip")
-            val downloadFile = if (isZip) File(downloadDir, "vivi_temp.zip") else File(downloadDir, "vivi.apk")
+            val downloadFile = if (isZip) File(downloadDir, "mkr_temp.zip") else File(downloadDir, "mkr.apk")
             val outputStream = FileOutputStream(downloadFile)
 
             val buffer = ByteArray(8192)
@@ -105,7 +105,7 @@ class UpdateDownloadWorker(private val context: Context, workerParams: WorkerPar
             connection.disconnect()
 
             val finalFile = if (isZip) {
-                val targetApkFile = File(downloadDir, "vivi.apk")
+                val targetApkFile = File(downloadDir, "mkr.apk")
                 var extracted = false
                 try {
                     ZipInputStream(downloadFile.inputStream()).use { zis ->

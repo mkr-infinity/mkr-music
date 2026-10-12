@@ -11,7 +11,7 @@
     android:paddingTop="8dp"
     android:paddingBottom="8dp"
     android:gravity="center_vertical"
-    android:theme="@style/Theme.Widget.vivimusic">
+    android:theme="@style/Theme.Widget.mkrmusic">
 
     <!-- Album Art - Square -->
     <ImageView

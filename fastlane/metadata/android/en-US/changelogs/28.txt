@@ -1,3 +1,0 @@
-﻿• Added crossfade between tracks
-• Fixed mini player not responding to swipe
-• Updated translations

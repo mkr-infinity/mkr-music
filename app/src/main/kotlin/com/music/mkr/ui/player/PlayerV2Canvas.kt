@@ -71,7 +71,7 @@ fun PlayerV2Canvas(
                     AppleMusicCanvasProvider.getBySongArtist(songTitle, artistName, albumName, storefront)
                         ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
                 }
-                CanvasSource.VIVIMUSIC -> {
+                CanvasSource.MKRMUSIC -> {
                     MkrMusicCanvasProvider.getBySongArtist(songTitle, artistName, albumName)
                         ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
                 }

@@ -9,7 +9,7 @@ import java.io.File
  */
 
 fun getDownloadedApksDir(context: Context): File {
-    return File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "vivi_updates")
+    return File(context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS), "mkr_updates")
 }
 
 fun getDownloadedApkCount(context: Context): Int {

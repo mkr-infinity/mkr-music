@@ -1,3 +1,0 @@
-﻿• Added sleep timer feature
-• Fixed notification controls on Android 13+
-• Improved audio focus handling

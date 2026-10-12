@@ -151,7 +151,7 @@ object BiniLyricsProvider : LyricsProvider {
         val ss = sec % 60
         // Result format: MM:SS.xxx where x is fractional padded
         val ssStr = String.format(Locale.US, "%05.2f", ss) // "09.52", "45.10" etc
-        // ViviMusic regex for Line Rich Sync expects \d{2,3} for ms block: [MM:SS.xx] or [MM:SS.xxx]
+        // MkrMusic regex for Line Rich Sync expects \d{2,3} for ms block: [MM:SS.xx] or [MM:SS.xxx]
         return String.format(Locale.US, "%02d:%s", mm, ssStr)
     }
 

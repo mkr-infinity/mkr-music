@@ -1,3 +1,0 @@
-﻿• New visualizer animations
-• Fixed share track functionality
-• Updated dependencies

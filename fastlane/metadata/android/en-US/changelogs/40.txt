@@ -1,3 +1,0 @@
-﻿• Added moods and genres browsing
-• Fixed app not resuming after call
-• Performance improvements

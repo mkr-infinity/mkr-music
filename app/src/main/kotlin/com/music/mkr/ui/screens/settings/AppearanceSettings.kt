@@ -336,7 +336,7 @@ fun AppearanceSettings(
     )
     val (lyricsAnimationStyle, onLyricsAnimationStyleChange) = rememberEnumPreference(
         LyricsAnimationStyleKey,
-        defaultValue = LyricsAnimationStyle.VIVIMUSIC_1
+        defaultValue = LyricsAnimationStyle.MKRMUSIC_1
     )
     val (lyricsTextSize, onLyricsTextSizeChange) = rememberPreference(LyricsTextSizeKey, defaultValue = 24f)
     val (lyricsLineSpacing, onLyricsLineSpacingChange) = rememberPreference(LyricsLineSpacingKey, defaultValue = 1.3f)
@@ -383,7 +383,7 @@ fun AppearanceSettings(
 
     // Density scale preferences
     val context = activity as Context
-    val sharedPreferences = remember { context.getSharedPreferences("vivimusic_settings", Context.MODE_PRIVATE) }
+    val sharedPreferences = remember { context.getSharedPreferences("mkrmusic_settings", Context.MODE_PRIVATE) }
     val prefDensityScale = remember(sharedPreferences) {
         sharedPreferences.getFloat("density_scale_factor", 1.0f)
     }
@@ -600,7 +600,7 @@ fun AppearanceSettings(
                     LyricsAnimationStyle.KARAOKE -> stringResource(R.string.karaoke)
                     LyricsAnimationStyle.APPLE -> stringResource(R.string.apple_music_style)
                     LyricsAnimationStyle.APPLE_V2 -> stringResource(R.string.apple_music_style_letter)
-                    LyricsAnimationStyle.VIVIMUSIC_1 -> stringResource(R.string.vivimusic_1)
+                    LyricsAnimationStyle.MKRMUSIC_1 -> stringResource(R.string.mkrmusic_1)
                     LyricsAnimationStyle.LYRICS_V2 -> stringResource(R.string.lyrics_v2_fluid)
                     LyricsAnimationStyle.METRO_LYRICS -> stringResource(R.string.lyrics_animation_metro)
                 }
@@ -1790,7 +1790,7 @@ fun AppearanceSettings(
                                 LyricsAnimationStyle.GLOW -> stringResource(R.string.glow)
                                 LyricsAnimationStyle.SLIDE -> stringResource(R.string.slide)
                                 LyricsAnimationStyle.KARAOKE -> stringResource(R.string.karaoke)
-                                LyricsAnimationStyle.VIVIMUSIC_1 -> stringResource(R.string.vivimusic_1)
+                                LyricsAnimationStyle.MKRMUSIC_1 -> stringResource(R.string.mkrmusic_1)
                                 LyricsAnimationStyle.APPLE -> stringResource(R.string.apple_music_style)
                                 LyricsAnimationStyle.APPLE_V2 -> stringResource(R.string.apple_music_style_letter)
                                 LyricsAnimationStyle.LYRICS_V2 -> stringResource(R.string.lyrics_v2_fluid)
@@ -1821,7 +1821,7 @@ fun AppearanceSettings(
                     },
                     onClick = { onLyricsGlowEffectChange(!lyricsGlowEffect) }
                 ),
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && lyricsAnimationStyle == LyricsAnimationStyle.VIVIMUSIC_1) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && lyricsAnimationStyle == LyricsAnimationStyle.MKRMUSIC_1) {
                     Material3SettingsItem(
                         icon = painterResource(R.drawable.lyrics),
                         title = { Text(stringResource(R.string.apple_music_lyrics_blur)) },

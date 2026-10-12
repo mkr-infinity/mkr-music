@@ -1,3 +1,0 @@
-﻿• New equalizer presets added
-• Fixed queue shuffle not working correctly
-• Minor UI tweaks and bug fixes

@@ -17,9 +17,9 @@ class SDUIBlock(
 
 data class ChangelogSection(val title: String, val items: List<String>, val description: String? = null, val blocks: List<SDUIBlock>? = null)
 
-sealed class ViviUpdateStatus {
-    object Idle : ViviUpdateStatus()
-    object Checking : ViviUpdateStatus()
+sealed class MkrUpdateStatus {
+    object Idle : MkrUpdateStatus()
+    object Checking : MkrUpdateStatus()
     data class Available(
         val version: String,
         val changelog: List<ChangelogSection>,
@@ -28,8 +28,8 @@ sealed class ViviUpdateStatus {
         val description: String?,
         val imageUrl: String?,
         val apkUrl: String?
-    ) : ViviUpdateStatus()
+    ) : MkrUpdateStatus()
 
-    data class NoUpdate(val version: String) : ViviUpdateStatus()
-    data class Error(val message: String) : ViviUpdateStatus()
+    data class NoUpdate(val version: String) : MkrUpdateStatus()
+    data class Error(val message: String) : MkrUpdateStatus()
 }

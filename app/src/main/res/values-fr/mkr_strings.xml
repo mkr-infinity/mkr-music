@@ -111,16 +111,16 @@
     <string name="thumbnail_corner_radius_desc">Régler le rayon des coins des miniatures</string>
     <string name="crop_album_art">Recadrer la pochette d\'album</string>
     <string name="crop_album_art_desc">Forcer un format carré en recadrant les miniatures vidéo</string>
-    <string name="vivimusic_canvas">Canvas</string>
+    <string name="mkrmusic_canvas">Canvas</string>
 	<string name="use_canvas">Utiliser Canvas</string>
-    <string name="vivimusic_canvas_desc">Remplace la pochette d\'album statique dans le lecteur par une vidéo animée en boucle lorsqu\'une telle vidéo est disponible pour le titre en cours</string>
+    <string name="mkrmusic_canvas_desc">Remplace la pochette d\'album statique dans le lecteur par une vidéo animée en boucle lorsqu\'une telle vidéo est disponible pour le titre en cours</string>
     <string name="canvas_source">Code source de Canvas</string>
     <string name="canvas_source_auto">Automatique</string>
     <string name="canvas_source_auto_desc">Essaie d\'abord Apple Music, puis Tidal et MKR Music. Sélectionne automatiquement la meilleure application pour le titre en cours.</string>
     <string name="canvas_source_apple_music">Apple Music</string>
     <string name="canvas_source_apple_music_desc">Utilise exclusivement les visuels animés d\'Apple Music. N\'affiche une image que si Apple Music en propose une pour le titre en cours de lecture.</string>
-    <string name="canvas_source_vivimusic">MKR Music</string>
-    <string name="canvas_source_vivimusic_desc">Utilise exclusivement la bibliothèque de toiles sélectionnés par MKR Music. N\'affiche une image que si elle a été ajoutée pour le titre en cours de lecture.</string>
+    <string name="canvas_source_mkrmusic">MKR Music</string>
+    <string name="canvas_source_mkrmusic_desc">Utilise exclusivement la bibliothèque de toiles sélectionnés par MKR Music. N\'affiche une image que si elle a été ajoutée pour le titre en cours de lecture.</string>
     <string name="canvas_source_tidal">Tidal</string>
     <string name="canvas_source_tidal_desc">Utilise exclusivement les visuels animés de Tidal. N\'affiche une image que si Tidal en propose une pour le titre en cours de lecture.</string>
     <string name="show_album_canvas">Afficher la page d\'accueil de l\'album</string>
@@ -471,7 +471,7 @@
     <string name="karaoke">Karaoké</string>
     <string name="apple_music_style">Apple Music</string>
     <string name="apple_music_style_letter">Apple Music V2 (Lettre par Lettre)</string>
-    <string name="vivimusic_1">MKR Music (Fluide)</string>
+    <string name="mkrmusic_1">MKR Music (Fluide)</string>
     <string name="apple_music_lyrics_blur">Paroles d\'Apple Music floues</string>
     <string name="apple_music_lyrics_blur_desc">Appliquez un effet de flou aux lignes de paroles inactives pour créer un effet de mise au point haut de gamme.</string>
     <string name="lyrics_v2_fluid">Paroles V2 (Fluide)</string>
@@ -543,16 +543,16 @@ est irréversible.
     <string name="error_title">Erreur</string>
     <string name="error_eq_apply_failed">Échec de l\'application du profil d\'égalisation : %1$s</string>
 
-	<!-- ViviEqualizer Strings -->
-<string name="vivi_equalizer">MKR Equalizer</string>
-    <string name="vivi_equalizer_desc">Réglage acoustique de qualité professionnelle &amp; Effets</string>
+	<!-- MKREqualizer Strings -->
+<string name="mkr_equalizer">MKR Equalizer</string>
+    <string name="mkr_equalizer_desc">Réglage acoustique de qualité professionnelle &amp; Effets</string>
     <string name="eq_simple">Simple</string>
     <string name="eq_advanced">Avancé</string>
     <string name="eq_label_bass">Basse</string>
     <string name="eq_label_mid">Milieux</string>
     <string name="eq_label_treble">Aigus</string>
     <string name="eq_preset_flat">Plat</string>
-<string name="eq_preset_vivi_signature">MKR Signature</string>
+<string name="eq_preset_mkr_signature">MKR Signature</string>
     <string name="eq_preset_acoustic">Acoustique</string>
     <string name="eq_preset_spatial">Scène 3D</string>
     <string name="eq_preset_bass_boost">Amplification des Basses</string>
@@ -571,7 +571,7 @@ est irréversible.
     <string name="eq_preset_dirac_game">Dirac Game</string>
 <string name="eq_enable_title">MKR Equalizer</string>
     <string name="eq_enable_summary">Activer le traitement audio professionnel</string>
-<string name="eq_label_vivi">MKR Signature</string>
+<string name="eq_label_mkr">MKR Signature</string>
     <string name="eq_label_dolby">Dolby Atmos</string>
     <string name="eq_label_dirac">Dirac Audio</string>
     <string name="eq_reset">Réinitialiser</string>
@@ -589,9 +589,9 @@ est irréversible.
     <string name="plays">lectures</string>
     <string name="casting_to">Conversion vers %s</string>
     <string name="progress_percent">Progression %s%%</string>
-    <string name="listening_to_vivimusic">Écouter MKR Music</string>
+    <string name="listening_to_mkrmusic">Écouter MKR Music</string>
     <string name="listen_on_youtube_music">Écoutez sur YouTube Music</string>
-    <string name="visit_vivimusic">Rendez-vous sur MKR Music</string>
+    <string name="visit_mkrmusic">Rendez-vous sur MKR Music</string>
     <string name="open">Ouvrir</string>
     <string name="failed_to_create_image">Échec de la création de l\'image : %s</string>
     <string name="copied_title">Titre copié</string>
@@ -865,9 +865,9 @@ est irréversible.
     <string name="discord_rpc_preview">Aperçu de Rich Presence</string>
     <string name="discord_presence">Présence</string>
     <string name="discord_connect_description">Connectez-vous avec Discord pour partager ce que vous écoutez.</string>
-    <string name="discord_playing_vivimusic">Écouter MKR Music</string>
-    <string name="discord_watching_vivimusic">Regarder MKR Music</string>
-    <string name="discord_competing_vivimusic">En compétition sur MKR Music</string>
+    <string name="discord_playing_mkrmusic">Écouter MKR Music</string>
+    <string name="discord_watching_mkrmusic">Regarder MKR Music</string>
+    <string name="discord_competing_mkrmusic">En compétition sur MKR Music</string>
     <string name="discord_activity_name">Nom de l\'activité</string>
     <string name="discord_activity_name_description">Nom personnalisé de l\'activité (laissez vide pour utiliser le nom par défaut)</string>
     <string name="discord_advanced_mode">Mode avancé</string>
@@ -923,7 +923,7 @@ est irréversible.
 
 	<!-- Onboarding -->
     <string name="welcome_to">Bienvenue sur</string>
-	<string name="welcome_to_vivi">Bienvenue sur MKR Music</string>
+	<string name="welcome_to_mkr">Bienvenue sur MKR Music</string>
     <string name="accessibility">Accessibilité</string>
     <string name="welcome_preparing_subtitle">Nous allons tout préparer pour vous.</string>
     <string name="get_started">C\'est parti !</string>
@@ -1077,7 +1077,7 @@ est irréversible.
     <string name="disabled">Désactivé</string>
 
 	<!-- Setup Wizard / Onboarding -->
-    <string name="setting_up_vivimusic">Configuration de MKR Music…</string>
+    <string name="setting_up_mkrmusic">Configuration de MKR Music…</string>
     <string name="skip">Passer</string>
 
     <!-- Data Saver -->

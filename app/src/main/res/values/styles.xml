@@ -13,7 +13,7 @@
     </style>
 
     <!-- Widget Theme with Material 3 colors fallback for API < 31 -->
-    <style name="Theme.Widget.vivimusic" parent="@android:style/Theme.DeviceDefault.DayNight">
+    <style name="Theme.Widget.mkrmusic" parent="@android:style/Theme.DeviceDefault.DayNight">
         <item name="android:colorBackground">#E6E1E5</item>
     </style>
 </resources>

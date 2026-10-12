@@ -1,3 +1,0 @@
-﻿• Added podcast support
-• Fixed skip buttons in car mode
-• Resolved memory leak on long sessions

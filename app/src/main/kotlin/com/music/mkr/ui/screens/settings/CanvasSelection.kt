@@ -77,7 +77,7 @@ fun CanvasSelection(
 
         // Description text
         Text(
-            text = stringResource(R.string.vivimusic_canvas_desc),
+            text = stringResource(R.string.mkrmusic_canvas_desc),
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.padding(bottom = 24.dp, top = 16.dp)
@@ -160,15 +160,15 @@ fun CanvasSelection(
                 Material3SettingsItem(
                     leadingContent = {
                         AnimatedRadioButton(
-                            selected = canvasSource == CanvasSource.VIVIMUSIC,
+                            selected = canvasSource == CanvasSource.MKRMUSIC,
                             onClick = null,
                             enabled = canvasThumbnailAnimation
                         )
                     },
-                    title = { Text(stringResource(R.string.canvas_source_vivimusic)) },
-                    description = { Text(stringResource(R.string.canvas_source_vivimusic_desc)) },
+                    title = { Text(stringResource(R.string.canvas_source_mkrmusic)) },
+                    description = { Text(stringResource(R.string.canvas_source_mkrmusic_desc)) },
                     enabled = canvasThumbnailAnimation,
-                    onClick = { onCanvasSourceChange(CanvasSource.VIVIMUSIC) }
+                    onClick = { onCanvasSourceChange(CanvasSource.MKRMUSIC) }
                 ),
                 Material3SettingsItem(
                     leadingContent = {
@@ -213,7 +213,7 @@ fun CanvasSelection(
 
 
     TopAppBar(
-        title = { Text(stringResource(R.string.vivimusic_canvas)) },
+        title = { Text(stringResource(R.string.mkrmusic_canvas)) },
         navigationIcon = {
             IconButton(
                 onClick = navController::navigateUp,

@@ -1,3 +1,0 @@
-﻿• Improved song metadata editing
-• Fixed export playlist not working
-• Stability update

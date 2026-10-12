@@ -37,7 +37,7 @@
     <string name="mobile_network_warning">O download de atualizações através de uma rede móvel ou durante o roaming pode causar custos adicionais.</string>
     <string name="update_size">Tamanho da atualização: %1$s MB</string>
     <string name="check_internet_connection">Verifique sua conexão com a internet e tente novamente.</string>
-    <string name="vivi_music_version">MKR Music versão %1$s</string>
+    <string name="mkr_music_version">MKR Music versão %1$s</string>
     <string name="last_checked">Última opção: %1$s</string>
     <string name="install">Instalar</string>
     <string name="check_for_update">Verificar a atualização</string>
@@ -53,7 +53,7 @@
     <string name="update_notifications_subtitle">Notifique quando as atualizações estiverem disponíveis.</string>
     <string name="settings_check_updates_title">Verificar as atualizações</string>
     <string name="later">Mais tarde.</string>
-    <string name="vivi_music_title">MKR Music</string>
+    <string name="mkr_music_title">MKR Music</string>
     <string name="developer_section">DESENVOLVIMENTO</string>
     <string name="collaborator_section">COLABORADOR</string>
     <string name="app_info_section">APP INFO</string>

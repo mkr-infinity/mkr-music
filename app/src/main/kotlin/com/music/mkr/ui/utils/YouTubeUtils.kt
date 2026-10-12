@@ -6,7 +6,7 @@
 package com.music.mkr.ui.utils
 
 import com.music.mkr.constants.DataSaverKey
-import com.music.mkr.utils.ViviPrefCache
+import com.music.mkr.utils.MkrPrefCache
 import timber.log.Timber
 
 /**
@@ -26,7 +26,7 @@ fun String.resize(
     // Detect YouTube video thumbnails (containing i.ytimg.com, img.youtube.com, or path segment /vi/)
     val isYtimg = this.contains("ytimg") || this.contains("youtube.com") || this.contains("/vi/")
 
-    val isDataSaverEnabled = ViviPrefCache.get(DataSaverKey) == true
+    val isDataSaverEnabled = MkrPrefCache.get(DataSaverKey) == true
 
     return when {
         isGoogleCdn -> resizeGoogleCdn(width, height, isDataSaverEnabled)

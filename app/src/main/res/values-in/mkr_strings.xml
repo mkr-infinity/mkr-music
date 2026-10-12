@@ -294,9 +294,9 @@
     <string name="wrapped_playlist_saved">Playlist tersimpan</string>
     <string name="casting_to">Casting ke %s</string>
     <string name="progress_percent">Progres %s%%</string>
-    <string name="listening_to_vivimusic">Mendengarkan MKR Music</string>
+    <string name="listening_to_mkrmusic">Mendengarkan MKR Music</string>
     <string name="listen_on_youtube_music">Dengarkan di YouTube Music</string>
-    <string name="visit_vivimusic">Kunjungi MKR Music</string>
+    <string name="visit_mkrmusic">Kunjungi MKR Music</string>
     <string name="open">Buka</string>
     <string name="failed_to_create_image">Gagal membuat gambar: %s</string>
     <string name="copied_title">Judul Disalin</string>
@@ -612,9 +612,9 @@
     <string name="discord_rpc_preview">Pratinjau Rich Presence</string>
     <string name="discord_presence">Kehadiran</string>
     <string name="discord_connect_description">Masuk dengan Discord untuk membagikan apa yang Anda dengarkan</string>
-    <string name="discord_playing_vivimusic">Bermain MKR Music</string>
-    <string name="discord_watching_vivimusic">Menonton MKR Music</string>
-    <string name="discord_competing_vivimusic">Berkompetisi di MKR Music</string>
+    <string name="discord_playing_mkrmusic">Bermain MKR Music</string>
+    <string name="discord_watching_mkrmusic">Menonton MKR Music</string>
+    <string name="discord_competing_mkrmusic">Berkompetisi di MKR Music</string>
     <string name="discord_activity_name">Nama aktivitas</string>
     <string name="discord_activity_name_description">Nama kustom untuk aktivitas (biarkan kosong untuk default)</string>
     <string name="discord_advanced_mode">Mode lanjutan</string>

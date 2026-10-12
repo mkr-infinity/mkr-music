@@ -1,3 +1,0 @@
-﻿• Fixed playback issues with certain audio formats
-• Improved battery efficiency during background playback
-• Updated UI for a smoother experience

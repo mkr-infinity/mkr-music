@@ -1,10 +1,10 @@
 /**
- * VIVI-SAAVN (C) 2026
+ * MKR-SAAVN (C) 2026
  *
  * PROPRIETARY LICENSE:
  * This file is source-available for viewing. Copying, modification,
  * redistribution, or reuse in other applications is strictly prohibited.
- * Licensed exclusively for use in the official vivimusic application.
+ * Licensed exclusively for use in the official mkrmusic application.
  *
  * JioSaavn audio streaming service.
  * Fetches search results and stream details directly from JioSaavn's public API endpoints,

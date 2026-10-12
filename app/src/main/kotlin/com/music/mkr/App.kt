@@ -32,7 +32,7 @@ import com.music.mkr.di.ApplicationScope
 import com.music.mkr.extensions.toEnum
 import com.music.mkr.extensions.toInetSocketAddress
 import com.music.mkr.utils.CrashHandler
-import com.music.mkr.utils.ViviPrefCache
+import com.music.mkr.utils.MkrPrefCache
 import com.music.mkr.utils.InnerTubeXPlayer
 import com.music.mkr.utils.cipher.CipherDeobfuscator
 import com.music.mkr.utils.dataStore
@@ -68,7 +68,7 @@ class App : Application(), SingletonImageLoader.Factory {
         context = this
 
         // Start preferences cache immediately
-        ViviPrefCache.start(this)
+        MkrPrefCache.start(this)
 
         // Install crash handler first
         CrashHandler.install(this)

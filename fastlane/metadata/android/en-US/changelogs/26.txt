@@ -1,3 +1,0 @@
-﻿• New material you dynamic color support
-• Fixed lyrics sync issues
-• Resolved crash in settings screen

@@ -46,7 +46,7 @@ import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.delay
 
 /**
- * Apple Music style lyrics animation — ViviMusic_1
+ * Apple Music style lyrics animation — MkrMusic_1
  * Features:
  * - Word-by-word fill with spring easing (FastOutSlowInEasing)
  * - Spring-based scale with gentle bounce on activation
@@ -59,7 +59,7 @@ import kotlinx.coroutines.delay
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun ViviMusicLyricsLine(
+fun MkrMusicLyricsLine(
     entry: LyricsEntry,
     nextEntryTime: Long?,
     effectivePlaybackPosition: Long,

@@ -320,9 +320,9 @@
     <string name="wrapped_playlist_saved">Playlist salvat</string>
     <string name="casting_to">Se difuzează către %s</string>
     <string name="progress_percent">Progres: %s%%</string>
-    <string name="listening_to_vivimusic">Ascultă pe MKR Music</string>
+    <string name="listening_to_mkrmusic">Ascultă pe MKR Music</string>
     <string name="listen_on_youtube_music">Ascultă pe YouTube Music</string>
-    <string name="visit_vivimusic">Vizitează MKR Music</string>
+    <string name="visit_mkrmusic">Vizitează MKR Music</string>
     <string name="open">Deschide</string>
     <string name="failed_to_create_image">Nu s-a putut crea imaginea: %s</string>
     <string name="copied_title">Titlul a fost copiat</string>
@@ -625,9 +625,9 @@
     <string name="discord_rpc_preview">Previzualizare Rich Presence</string>
     <string name="discord_presence">Prezență</string>
     <string name="discord_connect_description">Autentifică-te cu Discord pentru a partaja ce asculți</string>
-    <string name="discord_playing_vivimusic">Se joacă MKR Music</string>
-    <string name="discord_watching_vivimusic">Vizionează MKR Music</string>
-    <string name="discord_competing_vivimusic">Concurează pe MKR Music</string>
+    <string name="discord_playing_mkrmusic">Se joacă MKR Music</string>
+    <string name="discord_watching_mkrmusic">Vizionează MKR Music</string>
+    <string name="discord_competing_mkrmusic">Concurează pe MKR Music</string>
     <string name="discord_activity_name">Numele activității</string>
     <string name="discord_activity_name_description">Nume personalizat pentru activitate (lasă gol pentru numele prestabilit)</string>
     <string name="discord_advanced_mode">Mod avansat</string>

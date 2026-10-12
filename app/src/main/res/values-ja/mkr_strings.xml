@@ -302,7 +302,7 @@
     <string name="eq_disabled">無効</string>
     <string name="error_title">エラー</string>
     <string name="listen_on_youtube_music">YouTube Musicで聴く</string>
-<string name="visit_vivimusic">MKR Musicに移動</string>
+<string name="visit_mkrmusic">MKR Musicに移動</string>
     <string name="open">開く</string>
     <string name="copied_title">タイトルをコピーしました</string>
     <string name="copied_artist">アーティスト名をコピーしました</string>
@@ -460,7 +460,7 @@
     <string name="error_eq_apply_failed">イコライザープロファイルを適用できません：%1$s</string>
     <string name="casting_to">%sにキャスト中</string>
     <string name="progress_percent">進行状況：%s%%</string>
-<string name="listening_to_vivimusic">MKR Musicで再生中</string>
+<string name="listening_to_mkrmusic">MKR Musicで再生中</string>
     <string name="failed_to_create_image">画像の作成に失敗しました：%s</string>
     <string name="error_playing">再生中にエラーが発生しました</string>
     <string name="failed_to_parse_proxy">プロキシURLを解析できません。</string>
@@ -615,9 +615,9 @@
     <string name="discord_rpc_preview">リッチプレゼンスのプレビュー</string>
     <string name="discord_presence">プレゼンス</string>
     <string name="discord_connect_description">Discordにサインインして、再生中の内容を共有しよう</string>
-<string name="discord_playing_vivimusic">MKR Musicで再生中</string>
-<string name="discord_watching_vivimusic">MKR Musicで視聴中</string>
-<string name="discord_competing_vivimusic">MKR Musicで大会に参加中</string>
+<string name="discord_playing_mkrmusic">MKR Musicで再生中</string>
+<string name="discord_watching_mkrmusic">MKR Musicで視聴中</string>
+<string name="discord_competing_mkrmusic">MKR Musicで大会に参加中</string>
     <string name="discord_activity_name">アクティビティ名</string>
     <string name="discord_activity_name_description">アクティビティのカスタム名（空欄の場合はデフォルトを使用）</string>
     <string name="discord_advanced_mode">詳細設定</string>

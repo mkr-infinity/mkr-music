@@ -111,16 +111,16 @@
     <string name="thumbnail_corner_radius_desc">Adjust thumbnail corner radius</string>
     <string name="crop_album_art">Crop Album Art</string>
     <string name="crop_album_art_desc">Force a square aspect ratio by cropping video thumbnails</string>
-    <string name="vivimusic_canvas">Canvas</string>
+    <string name="mkrmusic_canvas">Canvas</string>
     <string name="use_canvas">Use canvas</string>
-    <string name="vivimusic_canvas_desc">Replaces the static album artwork in the player with a looping animated video when one is available for the current song</string>
+    <string name="mkrmusic_canvas_desc">Replaces the static album artwork in the player with a looping animated video when one is available for the current song</string>
     <string name="canvas_source">Canvas source</string>
     <string name="canvas_source_auto">Auto</string>
     <string name="canvas_source_auto_desc">Tries Apple Music first, then falls back to MKR Music and Tidal. Picks the best match for the current song automatically</string>
     <string name="canvas_source_apple_music">Apple Music</string>
     <string name="canvas_source_apple_music_desc">Uses Apple Music&#8217;s animated visuals exclusively. Only shows a canvas if Apple Music has one for the playing song</string>
-    <string name="canvas_source_vivimusic">MKR Music</string>
-    <string name="canvas_source_vivimusic_desc">Uses the MKR Music curated canvas library exclusively. Only shows a canvas if one has been added for the playing song</string>
+    <string name="canvas_source_mkrmusic">MKR Music</string>
+    <string name="canvas_source_mkrmusic_desc">Uses the MKR Music curated canvas library exclusively. Only shows a canvas if one has been added for the playing song</string>
     <string name="canvas_source_tidal">Tidal</string>
     <string name="canvas_source_tidal_desc">Uses Tidal&#8217;s animated visuals exclusively. Only shows a canvas if Tidal has one for the playing song</string>
     <string name="show_album_canvas">Show Album Canvas</string>
@@ -471,7 +471,7 @@
     <string name="karaoke">Karaoke</string>
     <string name="apple_music_style">Apple Music</string>
     <string name="apple_music_style_letter">Apple Music V2 (Letter by Letter)</string>
-    <string name="vivimusic_1">MKR Music (Fluid)</string>
+    <string name="mkrmusic_1">MKR Music (Fluid)</string>
     <string name="apple_music_lyrics_blur">Apple Music Lyrics Blur</string>
     <string name="apple_music_lyrics_blur_desc">Apply blur to inactive lyrics lines for a premium focus effect</string>
     <string name="lyrics_v2_fluid">Lyrics V2 (Fluid)</string>
@@ -544,15 +544,15 @@
     <string name="error_eq_apply_failed">Failed to apply EQ profile: %1$s</string>
 
     <!-- MKREqualizer Strings -->
-    <string name="vivi_equalizer">MKR Equalizer</string>
-    <string name="vivi_equalizer_desc">Pro-grade acoustic tuning &amp; effects</string>
+    <string name="mkr_equalizer">MKR Equalizer</string>
+    <string name="mkr_equalizer_desc">Pro-grade acoustic tuning &amp; effects</string>
     <string name="eq_simple">Simple</string>
     <string name="eq_advanced">Advanced</string>
     <string name="eq_label_bass">Bass</string>
     <string name="eq_label_mid">Mids</string>
     <string name="eq_label_treble">Treble</string>
     <string name="eq_preset_flat">Flat</string>
-    <string name="eq_preset_vivi_signature">MKR Signature</string>
+    <string name="eq_preset_mkr_signature">MKR Signature</string>
     <string name="eq_preset_acoustic">Acoustic</string>
     <string name="eq_preset_spatial">3D Stage</string>
     <string name="eq_preset_bass_boost">Bass Boost</string>
@@ -571,7 +571,7 @@
     <string name="eq_preset_dirac_game">Dirac Game</string>
     <string name="eq_enable_title">MKR Equalizer</string>
     <string name="eq_enable_summary">Toggle professional audio processing</string>
-    <string name="eq_label_vivi">MKR Signature</string>
+    <string name="eq_label_mkr">MKR Signature</string>
     <string name="eq_label_dolby">Dolby Atmos</string>
     <string name="eq_label_dirac">Dirac Audio</string>
     <string name="eq_reset">Reset</string>
@@ -589,9 +589,9 @@
     <string name="plays">plays</string>
     <string name="casting_to">Casting to %s</string>
     <string name="progress_percent">Progress %s%%</string>
-    <string name="listening_to_vivimusic">Listening to MKR Music</string>
+    <string name="listening_to_mkrmusic">Listening to MKR Music</string>
     <string name="listen_on_youtube_music">Listen on YouTube Music</string>
-    <string name="visit_vivimusic">Visit MKR Music</string>
+    <string name="visit_mkrmusic">Visit MKR Music</string>
     <string name="open">Open</string>
     <string name="failed_to_create_image">Failed to create image: %s</string>
     <string name="copied_title">Copied Title</string>
@@ -865,9 +865,9 @@
     <string name="discord_rpc_preview">Rich Presence Preview</string>
     <string name="discord_presence">Presence</string>
     <string name="discord_connect_description">Sign in with Discord to share what you\'re listening to</string>
-    <string name="discord_playing_vivimusic">Playing MKR Music</string>
-    <string name="discord_watching_vivimusic">Watching MKR Music</string>
-    <string name="discord_competing_vivimusic">Competing in MKR Music</string>
+    <string name="discord_playing_mkrmusic">Playing MKR Music</string>
+    <string name="discord_watching_mkrmusic">Watching MKR Music</string>
+    <string name="discord_competing_mkrmusic">Competing in MKR Music</string>
     <string name="discord_activity_name">Activity name</string>
     <string name="discord_activity_name_description">Custom name for the activity (leave empty for default)</string>
     <string name="discord_advanced_mode">Advanced mode</string>
@@ -923,7 +923,7 @@
 
     <!-- Onboarding -->
     <string name="welcome_to">Welcome to</string>
-    <string name="welcome_to_vivi">Welcome to MKR Music</string>
+    <string name="welcome_to_mkr">Welcome to MKR Music</string>
     <string name="accessibility">Accessibility</string>
     <string name="welcome_preparing_subtitle">Let\'s get everything ready for you.</string>
     <string name="get_started">Get Started</string>
@@ -1077,7 +1077,7 @@
     <string name="disabled">Disabled</string>
 
     <!-- Setup Wizard / Onboarding -->
-    <string name="setting_up_vivimusic">Setting up MKR Music…</string>
+    <string name="setting_up_mkrmusic">Setting up MKR Music…</string>
     <string name="skip">Skip</string>
 
     <!-- Data Saver -->

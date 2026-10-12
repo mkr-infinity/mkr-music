@@ -28,8 +28,8 @@ import kotlin.properties.ReadOnlyProperty
 val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
 operator fun <T> DataStore<Preferences>.get(key: Preferences.Key<T>): T? =
-    if (ViviPrefCache.isInitialized()) {
-        ViviPrefCache.get(key)
+    if (MkrPrefCache.isInitialized()) {
+        MkrPrefCache.get(key)
     } else {
         runBlocking(Dispatchers.IO) {
             try {
@@ -46,8 +46,8 @@ fun <T> DataStore<Preferences>.get(
     key: Preferences.Key<T>,
     defaultValue: T,
 ): T =
-    if (ViviPrefCache.isInitialized()) {
-        ViviPrefCache.get(key) ?: defaultValue
+    if (MkrPrefCache.isInitialized()) {
+        MkrPrefCache.get(key) ?: defaultValue
     } else {
         runBlocking(Dispatchers.IO) {
             try {
@@ -61,13 +61,13 @@ fun <T> DataStore<Preferences>.get(
     }
 
 suspend fun <T> DataStore<Preferences>.getAsync(key: Preferences.Key<T>): T? =
-    ViviPrefCache.get(key) ?: data.first()[key]
+    MkrPrefCache.get(key) ?: data.first()[key]
 
 suspend fun <T> DataStore<Preferences>.getAsync(
     key: Preferences.Key<T>,
     defaultValue: T,
 ): T =
-    ViviPrefCache.get(key) ?: data.first()[key] ?: defaultValue
+    MkrPrefCache.get(key) ?: data.first()[key] ?: defaultValue
 
 fun <T> preference(
     context: Context,

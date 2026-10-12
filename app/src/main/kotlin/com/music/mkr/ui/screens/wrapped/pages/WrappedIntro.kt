@@ -117,7 +117,7 @@ fun WrappedIntro(onNext: () -> Unit) {
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // vivimusic Title with Layered Effect
+            // mkrmusic Title with Layered Effect
             AnimatedVisibility(
                 visible = visible,
                 enter = fadeIn(animationSpec = tween(FADE_IN_DURATION, delayMillis = TITLE_DELAY)) +

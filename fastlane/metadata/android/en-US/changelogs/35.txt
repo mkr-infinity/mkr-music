@@ -1,3 +1,0 @@
-﻿• Added repeat one and repeat all modes
-• Fixed audio stuttering on some devices
-• Better error messages

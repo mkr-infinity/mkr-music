@@ -357,9 +357,9 @@
     <string name="error_file_open">No se pudo abrir el archivo: %1$s</string>
     <string name="import_error_title">Error al importar</string>
     <string name="casting_to">Transmitiendo a %s</string>
-    <string name="listening_to_vivimusic">Escuchando MKR Music</string>
+    <string name="listening_to_mkrmusic">Escuchando MKR Music</string>
     <string name="listen_on_youtube_music">Escuchar en YouTube Music</string>
-    <string name="visit_vivimusic">Visita MKR Music</string>
+    <string name="visit_mkrmusic">Visita MKR Music</string>
     <string name="open">Abrir</string>
     <string name="failed_to_create_image">No se pudo crear la imagen: %s</string>
     <string name="copied_title">Se copió el título</string>
@@ -630,9 +630,9 @@
     <string name="discord_rpc_preview">Previsualizar Presencia</string>
     <string name="discord_presence">Presencia</string>
     <string name="discord_connect_description">Inicia sesión con Discord para compartir lo que estás escuchando</string>
-    <string name="discord_playing_vivimusic">Reproduciendo en MKR Music</string>
-    <string name="discord_watching_vivimusic">Viendo en MKR Music</string>
-    <string name="discord_competing_vivimusic">Compitiendo en MKR Music</string>
+    <string name="discord_playing_mkrmusic">Reproduciendo en MKR Music</string>
+    <string name="discord_watching_mkrmusic">Viendo en MKR Music</string>
+    <string name="discord_competing_mkrmusic">Compitiendo en MKR Music</string>
     <string name="discord_activity_name">Nombre de la actividad</string>
     <string name="discord_activity_name_description">Nombre personalizado para la actividad (déjelo vacío para usar el nombre predeterminado)</string>
     <string name="discord_advanced_mode">Modo avanzado</string>

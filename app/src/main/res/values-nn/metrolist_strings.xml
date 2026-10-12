@@ -352,9 +352,9 @@
     <string name="import_error_title">Importeringslyte</string>
     <string name="casting_to">Kastar til %s</string>
     <string name="progress_percent">Framsteg %s %%</string>
-    <string name="listening_to_vivimusic">Høyrer på MKR Music</string>
+    <string name="listening_to_mkrmusic">Høyrer på MKR Music</string>
     <string name="listen_on_youtube_music">Høyr på på YouTube Music</string>
-    <string name="visit_vivimusic">Vitja MKR Music</string>
+    <string name="visit_mkrmusic">Vitja MKR Music</string>
     <string name="open">Opna</string>
     <string name="failed_to_create_image">Mislukkast i å skapa bilete: %s</string>
     <string name="copied_title">Kopierte tittel</string>

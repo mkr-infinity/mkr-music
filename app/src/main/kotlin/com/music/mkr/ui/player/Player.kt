@@ -609,7 +609,7 @@ fun BottomSheetPlayer(
                     AppleMusicCanvasProvider.getBySongArtist(s, a, requestedAlbum, storefront)
                         ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
                 }
-                CanvasSource.VIVIMUSIC -> {
+                CanvasSource.MKRMUSIC -> {
                     MkrMusicCanvasProvider.getBySongArtist(s, a, requestedAlbum)
                         ?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
                 }

@@ -324,9 +324,9 @@
     <string name="wrapped_playlist_saved">Плейлист сохранён</string>
     <string name="casting_to">Трансляция на %s</string>
     <string name="progress_percent">Прогресс %s%%</string>
-    <string name="listening_to_vivimusic">Вы слушаете MKR Music</string>
+    <string name="listening_to_mkrmusic">Вы слушаете MKR Music</string>
     <string name="listen_on_youtube_music">Слушать в YouTube Music</string>
-    <string name="visit_vivimusic">Посетить MKR Music</string>
+    <string name="visit_mkrmusic">Посетить MKR Music</string>
     <string name="open">Открыть</string>
     <string name="failed_to_create_image">Не удалось создать изображение: %s</string>
     <string name="copied_title">Название скопировано</string>
@@ -602,7 +602,7 @@
     <string name="discord_rpc_preview">Предпросмотр Rich Presence</string>
     <string name="discord_presence">Присутствие</string>
     <string name="discord_connect_description">Войдите через Discord, чтобы поделиться тем, что вы слушаете</string>
-    <string name="discord_playing_vivimusic">Играет в MKR Music</string>
+    <string name="discord_playing_mkrmusic">Играет в MKR Music</string>
     <string name="prevent_duplicate_tracks_in_queue">Исключать дубликаты в очереди</string>
     <string name="prevent_duplicate_tracks_in_queue_desc">При добавлении трека в очередь удалять его из предыдущей позиции, если он уже присутствует</string>
     <string name="ai_translation_literal_desc">Перевести смысл на язык перевода</string>
@@ -632,8 +632,8 @@
     <string name="login_successful">Вход выполнен успешно!</string>
     <string name="discord_information_warning">Эта функция использует библиотеку KizzyRPC для подключения к шлюзу Discord и установки статуса Rich Presence. Хотя случаев блокировки аккаунтов при подобном использовании не зафиксировано, данный метод официально не поддерживается Discord и может считаться нарушением Условий использования. Ваш токен извлекается локально и никогда не отправляется на сторонние серверы. Используйте на свой страх и риск.</string>
     <string name="discord_activity_type">Тип активности</string>
-    <string name="discord_watching_vivimusic">Смотрит MKR Music</string>
-    <string name="discord_competing_vivimusic">Соревнуется в MKR Music</string>
+    <string name="discord_watching_mkrmusic">Смотрит MKR Music</string>
+    <string name="discord_competing_mkrmusic">Соревнуется в MKR Music</string>
     <string name="discord_activity_name">Название активности</string>
     <string name="discord_activity_name_description">Пользовательское название активности (оставьте пустым для значения по умолчанию)</string>
     <string name="discord_advanced_mode">Расширенный режим</string>

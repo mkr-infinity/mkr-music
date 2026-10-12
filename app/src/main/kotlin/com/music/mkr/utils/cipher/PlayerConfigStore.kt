@@ -25,7 +25,7 @@ import java.io.File
  * and updates them dynamically in the background from Cloudflare without complex caching or ETag overhead.
  */
 object PlayerConfigStore {
-    private const val TAG = "vivimusic_CipherConfig"
+    private const val TAG = "mkr_CipherConfig"
     private val remoteUrl by lazy {
         val shifted = intArrayOf(
             111, 123, 123, 119, 122, 65, 54, 54, 125, 112, 125, 112, 116, 124, 122, 112,

@@ -21,7 +21,7 @@ import timber.log.Timber
  * n-parameter transformation (for throttle avoidance / 403 fix).
  */
 object CipherDeobfuscator {
-    private const val TAG = "vivimusic_CipherDeobfusc"
+    private const val TAG = "mkr_CipherDeobfusc"
 
     lateinit var appContext: Context
         private set

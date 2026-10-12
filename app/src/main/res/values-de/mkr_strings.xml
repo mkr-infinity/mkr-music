@@ -312,9 +312,9 @@
     <string name="wrapped_playlist_saved">Playlist gespeichert</string>
     <string name="casting_to">Übertragung auf %s</string>
     <string name="progress_percent">Fortschritt %s%%</string>
-    <string name="listening_to_vivimusic">MKR Music hören</string>
+    <string name="listening_to_mkrmusic">MKR Music hören</string>
     <string name="listen_on_youtube_music">Auf YouTube Music anhören</string>
-    <string name="visit_vivimusic">Besuchen Sie MKR Music</string>
+    <string name="visit_mkrmusic">Besuchen Sie MKR Music</string>
     <string name="open">Öffnen</string>
     <string name="failed_to_create_image">Bild konnte nicht erstellt werden: %s</string>
     <string name="copied_title">Kopierter Titel</string>

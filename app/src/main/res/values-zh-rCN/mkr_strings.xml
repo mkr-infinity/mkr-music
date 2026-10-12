@@ -315,9 +315,9 @@
     <string name="wrapped_playlist_saved">播放列表已保存</string>
     <string name="casting_to">转换为 %s</string>
     <string name="progress_percent">进度 %s%%</string>
-    <string name="listening_to_vivimusic">收听 MKR Music</string>
+    <string name="listening_to_mkrmusic">收听 MKR Music</string>
     <string name="listen_on_youtube_music">在 YouTube Music 上收听</string>
-    <string name="visit_vivimusic">访问 MKR Music</string>
+    <string name="visit_mkrmusic">访问 MKR Music</string>
     <string name="open">打开</string>
     <string name="failed_to_create_image">无法创建图片：%s</string>
     <string name="copied_title">已复制标题</string>
@@ -615,9 +615,9 @@
     <string name="discord_rpc_preview">Rich Presence 预览</string>
     <string name="discord_presence">在场</string>
     <string name="discord_connect_description">使用 Discord 登录来分享你正在收听的内容</string>
-    <string name="discord_playing_vivimusic">播放 MKR Music</string>
-<string name="discord_watching_vivimusic">观看MKR Music</string>
-<string name="discord_competing_vivimusic">参与MKR Music评选</string>
+    <string name="discord_playing_mkrmusic">播放 MKR Music</string>
+<string name="discord_watching_mkrmusic">观看MKR Music</string>
+<string name="discord_competing_mkrmusic">参与MKR Music评选</string>
     <string name="discord_activity_name">活动名称</string>
     <string name="discord_activity_name_description">自定义活动名称（留空则使用默认值）</string>
     <string name="discord_advanced_mode">高级模式</string>

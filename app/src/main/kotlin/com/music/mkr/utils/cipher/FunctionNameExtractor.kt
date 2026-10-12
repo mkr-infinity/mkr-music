@@ -15,7 +15,7 @@ import java.security.MessageDigest
  * Falls back to hardcoded configs for known player.js hashes when regex fails.
  */
 object FunctionNameExtractor {
-    private const val TAG = "vivimusic_CipherFnExtract"
+    private const val TAG = "mkr_CipherFnExtract"
 
     // ==================== DATA CLASSES ====================
 

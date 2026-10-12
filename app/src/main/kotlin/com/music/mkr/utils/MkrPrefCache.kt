@@ -12,7 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-object ViviPrefCache {
+object MkrPrefCache {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     @Volatile
     private var preferences: Preferences? = null

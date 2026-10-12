@@ -1,3 +1,0 @@
-﻿• Improved canvas fallback resolution
-• Fixed navigation stack bug
-• Stability improvements

@@ -24,7 +24,7 @@ class DensityScaler : BaseLifecycleContentProvider() {
     }
 
     companion object {
-        private const val PREFS_NAME = "vivimusic_settings"
+        private const val PREFS_NAME = "mkrmusic_settings"
         private const val KEY_DENSITY_SCALE = "density_scale_factor"
         private const val DEFAULT_SCALE_FACTOR = 1.0f
 
@@ -35,7 +35,12 @@ class DensityScaler : BaseLifecycleContentProvider() {
         private fun getScaleFactorFromPreferences(context: Context): Float {
             return try {
                 val prefs = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-                prefs.getFloat(KEY_DENSITY_SCALE, DEFAULT_SCALE_FACTOR)
+                if (prefs.contains(KEY_DENSITY_SCALE)) {
+                    prefs.getFloat(KEY_DENSITY_SCALE, DEFAULT_SCALE_FACTOR)
+                } else {
+                    context.getSharedPreferences("vivimusic_settings", Context.MODE_PRIVATE)
+                        .getFloat(KEY_DENSITY_SCALE, DEFAULT_SCALE_FACTOR)
+                }
             } catch (e: Exception) {
                 Timber.tag("DensityScaler").w(e, "Failed to read scale factor from preferences")
                 DEFAULT_SCALE_FACTOR

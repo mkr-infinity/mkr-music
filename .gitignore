@@ -101,7 +101,7 @@ core.*
 *.so
 *.bin
 .env
-app/src/main/java/com/vivimusic/music/listentogether/proto/*
+app/src/main/java/com/music/mkr/listentogether/proto/*
 
 # FFTW third-party library build artifacts
 app/src/main/cpp/vibrafp/third_party/fftw-android/

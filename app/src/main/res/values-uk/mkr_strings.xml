@@ -324,9 +324,9 @@
     <string name="wrapped_playlist_saved">Список відтворення збережено</string>
     <string name="casting_to">Трансляція на %s</string>
     <string name="progress_percent">Прогрес %s%%</string>
-    <string name="listening_to_vivimusic">Слухаючи MKR Music</string>
+    <string name="listening_to_mkrmusic">Слухаючи MKR Music</string>
     <string name="listen_on_youtube_music">Слухайте далі YouTube Music</string>
-    <string name="visit_vivimusic">Відвідайте MKR Music</string>
+    <string name="visit_mkrmusic">Відвідайте MKR Music</string>
     <string name="open">Відкрити</string>
     <string name="failed_to_create_image">Не вдалося створити зображення: %s</string>
     <string name="copied_title">Скопійована назва</string>

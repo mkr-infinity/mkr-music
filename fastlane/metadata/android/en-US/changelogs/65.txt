@@ -1,3 +1,0 @@
-Fixed slow streaming
-Fixed crashing issue in stat screen
-Added better support for connect together listen

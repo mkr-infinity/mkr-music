@@ -266,7 +266,7 @@ fun Lyrics(
     val romanizeHindiLyrics by rememberPreference(LyricsRomanizeHindiKey, true)
     val romanizePunjabiLyrics by rememberPreference(LyricsRomanizePunjabiKey, true)
     val lyricsGlowEffect by rememberPreference(LyricsGlowEffectKey, false)
-    val lyricsAnimationStyle by rememberEnumPreference(LyricsAnimationStyleKey, LyricsAnimationStyle.VIVIMUSIC_1)
+    val lyricsAnimationStyle by rememberEnumPreference(LyricsAnimationStyleKey, LyricsAnimationStyle.MKRMUSIC_1)
     val lyricsTextSize by rememberPreference(LyricsTextSizeKey, 24f)
     val lyricsLineSpacing by rememberPreference(LyricsLineSpacingKey, 1.3f)
     val lyricsStandardBlur by rememberPreference(LyricsStandardBlurKey, false)
@@ -611,7 +611,7 @@ fun Lyrics(
 
     val lazyListState = rememberLazyListState()
     
-    // Professional animation states for smooth vivimusic-style transitions
+    // Professional animation states for smooth mkr-style transitions
     var isAnimating by remember { mutableStateOf(false) }
     var isAutoScrollEnabled by rememberSaveable { mutableStateOf(true) }
 
@@ -1478,7 +1478,7 @@ fun Lyrics(
                     key = { index, item -> "$index-${item.time}" } // Add stable key
                 ) { index, item ->
                     val isSelected = selectedIndices.contains(index)
-                    if (lyricsAnimationStyle == LyricsAnimationStyle.VIVIMUSIC_1) {
+                    if (lyricsAnimationStyle == LyricsAnimationStyle.MKRMUSIC_1) {
                         val currentLineTime = if (displayedCurrentLineIndex >= 0 && displayedCurrentLineIndex < lines.size) {
                             lines[displayedCurrentLineIndex].time
                         } else -1L
@@ -1486,7 +1486,7 @@ fun Lyrics(
                         val isActiveByIndex = index == displayedCurrentLineIndex
                         val isActiveByTime = isLineAtSameTime && displayedCurrentLineIndex >= 0
 
-                        ViviMusicLyricsLine(
+                        MkrMusicLyricsLine(
                             entry = item,
                             nextEntryTime = lines.getOrNull(index + 1)?.time,
                             effectivePlaybackPosition = effectivePlaybackPosition,
@@ -2867,11 +2867,11 @@ fun Lyrics(
     }
 }
 
-// Professional page animation constants inspired by vivimusic design - slower for smoothness
-private const val vivimusic_AUTO_SCROLL_DURATION = 1500L // Much slower auto-scroll for smooth transitions
-private const val vivimusic_INITIAL_SCROLL_DURATION = 1000L // Slower initial positioning
-private const val vivimusic_SEEK_DURATION = 800L // Slower user interaction
-private const val vivimusic_FAST_SEEK_DURATION = 600L // Less aggressive seeking
+// Professional page animation constants inspired by mkr design - slower for smoothness
+private const val mkrmusic_AUTO_SCROLL_DURATION = 1500L // Much slower auto-scroll for smooth transitions
+private const val mkrmusic_INITIAL_SCROLL_DURATION = 1000L // Slower initial positioning
+private const val mkrmusic_SEEK_DURATION = 800L // Slower user interaction
+private const val mkrmusic_FAST_SEEK_DURATION = 600L // Less aggressive seeking
 
 // Lyrics constants
 val LyricsPreviewTime = 2.seconds

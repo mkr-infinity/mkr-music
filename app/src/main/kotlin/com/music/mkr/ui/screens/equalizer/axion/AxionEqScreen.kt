@@ -58,7 +58,7 @@ fun AxionEqScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(stringResource(R.string.vivi_equalizer)) },
+                title = { Text(stringResource(R.string.mkr_equalizer)) },
                 navigationIcon = {
                     com.music.mkr.ui.component.IconButton(
                         onClick = onBackClick,
@@ -317,9 +317,9 @@ private fun SimpleEqMode(
         syncFromBands()
     }
 
-    val viviPresets = listOf(
+    val mkrPresets = listOf(
         R.string.eq_preset_flat to floatArrayOf(0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f, 0f),
-        R.string.eq_preset_vivi_signature to floatArrayOf(250f, 200f, 80f, -120f, -50f, 120f, 180f, 100f, 280f, 450f),
+        R.string.eq_preset_mkr_signature to floatArrayOf(250f, 200f, 80f, -120f, -50f, 120f, 180f, 100f, 280f, 450f),
         R.string.eq_preset_acoustic to floatArrayOf(-50f, 50f, 120f, 50f, -50f, 100f, 150f, 220f, 180f, 100f),
         R.string.eq_preset_spatial to floatArrayOf(200f, 100f, 0f, -150f, -200f, -100f, 50f, 150f, 300f, 400f),
         R.string.eq_preset_bass_boost to floatArrayOf(500f, 400f, 250f, 100f, 0f, -50f, 0f, 100f, 200f, 300f),
@@ -426,9 +426,9 @@ private fun SimpleEqMode(
             )
         }
 
-        viviPresets.chunked(4).forEach { chunk ->
+        mkrPresets.chunked(4).forEach { chunk ->
             PresetSection(
-                title = if (viviPresets.first() in chunk) stringResource(R.string.eq_label_vivi) else "",
+                title = if (mkrPresets.first() in chunk) stringResource(R.string.eq_label_mkr) else "",
                 presets = chunk,
                 enabled = enabled,
                 viewModel = viewModel,

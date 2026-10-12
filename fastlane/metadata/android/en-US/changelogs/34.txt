@@ -1,3 +1,0 @@
-﻿• Improved canvas animation smoothness
-• Fixed search history clearing bug
-• Updated app icon

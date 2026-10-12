@@ -1,3 +1,0 @@
-﻿• New user profile section
-• Fixed search filter not resetting
-• Bug fixes

@@ -328,9 +328,9 @@
     <string name="wrapped_playlist_saved">تم حفظ قائمة التشغيل</string>
     <string name="casting_to">التحويل إلى %s</string>
     <string name="progress_percent">التقدم %s%%</string>
-    <string name="listening_to_vivimusic">الاستماع إلى متروليست</string>
+    <string name="listening_to_mkrmusic">الاستماع إلى متروليست</string>
     <string name="listen_on_youtube_music">استمع عبر يوتيوب ميوزك</string>
-    <string name="visit_vivimusic">قم بزيارة MKR Music</string>
+    <string name="visit_mkrmusic">قم بزيارة MKR Music</string>
     <string name="open">فتح</string>
     <string name="failed_to_create_image">فشل إنشاء الصورة: %s</string>
     <string name="failed_to_parse_proxy">فشل تحليل عنوان URL للوكيل.</string>
@@ -645,9 +645,9 @@
     <string name="discord_rpc_preview">معاينة الحالة الغنية</string>
     <string name="discord_presence">التواجد</string>
     <string name="discord_connect_description">سجّل الدخول باستخدام Discord للمشاركة ما تستمع إليه</string>
-    <string name="discord_playing_vivimusic">تشغيل MKR Music</string>
-    <string name="discord_watching_vivimusic">مشاهدة MKR Music</string>
-    <string name="discord_competing_vivimusic">التنافس في MKR Music</string>
+    <string name="discord_playing_mkrmusic">تشغيل MKR Music</string>
+    <string name="discord_watching_mkrmusic">مشاهدة MKR Music</string>
+    <string name="discord_competing_mkrmusic">التنافس في MKR Music</string>
     <string name="discord_activity_name">اسم النشاط</string>
     <string name="discord_activity_name_description">اسم مخصص للنشاط (اتركه فارغًا للافتراضي)</string>
     <string name="discord_advanced_mode">الوضع المتقدم</string>

@@ -1,10 +1,10 @@
 /**
- * VIVI-LYRICS (C) 2026
+ * MKR-LYRICS (C) 2026
  *
  * PROPRIETARY LICENSE:
  * This file is source-available for viewing. Copying, modification,
  * redistribution, or reuse in other applications is strictly prohibited.
- * Licensed exclusively for use in the official vivimusic application.
+ * Licensed exclusively for use in the official mkrmusic application.
  */
 
 package com.music.musixmatch.models

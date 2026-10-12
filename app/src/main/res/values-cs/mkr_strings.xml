@@ -324,9 +324,9 @@
     <string name="wrapped_playlist_saved">Playlist uložen</string>
     <string name="casting_to">Přehrávání přes %s</string>
     <string name="progress_percent">Postup %s%%</string>
-    <string name="listening_to_vivimusic">Poslouchá MKR Music</string>
+    <string name="listening_to_mkrmusic">Poslouchá MKR Music</string>
     <string name="listen_on_youtube_music">Poslouchat na YouTube Music</string>
-    <string name="visit_vivimusic">Navštívit MKR Music</string>
+    <string name="visit_mkrmusic">Navštívit MKR Music</string>
     <string name="open">Otevřít</string>
     <string name="failed_to_create_image">Nepodařilo se vytvořit obrázek: %s</string>
     <string name="copied_title">Název zkopírován</string>
@@ -635,9 +635,9 @@
     <string name="discord_rpc_preview">Náhled stavu na Discordu</string>
     <string name="discord_presence">Stav</string>
     <string name="discord_connect_description">Přihlaste se k Discordu pro sdílení hudby, kterou posloucháte</string>
-    <string name="discord_playing_vivimusic">Hraje MKR Music</string>
-    <string name="discord_watching_vivimusic">Sleduje MKR Music</string>
-    <string name="discord_competing_vivimusic">Soupeří v MKR Music</string>
+    <string name="discord_playing_mkrmusic">Hraje MKR Music</string>
+    <string name="discord_watching_mkrmusic">Sleduje MKR Music</string>
+    <string name="discord_competing_mkrmusic">Soupeří v MKR Music</string>
     <string name="discord_activity_name">Název aktivity</string>
     <string name="discord_activity_name_description">Vlastní název aktivity (ponechte prázdné pro výchozí)</string>
     <string name="discord_advanced_mode">Pokročilý režim</string>

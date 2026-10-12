@@ -826,7 +826,7 @@ private fun ThumbnailItem(
                                     )?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
                                 }
                             }
-                            CanvasSource.VIVIMUSIC -> {
+                            CanvasSource.MKRMUSIC -> {
                                 searchTasks.firstNotNullOfOrNull { (s, a) ->
                                     MkrMusicCanvasProvider.getBySongArtist(
                                         song = s,

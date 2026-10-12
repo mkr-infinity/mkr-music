@@ -421,7 +421,7 @@ class ListenTogetherClient @Inject constructor(
 
     private fun getServerUrl(): String {
         val savedUrl = context.dataStore.get(ListenTogetherServerUrlKey, DEFAULT_SERVER_URL)
-        // If the saved URL is no longer in our list (e.g. Meowery was removed), revert to ViviMusic default
+        // If the saved URL is no longer in our list (e.g. Meowery was removed), revert to MKR default
         return if (ListenTogetherServers.findByUrl(savedUrl) != null) {
             savedUrl
         } else {
@@ -595,7 +595,7 @@ class ListenTogetherClient @Inject constructor(
             val powerManager = context.getSystemService<PowerManager>()
             wakeLock = powerManager?.newWakeLock(
                 PowerManager.PARTIAL_WAKE_LOCK,
-                "vivimusic:ListenTogether"
+                "mkrmusic:ListenTogether"
             )
         }
         if (wakeLock?.isHeld == false) {

@@ -45,13 +45,13 @@ class CustomDownloadManager {
                 // Create download directory
                 val downloadDir = File(
                     context.getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS),
-                    "vivi_updates"
+                    "mkr_updates"
                 )
                 if (!downloadDir.exists()) {
                     downloadDir.mkdirs()
                 }
 
-                val outputFile = File(downloadDir, "vivi.apk")
+                val outputFile = File(downloadDir, "mkr.apk")
                 val outputStream = FileOutputStream(outputFile)
 
                 val buffer = ByteArray(8192)

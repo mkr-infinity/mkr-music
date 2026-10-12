@@ -364,9 +364,9 @@
     <string name="error_eq_apply_failed">ไม่สามารถใช้โปรไฟล์ EQ : %1$s</string>
     <string name="casting_to">กำลังแคสต์ไปยัง %s</string>
     <string name="progress_percent">ความคืบหน้า %s%%</string>
-    <string name="listening_to_vivimusic">กำลังฟังผ่าน MKR Music</string>
+    <string name="listening_to_mkrmusic">กำลังฟังผ่าน MKR Music</string>
     <string name="listen_on_youtube_music">ฟังบน YouTube Music</string>
-    <string name="visit_vivimusic">ไปที่ MKR Music</string>
+    <string name="visit_mkrmusic">ไปที่ MKR Music</string>
     <string name="open">เปิด</string>
     <string name="failed_to_create_image">ไม่สามารถสร้างรูปภาพ: %s</string>
     <string name="copied_title">คัดลอกชื่อเพลงแล้ว</string>
@@ -615,9 +615,9 @@
     <string name="discord_rpc_preview">ตัวอย่าง Rich Presence</string>
     <string name="discord_presence">สถานะการแสดงตัว</string>
     <string name="discord_connect_description">เข้าสู่ระบบด้วย Discord เพื่อแชร์สิ่งที่คุณกำลังฟัง</string>
-    <string name="discord_playing_vivimusic">กำลังเล่น MKR Music</string>
-    <string name="discord_watching_vivimusic">กำลังรับชม MKR Music</string>
-    <string name="discord_competing_vivimusic">กำลังแข่งขันใน MKR Music</string>
+    <string name="discord_playing_mkrmusic">กำลังเล่น MKR Music</string>
+    <string name="discord_watching_mkrmusic">กำลังรับชม MKR Music</string>
+    <string name="discord_competing_mkrmusic">กำลังแข่งขันใน MKR Music</string>
     <string name="discord_activity_name">ชื่อกิจกรรม</string>
     <string name="discord_activity_name_description">กำหนดชื่อกิจกรรมเอง (เว้นว่างเพื่อใช้ค่าเริ่มต้น)</string>
     <string name="discord_advanced_mode">โหมดขั้นสูง</string>

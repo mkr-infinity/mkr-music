@@ -1,3 +1,0 @@
-﻿• Added explicit content filter
-• Fixed recommendations loop
-• Stability improvements

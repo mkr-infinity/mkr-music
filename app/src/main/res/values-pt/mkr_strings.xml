@@ -332,9 +332,9 @@
     <string name="import_error_title">Erro de importação</string>
     <string name="casting_to">Transmitir para %s</string>
     <string name="progress_percent">Progresso %s%%</string>
-    <string name="listening_to_vivimusic">Ouvir no MKR Music</string>
+    <string name="listening_to_mkrmusic">Ouvir no MKR Music</string>
     <string name="listen_on_youtube_music">Ouvir no YouTube Music</string>
-    <string name="visit_vivimusic">Visitar MKR Music</string>
+    <string name="visit_mkrmusic">Visitar MKR Music</string>
     <string name="open">Aberto</string>
     <string name="failed_to_create_image">Falha ao criar imagem: %s</string>
     <string name="copied_title">Título copiado</string>

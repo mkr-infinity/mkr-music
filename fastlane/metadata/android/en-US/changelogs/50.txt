@@ -1,3 +1,0 @@
-﻿• New immersive fullscreen mode
-• Fixed bottom bar overlapping content
-• Stability fixes

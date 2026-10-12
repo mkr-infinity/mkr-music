@@ -21,7 +21,7 @@ import java.util.Locale
  * and adds Android 16 Status Chips (Live Updates) support.
  */
 @OptIn(UnstableApi::class)
-class ViviNotificationProvider(
+class MkrNotificationProvider(
     private val context: Context,
     notificationIdProvider: DefaultMediaNotificationProvider.NotificationIdProvider,
     channelId: String,
@@ -38,7 +38,7 @@ class ViviNotificationProvider(
     /**
      * Set the small icon for the notification. This is used by MusicService.
      */
-    fun setSmallIcon(iconResId: Int): ViviNotificationProvider {
+    fun setSmallIcon(iconResId: Int): MkrNotificationProvider {
         defaultProvider.setSmallIcon(iconResId)
         return this
     }

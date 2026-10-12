@@ -319,9 +319,9 @@
     <string name="wrapped_playlist_saved">Playlist salvata</string>
     <string name="casting_to">Trasmissione a %s in corso</string>
     <string name="progress_percent">Progresso %s%%</string>
-    <string name="listening_to_vivimusic">Ascoltando MKR Music</string>
+    <string name="listening_to_mkrmusic">Ascoltando MKR Music</string>
     <string name="listen_on_youtube_music">Ascolta su YouTube Music</string>
-    <string name="visit_vivimusic">Visita MKR Music</string>
+    <string name="visit_mkrmusic">Visita MKR Music</string>
     <string name="open">Apri</string>
     <string name="failed_to_create_image">Impossibile creare l\'immagine: %s</string>
     <string name="copied_title">Titolo copiato</string>
@@ -619,9 +619,9 @@
     <string name="discord_advanced_mode">Modalità avanzata</string>
     <string name="discord_activity_name_description">Nome personalizzato per l\'attività (lascia vuoto per predefinito)</string>
     <string name="discord_activity_name">Nome dell\'attività</string>
-    <string name="discord_competing_vivimusic">Competendo su MKR Music</string>
-    <string name="discord_watching_vivimusic">Guardando video su MKR Music</string>
-    <string name="discord_playing_vivimusic">Riproducendo musica su MKR Music</string>
+    <string name="discord_competing_mkrmusic">Competendo su MKR Music</string>
+    <string name="discord_watching_mkrmusic">Guardando video su MKR Music</string>
+    <string name="discord_playing_mkrmusic">Riproducendo musica su MKR Music</string>
     <string name="discord_connect_description">Accedi con Discord per condividere ciò che stai ascoltando</string>
     <string name="discord_presence">Presenza (Discord RPC)</string>
     <string name="discord_rpc_preview">Anteprima della Rich Presence</string>

@@ -1,3 +1,0 @@
-﻿• Better Android Auto integration
-• Fixed track skip on Bluetooth disconnect
-• Bug fixes
