@@ -22,7 +22,7 @@
 ### 💖 Support & Contributions
 - **Chainsaw Spikes Action Button**: Custom-designed animated moving chainsaw teeth border on the Donate & Support button with a smooth continuous perimeter loop and zero text clipping.
 - **Direct UPI Copy Card**: One-tap manual copy card for verified UPI payment details with tactile spring press feedback ("Copied ✓").
-- **App Recommendation Badges**: Quick-access guidance badges for major payment platforms (PhonePe, Google Pay, Paytm, BHIM, and Banking Apps).
+- **Official Payment App Logos**: Authentic vector logos for PhonePe, Google Pay, Paytm, BHIM UPI, and mobile banking apps.
 - **One-Touch Note Remark**: Dedicated copy action for the payment remark (`"Support MKR Music"`).
 - **Rotating Gratitude Toasts**: 6 randomized appreciation toast messages displaying on copy with automatic 4-second dismiss and instant reset on subsequent clicks.
 - **External Contribution Link**: Direct integration with Buy Me a Coffee platform.
