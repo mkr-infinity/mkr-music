@@ -799,49 +799,44 @@ suspend fun checkForUpdate(
                     val tagWithPrefix = targetRelease.getString("tag_name")
                     val displayTag = tagWithPrefix
 
-                    // FETCH CHANGELOG URL FROM RELEASE ASSETS DYNAMICALLY BASED ON CHANNEL
+                    // Parse release notes directly from GitHub release body
                     val changelogList = mutableListOf<ChangelogSection>()
+                    val body = targetRelease.optString("body", "").trim()
                     var description: String? = null
-                    var imageUrl: String? = null
-                    try {
-                        val changelogUrl =
-                            URL("https://github.com/mkr-infinity/mkr-music/releases/download/$tagWithPrefix/changelog.json?t=${System.currentTimeMillis()}")
-                        val changelogJson = changelogUrl.openStream().bufferedReader().use { it.readText() }
-                        val changelogData = JSONObject(changelogJson)
+                    val imageUrl: String? = "https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/banner.png"
 
-                        description = changelogData.optString("description").takeIf { it.isNotEmpty() }
-                        imageUrl = changelogData.optString("image").takeIf { it.isNotEmpty() }
+                    if (body.isNotBlank()) {
+                        val lines = body.split("\n")
+                            .map { it.trim() }
+                            .filter { it.isNotBlank() && !it.startsWith("<") }
+                        
+                        var currentSectionTitle = context.getString(R.string.changelog)
+                        val currentItems = mutableListOf<String>()
 
-                        val changelogArray = changelogData.getJSONArray("changelog")
-                        for (j in 0 until changelogArray.length()) {
-                            val sectionObj = changelogArray.getJSONObject(j)
-                            val title = sectionObj.optString("title", "")
-                            val secDesc = sectionObj.optString("description").takeIf { it.isNotBlank() }
-                            val itemsArray = sectionObj.optJSONArray("items")
-                            val itemsList = mutableListOf<String>()
-                            if (itemsArray != null) {
-                                for (k in 0 until itemsArray.length()) {
-                                    itemsList.add(itemsArray.getString(k))
+                        for (line in lines) {
+                            if (line.startsWith("#")) {
+                                if (currentItems.isNotEmpty()) {
+                                    changelogList.add(ChangelogSection(currentSectionTitle, currentItems.toList()))
+                                    currentItems.clear()
+                                }
+                                currentSectionTitle = line.trimStart('#', ' ')
+                            } else if (line.startsWith("-") || line.startsWith("*") || line.startsWith("•")) {
+                                currentItems.add(line.trimStart('-', '*', '•', ' '))
+                            } else if (!line.startsWith("---")) {
+                                if (description == null) {
+                                    description = line
+                                } else {
+                                    currentItems.add(line)
                                 }
                             }
-                            
-                            val blocksArray = sectionObj.optJSONArray("blocks")
-                            var blocksList: List<SDUIBlock>? = null
-                            if (blocksArray != null) {
-                                val sduiList = mutableListOf<SDUIBlock>()
-                                for (k in 0 until blocksArray.length()) {
-                                    sduiList.add(parseSDUIBlock(blocksArray.getJSONObject(k)))
-                                }
-                                blocksList = sduiList
-                            }
-                            
-                            changelogList.add(ChangelogSection(title, itemsList, secDesc, blocksList))
                         }
-                    } catch (e: Exception) {
-                        // Fallback: Parse body as a single list if it starts with characters or split by lines
-                        val body = targetRelease.optString("body", context.getString(R.string.no_changelog_available))
-                        val fallbackItems = body.split("\n").filter { it.isNotBlank() }
-                        changelogList.add(ChangelogSection(context.getString(R.string.changelog), fallbackItems))
+                        if (currentItems.isNotEmpty()) {
+                            changelogList.add(ChangelogSection(currentSectionTitle, currentItems.toList()))
+                        }
+                    }
+
+                    if (changelogList.isEmpty()) {
+                        changelogList.add(ChangelogSection(context.getString(R.string.changelog), listOf("Update available: $displayTag")))
                     }
 
                     val publishedAt = targetRelease.getString("published_at")
