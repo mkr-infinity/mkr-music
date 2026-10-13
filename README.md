@@ -182,13 +182,30 @@ Crafted with dedication by **Mohammad Kaif Raja**:
 
 ---
 
-## 🙏 Credits & Inspiration
+## 🙏 Special Thanks & Credits
 
-MKR Music was inspired by and builds upon the ideas of these open-source projects:
+**MKR Music** is built upon the foundation of amazing open-source projects, visionary developers, and the broader FLOSS community:
 
-- **ViVi Music**: Created with passion by **vivizzz007** and community contributors.
-- **InnerTune**: Developed by **Zion Huang** and contributors.
-- **ViMusic**: Developed by **vfsfitvnm** and contributors.
+### 💡 Special Thanks
+- **Mostafa Alagamy** – Creator of [Metrolist](https://github.com/mostafaalagamy/metrolist), the project that inspired the original foundation. Huge thanks for the foundation and open-source contributions! 🌟
+- **[@Zemer](https://github.com/Zemer)** – Huge congratulations and thanks for inventing the revolutionary playback method! 🎉
+
+### 🎖️ Foundational Projects
+- **[InnerTune](https://github.com/z-huang/InnerTune)** by Zion Huang – For the groundbreaking YouTube Music client architecture and Innertube integration foundation.
+- **[ViMusic](https://github.com/vfsfitvnm/ViMusic)** by vfsfitvnm – For pioneering the original Android client and playback concepts.
+- **[ViVi Music](https://github.com/vivizzz007/vivi-music)** by vivizzz007 – For inspiring features, UI refinements, and dedicated contributions.
+- **[AM-Lyrics](https://github.com/Binimum)** – For the powerful synced TTML lyrics integration from Binimum.
+- **[Better Lyrics](https://github.com/Better-Lyrics)** – For beautiful synchronized lyrics and YouTube Music integration.
+- **[YouLyPlus](https://github.com/YouLyPlus)** – For smooth, expressive in-app lyrics styling.
+- **[Unison](https://github.com)** – For the premium Apple Music-style visualizer canvas.
+- **[SponsorBlock](https://sponsor.ajay.app/)** – For automatic skipping of sponsored and non-music segments.
+- **Spotify Integration** – For Spotify playlist discovery, search queries, and audio library synchronization.
+- **JioSaavn Integration** – For high-fidelity regional streaming and catalog fallback.
+- **Innertube & NewPipe Extractor** – For YouTube Music streaming APIs, stream extraction, and search pipelines.
+
+> 💖 **To the open-source community:** Thank you for all the incredible tools, libraries, and APIs that make this project possible!
+> 
+> *Thank you to all the amazing developers who made this project possible!* ✨
 
 ---
 
