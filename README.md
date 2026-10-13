@@ -32,15 +32,64 @@ Experience studio-grade lossless playback up to **320 kbps**, powered by **Andro
 
 ---
 
-## 📱 Screenshots
+## 📱 Screenshots Showcase
 
 <p align="center">
-  <em>👉 Swipe or scroll horizontally to explore all screens</em>
+  <em>👉 Swipe or scroll horizontally to explore every screen in full detail</em>
 </p>
 
-| Home | Search | Player | Immersive Player | Canvas Player | Synced Lyrics | Artist Profile | Equalizer | Audio Output | Settings | Appearance | Storage & Cache |
-| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| <img src="assets/ui/home.jpg" width="220" alt="Home Screen" /> | <img src="assets/ui/search.jpg" width="220" alt="Search Screen" /> | <img src="assets/ui/player.jpg" width="220" alt="Player Screen" /> | <img src="assets/ui/immersive_player.jpg" width="220" alt="Immersive Player" /> | <img src="assets/ui/canvas_player.jpg" width="220" alt="Canvas Player" /> | <img src="assets/ui/lyrics.jpg" width="220" alt="Synced Lyrics" /> | <img src="assets/ui/artist.jpg" width="220" alt="Artist Profile" /> | <img src="assets/ui/equalizer.jpg" width="220" alt="MKR Equalizer" /> | <img src="assets/ui/audio_output.jpg" width="220" alt="Audio Output" /> | <img src="assets/ui/settings.jpg" width="220" alt="Settings Dashboard" /> | <img src="assets/ui/appearance.jpg" width="220" alt="Appearance Settings" /> | <img src="assets/ui/storage_cache.jpg" width="220" alt="Storage & Cache" /> |
+<table>
+  <tr>
+    <td align="center" valign="top">
+      <h3>🏠 Home</h3>
+      <img src="assets/ui/home.jpg" width="340" alt="Home Screen" />
+    </td>
+    <td align="center" valign="top">
+      <h3>🔍 Search</h3>
+      <img src="assets/ui/search.jpg" width="340" alt="Search Screen" />
+    </td>
+    <td align="center" valign="top">
+      <h3>🎵 Now Playing</h3>
+      <img src="assets/ui/player.jpg" width="340" alt="Now Playing Screen" />
+    </td>
+    <td align="center" valign="top">
+      <h3>🌌 Immersive View</h3>
+      <img src="assets/ui/immersive_player.jpg" width="340" alt="Immersive Player" />
+    </td>
+    <td align="center" valign="top">
+      <h3>🎬 Dynamic Canvas</h3>
+      <img src="assets/ui/canvas_player.jpg" width="340" alt="Dynamic Canvas Player" />
+    </td>
+    <td align="center" valign="top">
+      <h3>📜 Synced Lyrics</h3>
+      <img src="assets/ui/lyrics.jpg" width="340" alt="Synchronized Lyrics" />
+    </td>
+    <td align="center" valign="top">
+      <h3>👤 Artist Profile</h3>
+      <img src="assets/ui/artist.jpg" width="340" alt="Artist Profile" />
+    </td>
+    <td align="center" valign="top">
+      <h3>🎚️ Studio Equalizer</h3>
+      <img src="assets/ui/equalizer.jpg" width="340" alt="MKR Studio Equalizer" />
+    </td>
+    <td align="center" valign="top">
+      <h3>🔊 Audio Output</h3>
+      <img src="assets/ui/audio_output.jpg" width="340" alt="Audio Output Switcher" />
+    </td>
+    <td align="center" valign="top">
+      <h3>⚙️ Settings</h3>
+      <img src="assets/ui/settings.jpg" width="340" alt="Settings Dashboard" />
+    </td>
+    <td align="center" valign="top">
+      <h3>🎭 Appearance</h3>
+      <img src="assets/ui/appearance.jpg" width="340" alt="Appearance and Themes" />
+    </td>
+    <td align="center" valign="top">
+      <h3>💾 Storage & Cache</h3>
+      <img src="assets/ui/storage_cache.jpg" width="340" alt="Storage and Cache Settings" />
+    </td>
+  </tr>
+</table>
 
 ---
 
@@ -48,7 +97,7 @@ Experience studio-grade lossless playback up to **320 kbps**, powered by **Andro
 
 | # | Feature | Description |
 | :-: | :--- | :--- |
-| 1 | 🎧 **Dual-Engine Streaming** | High-fidelity audio powered by JioSaavn and YouTube Music with seamless automatic fallback. |
+| 1 | 🎧 **Tri-Engine Streaming & Sync** | Lossless audio powered by YouTube Music, JioSaavn, and Spotify playlist integration & sync with seamless fallback. |
 | 2 | 🎚️ **MKR Studio Equalizer** | Studio acoustic tuning with 10-band EQ, Bass/Mids/Treble sliders, Dolby Atmos, and signature presets. |
 | 3 | 📜 **Synchronized Lyrics** | Real-time word-by-word scrolling lyrics with dynamic animated glow and blurred album art backdrops. |
 | 4 | 🧠 **Smart Mood Queue & Quick Picks** | Intelligent track radio clustering that adapts to your active listening taste, recent mood, and genre. |
