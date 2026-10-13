@@ -68,19 +68,15 @@ Unifying **YouTube Music**, **JioSaavn**, and **Spotify playlist sync**, it deli
       <img src="assets/ui/artist.jpg" width="100%" alt="Artist Profile" />
     </td>
     <td align="center" width="33%" valign="top">
-      <h4>🎚️ Studio Equalizer</h4>
-      <img src="assets/ui/equalizer.jpg" width="100%" alt="MKR Studio Equalizer" />
-    </td>
-    <td align="center" width="33%" valign="top">
       <h4>🔊 Audio Output</h4>
       <img src="assets/ui/audio_output.jpg" width="100%" alt="Audio Output Switcher" />
     </td>
-  </tr>
-  <tr>
     <td align="center" width="33%" valign="top">
       <h4>⚙️ Settings</h4>
       <img src="assets/ui/settings.jpg" width="100%" alt="Settings Dashboard" />
     </td>
+  </tr>
+  <tr>
     <td align="center" width="33%" valign="top">
       <h4>🎭 Appearance</h4>
       <img src="assets/ui/appearance.jpg" width="100%" alt="Appearance and Themes" />
@@ -88,6 +84,10 @@ Unifying **YouTube Music**, **JioSaavn**, and **Spotify playlist sync**, it deli
     <td align="center" width="33%" valign="top">
       <h4>💾 Storage & Cache</h4>
       <img src="assets/ui/storage_cache.jpg" width="100%" alt="Storage and Cache Settings" />
+    </td>
+    <td align="center" width="33%" valign="top">
+      <h4>🎚️ Studio Equalizer</h4>
+      <img src="assets/ui/equalizer.jpg" width="100%" alt="MKR Studio Equalizer" />
     </td>
   </tr>
 </table>
