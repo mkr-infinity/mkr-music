@@ -3,11 +3,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mkr-infinity/mkr-music/releases"><img src="https://img.shields.io/badge/Version-v6.0.8%20Stable-00E676?style=for-the-badge&logo=android&logoColor=white" alt="Version v6.0.8 Stable"/></a>
-  <a href="https://github.com/mkr-infinity/mkr-music/actions"><img src="https://img.shields.io/badge/Build-Passing-3498DB?style=for-the-badge&logo=githubactions&logoColor=white" alt="Build Status"/></a>
-  <a href="https://www.gnu.org/licenses/gpl-3.0"><img src="https://img.shields.io/badge/License-GPLv3-8E44AD?style=for-the-badge" alt="License: GPL v3"/></a>
+  <a href="https://github.com/mkr-infinity/mkr-music/releases/latest"><img src="https://img.shields.io/badge/Download-Latest%20Release-00E676?style=for-the-badge&logo=android&logoColor=white" alt="Download Latest Release"/></a>
   <a href="https://github.com/mkr-infinity"><img src="https://img.shields.io/badge/Developer-%40mkr--infinity-E74C3C?style=for-the-badge&logo=github&logoColor=white" alt="Developer @mkr-infinity"/></a>
-  <img src="https://img.shields.io/badge/Platform-Android%208.0%2B-F39C12?style=for-the-badge" alt="Android 8.0+"/>
+  <img src="https://img.shields.io/badge/Platform-Android%208.0%2B-F39C12?style=for-the-badge" alt="Platform Android 8.0+"/>
 </p>
 
 <div align="center">
@@ -16,8 +14,9 @@
 
 ### *Not just a music player — an intelligent, private sonic sanctuary.* ✨
 
-**MKR Music** is a premier open-source, ad-free music streaming and offline audio player for Android.
-Crafted with **Jetpack Compose**, **Material 3 Expressive**, and **AndroidX Media3 ExoPlayer**, MKR Music merges studio-grade acoustics with modern visuals.
+**MKR Music** is an elite, open-source music streaming powerhouse and offline audio player engineered for Android. Built from the ground up to redefine your auditory journey, MKR Music seamlessly unifies **YouTube Music**, **JioSaavn**, and **Spotify playlist integration & sync** into one cohesive, ultra-responsive experience.
+
+Experience studio-grade lossless playback up to **320 kbps**, powered by **AndroidX Media3 ExoPlayer**, real-time synchronized lyrics, full-screen dynamic canvas visuals, and an intelligent mood-adaptive queue algorithm that evolves with your musical taste. Whether you are exploring global charts, syncing your Spotify collections, tuning with the 10-band MKR Studio Equalizer, or streaming live with friends via **Listen Together**, MKR Music delivers the ultimate ad-free sonic experience with absolute privacy and zero telemetry.
 
 <p align="center">
   <a href="https://github.com/mkr-infinity/mkr-music/releases/latest">
