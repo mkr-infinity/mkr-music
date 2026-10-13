@@ -45,29 +45,20 @@ Crafted with **Jetpack Compose**, **Material 3 Expressive**, and **AndroidX Medi
 
 ---
 
-## 🌟 Key Highlights
+## ✨ Key Features
 
-| Feature | Description |
-| :--- | :--- |
-| 🎧 **Dual-Engine Streaming** | High-fidelity audio powered by JioSaavn & YouTube Music with seamless fallback |
-| 🎨 **12 Adaptive Icons** | 5 Human-Made + 7 AI-Made themes adapting naturally to any device launcher shape |
-| 🧠 **Smart Recommendations** | Intelligent Quick Picks that learn your musical style, artists, and release eras |
-| 🔍 **Smart Jump Search** | Instant setting search with smooth scroll positioning and spotlight glow animation |
-| 📜 **Synchronized Lyrics** | Real-time word-by-word scrolling lyrics with dynamic Apple Music-style glow |
-| 🎚️ **Axion Equalizer** | Studio acoustic tuning with presets: *MKR Signature, 3D Stage, Bass Boost, Dolby Atmos* |
-| 👥 **Listen Together** | Real-time shared streaming sessions with friends across devices |
-| 🛡️ **Zero Telemetry** | 100% private — no trackers, no ads, and all library data stays on your device |
-
----
-
-## 🚀 Key Features
-
-- ⚡ **High-Fidelity Audio**: Ultra-fast buffering, gapless playback, crossfade transitions, and background streaming.
-- 🎨 **Adaptive Launcher Icons**: Categorized into **Human Made** (*Cyber Dots, Sunset Pastel, Retro Synthwave, Aurora Glow, Matte Obsidian*) and **AI Made** (*MKR Official, Neon Beat, Midnight Note, Dreamwave, Minimal Note, Pulse Vinyl, Retro Melody*).
-- 🎯 **Redesigned Settings**: Clean top search capsule, 2x2 quick hub grid, dual 50/50 status capsules, and separate Privacy & Backup vaults.
-- 💾 **Smart Offline Vault**: Automatic background audio caching, lossless local downloads, and one-tap library backup.
-- 🎮 **Discord Rich Presence**: Live status showing your currently playing track, artist, album art, and duration.
-- 🔋 **Battery Efficient**: Automatic process cleanup on app swipe to conserve battery and memory on all devices.
+| # | Feature | Description |
+| :-: | :--- | :--- |
+| 1 | 🎧 **Dual-Engine Streaming** | High-fidelity audio powered by JioSaavn and YouTube Music with seamless automatic fallback. |
+| 2 | 🎚️ **MKR Studio Equalizer** | Studio acoustic tuning with 10-band EQ, Bass/Mids/Treble sliders, Dolby Atmos, and signature presets. |
+| 3 | 📜 **Synchronized Lyrics** | Real-time word-by-word scrolling lyrics with dynamic animated glow and blurred album art backdrops. |
+| 4 | 🧠 **Smart Mood Queue & Quick Picks** | Intelligent track radio clustering that adapts to your active listening taste, recent mood, and genre. |
+| 5 | ⚡ **Instant Playback & Smart Cache** | Instant zero-buffer audio start with customizable delayed caching (5s–90s) for offline listening. |
+| 6 | 🎨 **Expressive Material 3 UI** | Full-bleed artwork canvases, fluid animations, and 12 custom adaptive launcher icons. |
+| 7 | 👥 **Listen Together** | Real-time synchronized listening rooms allowing you and your friends to stream music together remotely. |
+| 8 | 🎵 **Stream Bitrate & Output Switcher** | Dynamic real-time kbps stream quality reporting with seamless Bluetooth and device audio routing. |
+| 9 | 🛡️ **Zero Telemetry & 100% Private** | Completely open-source, zero analytics or telemetry, no ads, and all library data stored locally. |
+| 10 | 🚀 **Explore More Features** | [**Download the App**](https://github.com/mkr-infinity/mkr-music/releases/latest) to enjoy Discord Rich Presence, Sleep Timer, Library Backups, and more! |
 
 ---
 
