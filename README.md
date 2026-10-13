@@ -34,61 +34,70 @@ Unifying **YouTube Music**, **JioSaavn**, and **Spotify playlist sync**, it deli
 ## 📱 Screenshots Showcase
 
 <p align="center">
-  <em>👉 Swipe or scroll horizontally to explore every screen in full detail</em>
+  <em>Explore MKR Music's intuitive, expressive interface screen by screen:</em>
 </p>
 
-<table>
-  <tr>
-    <td align="center" valign="top">
-      <h3>🏠 Home</h3>
-      <img src="assets/ui/home.jpg" width="340" alt="Home Screen" />
-    </td>
-    <td align="center" valign="top">
-      <h3>🔍 Search</h3>
-      <img src="assets/ui/search.jpg" width="340" alt="Search Screen" />
-    </td>
-    <td align="center" valign="top">
-      <h3>🎵 Now Playing</h3>
-      <img src="assets/ui/player.jpg" width="340" alt="Now Playing Screen" />
-    </td>
-    <td align="center" valign="top">
-      <h3>🌌 Immersive View</h3>
-      <img src="assets/ui/immersive_player.jpg" width="340" alt="Immersive Player" />
-    </td>
-    <td align="center" valign="top">
-      <h3>🎬 Dynamic Canvas</h3>
-      <img src="assets/ui/canvas_player.jpg" width="340" alt="Dynamic Canvas Player" />
-    </td>
-    <td align="center" valign="top">
-      <h3>📜 Synced Lyrics</h3>
-      <img src="assets/ui/lyrics.jpg" width="340" alt="Synchronized Lyrics" />
-    </td>
-    <td align="center" valign="top">
-      <h3>👤 Artist Profile</h3>
-      <img src="assets/ui/artist.jpg" width="340" alt="Artist Profile" />
-    </td>
-    <td align="center" valign="top">
-      <h3>🎚️ Studio Equalizer</h3>
-      <img src="assets/ui/equalizer.jpg" width="340" alt="MKR Studio Equalizer" />
-    </td>
-    <td align="center" valign="top">
-      <h3>🔊 Audio Output</h3>
-      <img src="assets/ui/audio_output.jpg" width="340" alt="Audio Output Switcher" />
-    </td>
-    <td align="center" valign="top">
-      <h3>⚙️ Settings</h3>
-      <img src="assets/ui/settings.jpg" width="340" alt="Settings Dashboard" />
-    </td>
-    <td align="center" valign="top">
-      <h3>🎭 Appearance</h3>
-      <img src="assets/ui/appearance.jpg" width="340" alt="Appearance and Themes" />
-    </td>
-    <td align="center" valign="top">
-      <h3>💾 Storage & Cache</h3>
-      <img src="assets/ui/storage_cache.jpg" width="340" alt="Storage and Cache Settings" />
-    </td>
-  </tr>
-</table>
+<div align="center">
+
+### 🏠 Home Screen
+<img src="assets/ui/home.jpg" width="360" alt="Home Screen" />
+
+---
+
+### 🔍 Search & Discover
+<img src="assets/ui/search.jpg" width="360" alt="Search Screen" />
+
+---
+
+### 🎵 Now Playing
+<img src="assets/ui/player.jpg" width="360" alt="Now Playing Screen" />
+
+---
+
+### 🌌 Immersive Player
+<img src="assets/ui/immersive_player.jpg" width="360" alt="Immersive Player" />
+
+---
+
+### 🎬 Dynamic Canvas
+<img src="assets/ui/canvas_player.jpg" width="360" alt="Dynamic Canvas Player" />
+
+---
+
+### 📜 Synchronized Lyrics
+<img src="assets/ui/lyrics.jpg" width="360" alt="Synchronized Lyrics" />
+
+---
+
+### 👤 Artist Profile
+<img src="assets/ui/artist.jpg" width="360" alt="Artist Profile" />
+
+---
+
+### 🎚️ MKR Studio Equalizer
+<img src="assets/ui/equalizer.jpg" width="360" alt="MKR Studio Equalizer" />
+
+---
+
+### 🔊 Audio Output Switcher
+<img src="assets/ui/audio_output.jpg" width="360" alt="Audio Output Switcher" />
+
+---
+
+### ⚙️ Settings Dashboard
+<img src="assets/ui/settings.jpg" width="360" alt="Settings Dashboard" />
+
+---
+
+### 🎭 Appearance & Themes
+<img src="assets/ui/appearance.jpg" width="360" alt="Appearance and Themes" />
+
+---
+
+### 💾 Storage & Cache
+<img src="assets/ui/storage_cache.jpg" width="360" alt="Storage and Cache Settings" />
+
+</div>
 
 ---
 
