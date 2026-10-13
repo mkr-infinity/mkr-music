@@ -19,7 +19,15 @@
 **MKR Music** is a premier open-source, ad-free music streaming and offline audio player for Android.
 Crafted with **Jetpack Compose**, **Material 3 Expressive**, and **AndroidX Media3 ExoPlayer**, MKR Music merges studio-grade acoustics with modern visuals.
 
-[**Download APK**](https://github.com/mkr-infinity/mkr-music/releases) • [**Report Issue**](https://github.com/mkr-infinity/mkr-music/issues) • [**Request Feature**](https://github.com/mkr-infinity/mkr-music/issues/new) • [**Developer Website**](https://mkr-infinity.github.io)
+<p align="center">
+  <a href="https://github.com/mkr-infinity/mkr-music/releases/latest">
+    <img src="https://img.shields.io/badge/📥%20Download%20The%20App-Latest%20Release-00E676?style=for-the-badge&logo=android&logoColor=white" alt="Download The App" height="42"/>
+  </a>
+</p>
+
+<p align="center">
+  <sub><em>💡 <b>Note:</b> After clicking the button above, scroll down to the <b>Assets</b> section on the release page to download the APK file.</em></sub>
+</p>
 
 </div>
 
