@@ -33,6 +33,18 @@ Crafted with **Jetpack Compose**, **Material 3 Expressive**, and **AndroidX Medi
 
 ---
 
+## 📱 Screenshots
+
+<p align="center">
+  <em>👉 Swipe or scroll horizontally to explore all screens</em>
+</p>
+
+| Home | Search | Player | Immersive Player | Canvas Player | Synced Lyrics | Artist Profile | Equalizer | Audio Output | Settings | Appearance | Storage & Cache |
+| :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| <img src="assets/ui/home.jpg" width="220" alt="Home Screen" /> | <img src="assets/ui/search.jpg" width="220" alt="Search Screen" /> | <img src="assets/ui/player.jpg" width="220" alt="Player Screen" /> | <img src="assets/ui/immersive_player.jpg" width="220" alt="Immersive Player" /> | <img src="assets/ui/canvas_player.jpg" width="220" alt="Canvas Player" /> | <img src="assets/ui/lyrics.jpg" width="220" alt="Synced Lyrics" /> | <img src="assets/ui/artist.jpg" width="220" alt="Artist Profile" /> | <img src="assets/ui/equalizer.jpg" width="220" alt="MKR Equalizer" /> | <img src="assets/ui/audio_output.jpg" width="220" alt="Audio Output" /> | <img src="assets/ui/settings.jpg" width="220" alt="Settings Dashboard" /> | <img src="assets/ui/appearance.jpg" width="220" alt="Appearance Settings" /> | <img src="assets/ui/storage_cache.jpg" width="220" alt="Storage & Cache" /> |
+
+---
+
 ## 🌟 Key Highlights
 
 | Feature | Description |
