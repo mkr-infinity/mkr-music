@@ -96,18 +96,16 @@ Unifying **YouTube Music**, **JioSaavn**, and **Spotify playlist sync**, it deli
 
 ## ✨ Key Features
 
-| # | Feature | Description |
-| :-: | :--- | :--- |
-| 1 | 🎧 **Tri-Engine Streaming & Sync** | Lossless audio powered by YouTube Music, JioSaavn, and Spotify playlist integration & sync with seamless fallback. |
-| 2 | 🎚️ **MKR Studio Equalizer** | Studio acoustic tuning with 10-band EQ, Bass/Mids/Treble sliders, Dolby Atmos, and signature presets. |
-| 3 | 📜 **Synchronized Lyrics** | Real-time word-by-word scrolling lyrics with dynamic animated glow and blurred album art backdrops. |
-| 4 | 🧠 **Smart Mood Queue & Quick Picks** | Intelligent track radio clustering that adapts to your active listening taste, recent mood, and genre. |
-| 5 | ⚡ **Instant Playback & Smart Cache** | Instant zero-buffer audio start with customizable delayed caching (5s–90s) for offline listening. |
-| 6 | 🎨 **Expressive Material 3 UI** | Full-bleed artwork canvases, fluid animations, and 12 custom adaptive launcher icons. |
-| 7 | 👥 **Listen Together** | Real-time synchronized listening rooms allowing you and your friends to stream music together remotely. |
-| 8 | 🎵 **Stream Bitrate & Output Switcher** | Dynamic real-time kbps stream quality reporting with seamless Bluetooth and device audio routing. |
-| 9 | 🛡️ **Zero Telemetry & 100% Private** | Completely open-source, zero analytics or telemetry, no ads, and all library data stored locally. |
-| 10 | 🚀 **Explore More Features** | [**Download the App**](https://github.com/mkr-infinity/mkr-music/releases/latest) to enjoy Discord Rich Presence, Sleep Timer, Library Backups, and more! |
+- 🎧 **Tri-Engine Streaming & Sync** – YouTube Music, JioSaavn, and Spotify playlist integration with lossless playback.
+- 🎚️ **MKR Studio Equalizer** – 10-band precision EQ, Dolby Atmos simulation, bass boost, and audio presets.
+- 📜 **Synchronized Lyrics** – Live word-by-word scrolling lyrics with dynamic animated glow and blurred backdrops.
+- 🧠 **Mood Queue & Quick Picks** – Smart track recommendations matching your active mood and listening taste.
+- ⚡ **Instant Playback & Smart Cache** – Zero-buffer audio playback with automated offline caching (5s–90s).
+- 🎨 **Expressive Material 3 UI** – Full-bleed dynamic canvas visuals, fluid transitions, and 12 adaptive icons.
+- 👥 **Listen Together** – Synchronized listening rooms to stream music in real-time with friends.
+- 🎵 **Bitrate & Output Switcher** – Live kbps stream quality badges and instant Bluetooth audio routing.
+- 🛡️ **Zero Telemetry & 100% Private** – Open-source, no trackers, no ads, and all library data stored locally.
+- 🚀 **More to Explore** – Sleep timer, Discord Rich Presence, backup/restore, and persistent playback.
 
 ---
 
