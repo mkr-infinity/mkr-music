@@ -183,8 +183,6 @@ Crafted with dedication by **Mohammad Kaif Raja**:
 
 ### 🎖️ Foundational Projects
 - **[InnerTune](https://github.com/z-huang/InnerTune)** by Zion Huang – For the groundbreaking YouTube Music client architecture and Innertube integration foundation.
-- **[ViMusic](https://github.com/vfsfitvnm/ViMusic)** by vfsfitvnm – For pioneering the original Android client and playback concepts.
-- **[ViVi Music](https://github.com/vivizzz007/vivi-music)** by vivizzz007 – For inspiring features, UI refinements, and dedicated contributions.
 - **[AM-Lyrics](https://github.com/Binimum)** – For the powerful synced TTML lyrics integration from Binimum.
 - **[Better Lyrics](https://github.com/Better-Lyrics)** – For beautiful synchronized lyrics and YouTube Music integration.
 - **[YouLyPlus](https://github.com/YouLyPlus)** – For smooth, expressive in-app lyrics styling.
