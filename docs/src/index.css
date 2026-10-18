@@ -1,0 +1,266 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+  --bg-graphite: #080809;
+  --bg-card: #121214;
+  --color-green: #22c55e;
+  --color-yellow: #facc15;
+  --color-cream: #fbf8ee;
+}
+
+body {
+  margin: 0;
+  background-color: #080809;
+  background-image: 
+    radial-gradient(circle at 18% 12%, rgba(34, 197, 94, 0.10) 0%, transparent 45%),
+    radial-gradient(circle at 82% 18%, rgba(250, 204, 21, 0.08) 0%, transparent 45%),
+    radial-gradient(circle at 50% 55%, rgba(22, 163, 74, 0.05) 0%, transparent 50%),
+    radial-gradient(circle at 85% 85%, rgba(251, 248, 238, 0.03) 0%, transparent 45%),
+    linear-gradient(to bottom, #080809 0%, #0c0d0e 50%, #080809 100%);
+  background-attachment: fixed;
+  color: #fbf8ee;
+  font-family: 'Manrope', -apple-system, BlinkMacSystemFont, sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Custom Scrollbar - Warm Graphite */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: #080809;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #1c1c1f;
+  border-radius: 9999px;
+  border: 1px solid rgba(250, 204, 21, 0.18);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #27272b;
+  border-color: rgba(34, 197, 94, 0.35);
+}
+
+/* 21st.dev-Inspired Frosted Glass */
+.neo-glass {
+  background: rgba(14, 15, 17, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.16);
+}
+
+/* Ethereal Liquid Glass Navbar */
+.liquid-glass-navbar {
+  position: relative;
+  background: 
+    radial-gradient(140% 120% at 50% -20%, rgba(255, 255, 255, 0.22) 0%, rgba(255, 255, 255, 0.04) 40%, transparent 70%),
+    linear-gradient(180deg, rgba(30, 33, 40, 0.72) 0%, rgba(14, 15, 18, 0.82) 50%, rgba(8, 9, 11, 0.90) 100%);
+  backdrop-filter: blur(40px) saturate(220%);
+  -webkit-backdrop-filter: blur(40px) saturate(220%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 
+    0 28px 64px -12px rgba(0, 0, 0, 0.95),
+    0 8px 24px -4px rgba(0, 0, 0, 0.6),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.5),
+    inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.6),
+    inset 1px 0 2px 0 rgba(255, 255, 255, 0.18),
+    inset -1px 0 2px 0 rgba(255, 255, 255, 0.18);
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.liquid-glass-navbar:hover {
+  border-color: rgba(34, 197, 94, 0.5);
+  box-shadow: 
+    0 36px 72px -12px rgba(0, 0, 0, 0.98),
+    0 0 36px -4px rgba(34, 197, 94, 0.32),
+    inset 0 2px 2px 0 rgba(255, 255, 255, 0.6),
+    inset 0 -1.5px 2px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Beautiful Liquid Glass Download Button */
+.liquid-glass-btn {
+  position: relative;
+  background: linear-gradient(135deg, #22c55e 0%, #10b981 50%, #16a34a 100%);
+  color: #080809;
+  font-weight: 800;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 
+    0 8px 24px -4px rgba(34, 197, 94, 0.6),
+    0 2px 8px -1px rgba(34, 197, 94, 0.4),
+    inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.65),
+    inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.25);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+
+.liquid-glass-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.35) 0%, transparent 60%);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.liquid-glass-btn:hover {
+  transform: translateY(-2px) scale(1.03);
+  filter: brightness(1.1);
+  box-shadow: 
+    0 16px 36px -4px rgba(34, 197, 94, 0.75),
+    0 0 28px 2px rgba(34, 197, 94, 0.4),
+    inset 0 2px 2px 0 rgba(255, 255, 255, 0.8),
+    inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.25);
+}
+
+.liquid-glass-btn:active {
+  transform: translateY(0) scale(0.97);
+}
+
+/* 21st.dev-Inspired Luminous Glowing Cards */
+.neo-glass-card {
+  position: relative;
+  background: linear-gradient(145deg, rgba(20, 22, 25, 0.88) 0%, rgba(11, 12, 14, 0.94) 100%);
+  backdrop-filter: blur(24px) saturate(170%);
+  -webkit-backdrop-filter: blur(24px) saturate(170%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 
+    0 20px 48px -12px rgba(0, 0, 0, 0.88),
+    inset 0 1px 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.3);
+  border-radius: 1.5rem;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.35s ease, border-color 0.35s ease;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+/* Luminous gradient border highlight on hover */
+.neo-glass-card::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    135deg,
+    rgba(34, 197, 94, 0.45) 0%,
+    rgba(250, 204, 21, 0.25) 45%,
+    rgba(255, 255, 255, 0.06) 75%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0.5;
+  transition: opacity 0.35s ease, filter 0.35s ease;
+}
+
+.neo-glass-card:hover {
+  border-color: rgba(34, 197, 94, 0.4);
+  box-shadow: 
+    0 32px 64px -14px rgba(0, 0, 0, 0.95),
+    0 0 35px -4px rgba(34, 197, 94, 0.25),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.neo-glass-card:hover::before {
+  opacity: 1;
+  filter: drop-shadow(0 0 7px rgba(34, 197, 94, 0.45));
+}
+
+/* Amber/Wheat Variant */
+.neo-glass-yellow-card::before {
+  background: linear-gradient(
+    135deg,
+    rgba(250, 204, 21, 0.5) 0%,
+    rgba(34, 197, 94, 0.25) 45%,
+    rgba(255, 255, 255, 0.06) 75%,
+    transparent 100%
+  );
+}
+
+.neo-glass-yellow-card:hover {
+  border-color: rgba(250, 204, 21, 0.4);
+  box-shadow: 
+    0 32px 64px -14px rgba(0, 0, 0, 0.95),
+    0 0 35px -4px rgba(250, 204, 21, 0.25),
+    inset 0 1px 1.5px 0 rgba(255, 255, 255, 0.32),
+    inset 0 -1px 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.neo-glass-yellow-card:hover::before {
+  filter: drop-shadow(0 0 7px rgba(250, 204, 21, 0.5));
+}
+
+/* 3D Perspective and Scrollable Cards */
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+/* Smooth Scroll Reveal */
+.reveal-item {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: opacity, transform;
+}
+
+.reveal-item.is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-item {
+    opacity: 1 !important;
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+/* Vinland Saga Desktop Device Presentation Styles */
+.vinland-ultrawide-mask {
+  mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 12%, black 88%, transparent 100%);
+}
+
+.vinland-duality-ambient {
+  background: 
+    radial-gradient(ellipse 45% 60% at 15% 35%, rgba(185, 28, 28, 0.16) 0%, transparent 70%),
+    radial-gradient(ellipse 55% 65% at 85% 30%, rgba(250, 204, 21, 0.15) 0%, transparent 75%),
+    radial-gradient(ellipse 50% 50% at 50% 20%, rgba(34, 197, 94, 0.08) 0%, transparent 65%);
+}
+
+.vinland-dawn-ambient {
+  background: 
+    radial-gradient(ellipse 60% 70% at 75% 25%, rgba(250, 204, 21, 0.22) 0%, transparent 75%),
+    radial-gradient(ellipse 45% 55% at 25% 45%, rgba(245, 158, 11, 0.14) 0%, transparent 70%),
+    radial-gradient(ellipse 60% 60% at 50% 60%, rgba(251, 248, 238, 0.05) 0%, transparent 70%);
+}
+
+.vinland-emerald-ambient {
+  background: 
+    radial-gradient(ellipse 60% 65% at 50% 25%, rgba(34, 197, 94, 0.20) 0%, transparent 75%),
+    radial-gradient(ellipse 40% 50% at 80% 35%, rgba(16, 185, 129, 0.16) 0%, transparent 70%),
+    radial-gradient(ellipse 45% 50% at 20% 40%, rgba(22, 101, 52, 0.18) 0%, transparent 65%);
+}
+
+.vinland-obsidian-ambient {
+  background: 
+    radial-gradient(ellipse 50% 50% at 50% 30%, rgba(255, 255, 255, 0.03) 0%, transparent 70%),
+    linear-gradient(to bottom, rgba(8, 8, 9, 0.7) 0%, rgba(8, 8, 9, 0.95) 100%);
+}
+

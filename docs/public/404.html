@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MKR Music — Page Not Found</title>
+    <meta name="theme-color" content="#090a0d" />
+    <link rel="icon" type="image/jpeg" href="./favicon.jpg" />
+    <style>
+      * { box-sizing: border-box; margin: 0; padding: 0; }
+      body {
+        background-color: #090a0d;
+        color: #fbf8ee;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        text-align: center;
+        padding: 24px;
+      }
+      .card {
+        max-width: 480px;
+        background: rgba(19, 22, 30, 0.85);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        border-radius: 24px;
+        padding: 48px 32px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(16px);
+      }
+      .logo {
+        width: 80px;
+        height: 80px;
+        border-radius: 20px;
+        margin: 0 auto 24px;
+        display: block;
+        border: 2px solid rgba(250, 204, 21, 0.5);
+        box-shadow: 0 0 25px rgba(34, 197, 94, 0.4);
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        background: rgba(34, 197, 94, 0.15);
+        border: 1px solid rgba(34, 197, 94, 0.3);
+        color: #4ade80;
+        font-size: 12px;
+        font-family: monospace;
+        margin-bottom: 16px;
+      }
+      h1 { font-size: 28px; margin-bottom: 12px; font-weight: 800; color: #fbf8ee; }
+      p { font-size: 15px; color: #c7bea5; margin-bottom: 28px; line-height: 1.6; }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px 28px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #22c55e, #10b981);
+        color: #090a0d;
+        font-weight: 700;
+        text-decoration: none;
+        box-shadow: 0 8px 24px rgba(34, 197, 94, 0.35);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(34, 197, 94, 0.5);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <img src="./favicon.jpg" onerror="if(!this.src.endsWith('/mkr-music/favicon.jpg')){this.src='/mkr-music/favicon.jpg';}else if(!this.src.includes('mkr-music-logo.jpg')){this.src='./assets/branding/mkr-music-logo.jpg';}" alt="MKR Music" class="logo" />
+      <span class="badge">[ 404 · TRACK NOT FOUND ]</span>
+      <h1>Out of Range</h1>
+      <p>The frequency you are searching for does not exist or has moved. Return to the main station to resume playback.</p>
+      <a href="./" class="btn">Return to Home Station</a>
+    </div>
+  </body>
+</html>
