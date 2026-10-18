@@ -3,7 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/mkr-infinity/mkr-music/releases/latest"><img src="https://img.shields.io/badge/Download-Latest%20Release-00E676?style=for-the-badge&logo=android&logoColor=white" alt="Download Latest Release"/></a>
+  <a href="https://mkr-infinity.github.io/mkr-music-web" target="_blank"><img src="https://img.shields.io/badge/🌐%20Official%20Website-Live%20Web%20Experience-6366F1?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website"/></a>
+  <a href="https://github.com/mkr-infinity/mkr-music/releases/latest/download/mkr-music-universal.apk"><img src="https://img.shields.io/badge/⚡%20Download%20APK-Universal%20Latest-00E676?style=for-the-badge&logo=android&logoColor=white" alt="Download Universal APK"/></a>
   <a href="https://github.com/mkr-infinity"><img src="https://img.shields.io/badge/Developer-%40mkr--infinity-E74C3C?style=for-the-badge&logo=github&logoColor=white" alt="Developer @mkr-infinity"/></a>
   <img src="https://img.shields.io/badge/Platform-Android%208.0%2B-F39C12?style=for-the-badge" alt="Platform Android 8.0+"/>
 </p>
@@ -17,14 +18,25 @@
 **MKR Music** is a premier open-source music streaming and offline audio player for Android.
 Unifying **YouTube Music**, **JioSaavn**, and **Spotify playlist sync**, it delivers studio-grade lossless sound up to 320 kbps, synchronized lyrics, dynamic canvas visuals, and smart mood queues — completely ad-free and 100% private.
 
+<br/>
+
 <p align="center">
+  <a href="https://mkr-infinity.github.io/mkr-music-web" target="_blank">
+    <img src="https://img.shields.io/badge/🌐%20EXPLORE%20OFFICIAL%20WEBSITE-Interactive%20Experience%20%E2%9E%94-4F46E5?style=for-the-badge&logo=safari&logoColor=white" alt="Explore Official Website" height="46"/>
+  </a>
+  <br/><br/>
+  <a href="https://github.com/mkr-infinity/mkr-music/releases/latest/download/mkr-music-universal.apk">
+    <img src="https://img.shields.io/badge/📥%20DOWNLOAD%20UNIVERSAL%20APK-Latest%20Release-00C853?style=for-the-badge&logo=android&logoColor=white" alt="Download Universal APK" height="44"/>
+  </a>
+  &nbsp;&nbsp;
   <a href="https://github.com/mkr-infinity/mkr-music/releases/latest">
-    <img src="https://img.shields.io/badge/📥%20Download%20The%20App-Latest%20Release-00E676?style=for-the-badge&logo=android&logoColor=white" alt="Download The App" height="42"/>
+    <img src="https://img.shields.io/badge/📋%20ALL%20RELEASES-Changelog%20%26%20Notes-F59E0B?style=for-the-badge&logo=github&logoColor=white" alt="All Releases & Notes" height="44"/>
   </a>
 </p>
 
 <p align="center">
-  <sub><em>💡 <b>Note:</b> After clicking the button above, scroll down to the <b>Assets</b> section on the release page to download the APK file.</em></sub>
+  <sub>✨ <b>Direct APK Download:</b> The green button above automatically downloads <code>mkr-music-universal.apk</code> from the latest release.<br/>
+  🌐 <b>Official Website:</b> Check out <a href="https://mkr-infinity.github.io/mkr-music-web"><b>mkr-infinity.github.io/mkr-music-web</b></a> for interactive visualizers, audio feature showcases, and screenshot galleries!</sub>
 </p>
 
 </div>
@@ -162,7 +174,8 @@ Your privacy is fundamental:
 
 Crafted with dedication by **Mohammad Kaif Raja**:
 
-[![Website](https://img.shields.io/badge/Website-mkr--infinity.github.io-4CAF50?style=for-the-badge&logo=googlechrome&logoColor=white)](https://mkr-infinity.github.io)
+[![App Website](https://img.shields.io/badge/App%20Website-mkr--music--web-6366F1?style=for-the-badge&logo=googlechrome&logoColor=white)](https://mkr-infinity.github.io/mkr-music-web)
+[![Developer Website](https://img.shields.io/badge/Developer%20Website-mkr--infinity.github.io-4CAF50?style=for-the-badge&logo=safari&logoColor=white)](https://mkr-infinity.github.io)
 [![GitHub](https://img.shields.io/badge/GitHub-%40mkr--infinity-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/mkr-infinity)
 [![Repository](https://img.shields.io/badge/Repository-mkr--music-blue?style=for-the-badge&logo=git&logoColor=white)](https://github.com/mkr-infinity/mkr-music)
 [![Instagram](https://img.shields.io/badge/Instagram-%40mkr__infinity-E4405F?style=for-the-badge&logo=instagram&logoColor=white)](https://www.instagram.com/mkr_infinity)
