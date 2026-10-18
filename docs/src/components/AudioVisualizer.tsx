@@ -77,7 +77,11 @@ export const AudioVisualizer: React.FC = () => {
 
         ctx.fillStyle = gradient;
         ctx.beginPath();
-        ctx.roundRect(x, y, barWidth, barH, [barWidth / 2]);
+        if (typeof ctx.roundRect === 'function') {
+          ctx.roundRect(x, y, barWidth, barH, [barWidth / 2]);
+        } else {
+          ctx.rect(x, y, barWidth, barH);
+        }
         ctx.fill();
 
         // Subtle glow on highest peaks
