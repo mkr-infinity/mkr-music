@@ -25,15 +25,7 @@ class AxionEqViewModel @Inject constructor(
     private val eqProfileRepository: EQProfileRepository
 ) : ViewModel() {
 
-    private val prefs = run {
-        val mkrPrefs = context.getSharedPreferences("mkr_eq_prefs", Context.MODE_PRIVATE)
-        if (mkrPrefs.all.isNotEmpty()) {
-            mkrPrefs
-        } else {
-            val oldPrefs = context.getSharedPreferences("vivi_eq_prefs", Context.MODE_PRIVATE)
-            if (oldPrefs.all.isNotEmpty()) oldPrefs else mkrPrefs
-        }
-    }
+    private val prefs = context.getSharedPreferences("mkr_eq_prefs", Context.MODE_PRIVATE)
 
     private val _enabled = MutableStateFlow(prefs.getBoolean("enabled", false))
     val enabled = _enabled.asStateFlow()
@@ -52,7 +44,7 @@ class AxionEqViewModel @Inject constructor(
     val isDirty = _isDirty.asStateFlow()
 
     val customProfiles = eqProfileRepository.profiles.map { profiles ->
-        profiles.filter { it.isCustom && it.id != "mkr_tuning" && it.id != "vivi_tuning" }
+        profiles.filter { it.isCustom && it.id != "mkr_tuning" }
     }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     init {

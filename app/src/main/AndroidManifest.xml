@@ -93,7 +93,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="https" />
-                <data android:host="vivimusic-listen-together.onrender.com" />
+                <data android:host="listen-together-mkr-music.onrender.com" />
                 <data android:pathPrefix="/listen" />
             </intent-filter>
 
@@ -105,7 +105,6 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="mkrmusic" />
-                <data android:scheme="vivimusic" />
                 <data android:host="listen" />
             </intent-filter>
 
@@ -117,7 +116,6 @@
                 <category android:name="android.intent.category.BROWSABLE" />
 
                 <data android:scheme="mkrmusic" />
-                <data android:scheme="vivimusic" />
                 <data android:host="oauth2callback" />
             </intent-filter>
 

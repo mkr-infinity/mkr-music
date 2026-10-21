@@ -185,7 +185,7 @@ fun ListenTogetherSettings(
                 showServerUrlDialog = false
             },
             onUseCustom = { customUrl ->
-                serverUrl = customUrl
+                serverUrl = ListenTogetherServers.normalizeWebSocketUrl(customUrl)
                 showServerUrlDialog = false
             },
             onDismiss = { showServerUrlDialog = false }

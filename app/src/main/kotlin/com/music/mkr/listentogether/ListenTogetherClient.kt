@@ -45,6 +45,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -403,10 +404,11 @@ class ListenTogetherClient @Inject constructor(
     }
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(30, TimeUnit.SECONDS)
+        .connectTimeout(45, TimeUnit.SECONDS)
         .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(30, TimeUnit.SECONDS)
-        .pingInterval(30, TimeUnit.SECONDS)
+        .writeTimeout(45, TimeUnit.SECONDS)
+        .pingInterval(25, TimeUnit.SECONDS)
+        .retryOnConnectionFailure(true)
         .build()
 
     init {
@@ -421,11 +423,27 @@ class ListenTogetherClient @Inject constructor(
 
     private fun getServerUrl(): String {
         val savedUrl = context.dataStore.get(ListenTogetherServerUrlKey, DEFAULT_SERVER_URL)
-        // If the saved URL is no longer in our list (e.g. Meowery was removed), revert to MKR default
-        return if (ListenTogetherServers.findByUrl(savedUrl) != null) {
-            savedUrl
-        } else {
+        val candidate = if (savedUrl.isBlank()) {
             DEFAULT_SERVER_URL
+        } else {
+            savedUrl
+        }
+        return ListenTogetherServers.normalizeWebSocketUrl(candidate)
+    }
+
+    /**
+     * Check HTTP health/status of the Listen Together backend
+     */
+    suspend fun checkHealth(): Boolean = withContext(Dispatchers.IO) {
+        try {
+            val httpUrl = ListenTogetherServers.normalizeHttpUrl(getServerUrl()).trimEnd('/') + "/health"
+            val request = Request.Builder().url(httpUrl).get().build()
+            client.newCall(request).execute().use { response ->
+                response.isSuccessful
+            }
+        } catch (e: Exception) {
+            log(LogLevel.WARNING, "Server health check failed", e.message)
+            false
         }
     }
     
@@ -1227,14 +1245,15 @@ class ListenTogetherClient @Inject constructor(
         storedRoomCode = null
         wasHost = false
         
-        storedUsername = username
+        val cleanUsername = username.trim().take(30)
+        storedUsername = cleanUsername
         
         val avatarIndex = context.dataStore.get(ListenTogetherAvatarIndexKey, 0)
         if (_connectionState.value == ConnectionState.CONNECTED) {
-            sendMessage(MessageTypes.CREATE_ROOM, CreateRoomPayload(username, avatarIndex))
+            sendMessage(MessageTypes.CREATE_ROOM, CreateRoomPayload(cleanUsername, avatarIndex))
         } else {
             log(LogLevel.INFO, "Not connected, queueing create room action")
-            pendingAction = PendingAction.CreateRoom(username)
+            pendingAction = PendingAction.CreateRoom(cleanUsername)
             if (_connectionState.value == ConnectionState.DISCONNECTED || 
                 _connectionState.value == ConnectionState.ERROR) {
                 connect()
@@ -1254,14 +1273,16 @@ class ListenTogetherClient @Inject constructor(
         storedRoomCode = null
         wasHost = false
 
-        storedUsername = username
+        val cleanRoomCode = roomCode.trim().filter { it.isLetterOrDigit() }.uppercase()
+        val cleanUsername = username.trim().take(30)
+        storedUsername = cleanUsername
         
         val avatarIndex = context.dataStore.get(ListenTogetherAvatarIndexKey, 0)
         if (_connectionState.value == ConnectionState.CONNECTED) {
-            sendMessage(MessageTypes.JOIN_ROOM, JoinRoomPayload(roomCode.uppercase(), username, avatarIndex))
+            sendMessage(MessageTypes.JOIN_ROOM, JoinRoomPayload(cleanRoomCode, cleanUsername, avatarIndex))
         } else {
             log(LogLevel.INFO, "Not connected, queueing join room action")
-            pendingAction = PendingAction.JoinRoom(roomCode, username)
+            pendingAction = PendingAction.JoinRoom(cleanRoomCode, cleanUsername)
             if (_connectionState.value == ConnectionState.DISCONNECTED || 
                 _connectionState.value == ConnectionState.ERROR) {
                 connect()

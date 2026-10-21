@@ -55,6 +55,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import com.music.mkr.ui.component.DefaultDialog
+import com.music.mkr.listentogether.ListenTogetherServers
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -692,7 +693,7 @@ private fun RoomStatusCard(
 
             // Action Row
             val inviteLink = remember(roomCode) {
-                "https://vivimusic-listen-together.onrender.com/listen?code=$roomCode"
+                ListenTogetherServers.getInviteLink(roomCode)
             }
             
             // Fixed width for equal sizing horizontally
@@ -1514,7 +1515,7 @@ private fun JoinCreateRoomSection(
                 }
             } else {
                 val hasUsername = usernameInput.trim().isNotBlank() || savedUsername.isNotBlank()
-                val hasRoomCode = roomCodeInput.length == 8
+                val hasRoomCode = roomCodeInput.trim().length in 4..8
 
                 // Morphing Create/Join Button
                 AnimatedVisibility(visible = hasUsername) {

@@ -173,15 +173,15 @@ object AutoBackupHelper {
             Timber.tag("AutoBackup").e(e, "Error reading backups from app dir")
         }
 
-        // 2. Public Downloads/mkrmusic and legacy Downloads/vivimusic folder
+        // 2. Public Downloads/mkrmusic folder
         try {
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                 val projection = arrayOf(
                     MediaStore.Downloads.DISPLAY_NAME,
                     MediaStore.Downloads.DATA
                 )
-                val selection = "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? OR ${MediaStore.Downloads.RELATIVE_PATH} LIKE ? OR ${MediaStore.Downloads.RELATIVE_PATH} = ? OR ${MediaStore.Downloads.RELATIVE_PATH} = ?"
-                val selectionArgs = arrayOf("Download/mkrmusic/%", "Download/vivimusic/%", "Download/mkrmusic", "Download/vivimusic")
+                val selection = "${MediaStore.Downloads.RELATIVE_PATH} LIKE ? OR ${MediaStore.Downloads.RELATIVE_PATH} = ?"
+                val selectionArgs = arrayOf("Download/mkrmusic/%", "Download/mkrmusic")
                 
                 context.contentResolver.query(
                     MediaStore.Downloads.EXTERNAL_CONTENT_URI,
@@ -207,17 +207,15 @@ object AutoBackupHelper {
                 val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
                     android.os.Environment.DIRECTORY_DOWNLOADS
                 )
-                listOf("mkrmusic", "vivimusic").forEach { folderName ->
-                    val publicDir = File(downloadsDir, folderName)
-                    if (publicDir.exists()) {
-                        val files = publicDir.listFiles { file ->
-                            file.isFile && file.name.startsWith("auto_backup_") && file.name.endsWith(".backup")
-                        }
-                        if (files != null) {
-                            for (file in files) {
-                                if (backupsList.none { it.name == file.name }) {
-                                    backupsList.add(file)
-                                }
+                val publicDir = File(downloadsDir, "mkrmusic")
+                if (publicDir.exists()) {
+                    val files = publicDir.listFiles { file ->
+                        file.isFile && file.name.startsWith("auto_backup_") && file.name.endsWith(".backup")
+                    }
+                    if (files != null) {
+                        for (file in files) {
+                            if (backupsList.none { it.name == file.name }) {
+                                backupsList.add(file)
                             }
                         }
                     }
