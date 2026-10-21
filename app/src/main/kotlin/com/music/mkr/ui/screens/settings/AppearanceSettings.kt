@@ -61,9 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.R
-import com.music.mkr.constants.CanvasSource
-import com.music.mkr.constants.CanvasSourceKey
-import com.music.mkr.constants.CanvasThumbnailAnimationKey
 import com.music.mkr.constants.ChipSortTypeKey
 import com.music.mkr.constants.CropAlbumArtKey
 import com.music.mkr.constants.DefaultOpenTabKey
@@ -101,7 +98,10 @@ import com.music.mkr.constants.ShowTopPlaylistKey
 import com.music.mkr.constants.SliderStyle
 import com.music.mkr.constants.SliderStyleKey
 import com.music.mkr.constants.FloatingNavBarKey
+import com.music.mkr.constants.NavigationStyle
+import com.music.mkr.constants.NavigationStyleKey
 import com.music.mkr.constants.SlimNavBarKey
+import com.music.mkr.ui.component.NavigationStyleDialog
 import com.music.mkr.constants.SquigglySliderKey
 import com.music.mkr.constants.SwipeSensitivityKey
 import com.music.mkr.constants.SwipeThumbnailKey
@@ -139,7 +139,6 @@ import com.music.mkr.constants.LyricsLineSpacingKey
 import com.music.mkr.constants.LyricsScrollKey
 import com.music.mkr.constants.MiniPlayerBackgroundStyleKey
 import com.music.mkr.constants.ShowAudioQualityBadgeKey
-import com.music.mkr.constants.EnableSettingsPopupKey
 import com.music.mkr.constants.ShowCommentButtonKey
 import com.music.mkr.constants.AppIconKey
 import com.music.mkr.ui.component.AppIconSelectionDialog
@@ -163,10 +162,6 @@ fun AppearanceSettings(
     )
     val (enableDynamicIcon, onEnableDynamicIconChange) = rememberPreference(
         EnableDynamicIconKey,
-        defaultValue = true
-    )
-    val (enableSettingsPopup, onEnableSettingsPopupChange) = rememberPreference(
-        EnableSettingsPopupKey,
         defaultValue = true
     )
     val (enableHighRefreshRate, onEnableHighRefreshRateChange) = rememberPreference(
@@ -380,6 +375,11 @@ fun AppearanceSettings(
         FloatingNavBarKey,
         defaultValue = true
     )
+    val (navigationStyle, onNavigationStyleChange) = rememberEnumPreference(
+        NavigationStyleKey,
+        defaultValue = NavigationStyle.DEFAULT
+    )
+    var showNavigationStyleDialog by rememberSaveable { mutableStateOf(false) }
 
     // Density scale preferences
     val context = activity as Context
@@ -827,6 +827,18 @@ fun AppearanceSettings(
         )
     }
 
+    if (showNavigationStyleDialog) {
+        NavigationStyleDialog(
+            current = navigationStyle,
+            onSelect = {
+                onNavigationStyleChange(it)
+                onFloatingNavBarChange(it.isFloating)
+                showNavigationStyleDialog = false
+            },
+            onDismiss = { showNavigationStyleDialog = false }
+        )
+    }
+
 
 
     var showGridSizeDialog by rememberSaveable {
@@ -1168,6 +1180,24 @@ fun AppearanceSettings(
                         key = "appearance_theme_palette",
                         icon = painterResource(R.drawable.palette),
                         title = { Text(stringResource(R.string.theme)) },
+                        description = {
+                            Text(
+                                if (!isUsingCustomColor) {
+                                    if (dynamicTheme) "Dynamic Artwork Theme" else "Default Amber"
+                                } else {
+                                    "Custom Static Palette"
+                                }
+                            )
+                        },
+                        trailingContent = {
+                            androidx.compose.foundation.layout.Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(androidx.compose.foundation.shape.CircleShape)
+                                    .background(androidx.compose.ui.graphics.Color(selectedThemeColorInt))
+                                    .border(1.dp, MaterialTheme.colorScheme.outlineVariant, androidx.compose.foundation.shape.CircleShape)
+                            )
+                        },
                         onClick = { navController.navigate("settings/appearance/theme") }
                     )
                 )
@@ -1231,29 +1261,7 @@ fun AppearanceSettings(
                     )
                 )
 
-                add(
-                    Material3SettingsItem(
-                        icon = painterResource(R.drawable.settings), // Or tuning/setting generic icon
-                        title = { Text("Enable Settings Dropdown") },
-                        description = { Text("Show a Material 3 dropdown menu when clicking the settings icon on the home screen") },
-                        trailingContent = {
-                            Switch(
-                                checked = enableSettingsPopup,
-                                onCheckedChange = onEnableSettingsPopupChange,
-                                thumbContent = {
-                                    Icon(
-                                        painter = painterResource(
-                                            id = if (enableSettingsPopup) R.drawable.check else R.drawable.close
-                                        ),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(SwitchDefaults.IconSize)
-                                    )
-                                }
-                            )
-                        },
-                        onClick = { onEnableSettingsPopupChange(!enableSettingsPopup) }
-                    )
-                )
+
 
                 // Only show dynamic theme option when using the default/dynamic color
                 // When a custom color is selected, dynamic theme is automatically disabled
@@ -2045,6 +2053,20 @@ fun AppearanceSettings(
                     onClick = { onSlimNavChange(!slimNav) }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_navigation_style",
+                    icon = painterResource(R.drawable.nav_bar),
+                    title = { Text(stringResource(R.string.navigation_style)) },
+                    description = { Text(stringResource(navigationStyle.titleRes)) },
+                    trailingContent = {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_nav_chevron_right),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    },
+                    onClick = { showNavigationStyleDialog = true }
+                ),
+                Material3SettingsItem(
                     key = "appearance_floating_nav",
                     icon = painterResource(R.drawable.nav_bar),
                     title = { Text(stringResource(R.string.floating_navbar)) },
@@ -2065,27 +2087,6 @@ fun AppearanceSettings(
                         )
                     },
                     onClick = { onFloatingNavBarChange(!floatingNavBar) }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.group_outlined),
-                    title = { Text(stringResource(R.string.listen_together_in_top_bar)) },
-                    description = { Text(stringResource(R.string.listen_together_in_top_bar_desc)) },
-                    trailingContent = {
-                        Switch(
-                            checked = listenTogetherInTopBar,
-                            onCheckedChange = onListenTogetherInTopBarChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (listenTogetherInTopBar) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onListenTogetherInTopBarChange(!listenTogetherInTopBar) }
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.grid_view),

@@ -114,7 +114,6 @@ import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.HideExplicitKey
 import com.music.mkr.constants.HideVideoSongsKey
-import com.music.mkr.constants.AlbumCanvasEnabledKey
 import com.music.mkr.db.entities.Album
 import com.music.mkr.playback.ExoDownloadService
 import com.music.mkr.playback.queues.LocalAlbumRadio
@@ -134,7 +133,6 @@ import com.music.mkr.ui.menu.SongMenu
 import com.music.mkr.ui.menu.YouTubeAlbumMenu
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.fadingEdge
-import com.music.mkr.ui.player.CanvasArtworkPlayer
 import com.music.mkr.utils.listItemShape
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.viewmodels.AlbumViewModel
@@ -167,13 +165,6 @@ fun AlbumScreen(
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
     val useExpressiveAlbumDesign by rememberPreference(key = UseExpressiveAlbumDesignKey, defaultValue = true)
     val hideVideoSongs by rememberPreference(key = HideVideoSongsKey, defaultValue = false)
-    val albumCanvasEnabled by rememberPreference(key = AlbumCanvasEnabledKey, defaultValue = false)
-
-    val canvasArtwork = rememberAlbumCanvas(
-        albumTitle = albumWithSongs?.album?.title,
-        artistName = albumWithSongs?.artists?.joinToString { it.name }?.takeIf { it.isNotEmpty() },
-        firstSongTitle = albumWithSongs?.songs?.firstOrNull()?.song?.title
-    )
 
     val filteredSongs = remember(albumWithSongs, hideExplicit, hideVideoSongs) {
         var songs = albumWithSongs?.songs ?: emptyList()
@@ -302,15 +293,6 @@ fun AlbumScreen(
                                     },
                                 contentScale = ContentScale.Crop
                             )
-
-                            if (albumCanvasEnabled && canvasArtwork != null) {
-                                CanvasArtworkPlayer(
-                                    primaryUrl = canvasArtwork.animated,
-                                    fallbackUrl = canvasArtwork.videoUrl,
-                                    isPlaying = true,
-                                    modifier = Modifier.fillMaxSize()
-                                )
-                            }
 
                             // Re-adding the shadow gradient mask to ensure text readability
                             Box(

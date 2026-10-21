@@ -390,7 +390,7 @@ fun AudioDeviceBottomSheet(onDismiss: () -> Unit, modifier: Modifier = Modifier)
                                     val onContainer = if (isActiveDevice) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
                                     val scallopShape = RoundedStarShape(sides = 8, curve = 0.10, rotation = 0f)
                                     val backgroundScale by animateFloatAsState(targetValue = if (isActiveDevice) 1.10f else 1f, animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing), label = "activeDeviceScale")
-                                    @DrawableRes val deviceIconRes = when (device.type) { AudioDeviceType.BLUETOOTH -> R.drawable.bluetooth; AudioDeviceType.WIRED_HEADPHONES -> R.drawable.headset_applemusic; AudioDeviceType.USB_HEADSET -> R.drawable.usb; AudioDeviceType.HDMI -> R.drawable.tv; AudioDeviceType.EXTERNAL_SPEAKER -> R.drawable.speaker_apple; else -> R.drawable.speaker_apple }
+                                    @DrawableRes val deviceIconRes = when (device.type) { AudioDeviceType.BLUETOOTH -> R.drawable.bluetooth; AudioDeviceType.WIRED_HEADPHONES -> R.drawable.headphones; AudioDeviceType.USB_HEADSET -> R.drawable.usb; AudioDeviceType.HDMI -> R.drawable.tv; AudioDeviceType.EXTERNAL_SPEAKER -> R.drawable.speaker; else -> R.drawable.speaker }
 
                                     Surface(modifier = Modifier.weight(1f), color = Color.Transparent, tonalElevation = 0.dp) {
                                         Row(modifier = Modifier.fillMaxWidth().padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -476,12 +476,12 @@ fun AudioDeviceBottomSheet(onDismiss: () -> Unit, modifier: Modifier = Modifier)
                                     key(dev.deviceId) {
                                         @DrawableRes val deviceIconRes = when (dev.type) {
                                             AudioDeviceType.BLUETOOTH -> R.drawable.bluetooth
-                                            AudioDeviceType.WIRED_HEADPHONES -> R.drawable.headset_applemusic
+                                            AudioDeviceType.WIRED_HEADPHONES -> R.drawable.headphones
                                             AudioDeviceType.USB_HEADSET -> R.drawable.usb
                                             AudioDeviceType.HDMI -> R.drawable.tv
-                                            AudioDeviceType.EXTERNAL_SPEAKER -> R.drawable.speaker_apple
+                                            AudioDeviceType.EXTERNAL_SPEAKER -> R.drawable.speaker
                                             AudioDeviceType.PHONE_SPEAKER -> R.drawable.phone_android
-                                            else -> R.drawable.speaker_apple
+                                            else -> R.drawable.speaker
                                         }
 
                                         Surface(

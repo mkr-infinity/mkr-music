@@ -6,6 +6,7 @@
 package com.music.mkr.ui.component
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Image
@@ -28,6 +29,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.music.mkr.R
@@ -54,9 +57,9 @@ fun ExpressiveSettingGroup(
         title?.let {
             Text(
                 text = it,
-                style = MaterialTheme.typography.labelLarge,
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 16.dp, bottom = 8.dp, top = 8.dp)
+                modifier = Modifier.padding(start = 16.dp, bottom = 8.dp, top = 12.dp)
             )
         }
         items.forEachIndexed { index, item ->
@@ -69,10 +72,11 @@ fun ExpressiveSettingGroup(
                     .animateContentSize(),
                 shape = shape,
                 color = if (androidx.compose.foundation.isSystemInDarkTheme()) {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                    MaterialTheme.colorScheme.surfaceContainerHigh
                 } else {
-                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-                }
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                },
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
             ) {
                 ListItem(
                     modifier = Modifier
@@ -86,11 +90,11 @@ fun ExpressiveSettingGroup(
                                 if (item.tintIcon) {
                                     androidx.compose.foundation.layout.Box(
                                         modifier = Modifier
-                                            .size(38.dp)
+                                            .size(40.dp)
                                             .clip(RoundedCornerShape(12.dp))
                                             .background(
-                                                if (item.enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-                                                else Color.Transparent
+                                                if (item.enabled) MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                                else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
                                             ),
                                         contentAlignment = androidx.compose.ui.Alignment.Center
                                     ) {
@@ -111,7 +115,7 @@ fun ExpressiveSettingGroup(
                                         modifier = Modifier
                                             .size(40.dp)
                                             .clip(
-                                                item.iconShape ?: RoundedCornerShape(6.dp)
+                                                item.iconShape ?: RoundedCornerShape(8.dp)
                                             ),
                                         contentScale = ContentScale.Crop
                                     )
@@ -121,6 +125,7 @@ fun ExpressiveSettingGroup(
                     headlineContent = {
                         ProvideTextStyle(
                             MaterialTheme.typography.bodyLarge.copy(
+                                fontWeight = FontWeight.SemiBold,
                                 color = if (!item.enabled)
                                     MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                                 else

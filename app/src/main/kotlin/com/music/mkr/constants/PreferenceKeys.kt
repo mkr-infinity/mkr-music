@@ -61,6 +61,7 @@ enum class DensityScale(val value: Float, val label: String) {
 }
 
 val DefaultOpenTabKey = stringPreferencesKey("defaultOpenTab")
+val NavigationStyleKey = stringPreferencesKey("navigationStyle")
 val SlimNavBarKey = booleanPreferencesKey("slimNavBar")
 val FloatingNavBarKey = booleanPreferencesKey("floatingNavBar")
 val GridItemsSizeKey = stringPreferencesKey("gridItemSize")
@@ -104,7 +105,6 @@ val SuggestionRegionKey = stringPreferencesKey("suggestionRegion")
 val EnableKugouKey = booleanPreferencesKey("enableKugou")
 val EnableLrcLibKey = booleanPreferencesKey("enableLrclib")
 val EnableBetterLyricsKey = booleanPreferencesKey("enableBetterLyrics")
-val EnableMusixmatchKey = booleanPreferencesKey("enableMusixmatch")
 
 val EnableYouLyPlusKey = booleanPreferencesKey("enableYouLyPlus")
 val EnablePaxsenixKey = booleanPreferencesKey("enablePaxsenix")
@@ -116,8 +116,6 @@ val HideYoutubeShortsKey = booleanPreferencesKey("hideYoutubeShorts")
 val ShowArtistDescriptionKey = booleanPreferencesKey("showArtistDescription")
 val ShowArtistSubscriberCountKey = booleanPreferencesKey("showArtistSubscriberCount")
 val ShowMonthlyListenersKey = booleanPreferencesKey("showMonthlyListeners")
-val ShowArtistVideoKey = booleanPreferencesKey("showArtistVideo")
-val ShowArtistBackgroundVideoKey = booleanPreferencesKey("showArtistBackgroundVideo")
 val ProxyEnabledKey = booleanPreferencesKey("proxyEnabled")
 val ProxyUrlKey = stringPreferencesKey("proxyUrl")
 val ProxyTypeKey = stringPreferencesKey("proxyType")
@@ -136,10 +134,6 @@ enum class AudioQuality {
 }
 
 val AudioOffload = booleanPreferencesKey("enableOffload")
-
-// JioSaavn streaming
-val EnableSaavnStreamingKey = booleanPreferencesKey("enableSaavnStreaming")
-val SaavnAudioQualityKey    = stringPreferencesKey("saavnAudioQuality")
 
 // SponsorBlock settings
 val EnableSponsorBlockKey = booleanPreferencesKey("enableSponsorBlock")
@@ -167,24 +161,6 @@ val TasteBasedReleaseNotificationsKey = booleanPreferencesKey("tasteBasedRelease
 val AutoBackupEnabledKey = booleanPreferencesKey("autoBackupEnabled")
 val AutoBackupWeeklyKey = booleanPreferencesKey("autoBackupWeekly")
 val AutoBackupBeforeUpdateKey = booleanPreferencesKey("autoBackupBeforeUpdate")
-
-enum class SaavnAudioQuality {
-    QUALITY_320,
-    QUALITY_160,
-    QUALITY_96;
-
-    fun toApiValue() = when (this) {
-        QUALITY_320 -> "320kbps"
-        QUALITY_160 -> "160kbps"
-        QUALITY_96  -> "96kbps"
-    }
-
-    fun toLabel() = when (this) {
-        QUALITY_320 -> "High (320 kbps)"
-        QUALITY_160 -> "Medium (160 kbps)"
-        QUALITY_96  -> "Low (96 kbps)"
-    }
-}
 
 val PersistentQueueKey = booleanPreferencesKey("persistentQueue")
 val PersistentShuffleAcrossQueuesKey = booleanPreferencesKey("persistentShuffleAcrossQueues")
@@ -343,7 +319,6 @@ val ShowWrappedCardKey = booleanPreferencesKey("show_wrapped_card")
 val WrappedSeenKey = booleanPreferencesKey("wrapped_seen")
 val RandomizeHomeOrderKey = booleanPreferencesKey("randomizeHomeOrder")
 val HideSpeedDialKey = booleanPreferencesKey("hide_speed_dial")
-val AlbumCanvasEnabledKey = booleanPreferencesKey("albumCanvasEnabled")
 
 val ShowLikedPlaylistKey = booleanPreferencesKey("show_liked_playlist")
 val ShowDownloadedPlaylistKey = booleanPreferencesKey("show_downloaded_playlist")
@@ -491,7 +466,6 @@ enum class PreferredLyricsProvider {
     LRCLIB,
     KUGOU,
     BETTER_LYRICS,
-    MUSIXMATCH,
     YOULYPLUS,
     PAXSENIX,
     UNISON,
@@ -575,25 +549,10 @@ val RepeatModeKey = intPreferencesKey("repeatMode")
 val SearchSourceKey = stringPreferencesKey("searchSource")
 val SwipeThumbnailKey = booleanPreferencesKey("swipeThumbnail")
 val RotatingThumbnailKey = booleanPreferencesKey("rotatingThumbnail")
-val CanvasThumbnailAnimationKey = booleanPreferencesKey("canvasThumbnailAnimation")
-val CanvasSourceKey = stringPreferencesKey("canvasSource")
-val CanvasLoadOnlyWifiKey = booleanPreferencesKey("canvasLoadOnlyWifi")
 
 // Data Saver
 val DataSaverKey = booleanPreferencesKey("dataSaver")
-// Backup keys — store user's original values before Data Saver overrides them
-val DataSaverBackupCanvasKey        = booleanPreferencesKey("dataSaverBackupCanvas")
-val DataSaverBackupArtistVideoKey   = booleanPreferencesKey("dataSaverBackupArtistVideo")
-val DataSaverBackupArtistBgVideoKey = booleanPreferencesKey("dataSaverBackupArtistBgVideo")
-val DataSaverBackupAlbumCanvasKey   = booleanPreferencesKey("dataSaverBackupAlbumCanvas")
 
-
-enum class CanvasSource {
-    AUTO,
-    APPLE_MUSIC,
-    MKRMUSIC,
-    TIDAL,
-}
 val SwipeSensitivityKey = floatPreferencesKey("swipeSensitivity")
 
 enum class SearchSource {

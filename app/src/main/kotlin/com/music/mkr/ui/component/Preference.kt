@@ -39,6 +39,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -121,8 +122,10 @@ fun <T> ListPreference(
     if (showDialog) {
         ListDialog(
             onDismiss = { showDialog = false },
+            title = title,
         ) {
             items(values) { value ->
+                val isSelected = value == selectedValue
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier =
@@ -131,16 +134,18 @@ fun <T> ListPreference(
                         .clickable {
                             showDialog = false
                             onValueSelected(value)
-                        }.padding(horizontal = 16.dp, vertical = 12.dp),
+                        }.padding(horizontal = 20.dp, vertical = 12.dp),
                 ) {
-                    RadioButton(
-                        selected = value == selectedValue,
+                    AnimatedRadioButton(
+                        selected = isSelected,
                         onClick = null,
                     )
 
                     Text(
                         text = valueText(value),
                         style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(start = 16.dp),
                     )
                 }
@@ -196,19 +201,10 @@ fun SwitchPreference(
         description = description,
         icon = icon,
         trailingContent = {
-            Switch(
+            ModernSwitch(
                 checked = checked,
                 onCheckedChange = onCheckedChange,
-                enabled = isEnabled,
-                thumbContent = {
-                    Icon(
-                        painter = painterResource(
-                            id = if (checked) R.drawable.check else R.drawable.close
-                        ),
-                        contentDescription = null,
-                        modifier = Modifier.size(SwitchDefaults.IconSize),
-                    )
-                }
+                enabled = isEnabled
             )
         },
         onClick = { onCheckedChange(!checked) },
@@ -341,8 +337,8 @@ fun PreferenceGroupTitle(
 ) {
     Text(
         text = title.uppercase(),
-        style = MaterialTheme.typography.labelLarge,
+        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
         color = MaterialTheme.colorScheme.primary,
-        modifier = modifier.padding(16.dp),
+        modifier = modifier.padding(horizontal = 16.dp, vertical = 12.dp),
     )
 }

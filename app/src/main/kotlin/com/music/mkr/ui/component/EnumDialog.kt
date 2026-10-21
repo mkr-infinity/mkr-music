@@ -12,11 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
 @Composable
@@ -31,8 +31,10 @@ fun <T> EnumDialog(
 ) {
     ListDialog(
         onDismiss = onDismiss,
+        title = { Text(title) },
     ) {
         items(values) { value ->
+            val isSelected = value == current
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier =
@@ -41,10 +43,10 @@ fun <T> EnumDialog(
                     .clickable {
                         onSelect(value)
                     }
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
             ) {
-                RadioButton(
-                    selected = value == current,
+                AnimatedRadioButton(
+                    selected = isSelected,
                     onClick = null,
                 )
 
@@ -53,12 +55,15 @@ fun <T> EnumDialog(
                 ) {
                     Text(
                         text = valueText(value),
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     )
                     if (valueDescription != null) {
                         Text(
                             text = valueDescription(value),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                         )
                     }
                 }

@@ -134,16 +134,11 @@ import com.music.mkr.utils.listItemShape
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.viewmodels.ArtistViewModel
 import com.valentinilk.shimmer.shimmer
-import com.music.mkr.artistvideo.ArtistVideo
-import com.music.mkr.constants.ShowArtistVideoKey
-import com.music.mkr.constants.ShowArtistBackgroundVideoKey
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.music.mkr.canvas.AppleMusicArtistBackgroundProvider
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -166,14 +161,10 @@ fun ArtistScreen(
     val libraryArtist by viewModel.libraryArtist.collectAsState()
     val librarySongs by viewModel.librarySongs.collectAsState()
     val libraryAlbums by viewModel.libraryAlbums.collectAsState()
-    val artistVideoUrl by viewModel.artistVideoUrl.collectAsState()
-    val artistVideoSong by viewModel.artistVideoSong.collectAsState()
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
     val showArtistDescription by rememberPreference(key = ShowArtistDescriptionKey, defaultValue = true)
     val showArtistSubscriberCount by rememberPreference(key = ShowArtistSubscriberCountKey, defaultValue = true)
     val showMonthlyListeners by rememberPreference(key = ShowMonthlyListenersKey, defaultValue = true)
-    val showArtistVideo by rememberPreference(key = ShowArtistVideoKey, defaultValue = true)
-    val showArtistBackgroundVideo by rememberPreference(key = ShowArtistBackgroundVideoKey, defaultValue = true)
 
     val lazyListState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -298,18 +289,9 @@ fun ArtistScreen(
                     val thumbnail = artistPage?.artist?.thumbnail ?: libraryArtist?.artist?.thumbnailUrl
                     val artistName = artistPage?.artist?.title ?: libraryArtist?.artist?.name
 
-                    var backgroundVideoUrl by remember { mutableStateOf<String?>(null) }
-                    LaunchedEffect(artistName, showArtistBackgroundVideo) {
-                        if (artistName != null && showArtistBackgroundVideo) {
-                            withContext(Dispatchers.IO) {
-                                backgroundVideoUrl = AppleMusicArtistBackgroundProvider.getByArtistName(artistName)
-                            }
-                        }
-                    }
-
                     Box {
                         // Artist Image with offset
-                        if (thumbnail != null || backgroundVideoUrl != null) {
+                        if (thumbnail != null) {
                             val screenHeight = LocalResources.current.displayMetrics.heightPixels
                             val headerHeight = with(density) { (screenHeight * 0.40f).toDp() }
                             Box(
@@ -327,21 +309,12 @@ fun ArtistScreen(
                                             bottom = 200.dp,
                                         )
                                 ) {
-                                    if (thumbnail != null) {
-                                        AsyncImage(
-                                            model = thumbnail.resize(1200, 1200),
-                                            contentDescription = null,
-                                            modifier = Modifier.fillMaxSize(),
-                                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
-                                        )
-                                    }
-                                    if (backgroundVideoUrl != null && showArtistBackgroundVideo) {
-                                        ArtistVideo(
-                                            videoUrl = backgroundVideoUrl!!,
-                                            modifier = Modifier.fillMaxSize(),
-                                            onClick = { }
-                                        )
-                                    }
+                                    AsyncImage(
+                                        model = thumbnail.resize(1200, 1200),
+                                        contentDescription = null,
+                                        modifier = Modifier.fillMaxSize(),
+                                        contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                                    )
                                 }
                             }
                         }
@@ -352,8 +325,8 @@ fun ArtistScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(
-                                    top = if (thumbnail != null || backgroundVideoUrl != null) {
-                                        // Push content down to sit at the bottom edge of the video header
+                                    top = if (thumbnail != null) {
+                                        // Push content down to sit at the bottom edge of the header
                                         // headerHeight (40% screen height) minus overlap for text/controls
                                         val screenHeight = LocalResources.current.displayMetrics.heightPixels
                                         with(density) { (screenHeight * 0.40f - 160f).toDp() }
@@ -371,29 +344,6 @@ fun ArtistScreen(
                                     verticalAlignment = Alignment.CenterVertically,
                                     modifier = Modifier.padding(bottom = 16.dp)
                                 ) {
-
-                                    //artist video
-                                    if (showArtistVideo && !(showArtistBackgroundVideo && backgroundVideoUrl != null)) {
-                                        artistVideoUrl?.let { videoUrl ->
-                                            artistPage?.artist?.radioEndpoint?.let { radioEndpoint ->
-                                                Spacer(modifier = Modifier.width(5.dp))
-                                                ArtistVideo(
-                                                    videoUrl = videoUrl,
-                                                    modifier = Modifier
-                                                        .height(45.dp)
-                                                        .aspectRatio(16f / 9f),
-                                                    onClick = {
-                                                        val watchEndpoint = artistVideoSong?.endpoint
-                                                            ?: artistPage?.artist?.radioEndpoint
-                                                        watchEndpoint?.let {
-                                                            playerConnection.playQueue(YouTubeQueue(it))
-                                                        }
-                                                    }
-                                                )
-                                            }
-                                        }
-                                    }
-
                                     Spacer(modifier = Modifier.width(5.dp))
 
                                     // Artist Name

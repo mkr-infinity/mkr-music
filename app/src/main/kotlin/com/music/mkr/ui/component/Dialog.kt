@@ -48,6 +48,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -73,9 +76,10 @@ fun DefaultDialog(
     ) {
         Surface(
             modifier = Modifier.padding(24.dp),
-            shape = AlertDialogDefaults.shape,
-            color = AlertDialogDefaults.containerColor,
-            tonalElevation = AlertDialogDefaults.TonalElevation
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+            tonalElevation = 2.dp
         ) {
             Column(
                 horizontalAlignment = horizontalAlignment,
@@ -209,6 +213,7 @@ fun ActionPromptDialog(
 fun ListDialog(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
+    title: (@Composable () -> Unit)? = null,
     content: LazyListScope.() -> Unit,
 ) {
     Dialog(
@@ -216,17 +221,37 @@ fun ListDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
         Surface(
-            modifier = Modifier.padding(24.dp),
-            shape = AlertDialogDefaults.shape,
-            color = AlertDialogDefaults.containerColor,
-            tonalElevation = AlertDialogDefaults.TonalElevation,
+            modifier = Modifier
+                .padding(24.dp)
+                .fillMaxWidth(0.92f),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+            tonalElevation = 2.dp,
         ) {
             Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.Start,
                 modifier = modifier
-                    .padding(vertical = 24.dp)
+                    .padding(vertical = 20.dp)
                     .imePadding(),
             ) {
+                if (title != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp, vertical = 8.dp)
+                    ) {
+                        ProvideTextStyle(
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        ) {
+                            title()
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
                 LazyColumn(content = content)
             }
         }

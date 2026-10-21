@@ -68,7 +68,6 @@ import com.music.mkr.constants.SuggestionRegionSlugToName
 import com.music.mkr.ui.screens.search.suggestions.SuggestionRegionSheet
 import com.music.mkr.constants.CountryCodeToName
 import com.music.mkr.constants.EnableBetterLyricsKey
-import com.music.mkr.constants.EnableMusixmatchKey
 import com.music.mkr.constants.EnableKugouKey
 import com.music.mkr.constants.EnableLrcLibKey
 import com.music.mkr.constants.EnableYouLyPlusKey
@@ -79,7 +78,6 @@ import com.music.mkr.constants.HideExplicitKey
 import com.music.mkr.constants.HideVideoSongsKey
 import com.music.mkr.constants.HideYoutubeShortsKey
 import com.music.mkr.constants.HideSpeedDialKey
-import com.music.mkr.constants.AlbumCanvasEnabledKey
 import com.music.mkr.constants.LanguageCodeToName
 import com.music.mkr.constants.LyricsProviderOrderKey
 import com.music.mkr.constants.ProxyEnabledKey
@@ -94,8 +92,6 @@ import com.music.mkr.constants.SYSTEM_DEFAULT
 import com.music.mkr.constants.ShowArtistDescriptionKey
 import com.music.mkr.constants.ShowArtistSubscriberCountKey
 import com.music.mkr.constants.ShowMonthlyListenersKey
-import com.music.mkr.constants.ShowArtistVideoKey
-import com.music.mkr.constants.ShowArtistBackgroundVideoKey
 import com.music.mkr.constants.ShowWrappedCardKey
 import com.music.mkr.constants.TopSize
 import com.music.mkr.ui.component.EnumDialog
@@ -123,11 +119,6 @@ import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.launch
 import com.music.mkr.utils.dataStore
 import com.music.mkr.constants.DataSaverKey
-import com.music.mkr.constants.DataSaverBackupCanvasKey
-import com.music.mkr.constants.DataSaverBackupArtistVideoKey
-import com.music.mkr.constants.DataSaverBackupArtistBgVideoKey
-import com.music.mkr.constants.DataSaverBackupAlbumCanvasKey
-import com.music.mkr.constants.CanvasThumbnailAnimationKey
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -142,24 +133,7 @@ fun ContentSettings(
     fun toggleDataSaver(enable: Boolean) {
         scope.launch {
             context.dataStore.edit { prefs ->
-                if (enable) {
-                    prefs[DataSaverBackupCanvasKey]        = prefs[CanvasThumbnailAnimationKey] ?: true
-                    prefs[DataSaverBackupArtistVideoKey]   = prefs[ShowArtistVideoKey] ?: true
-                    prefs[DataSaverBackupArtistBgVideoKey] = prefs[ShowArtistBackgroundVideoKey] ?: true
-                    prefs[DataSaverBackupAlbumCanvasKey]   = prefs[AlbumCanvasEnabledKey] ?: false
-                    
-                    prefs[CanvasThumbnailAnimationKey]  = false
-                    prefs[ShowArtistVideoKey]           = false
-                    prefs[ShowArtistBackgroundVideoKey] = false
-                    prefs[AlbumCanvasEnabledKey]        = false
-                    prefs[DataSaverKey]                 = true
-                } else {
-                    prefs[CanvasThumbnailAnimationKey]  = prefs[DataSaverBackupCanvasKey] ?: true
-                    prefs[ShowArtistVideoKey]           = prefs[DataSaverBackupArtistVideoKey] ?: true
-                    prefs[ShowArtistBackgroundVideoKey] = prefs[DataSaverBackupArtistBgVideoKey] ?: true
-                    prefs[AlbumCanvasEnabledKey]        = prefs[DataSaverBackupAlbumCanvasKey] ?: false
-                    prefs[DataSaverKey]                 = false
-                }
+                prefs[DataSaverKey] = enable
             }
         }
     }
@@ -177,8 +151,6 @@ fun ContentSettings(
     val (showArtistDescription, onShowArtistDescriptionChange) = rememberPreference(key = ShowArtistDescriptionKey, defaultValue = true)
     val (showArtistSubscriberCount, onShowArtistSubscriberCountChange) = rememberPreference(key = ShowArtistSubscriberCountKey, defaultValue = true)
     val (showMonthlyListeners, onShowMonthlyListenersChange) = rememberPreference(key = ShowMonthlyListenersKey, defaultValue = true)
-    val (showArtistVideo, onShowArtistVideoChange) = rememberPreference(key = ShowArtistVideoKey, defaultValue = true)
-    val (showArtistBackgroundVideo, onShowArtistBackgroundVideoChange) = rememberPreference(key = ShowArtistBackgroundVideoKey, defaultValue = true)
     val (proxyEnabled, onProxyEnabledChange) = rememberPreference(key = ProxyEnabledKey, defaultValue = false)
     val (proxyType, onProxyTypeChange) = rememberEnumPreference(key = ProxyTypeKey, defaultValue = Proxy.Type.HTTP)
     val (proxyUrl, onProxyUrlChange) = rememberPreference(key = ProxyUrlKey, defaultValue = "host:port")
@@ -187,7 +159,6 @@ fun ContentSettings(
     val (enableKugou, onEnableKugouChange) = rememberPreference(key = EnableKugouKey, defaultValue = true)
     val (enableLrclib, onEnableLrclibChange) = rememberPreference(key = EnableLrcLibKey, defaultValue = true)
     val (enableBetterLyrics, onEnableBetterLyricsChange) = rememberPreference(key = EnableBetterLyricsKey, defaultValue = true)
-    val (enableMusixmatch, onEnableMusixmatchChange) = rememberPreference(key = EnableMusixmatchKey, defaultValue = true)
     val (enableYouLyPlus, onEnableYouLyPlusChange) = rememberPreference(key = EnableYouLyPlusKey, defaultValue = true)
     val (enablePaxsenix, onEnablePaxsenixChange) = rememberPreference(key = EnablePaxsenixKey, defaultValue = true)
     val (enableUnison, onEnableUnisonChange) = rememberPreference(key = EnableUnisonKey, defaultValue = true)
@@ -212,7 +183,6 @@ fun ContentSettings(
         IpVersionKey,
         defaultValue = IpVersion.AUTO
     )
-    val (albumCanvasEnabled, onAlbumCanvasEnabledChange) = rememberPreference(key = AlbumCanvasEnabledKey, defaultValue = false)
 
     var showPlaybackLogsDialog by rememberSaveable { mutableStateOf(false) }
     var showSuggestionSheet by rememberSaveable { mutableStateOf(false) }
@@ -406,12 +376,11 @@ fun ContentSettings(
     if (showProviderPriorityDialog) {
         val defaultOrder = LyricsProviderRegistry.getDefaultProviderOrder()
         // User-toggleable provider names (excludes always-on YouTube providers)
-        val userToggleable = setOf("YouLyPlus", "Paxsenix", "BetterLyrics", "Musixmatch", "LrcLib", "Kugou", "Unison", "BiniLyrics")
+        val userToggleable = setOf("YouLyPlus", "Paxsenix", "BetterLyrics", "LrcLib", "Kugou", "Unison", "BiniLyrics")
         val enabledProviders = setOfNotNull(
             "LrcLib".takeIf { enableLrclib },
             "Kugou".takeIf { enableKugou },
             "BetterLyrics".takeIf { enableBetterLyrics },
-            "Musixmatch".takeIf { enableMusixmatch },
             "YouLyPlus".takeIf { enableYouLyPlus },
             "Paxsenix".takeIf { enablePaxsenix },
             "Unison".takeIf { enableUnison },
@@ -837,75 +806,6 @@ fun ContentSettings(
                         )
                     },
                     onClick = { onShowMonthlyListenersChange(!showMonthlyListeners) }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.slow_motion_video),
-                    title = { Text(stringResource(R.string.show_artist_video)) },
-                    description = { Text(stringResource(R.string.show_artist_video_desc)) },
-                    trailingContent = {
-                        Switch(
-                            checked = showArtistVideo,
-                            onCheckedChange = onShowArtistVideoChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (showArtistVideo) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onShowArtistVideoChange(!showArtistVideo) }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.slow_motion_video),
-                    title = { Text(stringResource(R.string.show_artist_background_video)) },
-                    description = { Text(stringResource(R.string.show_artist_background_video_desc)) },
-                    trailingContent = {
-                        Switch(
-                            checked = showArtistBackgroundVideo,
-                            onCheckedChange = onShowArtistBackgroundVideoChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (showArtistBackgroundVideo) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onShowArtistBackgroundVideoChange(!showArtistBackgroundVideo) }
-                )
-            )
-        )
-
-        ExpressiveSettingGroup(
-            title = stringResource(R.string.album_text),
-            items = listOf(
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.slow_motion_video),
-                    title = { Text(stringResource(R.string.show_album_canvas)) },
-                    description = { Text(stringResource(R.string.show_album_canvas_desc)) },
-                    trailingContent = {
-                        Switch(
-                            checked = albumCanvasEnabled,
-                            onCheckedChange = onAlbumCanvasEnabledChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (albumCanvasEnabled) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onAlbumCanvasEnabledChange(!albumCanvasEnabled) }
                 )
             )
         )
@@ -1064,27 +964,6 @@ fun ContentSettings(
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.lyrics),
-                    title = { Text("Musixmatch") },
-                    description = { Text("World's largest lyrics database (supports word-level and line-level sync)") },
-                    trailingContent = {
-                        Switch(
-                            checked = enableMusixmatch,
-                            onCheckedChange = onEnableMusixmatchChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (enableMusixmatch) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onEnableMusixmatchChange(!enableMusixmatch) }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.lyrics),
                     title = { Text("YouLyPlus") },
                     description = { Text("LyricsPlus multi-server provider (YouLy+ extension backend)") },
                     trailingContent = {
@@ -1149,7 +1028,7 @@ fun ContentSettings(
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text("Bini Lyrics") },
-                    description = { Text("Binimum/KPoe LyricsPlus (Apple Music, Musixmatch, Spotify & more — word-synced)") },
+                    description = { Text("Binimum/KPoe LyricsPlus (Apple Music, Spotify & more — word-synced)") },
                     trailingContent = {
                         Switch(
                             checked = enableBiniLyrics,

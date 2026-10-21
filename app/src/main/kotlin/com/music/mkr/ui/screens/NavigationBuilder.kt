@@ -40,7 +40,6 @@ import com.music.mkr.ui.screens.search.OnlineSearchResult
 import com.music.mkr.ui.screens.search.SearchScreen
 import com.music.mkr.ui.screens.settings.AboutScreen
 import com.music.mkr.ui.screens.settings.AppearanceSettings
-import com.music.mkr.ui.screens.settings.CanvasSelection
 import com.music.mkr.ui.screens.settings.FontSelectionScreen
 import com.music.mkr.ui.screens.settings.BackupAndRestore
 import com.music.mkr.ui.screens.settings.AutoBackupSettings
@@ -51,7 +50,6 @@ import com.music.mkr.ui.screens.settings.ContentSettings
 import com.music.mkr.ui.screens.settings.DarkMode
 import com.music.mkr.ui.screens.settings.DiscordLoginScreen
 import com.music.mkr.ui.screens.settings.PlayerSettings
-import com.music.mkr.ui.screens.settings.JioSettings
 import com.music.mkr.ui.screens.settings.SponsorBlockSettings
 import com.music.mkr.ui.screens.settings.PrivacySettings
 import com.music.mkr.ui.screens.settings.RomanizationSettings
@@ -373,10 +371,6 @@ fun NavGraphBuilder.navigationBuilder(
         ThemeScreen(navController)
     }
 
-    composable("settings/player/canvas") {
-        CanvasSelection(navController, scrollBehavior)
-    }
-
     composable("settings/appearance/font") {
         FontSelectionScreen(navController, scrollBehavior)
     }
@@ -395,10 +389,6 @@ fun NavGraphBuilder.navigationBuilder(
     
     composable("settings/player") {
         PlayerSettings(navController, scrollBehavior)
-    }
-
-    composable("settings/player/jio") {
-        JioSettings(navController, scrollBehavior)
     }
 
     composable("settings/player/sponsorblock") {

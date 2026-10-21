@@ -641,13 +641,13 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                             title = "Apple-Style Player",
                             description = "Fluid gestures, animated liquid lyrics and floating miniplayer crafted with pure elegance.",
                             tag = "EXPERIENCE",
-                            iconRes = R.drawable.lyrics_apple,
+                            iconRes = R.drawable.lyrics,
                             iconColor = Color(0xFFffaee4),
                             iconTint = Color(0xFF8d0053)
                         ),
                         OnboardingFeatureItem(
-                            title = "Dual Engine Streaming",
-                            description = "High-fidelity JioSaavn audio streaming paired with seamless YouTube Music fallback.",
+                            title = "High-Fidelity Audio",
+                            description = "High-fidelity audio streaming paired with seamless YouTube Music playback.",
                             tag = "AUDIO CORE",
                             iconRes = R.drawable.high_quality,
                             iconColor = Color(0xFFffb683),

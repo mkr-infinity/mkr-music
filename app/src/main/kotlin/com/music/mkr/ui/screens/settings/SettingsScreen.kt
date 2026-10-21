@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.ui.component.IconButton
+import com.music.mkr.ui.component.EmptyPlaceholder
 import com.music.mkr.ui.component.ExpressiveSettingGroup
 import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.ui.screens.Screens
@@ -140,7 +141,7 @@ fun SettingsScreen(
                 title = "Apple-Style Player Design",
                 description = "Fluid gestures, apple miniplayer layout and modern typography",
                 category = "Appearance",
-                iconRes = R.drawable.lyrics_apple,
+                iconRes = R.drawable.lyrics,
                 route = "settings/appearance",
                 targetKey = "appearance_apple_player",
                 keywords = listOf("apple", "player design", "miniplayer", "fluid", "gestures", "ios")
@@ -158,12 +159,12 @@ fun SettingsScreen(
             // --- Player & Audio Engine ---
             SearchableSetting(
                 title = "Streaming Audio Quality",
-                description = "High-fidelity JioSaavn streaming (320kbps) & YouTube Music fallback",
+                description = "High-fidelity audio streaming and quality selection",
                 category = "Player & Audio",
                 iconRes = R.drawable.graphic_eq,
                 route = "settings/player",
                 targetKey = "player_audio_quality",
-                keywords = listOf("bitrate", "high quality", "lossless", "audio quality", "320kbps", "sound quality", "saavn", "streaming")
+                keywords = listOf("bitrate", "high quality", "lossless", "audio quality", "sound quality", "streaming")
             ),
             SearchableSetting(
                 title = "Crossfade Between Songs",
@@ -323,6 +324,15 @@ fun SettingsScreen(
                 route = "settings/listening_summary",
                 targetKey = "privacy_listening_summary",
                 keywords = listOf("recap", "summary", "stats", "weekly stats", "genres", "artists")
+            ),
+            SearchableSetting(
+                title = "Listening Statistics & Charts",
+                description = "Personal music analytics, top tracks, listening time, and statistics",
+                category = "Features & Data",
+                iconRes = R.drawable.stats,
+                route = "stats",
+                targetKey = "stats_screen",
+                keywords = listOf("stats", "statistics", "listening stats", "charts", "top songs", "analytics")
             ),
             SearchableSetting(
                 title = "Discord Rich Presence",
@@ -521,7 +531,7 @@ fun SettingsScreen(
     ) {
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Top Search Bar (Capsule Style)
+        // Top Search Bar (16.dp Rounded Surface)
         OutlinedTextField(
             value = searchQuery,
             onValueChange = { searchQuery = it },
@@ -553,12 +563,15 @@ fun SettingsScreen(
                 }
             },
             singleLine = true,
-            shape = RoundedCornerShape(28.dp),
+            shape = RoundedCornerShape(16.dp),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                 unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                cursorColor = MaterialTheme.colorScheme.primary,
                 focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
             ),
             modifier = Modifier.fillMaxWidth()
         )
@@ -577,31 +590,12 @@ fun SettingsScreen(
             }
 
             if (filtered.isEmpty()) {
-                Surface(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 16.dp),
-                    shape = RoundedCornerShape(20.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainer
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.search),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f),
-                            modifier = Modifier.size(36.dp)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "No matching settings found",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
+                EmptyPlaceholder(
+                    icon = R.drawable.search,
+                    text = "No matching settings found",
+                    description = "Try searching with different keywords or terms",
+                    modifier = Modifier.padding(vertical = 32.dp)
+                )
             } else {
                 Text(
                     text = "Search Results (${filtered.size})",
@@ -686,6 +680,13 @@ fun SettingsScreen(
                         title = { Text(if (isUpdateAvailable) "Update Available" else "System Updates") },
                         description = { Text(if (isUpdateAvailable) "New MKR Music release is ready to install" else "MKR Music is up to date • Check for updates") },
                         onClick = { navController.navigate("settings/update") }
+                    ),
+                    Material3SettingsItem(
+                        key = "stats_screen",
+                        icon = painterResource(R.drawable.stats),
+                        title = { Text(stringResource(R.string.stats)) },
+                        description = { Text("Detailed personal listening statistics, top tracks & artists") },
+                        onClick = { navController.navigate("stats") }
                     ),
                     Material3SettingsItem(
                         key = "privacy_listening_summary",
@@ -862,18 +863,18 @@ private fun SettingsGridCard(
 ) {
     Surface(
         modifier = modifier
-            .settingsHighlight(key, RoundedCornerShape(22.dp))
-            .clip(RoundedCornerShape(22.dp))
+            .settingsHighlight(key, RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(18.dp))
             .clickable(onClick = onClick),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        tonalElevation = 2.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+        tonalElevation = 0.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 14.dp, vertical = 13.dp),
+                .padding(horizontal = 14.dp, vertical = 14.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -885,13 +886,13 @@ private fun SettingsGridCard(
                     modifier = Modifier
                         .size(40.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.primaryContainer),
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         painter = painterResource(icon),
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp)
                     )
                 }
@@ -915,7 +916,7 @@ private fun SettingsGridCard(
                 Text(
                     text = subtitle,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     minLines = 2,
                     maxLines = 2,
                     lineHeight = 15.sp,

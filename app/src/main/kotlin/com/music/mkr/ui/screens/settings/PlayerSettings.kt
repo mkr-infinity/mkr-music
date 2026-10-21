@@ -42,15 +42,9 @@ import com.music.mkr.constants.AudioNormalizationKey
 import com.music.mkr.constants.AudioOffload
 import com.music.mkr.constants.AudioQuality
 import com.music.mkr.constants.AudioQualityKey
-import com.music.mkr.constants.EnableSaavnStreamingKey
-import com.music.mkr.constants.SaavnAudioQuality
-import com.music.mkr.constants.SaavnAudioQualityKey
 import com.music.mkr.constants.AutoDownloadOnLikeKey
 import com.music.mkr.constants.CrossfadeCurve
 import com.music.mkr.constants.CrossfadeCurveKey
-import com.music.mkr.constants.CanvasThumbnailAnimationKey
-import com.music.mkr.constants.CanvasSourceKey
-import com.music.mkr.constants.CanvasSource
 import com.music.mkr.constants.CrossfadeDurationKey
 import com.music.mkr.constants.CrossfadeEnabledKey
 import com.music.mkr.constants.CrossfadeGaplessKey
@@ -204,25 +198,9 @@ fun PlayerSettings(
         HistoryDuration,
         defaultValue = 30f
     )
-    val (saavnEnabled, _) = rememberPreference(
-        EnableSaavnStreamingKey,
-        defaultValue = true
-    )
-    val (saavnQuality, _) = rememberEnumPreference(
-        SaavnAudioQualityKey,
-        defaultValue = SaavnAudioQuality.QUALITY_320
-    )
     val (sponsorBlockEnabled, _) = rememberPreference(
         EnableSponsorBlockKey,
         defaultValue = false
-    )
-    val (canvasThumbnailAnimation, onCanvasThumbnailAnimationChange) = rememberPreference(
-        CanvasThumbnailAnimationKey,
-        defaultValue = true
-    )
-    val (canvasSource) = rememberEnumPreference(
-        CanvasSourceKey,
-        defaultValue = CanvasSource.AUTO
     )
 
     var showAudioQualityDialog by remember {
@@ -326,21 +304,6 @@ fun PlayerSettings(
                     },
                     onClick = { showAudioQualityDialog = true }
                 ))
-                // JioSaavn settings navigation
-                add(Material3SettingsItem(
-                    icon = painterResource(R.drawable.graphic_eq),
-                    title = { Text(stringResource(R.string.jiosaavn_settings)) },
-                    trailingContent = {
-                        Text(
-                            if (saavnEnabled) {
-                                saavnQuality.toLabel()
-                            } else {
-                                stringResource(R.string.jiosaavn_streaming_disabled)
-                            }
-                        )
-                    },
-                    onClick = { navController.navigate("settings/player/jio") }
-                ))
                 // SponsorBlock settings navigation
                 add(Material3SettingsItem(
                     key = "player_sponsorblock",
@@ -357,24 +320,6 @@ fun PlayerSettings(
                         )
                     },
                     onClick = { navController.navigate("settings/player/sponsorblock") }
-                ))
-                add(Material3SettingsItem(
-                    icon = painterResource(R.drawable.canvas_art),
-                    title = { Text(stringResource(R.string.mkrmusic_canvas)) },
-                    trailingContent = {
-                        val summary = if (!canvasThumbnailAnimation) {
-                            stringResource(R.string.disable)
-                        } else {
-                            when (canvasSource) {
-                                CanvasSource.AUTO -> stringResource(R.string.canvas_source_auto)
-                                CanvasSource.APPLE_MUSIC -> stringResource(R.string.canvas_source_apple_music)
-                                CanvasSource.MKRMUSIC -> stringResource(R.string.canvas_source_mkrmusic)
-                                CanvasSource.TIDAL -> stringResource(R.string.canvas_source_tidal)
-                            }
-                        }
-                        Text(summary)
-                    },
-                    onClick = { navController.navigate("settings/player/canvas") }
                 ))
                 add(Material3SettingsItem(
                     key = "player_crossfade",

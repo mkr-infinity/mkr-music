@@ -1,6 +1,7 @@
 package com.music.mkr.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
@@ -38,18 +39,22 @@ fun SpeedDialGridItem(
     isActive: Boolean = false,
     isPlaying: Boolean = false,
 ) {
+    val shape = if (item is ArtistItem) CircleShape else RoundedCornerShape(ThumbnailCornerRadius)
+    val borderColor = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .aspectRatio(1f) // Square aspect ratio
-            .clip(RoundedCornerShape(ThumbnailCornerRadius))
+            .clip(shape)
+            .border(1.dp, borderColor, shape)
     ) {
         // Thumbnail
         ItemThumbnail(
             thumbnailUrl = item.thumbnail?.resize(200, 200),
             isActive = isActive,
             isPlaying = isPlaying,
-            shape = if (item is ArtistItem) CircleShape else RoundedCornerShape(ThumbnailCornerRadius),
+            shape = shape,
             modifier = Modifier.fillMaxSize()
         )
 
@@ -60,10 +65,10 @@ fun SpeedDialGridItem(
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
-                            Color.Black.copy(alpha = 0.4f), // Top scrim for icon visibility on bright covers
+                            Color.Black.copy(alpha = 0.35f), // Top scrim for icon visibility on bright covers
                             Color.Transparent,
-                            Color.Black.copy(alpha = 0.6f),
-                            Color.Black.copy(alpha = 0.9f)
+                            Color.Black.copy(alpha = 0.55f),
+                            Color.Black.copy(alpha = 0.88f)
                         )
                     )
                 )
@@ -73,15 +78,15 @@ fun SpeedDialGridItem(
         Row(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .padding(8.dp) // Reduced padding for tighter layout
+                .padding(horizontal = 8.dp, vertical = 6.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = item.title,
-                style = MaterialTheme.typography.titleSmall, // Smaller, punchier font
+                style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = if (isActive) MaterialTheme.colorScheme.primary else Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f)
@@ -92,24 +97,29 @@ fun SpeedDialGridItem(
                 Icon(
                     painter = painterResource(R.drawable.navigate_next),
                     contentDescription = null,
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
+                    tint = Color.White.copy(alpha = 0.8f),
+                    modifier = Modifier.size(18.dp)
                 )
+            }
         }
-    }
+
         // Pinned Icon
         if (isPinned) {
-            Icon(
-                painter = painterResource(R.drawable.ic_push_pin),
-                contentDescription = null,
-                tint = Color.White,
+            Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .padding(8.dp)
-                    .size(16.dp)
-            )
+                    .padding(6.dp)
+                    .size(22.dp)
+                    .background(Color.Black.copy(alpha = 0.45f), CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.ic_push_pin),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(13.dp)
+                )
+            }
         }
-
-
     }
 }
