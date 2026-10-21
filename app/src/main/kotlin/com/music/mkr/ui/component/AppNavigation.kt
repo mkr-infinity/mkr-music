@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.music.mkr.constants.NavigationStyle
 import com.music.mkr.ui.screens.Screens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -147,11 +148,18 @@ fun AppNavigationBar(
     pureBlack: Boolean = false,
     slimNav: Boolean = false,
     onSearchLongClick: (() -> Unit)? = null,
-    floatingNav: Boolean = false,
+    navigationStyle: NavigationStyle = NavigationStyle.DEFAULT,
+    floatingNav: Boolean = true,
     bottomInset: Dp = 0.dp
 ) {
-    if (floatingNav) {
-        FloatingNavigationBar(
+    val effectiveStyle = if (!floatingNav && navigationStyle == NavigationStyle.DEFAULT) {
+        NavigationStyle.CLEAN_MATERIAL
+    } else {
+        navigationStyle
+    }
+
+    when (effectiveStyle) {
+        NavigationStyle.AMBER_DOCK -> AmberDockNavigationBar(
             navigationItems = navigationItems,
             currentRoute = currentRoute,
             onItemClick = onItemClick,
@@ -161,80 +169,35 @@ fun AppNavigationBar(
             onSearchLongClick = onSearchLongClick,
             bottomInset = bottomInset
         )
-    } else {
-        val containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
-        val contentColor = if (pureBlack) Color.White else MaterialTheme.colorScheme.onSurfaceVariant
-        val haptics = LocalHapticFeedback.current
-        val viewConfiguration = LocalViewConfiguration.current
-        
-        NavigationBar(
+        NavigationStyle.FLOATING_GLASS -> FloatingGlassNavigationBar(
+            navigationItems = navigationItems,
+            currentRoute = currentRoute,
+            onItemClick = onItemClick,
             modifier = modifier,
-            containerColor = containerColor,
-            contentColor = contentColor
-        ) {
-            navigationItems.forEach { screen ->
-                val isSelected = remember(currentRoute, screen.route) {
-                    isRouteSelected(currentRoute, screen.route, navigationItems)
-                }
-                val iconRes = remember(isSelected, screen) {
-                    if (isSelected) screen.iconIdActive else screen.iconIdInactive
-                }
-                
-                val isSearchItem = screen == Screens.Search && onSearchLongClick != null
-                val interactionSource = remember { MutableInteractionSource() }
-                
-                // Long press detection using InteractionSource
-                if (isSearchItem) {
-                    LaunchedEffect(interactionSource) {
-                        var isLongClick = false
-                        interactionSource.interactions.collectLatest { interaction ->
-                            when (interaction) {
-                                is PressInteraction.Press -> {
-                                    isLongClick = false
-                                    delay(viewConfiguration.longPressTimeoutMillis)
-                                    isLongClick = true
-                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    onSearchLongClick.invoke()
-                                }
-                                is PressInteraction.Release -> {
-                                    if (!isLongClick) {
-                                        onItemClick(screen, isSelected)
-                                    }
-                                }
-                                is PressInteraction.Cancel -> {
-                                    isLongClick = false
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                NavigationBarItem(
-                    selected = isSelected,
-                    onClick = { 
-                        if (!isSearchItem) {
-                            onItemClick(screen, isSelected)
-                        }
-                        // For search item, click is handled via InteractionSource
-                    },
-                    interactionSource = interactionSource,
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = iconRes),
-                            contentDescription = stringResource(screen.titleId)
-                        )
-                    },
-                    label = if (!slimNav) {
-                        {
-                            Text(
-                                text = stringResource(screen.titleId),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    } else null
-                )
-            }
-        }
+            pureBlack = pureBlack,
+            slimNav = slimNav,
+            onSearchLongClick = onSearchLongClick,
+            bottomInset = bottomInset
+        )
+        NavigationStyle.EXPRESSIVE_PILL -> ExpressivePillNavigationBar(
+            navigationItems = navigationItems,
+            currentRoute = currentRoute,
+            onItemClick = onItemClick,
+            modifier = modifier,
+            pureBlack = pureBlack,
+            slimNav = slimNav,
+            onSearchLongClick = onSearchLongClick,
+            bottomInset = bottomInset
+        )
+        NavigationStyle.CLEAN_MATERIAL -> CleanMaterialNavigationBar(
+            navigationItems = navigationItems,
+            currentRoute = currentRoute,
+            onItemClick = onItemClick,
+            modifier = modifier,
+            pureBlack = pureBlack,
+            slimNav = slimNav,
+            onSearchLongClick = onSearchLongClick,
+            bottomInset = bottomInset
+        )
     }
 }

@@ -37,6 +37,7 @@ import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -64,35 +65,43 @@ fun <E> ChipsRow(
     currentValue: E,
     onValueUpdate: (E) -> Unit,
     modifier: Modifier = Modifier,
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainer,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
 ) {
     Row(
-        modifier =
-        modifier
+        modifier = modifier
             .fillMaxWidth()
             .horizontalScroll(rememberScrollState())
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)),
     ) {
-        Spacer(Modifier.width(12.dp))
+        Spacer(Modifier.width(16.dp))
 
         chips.forEach { (value, label) ->
             val isSelected = currentValue == value
 
-            // Animate the corner radius based on selection
-            val cornerRadius by animateDpAsState(
-                targetValue = if (isSelected) 20.dp else 8.dp,
-                animationSpec = spring(
-                    dampingRatio = Spring.DampingRatioMediumBouncy,
-                    stiffness = Spring.StiffnessMedium
-                ),
-                label = "corner_radius"
-            )
-
             FilterChip(
-                label = { Text(label) },
+                label = {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                    )
+                },
                 selected = isSelected,
                 colors = FilterChipDefaults.filterChipColors(
                     containerColor = containerColor,
+                    labelColor = MaterialTheme.colorScheme.onSurface,
+                    iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                    selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                ),
+                border = FilterChipDefaults.filterChipBorder(
+                    enabled = true,
+                    selected = isSelected,
+                    borderColor = MaterialTheme.colorScheme.outline,
+                    selectedBorderColor = MaterialTheme.colorScheme.primary,
+                    borderWidth = 1.dp,
+                    selectedBorderWidth = 1.dp
                 ),
                 onClick = { onValueUpdate(value) },
                 leadingIcon = if (isSelected) {
@@ -106,13 +115,12 @@ fun <E> ChipsRow(
                 } else {
                     null
                 },
-                shape = RoundedCornerShape(cornerRadius),
-                border = null,
+                shape = RoundedCornerShape(10.dp),
                 modifier = Modifier
-                    .height(35.dp)
+                    .height(36.dp)
                     .animateContentSize(
                         animationSpec = spring(
-                            dampingRatio = Spring.DampingRatioMediumBouncy,
+                            dampingRatio = Spring.DampingRatioNoBouncy,
                             stiffness = Spring.StiffnessMedium
                         )
                     )
@@ -120,6 +128,8 @@ fun <E> ChipsRow(
 
             Spacer(Modifier.width(8.dp))
         }
+
+        Spacer(Modifier.width(8.dp))
     }
 }
 
@@ -155,8 +165,7 @@ fun <Int> ChoiceChipsRow(
             Box(contentAlignment = Alignment.Center) {
                 FilterChip(
                     selected = false,
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp),
+                    modifier = Modifier.padding(horizontal = 4.dp),
                     onClick = {
                         menuExpanded = !menuExpanded
                         expandIconDegree -= 180
@@ -168,7 +177,9 @@ fun <Int> ChoiceChipsRow(
                                 OptionStats.MONTHS -> stringResource(id = R.string.months)
                                 OptionStats.YEARS -> stringResource(id = R.string.years)
                                 OptionStats.CONTINUOUS -> stringResource(id = R.string.continuous)
-                            }
+                            },
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium
                         )
                     },
                     leadingIcon = {
@@ -182,17 +193,20 @@ fun <Int> ChoiceChipsRow(
                         Icon(
                             painter = painterResource(R.drawable.expand_more),
                             contentDescription = null,
-                            modifier = Modifier
-                                .graphicsLayer(rotationZ = rotationAnimation)
+                            modifier = Modifier.graphicsLayer(rotationZ = rotationAnimation)
                         )
                     },
-                    shape = RoundedCornerShape(16.dp),
-                    border = null,
+                    shape = RoundedCornerShape(10.dp),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = false,
+                        borderColor = MaterialTheme.colorScheme.outline,
+                        borderWidth = 1.dp
+                    ),
                     colors = FilterChipDefaults.filterChipColors(
                         containerColor = containerColor,
-                        selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                         labelColor = MaterialTheme.colorScheme.onSurface,
-                        selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 )
 
@@ -228,20 +242,30 @@ fun <Int> ChoiceChipsRow(
             chips.forEach { (value, label) ->
                 val isSelected = currentValue == value
 
-                val cornerRadius by animateDpAsState(
-                    targetValue = if (isSelected) 20.dp else 8.dp,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    ),
-                    label = "corner_radius"
-                )
-
                 FilterChip(
-                    label = { Text(label) },
+                    label = {
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                        )
+                    },
                     selected = isSelected,
                     colors = FilterChipDefaults.filterChipColors(
                         containerColor = containerColor,
+                        labelColor = MaterialTheme.colorScheme.onSurface,
+                        iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
+                    border = FilterChipDefaults.filterChipBorder(
+                        enabled = true,
+                        selected = isSelected,
+                        borderColor = MaterialTheme.colorScheme.outline,
+                        selectedBorderColor = MaterialTheme.colorScheme.primary,
+                        borderWidth = 1.dp,
+                        selectedBorderWidth = 1.dp
                     ),
                     onClick = { onValueUpdate(value) },
                     leadingIcon = if (isSelected) {
@@ -255,13 +279,12 @@ fun <Int> ChoiceChipsRow(
                     } else {
                         null
                     },
-                    shape = RoundedCornerShape(cornerRadius),
-                    border = null,
+                    shape = RoundedCornerShape(10.dp),
                     modifier = Modifier
                         .padding(horizontal = 4.dp)
                         .animateContentSize(
                             animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                dampingRatio = Spring.DampingRatioNoBouncy,
                                 stiffness = Spring.StiffnessMedium
                             )
                         )
