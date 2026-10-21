@@ -132,6 +132,7 @@ import com.music.mkr.models.MediaMetadata
 import com.music.mkr.ui.component.ActionPromptDialog
 import com.music.mkr.ui.component.BottomSheet
 import com.music.mkr.ui.component.BottomSheetState
+import com.music.mkr.ui.component.EmptyPlaceholder
 import com.music.mkr.ui.component.LocalBottomSheetPageState
 import com.music.mkr.ui.component.LocalMenuState
 import com.music.mkr.ui.component.MediaMetadataListItem
@@ -341,24 +342,14 @@ fun Queue(
                         ),
                 ) {
                     val buttonSize = 42.dp
-                    val iconSize = 24.dp
-                    val queueShape = RoundedCornerShape(
-                        topStart = 50.dp, bottomStart = 50.dp,
-                        topEnd = 3.dp, bottomEnd = 3.dp
-                    )
-                    val middleShape = RoundedCornerShape(3.dp)
-                    val repeatShape = RoundedCornerShape(
-                        topStart = 3.dp, bottomStart = 3.dp,
-                        topEnd = 50.dp, bottomEnd = 50.dp
-                    )
-
-//                    Spacer(modifier = Modifier.weight(1f))
+                    val iconSize = 22.dp
+                    val buttonShape = RoundedCornerShape(12.dp)
 
                     PlayerQueueButton(
                         icon = R.drawable.queue_music,
                         onClick = { state.expandSoft() },
                         isActive = false,
-                        shape = queueShape,
+                        shape = buttonShape,
                         modifier = Modifier.size(buttonSize),
                         textButtonColor = textButtonColor,
                         iconButtonColor = iconButtonColor,
@@ -378,7 +369,7 @@ fun Queue(
                         },
                         isActive = sleepTimerEnabled,
                         enabled = !isListenTogetherGuest,
-                        shape = middleShape,
+                        shape = buttonShape,
                         modifier = Modifier.size(buttonSize),
                         textButtonColor = textButtonColor,
                         iconButtonColor = iconButtonColor,
@@ -392,7 +383,7 @@ fun Queue(
                         icon = R.drawable.lyrics,
                         onClick = { onToggleLyrics() },
                         isActive = showInlineLyrics,
-                        shape = middleShape,
+                        shape = buttonShape,
                         modifier = Modifier.size(buttonSize),
                         textButtonColor = textButtonColor,
                         iconButtonColor = iconButtonColor,
@@ -406,7 +397,7 @@ fun Queue(
                             icon = R.drawable.chat_msg,
                             onClick = { showCommentSheet = true },
                             isActive = showCommentSheet,
-                            shape = middleShape,
+                            shape = buttonShape,
                             modifier = Modifier.size(buttonSize),
                             textButtonColor = textButtonColor,
                             iconButtonColor = iconButtonColor,
@@ -424,7 +415,7 @@ fun Queue(
                         },
                         isActive = shuffleModeEnabledInside,
                         enabled = !isListenTogetherGuest,
-                        shape = middleShape,
+                        shape = buttonShape,
                         modifier = Modifier.size(buttonSize),
                         textButtonColor = textButtonColor,
                         iconButtonColor = iconButtonColor,
@@ -432,7 +423,6 @@ fun Queue(
                         textBackgroundColor = TextBackgroundColor,
                         playerBackground = playerBackground
                     )
-
 
                     PlayerQueueButton(
                         icon = when (repeatMode) {
@@ -445,7 +435,7 @@ fun Queue(
                         },
                         isActive = repeatMode != Player.REPEAT_MODE_OFF,
                         enabled = !isListenTogetherGuest,
-                        shape = repeatShape,
+                        shape = buttonShape,
                         modifier = Modifier.size(buttonSize),
                         textButtonColor = textButtonColor,
                         iconButtonColor = iconButtonColor,
@@ -510,7 +500,7 @@ fun Queue(
                             horizontalArrangement = Arrangement.Center,
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.apple_queue),
+                                painter = painterResource(id = R.drawable.queue_music),
                                 contentDescription = null,
                                 modifier = Modifier.size(40.dp),
                                 tint = TextBackgroundColor
@@ -549,7 +539,7 @@ fun Queue(
                         ) {
                             Icon(
                                 painter = painterResource(
-                                    if (isBluetoothConnected) R.drawable.headset_applemusic else R.drawable.speaker_apple
+                                    if (isBluetoothConnected) R.drawable.headphones else R.drawable.home_speaker_devices
                                 ),
                                 contentDescription = null,
                                 modifier = Modifier.size(30.dp)
@@ -611,7 +601,7 @@ fun Queue(
                             horizontalArrangement = Arrangement.Center,
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.apple_music_me),
+                                painter = painterResource(id = R.drawable.lyrics),
                                 contentDescription = null,
                                 modifier = Modifier.size(40.dp),
                                 tint = TextBackgroundColor
@@ -1182,6 +1172,17 @@ fun Queue(
                         )
                     }
 
+                    if (mutableQueueWindows.isEmpty()) {
+                        item(key = "empty_queue") {
+                            EmptyPlaceholder(
+                                icon = R.drawable.queue_music,
+                                text = stringResource(R.string.playlist_is_empty),
+                                description = "Play a track or album to add songs to your queue",
+                                modifier = Modifier.padding(top = 48.dp)
+                            )
+                        }
+                    }
+
                     itemsIndexed(
                         items = mutableQueueWindows,
                         key = { _, item -> item.uid.hashCode() },
@@ -1290,7 +1291,7 @@ fun Queue(
                                                     ) {
                                                         Icon(
                                                             painter = painterResource(R.drawable.drag_handle),
-                                                            contentDescription = null,
+                                                            contentDescription = "Reorder",
                                                         )
                                                     }
                                                 }
@@ -1505,11 +1506,13 @@ private fun PlayerQueueButton(
         modifier.then(buttonModifier.background(textButtonColor)).alpha(alphaFactor)
     } else {
         modifier.then(
-            buttonModifier.border(
-                width = 1.dp,
-                color = textButtonColor.copy(alpha = 0.3f),
-                shape = shape
-            )
+            buttonModifier
+                .background(textButtonColor.copy(alpha = 0.08f), shape)
+                .border(
+                    width = 1.dp,
+                    color = textButtonColor.copy(alpha = 0.2f),
+                    shape = shape
+                )
         ).alpha(alphaFactor)
     }
 

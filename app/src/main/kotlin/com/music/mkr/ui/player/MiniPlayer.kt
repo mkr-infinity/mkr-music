@@ -267,7 +267,8 @@ private fun NewMiniPlayer(
         (600 / (1f + kotlin.math.exp(-(-11.44748 * swipeSensitivity + 9.04945)))).roundToInt()
     }
 
-    val (gradientColors, onGradientColorsChange) = remember { mutableStateOf<List<Color>>(emptyList()) }
+    val artworkPalette = com.music.mkr.ui.theme.rememberArtworkPalette(mediaMetadata)
+    val (gradientColors, onGradientColorsChange) = remember { mutableStateOf<List<Color>>(artworkPalette.backgroundGradient) }
 
     MiniPlayerColorExtractor(
         mediaMetadata = mediaMetadata,
@@ -275,13 +276,13 @@ private fun NewMiniPlayer(
         onGradientColorsChange = onGradientColorsChange
     )
     
-    // Memoize colors
-    val backgroundColor = if (pureBlack && useDarkTheme) Color.Black else MaterialTheme.colorScheme.surfaceContainer
+    // Cohesive colors with charcoal/amber baseline
     val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
+    val backgroundColor = if (pureBlack && useDarkTheme) Color.Black else if (isDynamicBackground) Color.Transparent else artworkPalette.surfaceElevated
     
-    val primaryColor = if (isDynamicBackground) Color.White else MaterialTheme.colorScheme.primary
+    val primaryColor = artworkPalette.primaryAccent
     val outlineColor = if (isDynamicBackground) Color.White.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline
-    val onSurfaceColor = if (isDynamicBackground) Color.White else MaterialTheme.colorScheme.onSurface
+    val onSurfaceColor = artworkPalette.textPrimary
     val errorColor = MaterialTheme.colorScheme.error
 
     Box(
@@ -361,7 +362,7 @@ private fun NewMiniPlayer(
                 .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
                 .clip(RoundedCornerShape(32.dp))
                 .background(color = backgroundColor)
-                .border(1.dp, outlineColor.copy(alpha = 0.3f), RoundedCornerShape(32.dp))
+                .border(1.dp, outlineColor.copy(alpha = 0.15f), RoundedCornerShape(32.dp))
         ) {
             // Background Layers
             MiniPlayerBackgroundLayer(
@@ -420,7 +421,7 @@ private fun NewMiniPlayer(
                         .clickable { showAudioDeviceBottomSheet = true }
                 ) {
                     Icon(
-                        painter = painterResource(if (isBluetoothConnected) R.drawable.bluetooth else R.drawable.speaker_apple),
+                        painter = painterResource(if (isBluetoothConnected) R.drawable.bluetooth else R.drawable.home_speaker_devices),
                         contentDescription = stringResource(R.string.audio_devices),
                         tint = primaryColor,
                         modifier = Modifier.size(20.dp)
@@ -559,7 +560,11 @@ private fun NewMiniPlayerPlayButton(
                             if (isMuted) R.drawable.volume_off else R.drawable.volume_up
                         } else if (playbackState == Player.STATE_ENDED) R.drawable.replay else R.drawable.play
                     ),
-                    contentDescription = null,
+                    contentDescription = if (isListenTogetherGuest) {
+                        if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
+                    } else {
+                        if (effectiveIsPlaying) stringResource(R.string.pause) else stringResource(R.string.play)
+                    },
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
                 )
@@ -986,7 +991,7 @@ private fun FavoriteButton(
     ) {
         Icon(
             painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
-            contentDescription = null,
+            contentDescription = if (isLiked) stringResource(R.string.action_remove_like) else stringResource(R.string.action_like),
             tint = if (isLiked) errorColor else onSurfaceColor.copy(alpha = 0.7f),
             modifier = Modifier.size(20.dp)
         )
@@ -1002,7 +1007,10 @@ internal fun MiniPlayerColorExtractor(
     val fallbackColor = MaterialTheme.colorScheme.surfaceContainer.toArgb()
 
     LaunchedEffect(mediaMetadata?.id, miniPlayerBackground) {
-        if (miniPlayerBackground == PlayerBackgroundStyle.GRADIENT || miniPlayerBackground == PlayerBackgroundStyle.GLOW_ANIMATED) {
+        if (miniPlayerBackground == PlayerBackgroundStyle.GRADIENT) {
+            val palette = PlayerColorExtractor.extractPalette(context, mediaMetadata)
+            onGradientColorsChange(palette.backgroundGradient)
+        } else if (miniPlayerBackground == PlayerBackgroundStyle.GLOW_ANIMATED) {
             val currentMetadata = mediaMetadata
             if (currentMetadata?.thumbnailUrl != null) {
                 withContext(Dispatchers.IO) {
@@ -1022,26 +1030,23 @@ internal fun MiniPlayerColorExtractor(
                                     .resizeBitmapArea(100 * 100)
                                     .generate()
                             }
-                            val extractedColors = if (miniPlayerBackground == PlayerBackgroundStyle.GLOW_ANIMATED) {
-                                listOfNotNull(
-                                    palette.getVibrantColor(fallbackColor).let { Color(it) },
-                                    palette.getLightVibrantColor(fallbackColor).let { Color(it) },
-                                    palette.getDarkVibrantColor(fallbackColor).let { Color(it) },
-                                    palette.getMutedColor(fallbackColor).let { Color(it) },
-                                    palette.getLightMutedColor(fallbackColor).let { Color(it) },
-                                    palette.getDarkMutedColor(fallbackColor).let { Color(it) }
-                                ).distinct()
-                            } else {
-                                PlayerColorExtractor.extractGradientColors(
-                                    palette = palette,
-                                    fallbackColor = fallbackColor
-                                )
-                            }
+                            val extractedColors = listOfNotNull(
+                                palette.getVibrantColor(fallbackColor).let { Color(it) },
+                                palette.getLightVibrantColor(fallbackColor).let { Color(it) },
+                                palette.getDarkVibrantColor(fallbackColor).let { Color(it) },
+                                palette.getMutedColor(fallbackColor).let { Color(it) },
+                                palette.getLightMutedColor(fallbackColor).let { Color(it) },
+                                palette.getDarkMutedColor(fallbackColor).let { Color(it) }
+                            ).distinct()
                             withContext(Dispatchers.Main) { onGradientColorsChange(extractedColors) }
                         }
                     }
                 }
+            } else {
+                val palette = PlayerColorExtractor.extractPalette(context, mediaMetadata)
+                onGradientColorsChange(palette.backgroundGradient)
             }
+        } else {
         } else {
             onGradientColorsChange(emptyList())
         }

@@ -124,7 +124,8 @@ fun AppleMiniPlayer(
         (600 / (1f + kotlin.math.exp(-(-11.44748 * swipeSensitivity + 9.04945)))).roundToInt()
     }
 
-    val (gradientColors, onGradientColorsChange) = remember { mutableStateOf<List<Color>>(emptyList()) }
+    val artworkPalette = com.music.mkr.ui.theme.rememberArtworkPalette(mediaMetadata)
+    val (gradientColors, onGradientColorsChange) = remember { mutableStateOf<List<Color>>(artworkPalette.backgroundGradient) }
 
     MiniPlayerColorExtractor(
         mediaMetadata = mediaMetadata,
@@ -132,13 +133,13 @@ fun AppleMiniPlayer(
         onGradientColorsChange = onGradientColorsChange
     )
     
-    // Memoize colors
-    val backgroundColor = if (pureBlack && useDarkTheme) Color.Black else MaterialTheme.colorScheme.surface
+    // Dynamic cohesive colors
     val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
+    val backgroundColor = if (pureBlack && useDarkTheme) Color.Black else if (isDynamicBackground) Color.Transparent else artworkPalette.surfaceElevated
     
-    val primaryColor = if (isDynamicBackground) Color.White else MaterialTheme.colorScheme.primary
+    val primaryColor = artworkPalette.primaryAccent
     val outlineColor = if (isDynamicBackground) Color.White.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline
-    val onSurfaceColor = if (isDynamicBackground) Color.White else MaterialTheme.colorScheme.onSurface
+    val onSurfaceColor = artworkPalette.textPrimary
     val errorColor = MaterialTheme.colorScheme.error
 
     Box(
@@ -215,8 +216,9 @@ fun AppleMiniPlayer(
                 .then(if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth())
                 .height(64.dp)
                 .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
-                .clip(RoundedCornerShape(8.dp)) // Apple rectangular shape with slightly rounded corners
+                .clip(RoundedCornerShape(16.dp))
                 .background(color = backgroundColor)
+                .border(1.dp, outlineColor.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
         ) {
             // Background Layers
             MiniPlayerBackgroundLayer(
@@ -243,21 +245,30 @@ fun AppleMiniPlayer(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxSize().padding(horizontal = 8.dp, vertical = 5.dp),
             ) {
-                // Cookie 4-Sided Thumbnail
+                // Rounded 10dp Thumbnail with fallback
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(54.dp)
-                        .clip(MaterialShapes.Cookie4Sided.toShape())
+                        .size(48.dp)
+                        .clip(RoundedCornerShape(10.dp))
                         .background(color = outlineColor.copy(alpha = 0.2f))
                 ) {
-                    mediaMetadata?.let { metadata ->
-                        AsyncImage(
-                            model = metadata.thumbnailUrl,
+                    if (mediaMetadata?.thumbnailUrl.isNullOrBlank()) {
+                        Icon(
+                            painter = painterResource(R.drawable.mkr_music_small_icon),
                             contentDescription = null,
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.fillMaxSize()
+                            tint = primaryColor.copy(alpha = 0.6f),
+                            modifier = Modifier.size(28.dp)
                         )
+                    } else {
+                        mediaMetadata?.let { metadata ->
+                            AsyncImage(
+                                model = metadata.thumbnailUrl,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     }
                 }
 
@@ -354,11 +365,15 @@ fun AppleMiniPlayer(
                             when {
                                 isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
                                 playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                effectiveIsPlaying -> R.drawable.pause_applemusic
-                                else -> R.drawable.play_applemusic
+                                effectiveIsPlaying -> R.drawable.pause
+                                else -> R.drawable.play
                             }
                         ),
-                        contentDescription = null,
+                        contentDescription = if (isListenTogetherGuest) {
+                            if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
+                        } else {
+                            if (effectiveIsPlaying) stringResource(R.string.pause) else stringResource(R.string.play)
+                        },
                         tint = onSurfaceColor,
                         modifier = Modifier.size(28.dp)
                     )
@@ -377,7 +392,7 @@ fun AppleMiniPlayer(
                         }
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.apple_skip_next),
+                        painter = painterResource(R.drawable.skip_next),
                         contentDescription = "Next",
                         tint = if (canSkipNext && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
                         modifier = Modifier.size(28.dp)

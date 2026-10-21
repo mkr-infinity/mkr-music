@@ -106,22 +106,9 @@ import com.music.mkr.constants.ThumbnailCornerRadius
 import com.music.mkr.listentogether.RoomRole
 import com.music.mkr.ui.component.CastButton
 import com.music.mkr.utils.rememberEnumPreference
-import com.music.mkr.constants.CanvasLoadOnlyWifiKey
-import com.music.mkr.constants.CanvasSource
-import com.music.mkr.constants.CanvasSourceKey
-import com.music.mkr.constants.CanvasThumbnailAnimationKey
-import com.music.mkr.canvas.TidalCanvasProvider
-import com.music.mkr.canvas.CanvasArtwork
-import com.music.mkr.canvas.normalizeForComparison
-import com.music.mkr.extensions.metadata
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.rememberPreference
-import com.music.mkr.utils.isWifiConnected
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
-import com.music.mkr.applecanvas.AppleMusicCanvasProvider
-import com.music.mkr.mkrmusiccanvas.MkrMusicCanvasProvider
 import timber.log.Timber
 import java.util.Locale
 
@@ -228,57 +215,6 @@ private fun getTextColor(playerBackground: PlayerBackgroundStyle): Color {
     return when (playerBackground) {
         PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onBackground
         PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.APPLE_MUSIC, PlayerBackgroundStyle.LIVE_MESH -> Color.White
-    }
-}
-
-
-object CanvasArtworkPlaybackCache {
-    private const val defaultMaxSize = 256
-    private val map = LinkedHashMap<String, CanvasArtwork>(defaultMaxSize, 0.75f, true)
-    @Volatile private var maxSize = defaultMaxSize
-
-    @Synchronized
-    fun get(mediaId: String): CanvasArtwork? {
-        if (maxSize <= 0) return null
-        return map[mediaId]
-    }
-
-    @Synchronized
-    fun put(mediaId: String, artwork: CanvasArtwork) {
-        val limit = maxSize
-        if (limit <= 0) return
-        if (mediaId.isBlank()) return
-        map[mediaId] = artwork
-        while (map.size > limit) {
-            val it = map.entries.iterator()
-            if (it.hasNext()) {
-                it.next()
-                it.remove()
-            }
-        }
-    }
-
-    @Synchronized
-    fun clear() {
-        map.clear()
-    }
-
-    @Synchronized
-    fun setMaxSize(value: Int) {
-        maxSize = value.coerceAtLeast(0)
-        if (maxSize == 0) {
-            map.clear()
-            return
-        }
-        while (map.size > maxSize) {
-            val it = map.entries.iterator()
-            if (it.hasNext()) {
-                it.next()
-                it.remove()
-            } else {
-                break
-            }
-        }
     }
 }
 
@@ -647,9 +583,6 @@ private fun ThumbnailItem(
     var skipMultiplier by remember { mutableIntStateOf(1) }
     var lastTapTime by remember { mutableLongStateOf(0L) }
 
-    val canvasThumbnailAnimation by rememberPreference(CanvasThumbnailAnimationKey, defaultValue = true)
-    val canvasLoadOnlyWifi by rememberPreference(CanvasLoadOnlyWifiKey, defaultValue = false)
-
     Box(
         modifier = modifier
             .then(
@@ -756,135 +689,6 @@ private fun ThumbnailItem(
                         cropArtwork = cropAlbumArt
                     )
                 }
-
-                if (canvasThumbnailAnimation && item.mediaId == currentMediaId && !rotatingThumbnail && playerBackground != PlayerBackgroundStyle.APPLE_MUSIC && (!canvasLoadOnlyWifi || isWifiConnected(context))) {
-                val (canvasSource) = rememberEnumPreference(CanvasSourceKey, defaultValue = CanvasSource.AUTO)
-                val albumTitle = item.mediaMetadata.albumTitle?.toString()
-                var canvasArtwork by remember(item.mediaId, albumTitle) { mutableStateOf<CanvasArtwork?>(null) }
-                var canvasFetchInFlight by remember(item.mediaId, albumTitle) { mutableStateOf(false) }
-                val storefront = remember {
-                    val country = Locale.getDefault().country
-                    if (country.length == 2) country.lowercase(Locale.ROOT) else "us"
-                }
-
-                LaunchedEffect(item.mediaId, albumTitle, canvasSource) {
-                    val cacheKey = "${item.mediaId}:${canvasSource.name}"
-                    CanvasArtworkPlaybackCache.get(cacheKey)?.let { cached ->
-                        canvasArtwork = cached
-                        return@LaunchedEffect
-                    }
-
-                    if (canvasFetchInFlight) return@LaunchedEffect
-                    canvasFetchInFlight = true
-
-                    val fetched = withContext(Dispatchers.IO) {
-                        val metadata = item.metadata
-                        val albumName = (metadata?.album?.title ?: item.mediaMetadata.albumTitle)?.toString()
-                        val duration = metadata?.duration
-                        
-                        val songTitleRaw = item.mediaMetadata.title?.toString() ?: ""
-                        val artistNameRaw = item.mediaMetadata.artist?.toString() ?: ""
-                        
-                        val songTitle = songTitleRaw
-                        val artistName = artistNameRaw
-                        
-                        println("CanvasFetch: Song='$songTitle' (raw='$songTitleRaw'), Artist='$artistName' (raw='$artistNameRaw'), Album='$albumName'")
-                        
-                        val searchTasks = listOf(
-                            songTitleRaw to artistNameRaw
-                        ).filter { (s, a) -> s.isNotBlank() && a.isNotBlank() }
-
-                        when (canvasSource) {
-                            CanvasSource.AUTO -> {
-                                searchTasks.firstNotNullOfOrNull { (s, a) ->
-                                    val album = albumName ?: ""
-                                    AppleMusicCanvasProvider.getBySongArtist(
-                                        song = s,
-                                        artist = a,
-                                        album = albumName,
-                                        storefront = storefront
-                                    )?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() && validateCanvasMatch(it, s, a, album) }
-                                        ?: TidalCanvasProvider.getBySongArtist(
-                                            song = s,
-                                            artist = a,
-                                            album = albumName
-                                        )?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() && validateCanvasMatch(it, s, a, album) }
-                                        ?: MkrMusicCanvasProvider.getBySongArtist(
-                                            song = s,
-                                            artist = a,
-                                            album = album
-                                        )?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() && validateCanvasMatch(it, s, a, album) }
-                                }
-                            }
-                            CanvasSource.APPLE_MUSIC -> {
-                                searchTasks.firstNotNullOfOrNull { (s, a) ->
-                                    AppleMusicCanvasProvider.getBySongArtist(
-                                        song = s,
-                                        artist = a,
-                                        album = albumName,
-                                        storefront = storefront
-                                    )?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-                                }
-                            }
-                            CanvasSource.MKRMUSIC -> {
-                                searchTasks.firstNotNullOfOrNull { (s, a) ->
-                                    MkrMusicCanvasProvider.getBySongArtist(
-                                        song = s,
-                                        artist = a,
-                                        album = albumName ?: ""
-                                    )?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-                                }
-                            }
-                            CanvasSource.TIDAL -> {
-                                searchTasks.firstNotNullOfOrNull { (s, a) ->
-                                    TidalCanvasProvider.getBySongArtist(
-                                        song = s,
-                                        artist = a,
-                                        album = albumName
-                                    )?.takeIf { !it.preferredAnimationUrl.isNullOrBlank() }
-                                }
-                            }
-                        }
-                    }
-                    
-                    // Client-side safety check: ensure the fetched canvas matches the requested song
-                    // This prevents "wrong canvas" if a provider returned a generic or incorrect match
-                    val requestedArtist = item.mediaMetadata.artist?.toString() ?: ""
-                    val requestedTitle = item.mediaMetadata.title?.toString() ?: ""
-                    
-                    // For AUTO mode validation is already done per-provider inside takeIf.
-                    // For single-source modes this block acts as the safety net.
-                    val requestedAlbum = item.mediaMetadata.albumTitle?.toString() ?: ""
-                    val validated = fetched?.let { artwork ->
-                        val passes = validateCanvasMatch(artwork, requestedTitle, requestedArtist, requestedAlbum)
-                        println("CanvasValidation: artistMatches=${artwork.artist.orEmpty().trim().equals(requestedArtist.trim(), ignoreCase = true)}, songMatches=${artwork.name.orEmpty().trim().equals(requestedTitle.trim(), ignoreCase = true)}, albumMatches=${artwork.albumName.orEmpty().trim().equals(requestedAlbum.trim(), ignoreCase = true)}")
-                        println("  Requested: Title='$requestedTitle', Album='$requestedAlbum', Artists='$requestedArtist'")
-                        println("  Returned: Title='${artwork.name}', Album='${artwork.albumName}', Artists='${artwork.artist}'")
-                        if (passes) {
-                            println("CanvasValidation: Match SUCCESS for '${artwork.name}'")
-                            artwork
-                        } else {
-                            println("CanvasValidation: Match FAILED for '${artwork.name}' by '${artwork.artist}'")
-                            null
-                        }
-                    }
-                    
-                    canvasArtwork = validated
-                    if (validated != null) {
-                        CanvasArtworkPlaybackCache.put("${item.mediaId}:${canvasSource.name}", validated)
-                    }
-                    canvasFetchInFlight = false
-                }
-
-                canvasArtwork?.let { artwork ->
-                    CanvasArtworkPlayer(
-                        primaryUrl = artwork.animated,
-                        fallbackUrl = artwork.videoUrl,
-                        isPlaying = isPlaying,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            } // end canvas if block
             } // end inner clip Box
         } // end outer shadow Box
     }
@@ -901,13 +705,13 @@ private fun HiddenThumbnailPlaceholder(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceVariant),
+            .background(com.music.mkr.ui.theme.PlayerColorExtractor.CharcoalElevated),
         contentAlignment = Alignment.Center
     ) {
         Icon(
             painter = painterResource(R.drawable.mkr_music_small_icon),
             contentDescription = stringResource(R.string.hide_player_thumbnail),
-            tint = textBackgroundColor.copy(alpha = 0.7f),
+            tint = com.music.mkr.ui.theme.PlayerColorExtractor.WarmAmber.copy(alpha = 0.7f),
             modifier = Modifier.size(120.dp)
         )
     }
@@ -925,30 +729,44 @@ private fun ThumbnailImage(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(MaterialTheme.colorScheme.surfaceVariant)
+            .background(com.music.mkr.ui.theme.PlayerColorExtractor.CharcoalElevated)
     ) {
-        var currentUrl by remember(artworkUri) {
-            mutableStateOf(artworkUri)
+        if (artworkUri.isNullOrBlank()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.mkr_music_small_icon),
+                    contentDescription = null,
+                    tint = com.music.mkr.ui.theme.PlayerColorExtractor.WarmAmber.copy(alpha = 0.6f),
+                    modifier = Modifier.size(96.dp)
+                )
+            }
+        } else {
+            var currentUrl by remember(artworkUri) {
+                mutableStateOf(artworkUri)
+            }
+            AsyncImage(
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(currentUrl)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .networkCachePolicy(CachePolicy.ENABLED)
+                    .crossfade(true)
+                    .build(),
+                onError = {
+                    val url = currentUrl
+                    Timber.e("[Thumbnail] ThumbnailImage load FAILED: url=$url | error=${it.result.throwable}")
+                    if (url != null && url.contains("maxresdefault.jpg")) {
+                        currentUrl = url.replace("maxresdefault.jpg", "hqdefault.jpg")
+                    }
+                },
+                contentDescription = null,
+                contentScale = if (cropArtwork) ContentScale.Crop else ContentScale.Fit,
+                modifier = Modifier.fillMaxSize()
+            )
         }
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(currentUrl)
-                .memoryCachePolicy(CachePolicy.ENABLED)
-                .diskCachePolicy(CachePolicy.ENABLED)
-                .networkCachePolicy(CachePolicy.ENABLED)
-                .crossfade(true)
-                .build(),
-            onError = {
-                val url = currentUrl
-                Timber.e("[Thumbnail] ThumbnailImage load FAILED: url=$url | error=${it.result.throwable}")
-                if (url != null && url.contains("maxresdefault.jpg")) {
-                    currentUrl = url.replace("maxresdefault.jpg", "hqdefault.jpg")
-                }
-            },
-            contentDescription = null,
-            contentScale = if (cropArtwork) ContentScale.Crop else ContentScale.Fit,
-            modifier = Modifier.fillMaxSize()
-        )
     }
 }
 
@@ -972,50 +790,6 @@ private fun SeekEffectOverlay(
     )
 }
 
-
-/**
- * Strict canvas match: song title, artist, and album must all match exactly.
- * For artists, all listed artists must match (set-based comparison to handle different separators like commas or ampersands).
- * Returns true only if ALL three pass. Any one failing returns false.
- */
-internal fun validateCanvasMatch(
-    artwork: com.music.mkr.canvas.CanvasArtwork,
-    requestedTitle: String,
-    requestedArtist: String,
-    requestedAlbum: String
-): Boolean {
-    val artist = artwork.artist
-    val name = artwork.name
-    val albumName = artwork.albumName
-
-    val artistMatches = if (artist != null && requestedArtist.isNotBlank()) {
-        val requestedList = splitAndNormalizeArtists(requestedArtist)
-        val resultList = splitAndNormalizeArtists(artist)
-        requestedList.isNotEmpty() && resultList.isNotEmpty() &&
-            requestedList.size == resultList.size &&
-            requestedList.all { req -> resultList.any { res -> res == req } }
-    } else true
-
-    val songMatches = if (name != null && requestedTitle.isNotBlank()) {
-        name.normalizeForComparison() == requestedTitle.normalizeForComparison()
-    } else true
-
-    val albumMatches = if (albumName != null && requestedAlbum.isNotBlank()) {
-        albumName.normalizeForComparison() == requestedAlbum.normalizeForComparison()
-    } else false
-
-    return artistMatches && songMatches && albumMatches
-}
-
-internal fun splitAndNormalizeArtists(raw: String): List<String> {
-    return raw.split(
-        Regex(
-            "(?:\\s*,\\s*|\\s*&\\s*|\\s+×\\s+|\\s+x\\s+|\\bfeat\\.?\\b|\\bft\\.?\\b|\\bfeaturing\\b|\\bwith\\b)",
-            RegexOption.IGNORE_CASE,
-        )
-    ).map { it.normalizeForComparison() }
-        .filter { it.isNotBlank() }
-}
 
 fun Modifier.customSoftShadow(
     elevation: Dp,

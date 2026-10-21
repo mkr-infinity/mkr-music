@@ -92,7 +92,7 @@ import com.music.mkr.ui.component.Material3MenuItemData
 import com.music.mkr.ui.component.NewAction
 import com.music.mkr.ui.component.NewActionGrid
 import com.music.mkr.ui.component.VolumeSlider
-import com.music.mkr.constants.EnableSaavnStreamingKey
+import com.music.mkr.listentogether.ListenTogetherServers
 import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -129,7 +129,6 @@ fun PlayerMenu(
     
     val librarySong by database.song(mediaMetadata.id).collectAsState(initial = null)
     val coroutineScope = rememberCoroutineScope()
-    val (saavnEnabled) = rememberPreference(EnableSaavnStreamingKey, defaultValue = true)
 
     val download by LocalDownloadUtil.current.getDownload(mediaMetadata.id)
         .collectAsState(initial = null)
@@ -356,10 +355,7 @@ fun PlayerMenu(
                             title = { Text(text = stringResource(R.string.retry_stream)) },
                             description = {
                                 Text(
-                                    text = if (saavnEnabled)
-                                        stringResource(R.string.retry_stream_desc_saavn)
-                                    else
-                                        stringResource(R.string.retry_stream_desc_yt)
+                                    text = stringResource(R.string.retry_stream_desc_yt)
                                 )
                             },
                             icon = {
@@ -1290,7 +1286,7 @@ fun ListenTogetherDialog(
                             if (isHost) {
                                 Spacer(modifier = Modifier.height(12.dp))
                                 val inviteLink = remember(room.roomCode) {
-                                    "https://vivimusic-listen-together.onrender.com/listen?code=${room.roomCode}"
+                                    ListenTogetherServers.getInviteLink(room.roomCode)
                                 }
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,

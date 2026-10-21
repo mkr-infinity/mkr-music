@@ -66,7 +66,6 @@ import com.music.mkr.ui.component.Material3MenuItemData
 import com.music.mkr.ui.component.NewAction
 import com.music.mkr.ui.component.NewActionGrid
 import com.music.mkr.ui.component.VolumeSlider
-import com.music.mkr.constants.EnableSaavnStreamingKey
 import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -108,7 +107,6 @@ fun OldPlayerMenu(
     val librarySong by database.song(mediaMetadata.id).collectAsState(initial = null)
     val repeatMode by playerConnection.repeatMode.collectAsState()
     val shuffleModeEnabled by playerConnection.shuffleModeEnabled.collectAsState()
-    val (saavnEnabled) = rememberPreference(EnableSaavnStreamingKey, defaultValue = true)
 
     val artists = remember(mediaMetadata.artists) {
         mediaMetadata.artists.filter { it.id != null }
@@ -441,10 +439,7 @@ fun OldPlayerMenu(
                             title = { Text(text = stringResource(R.string.retry_stream)) },
                             description = {
                                 Text(
-                                    text = if (saavnEnabled)
-                                        stringResource(R.string.retry_stream_desc_saavn)
-                                    else
-                                        stringResource(R.string.retry_stream_desc_yt)
+                                    text = stringResource(R.string.retry_stream_desc_yt)
                                 )
                             },
                             icon = {

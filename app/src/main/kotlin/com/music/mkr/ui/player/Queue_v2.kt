@@ -47,6 +47,7 @@ import com.music.mkr.ui.component.LocalBottomSheetPageState
 import com.music.mkr.ui.menu.QueueMenu
 import com.music.mkr.ui.utils.ShowMediaInfo
 import com.music.mkr.ui.component.BottomSheetState
+import com.music.mkr.ui.component.EmptyPlaceholder
 import androidx.navigation.NavController
 import com.music.mkr.ui.component.ActionPromptDialog
 import com.music.mkr.utils.makeTimeString
@@ -116,9 +117,11 @@ fun QueueV2(
         key = PlayerBackgroundStyleKey,
         defaultValue = PlayerBackgroundStyle.GRADIENT
     )
-    val adaptivePrimary = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.onSurface else Color.White
-    val adaptiveSecondary = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.onSurfaceVariant else Color.White.copy(alpha = 0.7f)
-    val adaptiveSurface = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.surfaceVariant else Color.White.copy(alpha = 0.2f)
+    val artworkPalette = com.music.mkr.ui.theme.rememberArtworkPalette()
+    val adaptivePrimary = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.onSurface else artworkPalette.textPrimary
+    val adaptiveSecondary = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.onSurfaceVariant else artworkPalette.textSecondary
+    val adaptiveSurface = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.surfaceVariant else artworkPalette.surfaceElevated
+    val adaptiveAccent = artworkPalette.primaryAccent
 
     val lazyListState = rememberLazyListState()
     
@@ -229,8 +232,10 @@ fun QueueV2(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             val pillShape = RoundedCornerShape(16.dp)
-            val activeColor = adaptivePrimary.copy(alpha = 0.25f)
-            val inactiveColor = adaptivePrimary.copy(alpha = 0.1f)
+            val activeColor = adaptiveAccent
+            val activeTextColor = com.music.mkr.ui.theme.PlayerColorExtractor.CharcoalDark
+            val inactiveColor = adaptivePrimary.copy(alpha = 0.08f)
+            val inactiveTextColor = adaptiveSecondary
             
             // Shuffle
             Box(
@@ -242,14 +247,20 @@ fun QueueV2(
                     .clickable(enabled = !isGuest) { playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(painterResource(R.drawable.shuffle), contentDescription = "Shuffle", tint = adaptivePrimary, modifier = Modifier.size(24.dp))
+                Icon(
+                    painterResource(R.drawable.shuffle), 
+                    contentDescription = stringResource(R.string.shuffle), 
+                    tint = if (shuffleModeEnabled) activeTextColor else inactiveTextColor, 
+                    modifier = Modifier.size(22.dp)
+                )
             }
             // Repeat
+            val isRepeatActive = repeatMode != Player.REPEAT_MODE_OFF
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
-                    .background(if (repeatMode != Player.REPEAT_MODE_OFF) activeColor else inactiveColor, pillShape)
+                    .background(if (isRepeatActive) activeColor else inactiveColor, pillShape)
                     .clip(pillShape)
                     .clickable(enabled = !isGuest) { playerConnection.player.toggleRepeatMode() },
                 contentAlignment = Alignment.Center
@@ -261,9 +272,9 @@ fun QueueV2(
                             else -> R.drawable.repeat
                         }
                     ),
-                    contentDescription = "Repeat",
-                    tint = adaptivePrimary,
-                    modifier = Modifier.size(24.dp)
+                    contentDescription = stringResource(R.string.repeat_mode),
+                    tint = if (isRepeatActive) activeTextColor else inactiveTextColor,
+                    modifier = Modifier.size(22.dp)
                 )
             }
             // Timer
@@ -283,13 +294,19 @@ fun QueueV2(
                 contentAlignment = Alignment.Center
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(painterResource(R.drawable.bedtime), contentDescription = "Sleep Timer", tint = adaptivePrimary, modifier = Modifier.size(24.dp))
+                    Icon(
+                        painterResource(R.drawable.bedtime), 
+                        contentDescription = stringResource(R.string.sleep_timer), 
+                        tint = if (sleepTimerEnabled) activeTextColor else inactiveTextColor, 
+                        modifier = Modifier.size(22.dp)
+                    )
                     if (sleepTimerEnabled) {
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
                             text = makeTimeString(sleepTimerTimeLeft.coerceAtLeast(0L)),
                             style = MaterialTheme.typography.labelSmall,
-                            color = adaptivePrimary
+                            fontWeight = FontWeight.Bold,
+                            color = activeTextColor
                         )
                     }
                 }
@@ -345,12 +362,8 @@ fun QueueV2(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     items(radioChips) { chip ->
-                        val chipBg = if (chip.isSelected) adaptivePrimary else adaptivePrimary.copy(alpha = 0.1f)
-                        val chipTextCol = if (chip.isSelected) {
-                            if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.surface else Color.Black
-                        } else {
-                            adaptivePrimary
-                        }
+                        val chipBg = if (chip.isSelected) adaptiveAccent else adaptivePrimary.copy(alpha = 0.08f)
+                        val chipTextCol = if (chip.isSelected) com.music.mkr.ui.theme.PlayerColorExtractor.CharcoalDark else adaptivePrimary
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(8.dp))
@@ -377,6 +390,17 @@ fun QueueV2(
             contentPadding = PaddingValues(bottom = 120.dp, top = 4.dp),
             modifier = Modifier.fillMaxSize()
         ) {
+            if (mutableQueueWindows.isEmpty()) {
+                item(key = "empty_queue_v2") {
+                    EmptyPlaceholder(
+                        icon = R.drawable.queue_music,
+                        text = stringResource(R.string.playlist_is_empty),
+                        description = "Play a track or album to add songs to your queue",
+                        modifier = Modifier.padding(top = 48.dp)
+                    )
+                }
+            }
+
             // Queue List
             itemsIndexed(
                 items = mutableQueueWindows,

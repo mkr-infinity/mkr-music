@@ -296,39 +296,30 @@ fun PlayerV2(
         }
     }
 
+    val artworkPalette = com.music.mkr.ui.theme.rememberArtworkPalette(mediaMetadata)
+
     val adaptivePrimary by animateColorAsState(
         targetValue = when (playerBackground) {
             PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onSurface
-            PlayerBackgroundStyle.BLUR,
-            PlayerBackgroundStyle.GRADIENT,
-            PlayerBackgroundStyle.GLOW_ANIMATED,
-            PlayerBackgroundStyle.APPLE_MUSIC,
-            PlayerBackgroundStyle.LIVE_MESH -> Color.White
+            else -> artworkPalette.textPrimary
         },
         label = "adaptivePrimary"
     )
     val adaptiveSecondary by animateColorAsState(
         targetValue = when (playerBackground) {
             PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onSurfaceVariant
-            PlayerBackgroundStyle.BLUR,
-            PlayerBackgroundStyle.GRADIENT,
-            PlayerBackgroundStyle.GLOW_ANIMATED,
-            PlayerBackgroundStyle.APPLE_MUSIC,
-            PlayerBackgroundStyle.LIVE_MESH -> Color.White.copy(alpha = 0.7f)
+            else -> artworkPalette.textSecondary
         },
         label = "adaptiveSecondary"
     )
     val adaptiveSurface by animateColorAsState(
         targetValue = when (playerBackground) {
             PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.surfaceVariant
-            PlayerBackgroundStyle.BLUR,
-            PlayerBackgroundStyle.GRADIENT,
-            PlayerBackgroundStyle.GLOW_ANIMATED,
-            PlayerBackgroundStyle.APPLE_MUSIC,
-            PlayerBackgroundStyle.LIVE_MESH -> Color.White.copy(alpha = 0.2f)
+            else -> artworkPalette.surfaceElevated
         },
         label = "adaptiveSurface"
     )
+    val adaptiveAccent = artworkPalette.primaryAccent
 
     Box(
         modifier = modifier
@@ -410,18 +401,18 @@ fun PlayerV2(
                                         .aspectRatio(1f)
                                         .customSoftShadow(
                                             elevation = playerThumbnailShadowElevation.dp, 
-                                            cornerRadius = 12.dp, 
+                                            cornerRadius = 16.dp, 
                                             enabled = showPlayerThumbnailShadow
                                         )
-                                        .background(adaptiveSurface, RoundedCornerShape(12.dp))
-                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(adaptiveSurface, RoundedCornerShape(16.dp))
+                                        .clip(RoundedCornerShape(16.dp))
                                         .SwipeGesture(
                                             enabled = (playerState == PlayerInternalState.COVER && !isListenTogetherGuest),
                                             onSwipeLeft = { if (canSkipNext) playerConnection.player.seekToNext() },
                                             onSwipeRight = { if (canSkipPrevious) playerConnection.player.seekToPrevious() }
                                         )
                                 ) {
-                                    if (hidePlayerThumbnail) {
+                                    if (hidePlayerThumbnail || mediaMetadata?.thumbnailUrl.isNullOrEmpty()) {
                                         Box(
                                             modifier = Modifier.fillMaxSize(),
                                             contentAlignment = Alignment.Center
@@ -430,23 +421,18 @@ fun PlayerV2(
                                                 painter = painterResource(R.drawable.mkr_music_small_icon),
                                                 contentDescription = null,
                                                 modifier = Modifier.size(72.dp),
-                                                tint = adaptivePrimary.copy(alpha = 0.5f)
+                                                tint = adaptiveAccent.copy(alpha = 0.6f)
                                             )
                                         }
                                     } else {
                                         AsyncImage(
-                                            model = mediaMetadata?.thumbnailUrl?.resize(1200, 1200),
+                                            model = ImageRequest.Builder(context)
+                                                .data(mediaMetadata?.thumbnailUrl?.resize(1200, 1200))
+                                                .crossfade(true)
+                                                .build(),
                                             contentDescription = "Cover Art",
                                             modifier = Modifier.fillMaxSize(),
                                             contentScale = ContentScale.Crop
-                                        )
-                                        // Fix 4: Always render canvas (don't gate on transition state).
-                                        // The previous guard caused a visible pop/snap when the
-                                        // transition completed and the canvas suddenly appeared.
-                                        PlayerV2Canvas(
-                                            mediaMetadata = mediaMetadata,
-                                            isPlaying = isPlaying,
-                                            modifier = Modifier.fillMaxSize()
                                         )
                                     }
                                 }
@@ -473,14 +459,17 @@ fun PlayerV2(
                                             boundsTransform = BoundsTransform { _, _ ->
                                                 tween(durationMillis = 500, easing = FastOutSlowInEasing)
                                             }
-                                        ).clickable {
+                                        )
+                                        .basicMarquee(iterations = 2, initialDelayMillis = 2500, velocity = 30.dp)
+                                        .clickable {
                                                 state.collapseSoft()
                                                 mediaMetadata?.album?.id?.let { navController.navigate("album/$it") }
                                             }
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
+                                        val artistDisplay = mediaMetadata?.artists?.filter { it.name.isNotBlank() }?.joinToString(", ") { it.name } ?: "Unknown"
                                         Text(
-                                            mediaMetadata?.artists?.firstOrNull()?.name ?: "Unknown",
+                                            artistDisplay,
                                             style = MaterialTheme.typography.titleMedium,
                                             color = adaptiveSecondary,
                                             fontWeight = FontWeight.Medium,
@@ -492,7 +481,9 @@ fun PlayerV2(
                                             boundsTransform = BoundsTransform { _, _ ->
                                                 tween(durationMillis = 500, easing = FastOutSlowInEasing)
                                             }
-                                        ).clickable {
+                                        )
+                                        .basicMarquee(iterations = 2, initialDelayMillis = 2500, velocity = 30.dp)
+                                        .clickable {
                                                 state.collapseSoft()
                                                 mediaMetadata?.artists?.firstOrNull()?.id?.let { navController.navigate("artist/$it") }
                                             }
@@ -515,7 +506,7 @@ fun PlayerV2(
                                         Box(
                                             modifier = Modifier
                                                 .size(40.dp)
-                                                .background(adaptivePrimary.copy(alpha = 0.1f), CircleShape),
+                                                .background(if (isLiked) adaptiveAccent.copy(alpha = 0.2f) else adaptivePrimary.copy(alpha = 0.1f), CircleShape),
                                             contentAlignment = Alignment.Center
                                         ) {
                                         IconButton(
@@ -523,8 +514,8 @@ fun PlayerV2(
                                         ) {
                                             Icon(
                                                 painter = painterResource(if (isLiked) R.drawable.star_filled_liked else R.drawable.star_like),
-                                                contentDescription = "Like",
-                                                tint = adaptivePrimary,
+                                                contentDescription = if (isLiked) stringResource(R.string.action_remove_like) else stringResource(R.string.action_like),
+                                                tint = if (isLiked) adaptiveAccent else adaptivePrimary,
                                             )
                                         }
                                         }
@@ -588,14 +579,14 @@ fun PlayerV2(
                                             .size(64.dp)
                                             .customSoftShadow(
                                                 elevation = playerThumbnailShadowElevation.dp / 2f, 
-                                                cornerRadius = 8.dp, 
+                                                cornerRadius = 10.dp, 
                                                 enabled = showPlayerThumbnailShadow
                                             )
-                                            .background(adaptiveSurface, RoundedCornerShape(8.dp))
-                                            .clip(RoundedCornerShape(8.dp))
+                                            .background(adaptiveSurface, RoundedCornerShape(10.dp))
+                                            .clip(RoundedCornerShape(10.dp))
                                             .clickable { playerState = PlayerInternalState.COVER }
                                     ) {
-                                        if (hidePlayerThumbnail) {
+                                        if (hidePlayerThumbnail || mediaMetadata?.thumbnailUrl.isNullOrEmpty()) {
                                             Box(
                                                 modifier = Modifier.fillMaxSize(),
                                                 contentAlignment = Alignment.Center
@@ -604,12 +595,15 @@ fun PlayerV2(
                                                     painter = painterResource(R.drawable.mkr_music_small_icon),
                                                     contentDescription = null,
                                                     modifier = Modifier.size(32.dp),
-                                                    tint = adaptivePrimary.copy(alpha = 0.5f)
+                                                    tint = adaptiveAccent.copy(alpha = 0.6f)
                                                 )
                                             }
                                         } else {
                                             AsyncImage(
-                                                model = mediaMetadata?.thumbnailUrl?.resize(1200, 1200),
+                                                model = ImageRequest.Builder(context)
+                                                    .data(mediaMetadata?.thumbnailUrl?.resize(1200, 1200))
+                                                    .crossfade(true)
+                                                    .build(),
                                                 contentDescription = "Cover Art",
                                                 modifier = Modifier.fillMaxSize(),
                                                 contentScale = ContentScale.Crop
@@ -632,8 +626,9 @@ fun PlayerV2(
                                                 exit = fadeOut(tween(300))
                                             )
                                         )
+                                        val miniArtistDisplay = mediaMetadata?.artists?.filter { it.name.isNotBlank() }?.joinToString(", ") { it.name } ?: "Unknown"
                                         Text(
-                                            mediaMetadata?.artists?.firstOrNull()?.name ?: "Unknown",
+                                            miniArtistDisplay,
                                             style = MaterialTheme.typography.titleSmall,
                                             color = adaptiveSecondary,
                                             maxLines = 1,
@@ -663,8 +658,8 @@ fun PlayerV2(
                                         ) {
                                             Icon(
                                                 painter = painterResource(if (isLiked) R.drawable.star_filled_liked else R.drawable.star_like),
-                                                contentDescription = "Like",
-                                                tint = adaptivePrimary,
+                                                contentDescription = if (isLiked) stringResource(R.string.action_remove_like) else stringResource(R.string.action_like),
+                                                tint = if (isLiked) adaptiveAccent else adaptivePrimary,
                                                 modifier = Modifier.size(24.dp)
                                             )
                                         }
@@ -819,7 +814,7 @@ fun PlayerV2(
                                     sliderState = sliderState,
                                     trackHeight = trackHeight,
                                     colors = PlayerSliderColors.getSliderColors(
-                                        activeColor = adaptivePrimary.copy(alpha = 0.8f),
+                                        activeColor = adaptiveAccent,
                                         playerBackground = playerBackground,
                                         useDarkTheme = androidx.compose.foundation.isSystemInDarkTheme()
                                     )
@@ -839,7 +834,7 @@ fun PlayerV2(
                     
                         Spacer(modifier = Modifier.height(16.dp))
                     
-                        // Naked Transparent Playback Controls
+                        // Tactile Playback Controls
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceEvenly,
@@ -854,38 +849,57 @@ fun PlayerV2(
                                 },
                                 enabled = !isListenTogetherGuest && canSkipPrevious,
                                 modifier = Modifier
-                                    .size(64.dp)
+                                    .size(56.dp)
                                     .alpha(if (isListenTogetherGuest || !canSkipPrevious) 0.4f else 1f)
                             ) {
-                                Icon(painter = painterResource(R.drawable.apple_skip_previous), contentDescription = "Previous", tint = adaptivePrimary, modifier = Modifier.size(48.dp))
+                                Icon(
+                                    painter = painterResource(R.drawable.skip_previous),
+                                    contentDescription = "Previous",
+                                    tint = adaptivePrimary,
+                                    modifier = Modifier.size(36.dp)
+                                )
                             }
                     
-                            IconButton(
-                                onClick = {
-                                    if (isListenTogetherGuest) {
-                                        playerConnection.toggleMute()
-                                    } else if (isCasting) {
-                                        if (castIsPlaying) castHandler?.pause() else castHandler?.play()
-                                    } else {
-                                        playerConnection.player.togglePlayPause()
-                                    }
-                                },
-                                modifier = Modifier.size(88.dp)
+                            // Tactile 76dp Play/Pause Circle
+                            Surface(
+                                shape = CircleShape,
+                                color = adaptiveAccent,
+                                shadowElevation = 6.dp,
+                                modifier = Modifier
+                                    .size(76.dp)
+                                    .clickable(
+                                        interactionSource = remember { MutableInteractionSource() },
+                                        indication = androidx.compose.material3.ripple(bounded = true, radius = 38.dp),
+                                        onClick = {
+                                            if (isListenTogetherGuest) {
+                                                playerConnection.toggleMute()
+                                            } else if (isCasting) {
+                                                if (castIsPlaying) castHandler?.pause() else castHandler?.play()
+                                            } else {
+                                                playerConnection.player.togglePlayPause()
+                                            }
+                                        }
+                                    )
                             ) {
-                                if (isListenTogetherGuest) {
-                                    Icon(
-                                        painter = painterResource(if (isMuted) R.drawable.volume_off else R.drawable.volume_up),
-                                        contentDescription = if (isMuted) "Unmute" else "Mute",
-                                        modifier = Modifier.size(64.dp),
-                                        tint = adaptivePrimary
-                                    )
-                                } else {
-                                    Icon(
-                                        painter = painterResource(if (effectiveIsPlaying) R.drawable.pause_applemusic else R.drawable.play_applemusic),
-                                        contentDescription = if (effectiveIsPlaying) "Pause" else "Play",
-                                        modifier = Modifier.size(80.dp),
-                                        tint = adaptivePrimary
-                                    )
+                                Box(
+                                    contentAlignment = Alignment.Center,
+                                    modifier = Modifier.fillMaxSize()
+                                ) {
+                                    if (isListenTogetherGuest) {
+                                        Icon(
+                                            painter = painterResource(if (isMuted) R.drawable.volume_off else R.drawable.volume_up),
+                                            contentDescription = if (isMuted) "Unmute" else "Mute",
+                                            modifier = Modifier.size(36.dp),
+                                            tint = com.music.mkr.ui.theme.PlayerColorExtractor.CharcoalDark
+                                        )
+                                    } else {
+                                        Icon(
+                                            painter = painterResource(if (effectiveIsPlaying) R.drawable.pause else R.drawable.play),
+                                            contentDescription = if (effectiveIsPlaying) "Pause" else "Play",
+                                            modifier = Modifier.size(36.dp),
+                                            tint = com.music.mkr.ui.theme.PlayerColorExtractor.CharcoalDark
+                                        )
+                                    }
                                 }
                             }
                     
@@ -898,10 +912,15 @@ fun PlayerV2(
                                 },
                                 enabled = !isListenTogetherGuest && canSkipNext,
                                 modifier = Modifier
-                                    .size(64.dp)
+                                    .size(56.dp)
                                     .alpha(if (isListenTogetherGuest || !canSkipNext) 0.4f else 1f)
                             ) {
-                                Icon(painter = painterResource(R.drawable.apple_skip_next), contentDescription = "Next", tint = adaptivePrimary, modifier = Modifier.size(48.dp))
+                                Icon(
+                                    painter = painterResource(R.drawable.skip_next),
+                                    contentDescription = "Next",
+                                    tint = adaptivePrimary,
+                                    modifier = Modifier.size(36.dp)
+                                )
                             }
                         }
                         
@@ -969,40 +988,43 @@ fun PlayerV2(
                     ) {
                         val isLyricsActive = playerState == PlayerInternalState.LYRICS
                         IconButton(
-                            onClick = { playerState = if (isLyricsActive) PlayerInternalState.COVER else PlayerInternalState.LYRICS }
+                            onClick = { playerState = if (isLyricsActive) PlayerInternalState.COVER else PlayerInternalState.LYRICS },
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.lyrics_apple), 
-                                contentDescription = "Lyrics", 
-                                tint = if (isLyricsActive) adaptivePrimary else adaptiveSecondary, 
+                                painter = painterResource(R.drawable.lyrics), 
+                                contentDescription = stringResource(R.string.lyrics), 
+                                tint = if (isLyricsActive) adaptiveAccent else adaptiveSecondary, 
                                 modifier = Modifier.size(28.dp)
                             )
                         }
 
                         Box(contentAlignment = Alignment.Center) {
                             if (bluetoothDeviceName != null) {
-                                IconButton(
-                                    onClick = { showAudioDeviceBottomSheet = true },
-                                    modifier = Modifier.background(Color.Transparent, RoundedCornerShape(12.dp))
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .clickable { showAudioDeviceBottomSheet = true }
+                                        .padding(horizontal = 8.dp, vertical = 4.dp)
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.headphones_apple), 
-                                        contentDescription = "Audio Device", 
+                                        painter = painterResource(R.drawable.headphones), 
+                                        contentDescription = stringResource(R.string.audio_devices), 
                                         tint = adaptiveSecondary, 
-                                        modifier = Modifier.size(28.dp)
+                                        modifier = Modifier.size(26.dp)
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = bluetoothDeviceName!!,
+                                        style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                                        color = adaptiveSecondary.copy(alpha = 0.85f),
+                                        maxLines = 1,
+                                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                                        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                        modifier = Modifier.widthIn(max = 84.dp)
                                     )
                                 }
-                                Text(
-                                    text = bluetoothDeviceName!!,
-                                    style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
-                                    color = adaptiveSecondary.copy(alpha = 0.8f),
-                                    maxLines = 1,
-                                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                                    modifier = Modifier
-                                        .absoluteOffset(y = 30.dp)
-                                        .widthIn(max = 84.dp)
-                                )
                             } else if (BuildConfig.CAST_AVAILABLE && enableGoogleCast) {
                                 CastButton(
                                     modifier = Modifier.size(48.dp),
@@ -1013,11 +1035,13 @@ fun PlayerV2(
                             } else {
                                 IconButton(
                                     onClick = { showAudioDeviceBottomSheet = true },
-                                    modifier = Modifier.background(Color.Transparent, RoundedCornerShape(12.dp))
+                                    modifier = Modifier
+                                        .size(48.dp)
+                                        .background(Color.Transparent, RoundedCornerShape(12.dp))
                                 ) {
                                     Icon(
                                         painter = painterResource(R.drawable.home_speaker_devices),
-                                        contentDescription = "Speaker", 
+                                        contentDescription = stringResource(R.string.audio_devices), 
                                         tint = adaptiveSecondary, 
                                         modifier = Modifier.size(28.dp)
                                     )
@@ -1027,12 +1051,13 @@ fun PlayerV2(
                         
                         val isQueueActive = playerState == PlayerInternalState.QUEUE
                         IconButton(
-                            onClick = { playerState = if (isQueueActive) PlayerInternalState.COVER else PlayerInternalState.QUEUE }
+                            onClick = { playerState = if (isQueueActive) PlayerInternalState.COVER else PlayerInternalState.QUEUE },
+                            modifier = Modifier.size(48.dp)
                         ) {
                             Icon(
-                                painter = painterResource(R.drawable.apple_queue),
-                                contentDescription = "Queue", 
-                                tint = if (isQueueActive) adaptivePrimary else adaptiveSecondary, 
+                                painter = painterResource(R.drawable.queue_music),
+                                contentDescription = stringResource(R.string.queue), 
+                                tint = if (isQueueActive) adaptiveAccent else adaptiveSecondary, 
                                 modifier = Modifier.size(28.dp)
                             )
                         }
