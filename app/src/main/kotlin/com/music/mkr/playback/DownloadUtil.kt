@@ -73,8 +73,6 @@ constructor(
     private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.AUTO)
     private val ipVersion by enumPreference(context, IpVersionKey, IpVersion.AUTO)
     private val songUrlCache = StreamUrlCache()
-    // Keep a reference to context so we can read DataStore prefs for JioSaavn support
-    private val appContext: Context = context
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
@@ -134,8 +132,7 @@ constructor(
                     mediaId,
                     audioQuality = audioQuality,
                     connectivityManager = connectivityManager,
-                    // Pass context so the JioSaavn intercept fires when the toggle is ON
-                    context = appContext,
+                    context = context,
                 )
             }.getOrThrow()
             val format = playbackData.format
@@ -211,11 +208,7 @@ constructor(
                 }
             }
 
-            val streamUrl = if (playbackData.isSaavnStream) {
-                playbackData.streamUrl
-            } else {
-                "${playbackData.streamUrl}&range=0-${actualContentLength}"
-            }
+            val streamUrl = "${playbackData.streamUrl}&range=0-${actualContentLength}"
 
             songUrlCache.put(
                 mediaId = mediaId,

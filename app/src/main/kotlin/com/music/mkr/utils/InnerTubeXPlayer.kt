@@ -127,7 +127,7 @@ object InnerTubeXPlayer {
         allowBoundedRange: Boolean = true,
     ): Result<PlaybackData> =
         try {
-            // 🔥 Inject NewPipe's YouTube auth & network context before extraction
+            // Inject NewPipe's YouTube auth & network context before extraction
             val youtube = com.music.innertube.YouTube
             innerTubeX.cookie = youtube.cookie
             innerTubeX.visitorData = youtube.visitorData
@@ -304,7 +304,6 @@ object InnerTubeXPlayer {
         val requireBoundedRange: Boolean,
         val rangeChunkSizeBytes: Long,
         val useRangeChunks: Boolean,
-        val isSaavnStream: Boolean = false,
     )
 
     private data class ExtractionBundle(

@@ -3585,7 +3585,7 @@ class MusicService :
                 arrayOf(
                     MatroskaExtractor(),        // .webm / Opus
                     FragmentedMp4Extractor(),   // fragmented .mp4 / AAC (YouTube)
-                    Mp4Extractor(),             // regular .mp4 / AAC (JioSaavn)
+                    Mp4Extractor(),             // regular .mp4 / AAC
                 )
             },
         )

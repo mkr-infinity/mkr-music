@@ -1,5 +1,7 @@
 package com.music.mkr.github
 
+import com.music.mkr.BuildConfig
+
 object GitHubConfig {
     const val REPO_OWNER = "mkr-infinity"
     const val REPO_NAME = "mkr-music"
@@ -17,5 +19,5 @@ object GitHubConfig {
     const val DEV_UPI_ID = "mkr-infinity@ybl"
     const val DEV_UPI_NAME = "Mohammad Kaif Raja"
     const val DEV_UPI_NOTE = "Support MKR Music"
-    const val VERSION_LABEL = "v6.0.8 Stable"
+    val VERSION_LABEL = "v${BuildConfig.VERSION_NAME} Stable"
 }
