@@ -852,7 +852,7 @@ class HomeViewModel @Inject constructor(
         allLocalItems.value = (quickPicks.value.orEmpty() + forgottenFavorites.value.orEmpty() + keepListening.value.orEmpty())
             .filter { it is Song || it is Album }
 
-        android.util.Log.d("QP_TIMING", "[Phase1] loadLocalDataPhase() END — total ${System.currentTimeMillis() - t0}ms — quickPicks is ${if (quickPicks.value.isNullOrEmpty()) "EMPTY ⚠️" else "OK (${quickPicks.value?.size} items) ✓"}")
+        android.util.Log.d("QP_TIMING", "[Phase1] loadLocalDataPhase() END — total ${System.currentTimeMillis() - t0}ms — quickPicks is ${if (quickPicks.value.isNullOrEmpty()) "EMPTY" else "OK (${quickPicks.value?.size} items)"}")
     }
 
     /**

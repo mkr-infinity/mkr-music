@@ -9,7 +9,9 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.ui.util.lerp
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
@@ -62,6 +64,7 @@ import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
 import androidx.compose.material3.surfaceColorAtElevation
 import androidx.compose.material3.Text
 import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
@@ -143,6 +146,7 @@ import com.music.mkr.R
 import com.music.mkr.ui.component.AlbumGridItem
 import com.music.mkr.ui.component.ArtistGridItem
 import com.music.mkr.ui.component.ChipsRow
+import com.music.mkr.ui.component.EmptyPlaceholder
 import com.music.mkr.ui.component.HideOnScrollFAB
 import com.music.mkr.ui.component.LocalBottomSheetPageState
 import com.music.mkr.ui.component.LocalMenuState
@@ -209,20 +213,22 @@ fun CommunityPlaylistCard(
 
     Card(
         modifier = modifier.width(300.dp),
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
         ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
         onClick = onClick
     ) {
         Column(
-            modifier = Modifier.padding(20.dp)
+            modifier = Modifier.padding(18.dp)
         ) {
             // Big Clear Typography
             Text(
                 text = item.playlist.title,
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
@@ -235,7 +241,7 @@ fun CommunityPlaylistCard(
                 overflow = TextOverflow.Ellipsis
             )
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Minimalist Song List
             item.songs.take(3).forEach { song ->
@@ -244,22 +250,31 @@ fun CommunityPlaylistCard(
                         .fillMaxWidth()
                         .padding(vertical = 4.dp)
                         .clip(RoundedCornerShape(12.dp))
-                        .clickable { onSongClick(song) },
+                        .clickable { onSongClick(song) }
+                        .padding(vertical = 2.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AsyncImage(
-                        model = song.thumbnail.resize(100, 100),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
+                    Box(
                         modifier = Modifier
                             .size(48.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        AsyncImage(
+                            model = song.thumbnail.resize(100, 100),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(14.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = song.title, 
                             style = MaterialTheme.typography.bodyMedium, 
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1, 
                             overflow = TextOverflow.Ellipsis
                         )
@@ -275,7 +290,7 @@ fun CommunityPlaylistCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Wide Action Buttons
             Row(
@@ -290,16 +305,20 @@ fun CommunityPlaylistCard(
                     },
                     modifier = Modifier
                         .weight(1f)
-                        .height(48.dp),
+                        .height(44.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(14.dp)
                 ) {
-                    Icon(painterResource(R.drawable.ic_widget_play), null, modifier = Modifier.size(20.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Play", fontWeight = FontWeight.Bold)
+                    Icon(painterResource(R.drawable.play), null, modifier = Modifier.size(18.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.play),
+                        fontWeight = FontWeight.Bold,
+                        style = MaterialTheme.typography.labelLarge
+                    )
                 }
 
                 IconButton(
@@ -309,10 +328,11 @@ fun CommunityPlaylistCard(
                         }
                     },
                     modifier = Modifier
-                        .size(48.dp)
-                        .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                        .size(44.dp)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(14.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), RoundedCornerShape(14.dp))
                 ) {
-                    Icon(painterResource(R.drawable.radio), null, tint = MaterialTheme.colorScheme.onSecondaryContainer)
+                    Icon(painterResource(R.drawable.radio), null, tint = MaterialTheme.colorScheme.onSurface)
                 }
 
                 IconButton(
@@ -356,13 +376,14 @@ fun CommunityPlaylistCard(
                         }
                     },
                     modifier = Modifier
-                        .size(48.dp)
-                        .background(MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+                        .size(44.dp)
+                        .background(MaterialTheme.colorScheme.surfaceContainerHighest, RoundedCornerShape(14.dp))
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), RoundedCornerShape(14.dp))
                 ) {
                     Icon(
                         painter = painterResource(if (isBookmarked) R.drawable.library_add_check else R.drawable.library_add), 
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSecondaryContainer
+                        tint = if (isBookmarked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -389,7 +410,8 @@ fun DailyDiscoverCard(
     Card(
         modifier = modifier
             .fillMaxSize()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(18.dp))
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f), RoundedCornerShape(18.dp))
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = {
@@ -406,9 +428,9 @@ fun DailyDiscoverCard(
                 }
             ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         ),
-        shape = RoundedCornerShape(16.dp)
+        shape = RoundedCornerShape(18.dp)
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
             var currentThumbnailUrl by remember(dailyDiscover.recommendation.thumbnail) {
@@ -439,10 +461,10 @@ fun DailyDiscoverCard(
                         .background(
                             brush = Brush.verticalGradient(
                                 colors = listOf(
-                                    Color.Black.copy(alpha = 0.3f),
-                                    Color.Transparent,
-                                    Color.Black.copy(alpha = 0.6f),
-                                    Color.Black.copy(alpha = 0.9f)
+                                    Color.Black.copy(alpha = 0.45f),
+                                    Color.Black.copy(alpha = 0.15f),
+                                    Color.Black.copy(alpha = 0.65f),
+                                    Color.Black.copy(alpha = 0.92f)
                                 )
                             )
                         )
@@ -451,15 +473,19 @@ fun DailyDiscoverCard(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .padding(24.dp),
+                        .padding(20.dp),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     Column {
                         Text(
                             text = dailyDiscover.recommendation.title,
                             style = MaterialTheme.typography.titleMedium,
-                            color = Color.White
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = buildString {
                                 append((dailyDiscover.recommendation as? SongItem)?.artists?.joinToString(", ") { it.name } ?: "")
@@ -468,7 +494,9 @@ fun DailyDiscoverCard(
                                 }
                             },
                             style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.7f)
+                            color = Color.White.copy(alpha = 0.8f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
 
@@ -483,17 +511,25 @@ fun DailyDiscoverCard(
                         messages[kotlin.math.abs(dailyDiscover.seed.id.hashCode()) % messages.size]
                     }
 
-                    Text(
-                        text = stringResource(messageRes, "${dailyDiscover.seed.title} • ${dailyDiscover.seed.artists.joinToString(", ") { it.name }}"),
-                        style = MaterialTheme.typography.bodySmall,
-                        fontWeight = androidx.compose.ui.text.font.FontWeight.Medium,
-                        color = Color.White.copy(alpha = 0.6f),
-                        maxLines = 1,
-                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                    )
+                    Surface(
+                        color = Color.Black.copy(alpha = 0.45f),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Text(
+                            text = stringResource(messageRes, "${dailyDiscover.seed.title} • ${dailyDiscover.seed.artists.joinToString(", ") { it.name }}"),
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White.copy(alpha = 0.85f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                        )
+                    }
                 }
             }
         }
+    }
+}
     }
 }
 
@@ -985,9 +1021,11 @@ fun HomeScreen(
                             Card(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
+                                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                                shape = RoundedCornerShape(20.dp),
+                                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
                                 colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                                 ),
                             ) {
                                 Box(
@@ -1002,29 +1040,38 @@ fun HomeScreen(
                                             FontFamily.Default
                                         }
                                         Column(
-                                            modifier = Modifier.padding(16.dp),
+                                            modifier = Modifier.padding(20.dp),
                                             horizontalAlignment = Alignment.CenterHorizontally,
                                             verticalArrangement = androidx.compose.foundation.layout.Arrangement.Center
                                         ) {
                                             Text(
                                                 text = stringResource(R.string.wrapped_ready_title),
-                                                style = MaterialTheme.typography.headlineLarge.copy(
+                                                style = MaterialTheme.typography.headlineMedium.copy(
                                                     fontFamily = bbhFont,
                                                     textAlign = TextAlign.Center
-                                                )
+                                                ),
+                                                color = MaterialTheme.colorScheme.onSurface
                                             )
-                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Spacer(modifier = Modifier.height(6.dp))
                                             Text(
                                                 text = stringResource(R.string.wrapped_ready_subtitle),
-                                                style = MaterialTheme.typography.bodyLarge.copy(
+                                                style = MaterialTheme.typography.bodyMedium.copy(
                                                     textAlign = TextAlign.Center
-                                                )
+                                                ),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                             Spacer(modifier = Modifier.height(16.dp))
-                                            Button(onClick = {
-                                                navController.navigate("wrapped")
-                                            }) {
-                                                Text(stringResource(R.string.open))
+                                            Button(
+                                                onClick = {
+                                                    navController.navigate("wrapped")
+                                                },
+                                                colors = ButtonDefaults.buttonColors(
+                                                    containerColor = MaterialTheme.colorScheme.primary,
+                                                    contentColor = MaterialTheme.colorScheme.onPrimary
+                                                ),
+                                                shape = RoundedCornerShape(12.dp)
+                                            ) {
+                                                Text(stringResource(R.string.open), fontWeight = FontWeight.Bold)
                                             }
                                         }
                                     } else {
@@ -1474,14 +1521,14 @@ fun HomeScreen(
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(230.dp),
+                                            .height(220.dp),
                                         contentAlignment = Alignment.Center
                                     ) {
                                         val carouselState = rememberCarouselState { discoverList.size }
                                         HorizontalUncontainedCarousel(
                                             state = carouselState,
                                             itemWidth = 320.dp,
-                                            itemSpacing = 8.dp,
+                                            itemSpacing = 12.dp,
                                             contentPadding = PaddingValues(horizontal = 16.dp),
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -1524,8 +1571,7 @@ fun HomeScreen(
                                     LazyHorizontalGrid(
                                         state = rememberLazyGridState(),
                                         rows = GridCells.Fixed(rows),
-                                        contentPadding = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
-                                            .asPaddingValues(),
+                                        contentPadding = PaddingValues(horizontal = 4.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .height((currentGridHeight + with(LocalDensity.current) {
@@ -1581,9 +1627,7 @@ fun HomeScreen(
 
                                 item(key = "account_playlists_list") {
                                     LazyRow(
-                                        contentPadding = WindowInsets.systemBars
-                                            .only(WindowInsetsSides.Horizontal)
-                                            .asPaddingValues(),
+                                        contentPadding = PaddingValues(horizontal = 4.dp),
                                         modifier = Modifier.animateItem()
                                     ) {
                                         items(
@@ -1730,9 +1774,7 @@ fun HomeScreen(
 
                                 item(key = "similar_to_list_${section.index}") {
                                     LazyRow(
-                                        contentPadding = WindowInsets.systemBars
-                                            .only(WindowInsetsSides.Horizontal)
-                                            .asPaddingValues(),
+                                        contentPadding = PaddingValues(horizontal = 4.dp),
                                         modifier = Modifier.animateItem()
                                     ) {
                                         items(recommendation.items) { item ->
@@ -1870,9 +1912,7 @@ fun HomeScreen(
                                     // Render mixed content as horizontal grid items (albums, playlists, artists, etc.)
                                     item(key = "home_section_list_${section.index}") {
                                         LazyRow(
-                                            contentPadding = WindowInsets.systemBars
-                                                .only(WindowInsetsSides.Horizontal)
-                                                .asPaddingValues(),
+                                            contentPadding = PaddingValues(horizontal = 4.dp),
                                             modifier = Modifier.animateItem()
                                         ) {
                                             items(sectionData.items) { item ->
@@ -1897,7 +1937,7 @@ fun HomeScreen(
                                 item(key = "mood_and_genres_list") {
                                     LazyHorizontalGrid(
                                         rows = GridCells.Fixed(4),
-                                        contentPadding = PaddingValues(6.dp),
+                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
                                         modifier = Modifier
                                             .height((MoodAndGenresButtonHeight + 12.dp) * 4 + 12.dp)
                                             .animateItem()
@@ -1921,6 +1961,19 @@ fun HomeScreen(
                     }
                 }
 
+                if (homeSections.isEmpty() && !isLoading) {
+                    item(key = "home_empty_placeholder") {
+                        EmptyPlaceholder(
+                            icon = R.drawable.music_note,
+                            text = stringResource(R.string.no_results_found),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(top = 48.dp)
+                                .animateItem()
+                        )
+                    }
+                }
+
                 if (isLoading || homePage?.continuation != null && homePage?.sections?.isNotEmpty() == true) {
                     item(key = "loading_shimmer") {
                         ShimmerHost(
@@ -1928,15 +1981,14 @@ fun HomeScreen(
                         ) {
                             repeat(2) {
                                 TextPlaceholder(
-                                    height = 36.dp,
+                                    height = 28.dp,
+                                    shape = RoundedCornerShape(8.dp),
                                     modifier = Modifier
-                                        .padding(12.dp)
-                                        .width(250.dp),
+                                        .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp)
+                                        .width(200.dp),
                                 )
                                 LazyRow(
-                                    contentPadding = WindowInsets.systemBars
-                                        .only(WindowInsetsSides.Horizontal)
-                                        .asPaddingValues(),
+                                    contentPadding = PaddingValues(horizontal = 4.dp),
                                 ) {
                                     items(4) {
                                         GridItemPlaceHolder()
@@ -1945,20 +1997,21 @@ fun HomeScreen(
                             }
 
                             TextPlaceholder(
-                                height = 36.dp,
+                                height = 28.dp,
+                                shape = RoundedCornerShape(8.dp),
                                 modifier = Modifier
-                                    .padding(vertical = 12.dp, horizontal = 12.dp)
-                                    .width(250.dp),
+                                    .padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp)
+                                    .width(180.dp),
                             )
                             repeat(4) {
-                                Row {
+                                Row(modifier = Modifier.padding(horizontal = 10.dp)) {
                                     repeat(2) {
                                         TextPlaceholder(
                                             height = MoodAndGenresButtonHeight,
-                                            shape = RoundedCornerShape(6.dp),
+                                            shape = RoundedCornerShape(12.dp),
                                             modifier = Modifier
-                                                .padding(horizontal = 12.dp)
-                                                .width(200.dp)
+                                                .padding(6.dp)
+                                                .width(180.dp)
                                         )
                                     }
                                 }
