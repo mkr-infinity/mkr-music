@@ -191,6 +191,8 @@ Crafted with dedication by **Mohammad Kaif Raja**:
 **MKR Music** is built upon the foundation of amazing open-source projects, visionary developers, and the broader FLOSS community:
 
 ### 💡 Special Thanks
+- **[ViMusic](https://github.com/vfsfitvnm/ViMusic)** by vfsfitvnm – For pioneering the original Android client and playback concepts.
+- **[ViVi Music](https://github.com/vivizzz007/vivi-music)** by vivizzz007 – For inspiring features, UI refinements, and dedicated contributions.
 - **Mostafa Alagamy** – Creator of [Metrolist](https://github.com/mostafaalagamy/metrolist), the project that inspired the original foundation. Huge thanks for the foundation and open-source contributions! 🌟
 - **[@Zemer](https://github.com/Zemer)** – Huge congratulations and thanks for inventing the revolutionary playback method! 🎉
 
