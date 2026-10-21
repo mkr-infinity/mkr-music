@@ -76,10 +76,6 @@
     <string name="show_artist_description">Show artist description</string>
     <string name="show_artist_subscriber_count">Show subscriber count</string>
     <string name="show_artist_monthly_listeners">Show monthly listeners</string>
-    <string name="show_artist_video">Show artist canvas video</string>
-    <string name="show_artist_video_desc">Display a looping video next to the artist name on the artist page</string>
-    <string name="show_artist_background_video">Show artist background video</string>
-    <string name="show_artist_background_video_desc">Display a looping motion art video behind the artist image</string>
 
     <!-- Menu descriptions -->
     <string name="download_playlist_desc">Download all songs for offline playback</string>
@@ -111,23 +107,6 @@
     <string name="thumbnail_corner_radius_desc">Adjust thumbnail corner radius</string>
     <string name="crop_album_art">Crop Album Art</string>
     <string name="crop_album_art_desc">Force a square aspect ratio by cropping video thumbnails</string>
-    <string name="mkrmusic_canvas">Canvas</string>
-    <string name="use_canvas">Use canvas</string>
-    <string name="mkrmusic_canvas_desc">Replaces the static album artwork in the player with a looping animated video when one is available for the current song</string>
-    <string name="canvas_source">Canvas source</string>
-    <string name="canvas_source_auto">Auto</string>
-    <string name="canvas_source_auto_desc">Tries Apple Music first, then falls back to MKR Music and Tidal. Picks the best match for the current song automatically</string>
-    <string name="canvas_source_apple_music">Apple Music</string>
-    <string name="canvas_source_apple_music_desc">Uses Apple Music&#8217;s animated visuals exclusively. Only shows a canvas if Apple Music has one for the playing song</string>
-    <string name="canvas_source_mkrmusic">MKR Music</string>
-    <string name="canvas_source_mkrmusic_desc">Uses the MKR Music curated canvas library exclusively. Only shows a canvas if one has been added for the playing song</string>
-    <string name="canvas_source_tidal">Tidal</string>
-    <string name="canvas_source_tidal_desc">Uses Tidal&#8217;s animated visuals exclusively. Only shows a canvas if Tidal has one for the playing song</string>
-    <string name="show_album_canvas">Show Album Canvas</string>
-    <string name="show_album_canvas_desc">Display animated canvas in album</string>
-    <string name="canvas_load_only_wifi">Load only on Wi-Fi</string>
-    <string name="canvas_load_only_wifi_desc">Skip loading canvas animations when on cellular or metered connections</string>
-    <string name="canvas_network">Network</string>
     <string name="rotating_thumbnail">Rotating thumbnail</string>
     <string name="rotating_thumbnail_desc">Enable a rotating thumbnail animation effect</string>
 
@@ -992,9 +971,6 @@
     <string name="show_comment_button_description">Show a button to view comments in the player queue</string>
     <string name="build_stable">STABLE</string>
     <string name="build_nightly">NIGHTLY</string>
-    <string name="jiosaavn_settings">JioSaavn Settings</string>
-    <string name="jiosaavn_streaming_disabled">Disabled</string>
-    <string name="jiosaavn_beta_info">This is currently in beta, don\'t report things based on JioSaavn. If JioSaavn is enabled and a song isn\'t available in JioSaavn, it will use YouTube Music as the next source. Downloading at 320 kbps is also supported when using JioSaavn.</string>
 
     <!-- Spotify Import -->
     <string name="spotify">Spotify</string>
@@ -1082,12 +1058,8 @@
 
     <!-- Data Saver -->
     <string name="data_saver">Data Saver</string>
-    <string name="data_saver_desc">Turns off canvas and background videos, and loads low-quality images to save data and battery</string>
+    <string name="data_saver_desc">Loads low-quality images to save data and battery</string>
     <string name="data_saver_turns_off_header">Turns off when enabled</string>
-    <string name="data_saver_player_canvas">Player canvas animation</string>
-    <string name="data_saver_artist_video">Artist canvas video</string>
-    <string name="data_saver_artist_bg_video">Artist background video</string>
-    <string name="data_saver_album_canvas">Album canvas</string>
     <string name="data_saver_high_quality_images">High-quality images</string>
 
     <string name="tab_recommended">Recommended</string>

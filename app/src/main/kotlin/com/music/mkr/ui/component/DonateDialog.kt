@@ -65,12 +65,12 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 
 private val APPRECIATION_MESSAGES = listOf(
-    "❤️ Thank you so much for supporting MKR Music!",
-    "✨ Your contribution means the world to us!",
-    "🎵 Thanks for keeping MKR Music alive and free!",
-    "🚀 Massive thanks for powering future updates!",
-    "💖 Truly grateful for your wonderful support!",
-    "🌟 Thank you for being an amazing supporter!"
+    "Thank you so much for supporting MKR Music!",
+    "Your contribution means the world to us!",
+    "Thanks for keeping MKR Music alive and free!",
+    "Massive thanks for powering future updates!",
+    "Truly grateful for your wonderful support!",
+    "Thank you for being an amazing supporter!"
 )
 
 /**
@@ -501,14 +501,25 @@ fun DonateDialog(
                     shadowElevation = 8.dp,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.4f))
                 ) {
-                    Text(
-                        text = toastMessage ?: "",
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Medium,
-                        color = MaterialTheme.colorScheme.inverseOnSurface,
-                        textAlign = TextAlign.Center,
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp)
-                    )
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.favorite),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Text(
+                            text = toastMessage ?: "",
+                            style = MaterialTheme.typography.labelLarge,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.inverseOnSurface,
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
             }
         }

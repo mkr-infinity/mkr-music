@@ -112,23 +112,6 @@
     <string name="thumbnail_corner_radius_desc">Justera hörnradie</string>
     <string name="crop_album_art">Beskär albumomslag</string>
     <string name="crop_album_art_desc">Tvinga kvadratisk form genom beskärning</string>
-    <string name="mkrmusic_canvas">Canvas</string>
-    <string name="use_canvas">Använd canvas</string>
-    <string name="mkrmusic_canvas_desc">Ersätter statiskt albumomslag med en loopande video när tillgänglig</string>
-    <string name="canvas_source">Canvas‑källa</string>
-    <string name="canvas_source_auto">Auto</string>
-    <string name="canvas_source_auto_desc">Försöker Apple Music först, sedan MKR Music och Tidal</string>
-    <string name="canvas_source_apple_music">Apple Music</string>
-    <string name="canvas_source_apple_music_desc">Använder endast Apple Musics canvas</string>
-    <string name="canvas_source_mkrmusic">MKR Music</string>
-<string name="canvas_source_mkrmusic_desc">Använder endast MKR Music canvasbibliotek</string>
-    <string name="canvas_source_tidal">Tidal</string>
-    <string name="canvas_source_tidal_desc">Använder endast Tidals canvas</string>
-    <string name="show_album_canvas">Visa albumcanvas</string>
-    <string name="show_album_canvas_desc">Visa animerad canvas i album</string>
-    <string name="canvas_load_only_wifi">Ladda endast via Wi‑Fi</string>
-    <string name="canvas_load_only_wifi_desc">Hoppa över canvas vid mobildata</string>
-    <string name="canvas_network">Nätverk</string>
     <string name="rotating_thumbnail">Roterande miniatyr</string>
     <string name="rotating_thumbnail_desc">Aktivera roterande miniatyranimation</string>
 
@@ -994,9 +977,6 @@
     <string name="show_comment_button_description">Visa en knapp för att se kommentarer i spelarkön</string>
     <string name="build_stable">STABIL</string>
     <string name="build_nightly">NATTBYGG</string>
-    <string name="jiosaavn_settings">JioSaavn‑inställningar</string>
-    <string name="jiosaavn_streaming_disabled">Inaktiverad</string>
-    <string name="jiosaavn_beta_info">Detta är för närvarande i beta, rapportera inte problem baserat på JioSaavn. Om JioSaavn är aktiverat och en låt inte finns där, används YouTube Music som nästa källa. Nedladdning i 320 kbps stöds också.</string>
 
     <!-- Spotify Import -->
     <string name="spotify">Spotify</string>

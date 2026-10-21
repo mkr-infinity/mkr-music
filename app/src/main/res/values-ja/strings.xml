@@ -384,12 +384,7 @@
     <string name="listen_together_smart_resync">スマートネットワーク再同期</string>
     <string name="listen_together_smart_resync_desc">接続が切断された後、ホストに自動的に追いつきます</string>
 
-    <!-- JioSaavn Streaming -->
-    <string name="enable_saavn_streaming">JioSaavn ストリーミングを有効化</string>
-    <string name="enable_saavn_streaming_desc">YouTube Musicの代わりにJioSaavnからストリーミングします（利用できない場合はYouTube Musicに切り替わります）</string>
-    <string name="saavn_audio_quality">JioSaavn の音質</string>
     <string name="retry_stream">ストリームを再試行</string>
-    <string name="retry_stream_desc_saavn">JioSaavnから320 kbpsで再取得</string>
     <string name="retry_stream_desc_yt">YouTube Musicから再取得</string>
 
     <!-- Dynamic Search Prompts -->

@@ -92,8 +92,6 @@
     <string name="thumbnail_corner_radius_desc">Albüm kapağı küçük resminin köşe yarıçapını değiştirin</string>
     <string name="crop_album_art">Albüm Resmini Kırp</string>
     <string name="crop_album_art_desc">Video küçük resimlerini kırparak kare en boy oranını zorlayın</string>
-    <string name="mkrmusic_canvas">Canvas</string>
-    <string name="mkrmusic_canvas_desc">Mevcut olduğunda hareketli albüm kapaklarını göster</string>
     <string name="already_in_playlist">Zaten çalma listesinde:</string>
 
     <plurals name="n_element">

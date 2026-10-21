@@ -331,11 +331,7 @@
     <string name="standard_lyrics_blur">Standart mahnı sözləri bulanıqlaşdırma</string>
     <string name="listen_together_smart_resync">Ağıllı Şəbəkə Resync</string>
     <string name="listen_together_smart_resync_desc">Avtomatikally catch up ilə host sonra bir bağlantı kəsilmə</string>
-    <string name="enable_saavn_streaming">Aktiv et JioSaavn Axın</string>
-    <string name="enable_saavn_streaming_desc">Axın audio -dan JioSaavn instead -ın YouTube Musiqi (falls back -a YT if deyil mövcuddur)</string>
-    <string name="saavn_audio_quality">JioSaavn Audio Keyfiyyət</string>
     <string name="retry_stream">Yenidən cəhd et Axın</string>
-    <string name="retry_stream_desc_saavn">Re-fetch -dan JioSaavn at 320 kbps</string>
     <string name="retry_stream_desc_yt">Re-fetch -dan YouTube Musiqi</string>
     <string name="search_prompt_whats_on_mind">What\'s on sizin mind?</string>
     <string name="search_prompt_todays_pick">What\'s bu gün\'s pick?</string>

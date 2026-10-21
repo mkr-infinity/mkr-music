@@ -396,12 +396,7 @@
     <string name="listen_together_smart_resync">Akıllı Ağ Yeniden Senkronizasyonu</string>
     <string name="listen_together_smart_resync_desc">Bağlantı koptuktan sonra otomatik olarak yayıncıya yetişir</string>
 
-    <!-- JioSaavn Streaming -->
-    <string name="enable_saavn_streaming">JioSaavn Akışını Etkinleştir</string>
-    <string name="enable_saavn_streaming_desc">Sesi YouTube Music yerine JioSaavn\'dan aktarır (mevcut değilse YT\'ye geri döner)</string>
-    <string name="saavn_audio_quality">JioSaavn Ses Kalitesi</string>
     <string name="retry_stream">Akışı Yeniden Dene</string>
-    <string name="retry_stream_desc_saavn">JioSaavn\'dan 320 kbps hızında yeniden getir</string>
     <string name="retry_stream_desc_yt">YouTube Music\'ten yeniden getir</string>
 
     <!-- Dynamic Search Prompts -->

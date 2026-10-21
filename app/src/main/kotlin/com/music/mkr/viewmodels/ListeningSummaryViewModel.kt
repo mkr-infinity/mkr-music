@@ -30,7 +30,7 @@ import kotlinx.coroutines.flow.StateFlow
 data class ListeningMood(
     val title: String,
     val quote: String,
-    val emoji: String,
+    val iconRes: Int = com.music.mkr.R.drawable.music_note,
     val tag: String
 )
 
@@ -62,7 +62,7 @@ class ListeningSummaryViewModel @Inject constructor(
         ListeningMood(
             title = "Your Musical Mood",
             quote = "Hit play on some tunes to discover your weekly musical personality and vibe!",
-            emoji = "🎵",
+            iconRes = com.music.mkr.R.drawable.music_note,
             tag = "Ready to Listen"
         )
     )
@@ -72,7 +72,7 @@ class ListeningSummaryViewModel @Inject constructor(
             return ListeningMood(
                 title = "Your Musical Mood",
                 quote = "Hit play on some tunes to discover your weekly musical personality and vibe!",
-                emoji = "🎵",
+                iconRes = com.music.mkr.R.drawable.music_note,
                 tag = "Ready to Listen"
             )
         }
@@ -105,37 +105,37 @@ class ListeningSummaryViewModel @Inject constructor(
             maxScore > 0 && sadScore == maxScore -> ListeningMood(
                 title = "Your favorite songs are melancholic & deep",
                 quote = "You've been leaning into raw emotional melodies and introspective lyrics. Let the music heal what words cannot.",
-                emoji = "🌧️",
+                iconRes = com.music.mkr.R.drawable.headphones,
                 tag = "Emotional & Deep"
             )
             maxScore > 0 && hypeScore == maxScore -> ListeningMood(
                 title = "Your favorite songs are pure hype & energy",
                 quote = "High BPM, explosive rhythm, and unstoppable momentum! Your playlist could easily power a stadium.",
-                emoji = "⚡",
+                iconRes = com.music.mkr.R.drawable.trending_up,
                 tag = "High Voltage"
             )
             maxScore > 0 && chillScore == maxScore -> ListeningMood(
                 title = "Your favorite songs are calm & dreamy",
                 quote = "Laid-back rhythms and soothing atmospheres. You know exactly how to unwind and let the world drift away.",
-                emoji = "☕",
+                iconRes = com.music.mkr.R.drawable.ic_coffee_cup,
                 tag = "Chill & Lo-Fi"
             )
             maxScore > 0 && loveScore == maxScore -> ListeningMood(
                 title = "Your favorite songs are sweet & romantic",
                 quote = "Heartfelt lyrics and warm harmonies. Your listening sessions are bathed in pure romantic warmth.",
-                emoji = "💖",
+                iconRes = com.music.mkr.R.drawable.favorite,
                 tag = "Romantic & Warm"
             )
             maxScore > 0 && funnyScore == maxScore -> ListeningMood(
                 title = "Your favorite songs are quirky & playful",
                 quote = "Unfiltered fun and catchy grooves! You listen to what makes you smile without taking things too seriously.",
-                emoji = "🎉",
+                iconRes = com.music.mkr.R.drawable.tune,
                 tag = "Playful & Vibey"
             )
             else -> ListeningMood(
                 title = "Your favorite songs are eclectic & diverse",
                 quote = "A masterclass in taste! You effortlessly float across different genres and moods without missing a beat.",
-                emoji = "✨",
+                iconRes = com.music.mkr.R.drawable.sparks,
                 tag = "Eclectic Taste"
             )
         }

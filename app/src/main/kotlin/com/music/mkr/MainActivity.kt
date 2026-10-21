@@ -160,7 +160,6 @@ import com.music.mkr.constants.DefaultOpenTabKey
 import com.music.mkr.constants.DisableScreenshotKey
 import com.music.mkr.constants.DynamicThemeKey
 import com.music.mkr.constants.EnableHighRefreshRateKey
-import com.music.mkr.constants.EnableSettingsPopupKey
 import com.music.mkr.constants.ListenTogetherInTopBarKey
 import com.music.mkr.constants.ListenTogetherUsernameKey
 import com.music.mkr.constants.MiniPlayerBottomSpacing
@@ -187,6 +186,8 @@ import com.music.mkr.constants.SelectedThemeColorKey
 import com.music.mkr.constants.SlimNavBarHeight
 import com.music.mkr.constants.SlimNavBarKey
 import com.music.mkr.constants.FloatingNavBarKey
+import com.music.mkr.constants.NavigationStyle
+import com.music.mkr.constants.NavigationStyleKey
 import com.music.mkr.constants.StopMusicOnTaskClearKey
 import com.music.mkr.constants.UseNewMiniPlayerDesignKey
 import com.music.mkr.constants.UseAppleMiniPlayerKey
@@ -210,7 +211,6 @@ import com.music.mkr.ui.component.shimmer.ShimmerTheme
 import com.music.mkr.ui.menu.YouTubeSongMenu
 import com.music.mkr.ui.player.BottomSheetPlayer
 import com.music.mkr.ui.screens.Screens
-import com.music.mkr.ui.screens.SettingsDropdownMenu
 import com.music.mkr.ui.screens.navigationBuilder
 import com.music.mkr.ui.screens.settings.DarkMode
 import com.music.mkr.ui.screens.settings.NavigationTab
@@ -218,6 +218,7 @@ import com.music.mkr.ui.theme.ColorSaver
 import com.music.mkr.ui.theme.DefaultThemeColor
 import com.music.mkr.ui.theme.mkrMusicTheme
 import com.music.mkr.ui.theme.extractThemeColor
+import com.music.mkr.ui.theme.rememberGlobalArtworkPalette
 import com.music.mkr.ui.utils.appBarScrollBehavior
 import com.music.mkr.ui.utils.resetHeightOffset
 import com.music.mkr.utils.SyncUtils
@@ -528,48 +529,14 @@ class MainActivity : ComponentActivity() {
         val (selectedThemeColorInt) = rememberPreference(SelectedThemeColorKey, defaultValue = DefaultThemeColor.toArgb())
         val selectedThemeColor = Color(selectedThemeColorInt)
 
-        var themeColor by rememberSaveable(stateSaver = ColorSaver) {
-            mutableStateOf(selectedThemeColor)
-        }
+        val currentSongMetadata by playerConnection?.service?.currentMediaMetadata?.collectAsState(initial = null)
+            ?: remember { mutableStateOf(null) }
 
-        LaunchedEffect(selectedThemeColor) {
-            if (!enableDynamicTheme) {
-                themeColor = selectedThemeColor
-            }
-        }
-
-        LaunchedEffect(playerConnection, enableDynamicTheme, selectedThemeColor) {
-            val playerConnection = playerConnection
-            if (!enableDynamicTheme || playerConnection == null) {
-                themeColor = selectedThemeColor
-                return@LaunchedEffect
-            }
-
-            playerConnection.service.currentMediaMetadata.collectLatest { song ->
-                if (song?.thumbnailUrl != null) {
-                    withContext(Dispatchers.IO) {
-                        try {
-                            val result = imageLoader.execute(
-                                ImageRequest.Builder(this@MainActivity)
-                                    .data(song.thumbnailUrl)
-                                    .allowHardware(false)
-                                    .memoryCachePolicy(CachePolicy.ENABLED)
-                                    .diskCachePolicy(CachePolicy.ENABLED)
-                                    .networkCachePolicy(CachePolicy.ENABLED)
-                                    .crossfade(false)
-                                    .build()
-                            )
-                            themeColor = result.image?.toBitmap()?.extractThemeColor() ?: selectedThemeColor
-                        } catch (e: Exception) {
-                            // Fallback to default on error
-                            themeColor = selectedThemeColor
-                        }
-                    }
-                } else {
-                    themeColor = selectedThemeColor
-                }
-            }
-        }
+        val globalArtworkPalette = rememberGlobalArtworkPalette(
+            mediaMetadata = currentSongMetadata,
+            enableDynamicTheme = enableDynamicTheme,
+            staticThemeColor = selectedThemeColor
+        )
 
         val gitHubViewModel: GitHubViewModel = hiltViewModel()
         val isStarred by gitHubViewModel.isStarred.collectAsState()
@@ -582,11 +549,28 @@ class MainActivity : ComponentActivity() {
         mkrMusicTheme(
             darkTheme = useDarkTheme,
             pureBlack = pureBlack,
-            themeColor = themeColor,
+            themeColor = selectedThemeColor,
+            artworkPalette = globalArtworkPalette,
         ) {
             if (!hasShownSupportPrompt && !hasStarredRepo && !isStarred && reachedSupportMilestone) {
                 ActionPromptDialog(
-                    title = "Support MKR Music 🌟",
+                    titleBar = {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.star),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Text(
+                                text = "Support MKR Music",
+                                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    },
                     onDismiss = { setHasShownSupportPrompt(true) },
                     onConfirm = {
                         setHasShownSupportPrompt(true)
@@ -662,7 +646,7 @@ class MainActivity : ComponentActivity() {
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Spacer(Modifier.width(6.dp))
-                                    Text("Coffee ☕")
+                                    Text("Coffee")
                                 }
                             }
                         }
@@ -754,6 +738,7 @@ class MainActivity : ComponentActivity() {
                 }
                 val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
                 val (floatingNav) = rememberPreference(FloatingNavBarKey, defaultValue = true)
+                val (navigationStyle) = rememberEnumPreference(NavigationStyleKey, defaultValue = NavigationStyle.DEFAULT)
                 val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
                 val (useAppleMiniPlayer) = rememberPreference(UseAppleMiniPlayerKey, defaultValue = false)
                 val defaultOpenTab = remember {
@@ -841,7 +826,9 @@ class MainActivity : ComponentActivity() {
                     collapsedBound = bottomInset +
                         (if (!showRail && shouldShowNavigationBar) navPadding else 0.dp) +
                         extraSnackbarHeight +
-                        (if (useNewMiniPlayerDesign || useAppleMiniPlayer) MiniPlayerBottomSpacing else 0.dp) +
+                        (if (useNewMiniPlayerDesign || useAppleMiniPlayer) {
+                            if (navigationStyle == NavigationStyle.CLEAN_MATERIAL) 0.dp else MiniPlayerBottomSpacing
+                        } else 0.dp) +
                         MiniPlayerHeight,
                     expandedBound = maxHeight,
                 )
@@ -1001,7 +988,7 @@ class MainActivity : ComponentActivity() {
 
                 val currentTitleRes = remember(navBackStackEntry) {
                     when (navBackStackEntry?.destination?.route) {
-                        Screens.Home.route -> R.string.music
+                        Screens.Home.route -> R.string.app_name
                         Screens.Search.route -> R.string.search
                         Screens.Library.route -> R.string.filter_library
                         Screens.ListenTogether.route -> R.string.together
@@ -1071,18 +1058,18 @@ class MainActivity : ComponentActivity() {
                                                             currentToast?.show()
                                                         } else if (logoClickCount >= 5) {
                                                             val toastMessage = when (logoClickCount) {
-                                                                5 -> "Hey, what are you doing? 👀"
-                                                                6 -> "Stop poking the MKR logo bro! 😅"
-                                                                7 -> "One more click and something wild might happen... ⚠️💥"
-                                                                8 -> "Bro please don't do it bro! 😂 What are you looking for?! There's no secret menu here! 🎵✨"
-                                                                9 -> "Bro really has too much free time today! 💀🎧"
-                                                                10 -> "Are you testing my screen refresh rate or what?! 🤣"
+                                                                5 -> "Hey, what are you doing?"
+                                                                6 -> "Stop poking the MKR logo bro!"
+                                                                7 -> "One more click and something wild might happen..."
+                                                                8 -> "Bro please don't do it bro! What are you looking for?! There's no secret menu here!"
+                                                                9 -> "Bro really has too much free time today!"
+                                                                10 -> "Are you testing my screen refresh rate or what?!"
                                                                 else -> {
                                                                     val funnyQuotes = listOf(
-                                                                        "Go listen to some bangers instead bro! 🔥🎶",
-                                                                        "MKR Music loves you, but please spare the logo! 💖🙏",
-                                                                        "Still clicking?! You must really love this note! 🎵😎",
-                                                                        "Achievement unlocked: Professional Logo Tapper 🏆😂"
+                                                                        "Go listen to some bangers instead bro!",
+                                                                        "MKR Music loves you, but please spare the logo!",
+                                                                        "Still clicking?! You must really love this note!",
+                                                                        "Achievement unlocked: Professional Logo Tapper"
                                                                     )
                                                                     funnyQuotes[logoClickCount % funnyQuotes.size]
                                                                 }
@@ -1103,14 +1090,19 @@ class MainActivity : ComponentActivity() {
                                             ) {
                                                 Surface(
                                                     shape = CircleShape,
-                                                    color = Color.Transparent,
-                                                    modifier = Modifier.size(36.dp)
+                                                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f),
+                                                    border = BorderStroke(
+                                                        1.5.dp,
+                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                                                    ),
+                                                    modifier = Modifier.size(38.dp)
                                                 ) {
                                                     Image(
                                                         painter = painterResource(R.drawable.icon),
-                                                        contentDescription = "MKR Music",
+                                                        contentDescription = stringResource(R.string.app_name),
                                                         modifier = Modifier
                                                             .fillMaxSize()
+                                                            .padding(2.dp)
                                                             .clip(CircleShape),
                                                         contentScale = ContentScale.Crop
                                                     )
@@ -1118,71 +1110,75 @@ class MainActivity : ComponentActivity() {
                                             }
                                         },
                                         title = {
+                                            val isHome = navBackStackEntry?.destination?.route == Screens.Home.route
                                             Text(
-                                                text = currentTitleRes?.let { stringResource(it) } ?: "",
+                                                text = if (isHome) stringResource(R.string.app_name) else (currentTitleRes?.let { stringResource(it) } ?: ""),
                                                 style = MaterialTheme.typography.titleLarge.copy(
-                                                    fontWeight = FontWeight.Bold,
-                                                    fontSize = 24.sp
+                                                    fontWeight = FontWeight.ExtraBold,
+                                                    fontSize = if (isHome) 22.sp else 20.sp,
+                                                    letterSpacing = (-0.5).sp
                                                 ),
+                                                color = MaterialTheme.colorScheme.onSurface,
+                                                maxLines = 1,
+                                                overflow = TextOverflow.Ellipsis
                                             )
                                         },
                                         actions = {
-                                            val (enableSettingsPopup) = rememberPreference(EnableSettingsPopupKey, defaultValue = true)
-
-                                            // Listening History button - placed at top-right before other action buttons
-                                            if (showHistoryButton) {
-                                                IconButton(onClick = { navController.navigate("history") }) {
-                                                    Icon(
-                                                        painter = painterResource(R.drawable.music_history),
-                                                        contentDescription = stringResource(R.string.history)
-                                                    )
-                                                }
-                                            }
-
-                                            if (!enableSettingsPopup) {
-                                                IconButton(onClick = { navController.navigate("stats") }) {
-                                                    Icon(
-                                                        painter = painterResource(R.drawable.stats),
-                                                        contentDescription = stringResource(R.string.stats)
-                                                    )
-                                                }
-                                                if (listenTogetherInTopBar) {
-                                                    IconButton(onClick = { navController.navigate("listen_together_from_topbar") }) {
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                                                modifier = Modifier.padding(end = 4.dp)
+                                            ) {
+                                                if (showHistoryButton) {
+                                                    IconButton(
+                                                        onClick = { navController.navigate("history") },
+                                                        modifier = Modifier.size(38.dp)
+                                                    ) {
                                                         Icon(
-                                                            painter = painterResource(R.drawable.group_outlined),
-                                                            contentDescription = stringResource(R.string.together)
+                                                            painter = painterResource(R.drawable.music_history),
+                                                            contentDescription = stringResource(R.string.history),
+                                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                            modifier = Modifier.size(20.dp)
                                                         )
                                                     }
                                                 }
-                                            }
-                                            if (enableSettingsPopup && accountImageUrl != null) {
-                                                IconButton(onClick = { navController.navigate("settings/account") }) {
-                                                    AsyncImage(
-                                                        model = accountImageUrl,
-                                                        contentDescription = stringResource(R.string.account),
-                                                        modifier = Modifier
-                                                            .size(24.dp)
-                                                            .clip(CircleShape)
-                                                    )
+
+                                                if (accountImageUrl != null) {
+                                                    IconButton(
+                                                        onClick = { navController.navigate("settings/account") },
+                                                        modifier = Modifier.size(38.dp)
+                                                    ) {
+                                                        AsyncImage(
+                                                            model = accountImageUrl,
+                                                            contentDescription = stringResource(R.string.account),
+                                                            contentScale = ContentScale.Crop,
+                                                            modifier = Modifier
+                                                                .size(28.dp)
+                                                                .clip(CircleShape)
+                                                                .border(
+                                                                    1.5.dp,
+                                                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                                                                    CircleShape
+                                                                )
+                                                        )
+                                                    }
                                                 }
-                                            }
-                                            
-                                            Box {
-                                                var showSettingsDropdown by remember { mutableStateOf(false) }
+
+                                                // Direct Settings navigation button
                                                 Surface(
-                                                    onClick = {
-                                                        if (enableSettingsPopup) {
-                                                            showSettingsDropdown = true
-                                                        } else {
-                                                            navController.navigate("settings")
-                                                        }
-                                                    },
+                                                    onClick = { navController.navigate("settings") },
                                                     shape = CircleShape,
                                                     color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f),
-                                                    border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.35f)),
-                                                    modifier = Modifier.size(42.dp)
+                                                    border = BorderStroke(
+                                                        1.dp,
+                                                        MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
+                                                    ),
+                                                    modifier = Modifier.size(38.dp)
                                                 ) {
-                                                    Box(contentAlignment = Alignment.Center) {
+                                                    Box(
+                                                        contentAlignment = Alignment.Center,
+                                                        modifier = Modifier.fillMaxSize()
+                                                    ) {
                                                         BadgedBox(
                                                             badge = {
                                                                 if (isUpdateAvailable.value) {
@@ -1193,47 +1189,31 @@ class MainActivity : ComponentActivity() {
                                                                 }
                                                             }
                                                         ) {
-                                                            if (!enableSettingsPopup && accountImageUrl != null) {
-                                                                AsyncImage(
-                                                                    model = accountImageUrl,
-                                                                    contentDescription = stringResource(R.string.account),
-                                                                    modifier = Modifier
-                                                                        .size(24.dp)
-                                                                        .clip(CircleShape)
-                                                                )
-                                                            } else {
-                                                                val composition by rememberLottieComposition(
-                                                                    LottieCompositionSpec.RawRes(R.raw.setting)
-                                                                )
-                                                                val progress by animateLottieCompositionAsState(
-                                                                    composition = composition,
-                                                                    isPlaying = true,
-                                                                    iterations = 1,
-                                                                    speed = 1.5f
-                                                                )
+                                                            val composition by rememberLottieComposition(
+                                                                LottieCompositionSpec.RawRes(R.raw.setting)
+                                                            )
+                                                            val progress by animateLottieCompositionAsState(
+                                                                composition = composition,
+                                                                isPlaying = true,
+                                                                iterations = 1,
+                                                                speed = 1.5f
+                                                            )
 
-                                                                LottieAnimation(
-                                                                    composition = composition,
-                                                                    progress = { progress },
-                                                                    modifier = Modifier.size(36.dp),
-                                                                    contentScale = ContentScale.Fit
-                                                                )
-                                                            }
+                                                            LottieAnimation(
+                                                                composition = composition,
+                                                                progress = { progress },
+                                                                modifier = Modifier.size(22.dp),
+                                                                contentScale = ContentScale.Fit
+                                                            )
                                                         }
                                                     }
                                                 }
-                                                SettingsDropdownMenu(
-                                                    expanded = showSettingsDropdown,
-                                                    onDismissRequest = { showSettingsDropdown = false },
-                                                    onNavigate = { route -> navController.navigate(route) },
-                                                    homeViewModel = homeViewModel
-                                                )
                                             }
                                         },
                                         scrollBehavior = topAppBarScrollBehavior,
                                         colors = TopAppBarDefaults.topAppBarColors(
                                             containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
-                                            scrolledContainerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
+                                            scrolledContainerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer,
                                             titleContentColor = MaterialTheme.colorScheme.onSurface,
                                             actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                             navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -1328,6 +1308,7 @@ class MainActivity : ComponentActivity() {
                                         pureBlack = pureBlack,
                                         slimNav = slimNav,
                                         onSearchLongClick = onSearchLongClick,
+                                        navigationStyle = navigationStyle,
                                         floatingNav = floatingNav,
                                         bottomInset = bottomInset,
                                         modifier = Modifier
@@ -1359,7 +1340,7 @@ class MainActivity : ComponentActivity() {
                                             // Use graphicsLayer for background color changes
                                             .graphicsLayer {
                                                 val progress = playerBottomSheetState.progress
-                                                alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar) || floatingNav) 0f else 1f
+                                                alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar) || navigationStyle.isFloating) 0f else 1f
                                             }
                                             .background(baseBg)
                                     )

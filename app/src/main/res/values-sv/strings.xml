@@ -396,12 +396,7 @@
     <string name="listen_together_smart_resync">Smart nätverkssynk</string>
     <string name="listen_together_smart_resync_desc">Kom automatiskt ikapp värden efter en anslutningsförlust</string>
 
-    <!-- JioSaavn Streaming -->
-    <string name="enable_saavn_streaming">Aktivera JioSaavn‑strömning</string>
-    <string name="enable_saavn_streaming_desc">Strömma ljud från JioSaavn istället för YouTube Music (faller tillbaka till YT om ej tillgängligt)</string>
-    <string name="saavn_audio_quality">JioSaavn‑ljudkvalitet</string>
     <string name="retry_stream">Försök strömma igen</string>
-    <string name="retry_stream_desc_saavn">Hämta igen från JioSaavn i 320 kbps</string>
     <string name="retry_stream_desc_yt">Hämta igen från YouTube Music</string>
 
     <!-- Dynamic Search Prompts -->

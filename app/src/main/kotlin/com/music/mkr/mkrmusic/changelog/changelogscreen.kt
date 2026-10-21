@@ -468,13 +468,13 @@ private fun ClickableMarkdownText(
 
 private fun getDefaultReleaseNotes(): String {
     return """
-## ✨ What's New in MKR Music
+## What's New in MKR Music
 
-- ⚡ **Instant Playback Start**: Direct low-latency audio streaming without pre-caching buffer lag.
-- ⏱️ **Delayed Song Caching**: Automatically starts background caching only after listening for your configured duration (5s–90s).
-- 🎵 **Adaptive Sound Quality**: Dynamic bitrate reporting with exact kbps indicator in the player.
-- ⚙️ **Granular Settings Search**: Search any keyword directly to quickly find specific options with zero duplicates.
-- 🚀 **Manual Update Workflow**: Seamless GitHub release updates with built-in backup instructions.
-- 🎨 **Visual Refinements**: Beautiful streamlined UI with responsive banners and smooth transitions.
+- **Instant Playback Start**: Direct low-latency audio streaming without pre-caching buffer lag.
+- **Delayed Song Caching**: Automatically starts background caching only after listening for your configured duration (5s–90s).
+- **Adaptive Sound Quality**: Dynamic bitrate reporting with exact kbps indicator in the player.
+- **Granular Settings Search**: Search any keyword directly to quickly find specific options with zero duplicates.
+- **Manual Update Workflow**: Seamless GitHub release updates with built-in backup instructions.
+- **Visual Refinements**: Beautiful streamlined UI with responsive banners and smooth transitions.
     """.trimIndent()
 }

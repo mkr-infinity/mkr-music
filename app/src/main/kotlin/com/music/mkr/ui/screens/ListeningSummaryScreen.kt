@@ -124,9 +124,11 @@ fun ListeningSummaryScreen(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            Text(
-                                text = listeningMood.emoji,
-                                style = MaterialTheme.typography.titleLarge
+                            Icon(
+                                painter = painterResource(id = listeningMood.iconRes),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
                             )
                             Surface(
                                 shape = RoundedCornerShape(12.dp),

@@ -339,11 +339,7 @@
     <string name="standard_lyrics_blur">Borrão de letras padrão</string>
     <string name="listen_together_smart_resync">Resincronização de Rede Inteligente</string>
     <string name="listen_together_smart_resync_desc">Sincronizar automaticamente com o anfitrião após uma queda de conexão</string>
-    <string name="enable_saavn_streaming">Ativar o Streaming do JioSaavn</string>
-    <string name="enable_saavn_streaming_desc">Transmita áudio de JioSaavn em vez de YouTube Music (cai de volta para YT se não estiver disponível)</string>
-    <string name="saavn_audio_quality">Qualidade de Áudio JioSaavn</string>
     <string name="retry_stream">Repetir o Fluxo</string>
-    <string name="retry_stream_desc_saavn">Recolha de JioSaavn a 320 kbps</string>
     <string name="retry_stream_desc_yt">Recolha no YouTube Music</string>
     <string name="search_prompt_whats_on_mind">O que está em sua mente?</string>
     <string name="search_prompt_todays_pick">Qual é a escolha de hoje?</string>

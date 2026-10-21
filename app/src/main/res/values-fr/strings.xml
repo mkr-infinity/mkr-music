@@ -402,12 +402,7 @@
     <string name="listen_together_smart_resync">Resynchronisation intelligente du réseau</string>
     <string name="listen_together_smart_resync_desc">Reprendre automatiquement la connexion avec l\'hôte après une perte de connexion</string>
 
-    <!-- JioSaavn Streaming -->
-    <string name="enable_saavn_streaming">Activer le streaming JioSaavn</string>
-    <string name="enable_saavn_streaming_desc">Écoutez de la musique en streaming depuis JioSaavn plutôt que depuis YouTube Music (retour à YouTube Music si JioSaavn n\'est pas disponible)</string>
-    <string name="saavn_audio_quality">Qualité audio de JioSaavn</string>
     <string name="retry_stream">Réessayer le flux</string>
-    <string name="retry_stream_desc_saavn">Récupérer depuis JioSaavn à 320 kbps</string>
     <string name="retry_stream_desc_yt">Récupérer depuis YouTube Music</string>
 
     <!-- Dynamic Search Prompts -->

@@ -111,23 +111,6 @@
     <string name="thumbnail_corner_radius_desc">Régler le rayon des coins des miniatures</string>
     <string name="crop_album_art">Recadrer la pochette d\'album</string>
     <string name="crop_album_art_desc">Forcer un format carré en recadrant les miniatures vidéo</string>
-    <string name="mkrmusic_canvas">Canvas</string>
-	<string name="use_canvas">Utiliser Canvas</string>
-    <string name="mkrmusic_canvas_desc">Remplace la pochette d\'album statique dans le lecteur par une vidéo animée en boucle lorsqu\'une telle vidéo est disponible pour le titre en cours</string>
-    <string name="canvas_source">Code source de Canvas</string>
-    <string name="canvas_source_auto">Automatique</string>
-    <string name="canvas_source_auto_desc">Essaie d\'abord Apple Music, puis Tidal et MKR Music. Sélectionne automatiquement la meilleure application pour le titre en cours.</string>
-    <string name="canvas_source_apple_music">Apple Music</string>
-    <string name="canvas_source_apple_music_desc">Utilise exclusivement les visuels animés d\'Apple Music. N\'affiche une image que si Apple Music en propose une pour le titre en cours de lecture.</string>
-    <string name="canvas_source_mkrmusic">MKR Music</string>
-    <string name="canvas_source_mkrmusic_desc">Utilise exclusivement la bibliothèque de toiles sélectionnés par MKR Music. N\'affiche une image que si elle a été ajoutée pour le titre en cours de lecture.</string>
-    <string name="canvas_source_tidal">Tidal</string>
-    <string name="canvas_source_tidal_desc">Utilise exclusivement les visuels animés de Tidal. N\'affiche une image que si Tidal en propose une pour le titre en cours de lecture.</string>
-    <string name="show_album_canvas">Afficher la page d\'accueil de l\'album</string>
-    <string name="show_album_canvas_desc">Afficher une toile animée dans l\'album</string>
-	<string name="canvas_load_only_wifi">Télécharger uniquement via le Wi-Fi</string>
-    <string name="canvas_load_only_wifi_desc">Ne pas charger les animations du canvas en cas de connexion mobile ou à volume limité</string>
-    <string name="canvas_network">Réseau</string>
     <string name="rotating_thumbnail">Vignette tournante</string>
     <string name="rotating_thumbnail_desc">Activer un effet d\'animation avec rotation des vignettes</string>
 
@@ -992,9 +975,6 @@ est irréversible.
     <string name="show_comment_button_description">Afficher un bouton permettant de consulter les commentaires dans la file d\'attente du lecteur</string>
     <string name="build_stable">STABLE</string>
     <string name="build_nightly">NIGHTLY</string>
-    <string name="jiosaavn_settings">Paramètres de JioSaavn</string>
-    <string name="jiosaavn_streaming_disabled">Désactivé</string>
-    <string name="jiosaavn_beta_info">Cette fonctionnalité est actuellement en version bêta ; veuillez ne pas signaler de problèmes liés à JioSaavn. Si JioSaavn est activé et qu\’un morceau n\’est pas disponible sur cette plateforme, YouTube Music sera utilisé comme source alternative. Le téléchargement à 320 kbps est également pris en charge lors de l\’utilisation de JioSaavn.</string>
 
 	<!-- Spotify Import -->
     <string name="spotify">Spotify</string>
