@@ -7,6 +7,43 @@ val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localProperties.load(localPropertiesFile.inputStream())
 }
+
+// Canonical version resolution from root version.properties
+val versionPropertiesFile = rootProject.file("version.properties")
+if (!versionPropertiesFile.exists()) {
+    throw GradleException("Canonical version file 'version.properties' not found at project root (${versionPropertiesFile.absolutePath}).")
+}
+
+val versionProperties = Properties().apply {
+    versionPropertiesFile.inputStream().use { load(it) }
+}
+
+val canonicalAppVersion = versionProperties.getProperty("APP_VERSION")?.trim()
+    ?: throw GradleException("Missing 'APP_VERSION' key in version.properties.")
+
+val semverRegex = Regex("""^(\d+)\.(\d+)\.(\d+)$""")
+val semverMatch = semverRegex.matchEntire(canonicalAppVersion)
+    ?: throw GradleException("Invalid APP_VERSION '$canonicalAppVersion' in version.properties. Must strictly follow semantic versioning MAJOR.MINOR.PATCH (e.g., 1.0.0).")
+
+val (majorStr, minorStr, patchStr) = semverMatch.destructured
+val versionMajor = majorStr.toIntOrNull() ?: throw GradleException("Invalid MAJOR component in '$canonicalAppVersion'")
+val versionMinor = minorStr.toIntOrNull() ?: throw GradleException("Invalid MINOR component in '$canonicalAppVersion'")
+val versionPatch = patchStr.toIntOrNull() ?: throw GradleException("Invalid PATCH component in '$canonicalAppVersion'")
+
+if (versionMinor !in 0..99) {
+    throw GradleException("MINOR version '$versionMinor' out of supported range (0..99).")
+}
+if (versionPatch !in 0..99) {
+    throw GradleException("PATCH version '$versionPatch' out of supported range (0..99).")
+}
+if (versionMajor < 0 || versionMajor > 214748) {
+    throw GradleException("MAJOR version '$versionMajor' out of supported range (0..214748).")
+}
+
+val computedVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
+if (computedVersionCode <= 77) {
+    throw GradleException("Computed versionCode ($computedVersionCode) must be strictly greater than historical version code 77 to permit Android upgrades.")
+}
 plugins {
     id("com.android.application")
     alias(libs.plugins.hilt)
@@ -25,19 +62,19 @@ android {
         applicationId = "com.mkr.music"
         minSdk = 26
         targetSdk = 37
-        versionCode = 77
-        val betaVersionName = project.findProperty("betaVersionName") as String?
-        versionName = betaVersionName ?: "6.0.8"
+        versionCode = computedVersionCode
+        versionName = canonicalAppVersion
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
 
-        // LastFM API keys from GitHub Secrets
-//        val lastFmKey = localProperties.getProperty("LASTFM_API_KEY") ?: System.getenv("LASTFM_API_KEY") ?: ""
-//        val lastFmSecret = localProperties.getProperty("LASTFM_SECRET") ?: System.getenv("LASTFM_SECRET") ?: ""
-        
-        val lastFmKey = "694cbaa17c78202a133eac4656dff651"
-        val lastFmSecret = "a0fdaf6060f19128c4a84f297c71e627"
+        // LastFM API keys from local.properties or environment with fallback
+        val lastFmKey = localProperties.getProperty("LASTFM_API_KEY")
+            ?: System.getenv("LASTFM_API_KEY")
+            ?: "694cbaa17c78202a133eac4656dff651"
+        val lastFmSecret = localProperties.getProperty("LASTFM_SECRET")
+            ?: System.getenv("LASTFM_SECRET")
+            ?: "a0fdaf6060f19128c4a84f297c71e627"
 
         buildConfigField("String", "LASTFM_API_KEY", "\"$lastFmKey\"")
         buildConfigField("String", "LASTFM_SECRET", "\"$lastFmSecret\"")
@@ -285,12 +322,7 @@ dependencies {
     implementation(project(":innertube"))
     implementation(project(":kizzy"))
     implementation(project(":lastfm"))
-    implementation(project(":canvas"))
     implementation(project(":shazamkit"))
-    implementation(project(":artistvideo"))
-    implementation(project(":applecanvas"))
-    implementation(project(":mkrmusiccanvas"))
-    implementation(project(":jiosaavn"))
     implementation(project(":spotify"))
     implementation(project(":lyricsProvider"))
 
@@ -316,5 +348,13 @@ dependencies {
     implementation(libs.haze)
     implementation(libs.work.runtime.ktx)
     implementation(libs.androidx.core.splashscreen)
+}
+
+tasks.register("printAppVersion") {
+    description = "Prints the canonical app version name and computed version code for CI validation"
+    doLast {
+        println("CANONICAL_VERSION_NAME=$canonicalAppVersion")
+        println("COMPUTED_VERSION_CODE=$computedVersionCode")
+    }
 }
 
