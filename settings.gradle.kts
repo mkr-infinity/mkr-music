@@ -33,15 +33,10 @@ dependencyResolutionManagement {
 
 rootProject.name = "mkrmusic"
 include(":app")
-include(":canvas")
 include(":innertube")
 include(":kizzy")
 include(":lastfm")
 include(":shazamkit")
-include(":artistvideo")
-include(":applecanvas")
-include(":mkrmusiccanvas")
-include(":jiosaavn")
 include(":spotify")
 include(":lyricsProvider")
 
