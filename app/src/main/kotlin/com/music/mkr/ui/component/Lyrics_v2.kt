@@ -25,6 +25,8 @@ import com.music.mkr.LocalListenTogetherManager
 import com.music.mkr.lyrics.LyricsTranslationHelper
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.constants.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import com.music.mkr.R
 import com.music.mkr.db.entities.LyricsEntity
@@ -32,8 +34,17 @@ import com.music.mkr.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
 import com.music.mkr.lyrics.LyricsEntry
 import com.music.mkr.lyrics.LyricsUtils
 import com.music.mkr.models.MediaMetadata
-import com.music.mkr.ui.component.MetroLyricsLine
+import com.music.mkr.ui.component.MkrLyricsLine
+import com.music.mkr.ui.component.LocalMenuState
+import com.music.mkr.ui.component.LocalBottomSheetPageState
+import com.music.mkr.ui.menu.LyricsMenu
+import com.music.mkr.ui.utils.ShowOffsetDialog
+import com.music.mkr.ui.theme.rememberArtworkPalette
+import com.music.mkr.ui.theme.PlayerColorExtractor
+import com.music.mkr.ui.theme.PlayerArtworkPalette
 import com.music.mkr.ui.screens.settings.LyricsPosition
+import com.music.mkr.utils.rememberEnumPreference
+import androidx.compose.ui.text.style.TextOverflow
 import dagger.hilt.android.EntryPointAccessors
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.animation.AnimatedVisibility
@@ -51,6 +62,7 @@ import androidx.compose.ui.zIndex
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed class LyricsListItemV2 {
     data class Line(val index: Int, val entry: LyricsEntry) : LyricsListItemV2()
@@ -104,13 +116,15 @@ fun LyricsV2(
     val translationStatus by LyricsTranslationHelper.status.collectAsState()
     val hasActiveTranslations by LyricsTranslationHelper.hasActiveTranslations.collectAsState()
 
-    val playerBackground by com.music.mkr.utils.rememberEnumPreference(
-        key = com.music.mkr.constants.PlayerBackgroundStyleKey,
-        defaultValue = com.music.mkr.constants.PlayerBackgroundStyle.GRADIENT
-    )
+    val lyricsTextSize by rememberPreference(LyricsTextSizeKey, 24f)
+    val lyricsLineSpacing by rememberPreference(LyricsLineSpacingKey, 1.35f)
+    val lyricsTextPosition by rememberEnumPreference(LyricsTextPositionKey, LyricsPosition.LEFT)
 
-    val adaptivePrimary =
-        if (playerBackground == com.music.mkr.constants.PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.onSurface else Color.White
+    val menuState = LocalMenuState.current
+    val bottomSheetPageState = LocalBottomSheetPageState.current
+
+    val artworkPalette = rememberArtworkPalette(mediaMetadata)
+    val adaptivePrimary = artworkPalette.textPrimary
     val lyrics = remember(currentLyrics) { currentLyrics?.lyrics?.trim() }
     val context = LocalContext.current
     val database = LocalDatabase.current
@@ -127,29 +141,32 @@ fun LyricsV2(
         }
     }
 
-    LaunchedEffect(mediaMetadata?.id, currentLyrics) {
-        if (mediaMetadata != null && currentLyrics == null) {
-            delay(500)
-            coroutineScope.launch(Dispatchers.IO) {
-                try {
-                    val entryPoint = EntryPointAccessors.fromApplication(
-                        context.applicationContext,
-                        com.music.mkr.di.LyricsHelperEntryPoint::class.java
-                    )
-                    val lyricsHelper = entryPoint.lyricsHelper()
-                    val fetchedLyricsWithProvider = lyricsHelper.getLyrics(mediaMetadata)
+    val currentTrackId = mediaMetadata?.id
+    LaunchedEffect(currentTrackId) {
+        if (currentTrackId != null && (currentLyrics == null || currentLyrics?.id != currentTrackId)) {
+            delay(300)
+            try {
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    context.applicationContext,
+                    com.music.mkr.di.LyricsHelperEntryPoint::class.java
+                )
+                val lyricsHelper = entryPoint.lyricsHelper()
+                val fetchedLyricsWithProvider = withContext(Dispatchers.IO) {
+                    lyricsHelper.getLyrics(mediaMetadata)
+                }
+                if (mediaMetadata?.id == currentTrackId) {
                     database.query {
                         upsert(
                             LyricsEntity(
-                                mediaMetadata.id,
+                                currentTrackId,
                                 fetchedLyricsWithProvider.lyrics,
                                 fetchedLyricsWithProvider.provider
                             )
                         )
                     }
-                } catch (e: Exception) {
-                    // Handle error silently
                 }
+            } catch (e: Exception) {
+                // Handled gracefully, empty state will show if not found
             }
         }
     }
@@ -160,15 +177,122 @@ fun LyricsV2(
     ) {
         when {
             lyrics == null -> {
-                ContainedLoadingIndicator()
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = artworkPalette.surfaceElevated),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, artworkPalette.primaryAccent.copy(alpha = 0.20f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                    modifier = Modifier.padding(32.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 32.dp, vertical = 28.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(44.dp),
+                            color = artworkPalette.primaryAccent,
+                            trackColor = artworkPalette.primaryAccent.copy(alpha = 0.2f),
+                            strokeWidth = 3.dp
+                        )
+                        Spacer(modifier = Modifier.height(18.dp))
+                        Text(
+                            text = "Loading lyrics...",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = artworkPalette.textPrimary,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(6.dp))
+                        Text(
+                            text = mediaMetadata?.title ?: "",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = artworkPalette.textSecondary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
             }
 
-            lyrics == LYRICS_NOT_FOUND -> {
-                Text(
-                    text = "Lyrics not found",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = adaptivePrimary.copy(alpha = 0.5f)
-                )
+            lyrics == LYRICS_NOT_FOUND || lyrics.isBlank() -> {
+                Card(
+                    shape = RoundedCornerShape(20.dp),
+                    colors = CardDefaults.cardColors(containerColor = artworkPalette.surfaceElevated),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, artworkPalette.primaryAccent.copy(alpha = 0.25f)),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                    modifier = Modifier.padding(horizontal = 28.dp)
+                ) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = 28.dp, vertical = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(64.dp)
+                                .background(artworkPalette.primaryAccent.copy(alpha = 0.12f), CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.lyrics),
+                                contentDescription = null,
+                                tint = artworkPalette.primaryAccent,
+                                modifier = Modifier.size(32.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(18.dp))
+                        Text(
+                            text = stringResource(R.string.lyrics_not_found),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = artworkPalette.textPrimary,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "No synchronized lyrics found for \"${mediaMetadata?.title ?: "this track"}\"",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = artworkPalette.textSecondary,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(20.dp))
+                        Button(
+                            onClick = {
+                                menuState.show {
+                                    LyricsMenu(
+                                        lyricsProvider = { currentLyrics },
+                                        songProvider = { currentSong?.song },
+                                        mediaMetadataProvider = { mediaMetadata ?: return@LyricsMenu },
+                                        onDismiss = menuState::dismiss,
+                                        onShowOffsetDialog = {
+                                            bottomSheetPageState.show {
+                                                ShowOffsetDialog(songProvider = { currentSong?.song })
+                                            }
+                                        }
+                                    )
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = artworkPalette.primaryAccent,
+                                contentColor = PlayerColorExtractor.CharcoalDark
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.more_vert),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Lyrics Options",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
             }
 
             else -> {
@@ -321,41 +445,44 @@ fun LyricsV2(
                     }
                 }
 
-                val isLyricsProviderShown = currentLyrics?.provider != null && currentLyrics?.provider != "Unknown"
-
-                // If plain text (not synced), just render a static list
+                // If plain text (not synced), just render a static list with MKR styling
                 if (lines.isNotEmpty() && lines.all { it.time == 0L }) {
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
                             top = 32.dp,
                             bottom = 120.dp,
-                            start = 24.dp,
-                            end = 24.dp
+                            start = 20.dp,
+                            end = 20.dp
                         )
                     ) {
-                        if (isLyricsProviderShown) {
-                            item {
-                                Text(
-                                    text = "Lyrics from ${currentLyrics?.provider}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = adaptivePrimary.copy(alpha = 0.6f),
-                                    fontWeight = FontWeight.Medium,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(bottom = 12.dp)
-                                )
-                            }
+                        item {
+                            LyricsHeader(
+                                title = mediaMetadata?.title.orEmpty(),
+                                artist = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
+                                provider = currentLyrics?.provider,
+                                palette = artworkPalette
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
                         }
                         items(lines.size) { index ->
-                            Text(
-                                text = lines[index].text,
-                                style = MaterialTheme.typography.headlineSmall,
-                                color = adaptivePrimary,
-                                modifier = Modifier.padding(vertical = 12.dp),
-                                fontWeight = FontWeight.Bold,
-                                textAlign = TextAlign.Start
+                            MkrLyricsLine(
+                                entry = lines[index],
+                                nextEntryTime = null,
+                                effectivePlaybackPosition = 0L,
+                                isSynced = false,
+                                isActive = false,
+                                distanceFromCurrent = 0,
+                                lyricsTextPosition = lyricsTextPosition,
+                                palette = artworkPalette,
+                                showRomanized = showRomanized,
+                                showTranslated = hasActiveTranslations,
+                                textSize = lyricsTextSize,
+                                lineSpacing = lyricsLineSpacing,
+                                onClick = {},
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 4.dp)
                             )
                         }
                     }
@@ -439,10 +566,10 @@ fun LyricsV2(
                     result
                 }
 
-                val providerOffset = if (isLyricsProviderShown) 1 else 0
+                val headerOffset = 1
 
                 val initialIndex = remember(currentLineIndex, lines) {
-                    maxOf(0, currentLineIndex - 1) + providerOffset
+                    maxOf(0, currentLineIndex - 1) + headerOffset
                 }
 
                 // Subscribed synced lyrics
@@ -466,7 +593,7 @@ fun LyricsV2(
 
                 LaunchedEffect(isAutoScrollEnabled, lastManualScrollTime) {
                     if (!isAutoScrollEnabled) {
-                        delay(3000L)
+                        delay(4000L)
                         isAutoScrollEnabled = true
                     }
                 }
@@ -479,7 +606,7 @@ fun LyricsV2(
                     contentAlignment = Alignment.TopCenter,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    val targetTopRatio = 0.30f
+                    val targetTopRatio = 0.32f
                     val topPadding = (estimatedLyricsAreaHeight * targetTopRatio) + contentPadding.calculateTopPadding()
                     val bottomPadding = (estimatedLyricsAreaHeight * (1f - targetTopRatio)) + contentPadding.calculateBottomPadding()
 
@@ -489,7 +616,7 @@ fun LyricsV2(
                             val actualListIndex = mergedLyricsList.indexOfFirst { 
                                 it is LyricsListItemV2.Line && it.index == currentLineIndex 
                             }.takeIf { it != -1 } ?: currentLineIndex
-                            val targetIndex = maxOf(0, actualListIndex) + providerOffset
+                            val targetIndex = maxOf(0, actualListIndex) + headerOffset
                             try {
                                 val itemInfo =
                                     listState.layoutInfo.visibleItemsInfo.firstOrNull { it.index == targetIndex }
@@ -538,8 +665,8 @@ fun LyricsV2(
                                 drawRect(
                                     brush = androidx.compose.ui.graphics.Brush.verticalGradient(
                                         0.0f to Color.Transparent,
-                                        0.12f to Color.Black,
-                                        0.82f to Color.Black,
+                                        0.10f to Color.Black,
+                                        0.85f to Color.Black,
                                         1.0f to Color.Transparent
                                     ),
                                     blendMode = androidx.compose.ui.graphics.BlendMode.DstIn
@@ -551,19 +678,14 @@ fun LyricsV2(
                             bottom = bottomPadding
                         )
                     ) {
-                        if (isLyricsProviderShown) {
-                            item {
-                                Text(
-                                    text = "Lyrics from ${currentLyrics?.provider}",
-                                    style = MaterialTheme.typography.labelMedium,
-                                    color = adaptivePrimary.copy(alpha = 0.6f),
-                                    fontWeight = FontWeight.Medium,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(horizontal = 24.dp, vertical = 12.dp)
-                                )
-                            }
+                        item {
+                            LyricsHeader(
+                                title = mediaMetadata?.title.orEmpty(),
+                                artist = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
+                                provider = currentLyrics?.provider,
+                                palette = artworkPalette
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
                         }
                         items(mergedLyricsList.size) { listIndex ->
                             val item = mergedLyricsList[listIndex]
@@ -578,7 +700,7 @@ fun LyricsV2(
                                     val nextStart =
                                         (mergedLyricsList.getOrNull(listIndex + 1) as? LyricsListItemV2.Line)?.entry?.time
 
-                                    MetroLyricsLine(
+                                    MkrLyricsLine(
                                         entry = line,
                                         nextEntryTime = nextStart,
                                         effectivePlaybackPosition = currentPosition,
@@ -586,21 +708,18 @@ fun LyricsV2(
                                         isSynced = true,
                                         isActive = isActive,
                                         distanceFromCurrent = distanceFromActive,
-                                        lyricsTextPosition = LyricsPosition.LEFT,
-                                        textColor = adaptivePrimary,
+                                        lyricsTextPosition = lyricsTextPosition,
+                                        palette = artworkPalette,
                                         showRomanized = showRomanized,
                                         showTranslated = hasActiveTranslations,
+                                        textSize = lyricsTextSize,
+                                        lineSpacing = lyricsLineSpacing,
                                         onClick = {
                                             if (!isGuest) {
                                                 playerConnection.player.seekTo(line.time - lyricsOffset)
+                                                isAutoScrollEnabled = true
                                             }
                                         },
-                                        onLongClick = {},
-                                        isSelected = false,
-                                        isSelectionModeActive = false,
-                                        isAutoScrollActive = isAutoScrollEnabled || isGuest,
-                                        expressiveAccent = adaptivePrimary,
-                                        bgVisible = true,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .padding(vertical = 4.dp)
@@ -616,7 +735,7 @@ fun LyricsV2(
                                         gapEndMs = item.gapEndMs - 650L,
                                         currentPositionMs = effectivePos,
                                         visible = indicatorVisible,
-                                        color = adaptivePrimary,
+                                        color = artworkPalette.primaryAccent,
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .wrapContentWidth(Alignment.CenterHorizontally)
@@ -732,41 +851,119 @@ fun LyricsV2(
                     }
 
                     Box(
-                        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)
+                        modifier = Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(bottom = 20.dp)
                     ) {
                         AnimatedVisibility(
                             visible = !isAutoScrollEnabled,
                             enter = slideInVertically { it } + fadeIn(),
                             exit = slideOutVertically { it } + fadeOut()
                         ) {
-                            FilledTonalButton(onClick = {
-                                isAutoScrollEnabled = true
-                                if (currentLineIndex != -1) {
-                                    coroutineScope.launch {
-                                        try {
-                                            listState.animateScrollToItem(
-                                                maxOf(
-                                                    0,
-                                                    currentLineIndex - 2 + providerOffset
-                                                )
-                                            )
-                                        } catch (e: Exception) {
+                            Button(
+                                onClick = {
+                                    isAutoScrollEnabled = true
+                                    if (currentLineIndex != -1) {
+                                        coroutineScope.launch {
+                                            try {
+                                                val actualListIndex = mergedLyricsList.indexOfFirst {
+                                                    it is LyricsListItemV2.Line && it.index == currentLineIndex
+                                                }.takeIf { it != -1 } ?: currentLineIndex
+                                                val targetIndex = maxOf(0, actualListIndex) + headerOffset
+                                                listState.animateScrollToItem(targetIndex, 0)
+                                            } catch (e: Exception) {
+                                            }
                                         }
                                     }
-                                }
-                            }) {
+                                },
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = artworkPalette.primaryAccent,
+                                    contentColor = PlayerColorExtractor.CharcoalDark
+                                ),
+                                shape = RoundedCornerShape(24.dp),
+                                elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)
+                            ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.sync),
-                                    contentDescription = stringResource(R.string.auto_scroll),
-                                    modifier = Modifier.size(20.dp)
+                                    contentDescription = "Resume Sync",
+                                    modifier = Modifier.size(18.dp)
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
-                                Text(text = stringResource(R.string.auto_scroll))
+                                Text(
+                                    text = "Resume Sync",
+                                    fontWeight = FontWeight.Bold,
+                                    style = MaterialTheme.typography.labelLarge
+                                )
                             }
                         }
                     }
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun LyricsHeader(
+    title: String,
+    artist: String,
+    provider: String?,
+    palette: PlayerArtworkPalette,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        if (!provider.isNullOrBlank() && provider != "Unknown") {
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = palette.surfaceElevated.copy(alpha = 0.85f),
+                border = BorderStroke(1.dp, palette.primaryAccent.copy(alpha = 0.25f)),
+                modifier = Modifier.padding(bottom = 10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(6.dp)
+                            .background(palette.primaryAccent, CircleShape)
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = "Lyrics via $provider",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = palette.textSecondary,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+            }
+        }
+        if (title.isNotBlank()) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = palette.textPrimary,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+        if (artist.isNotBlank()) {
+            Spacer(modifier = Modifier.height(2.dp))
+            Text(
+                text = artist,
+                style = MaterialTheme.typography.bodySmall,
+                color = palette.textSecondary,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }
