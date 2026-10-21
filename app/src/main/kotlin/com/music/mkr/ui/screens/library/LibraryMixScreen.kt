@@ -91,6 +91,8 @@ import com.music.mkr.db.entities.Artist
 import com.music.mkr.db.entities.Playlist
 import com.music.mkr.db.entities.PlaylistEntity
 import com.music.mkr.extensions.reversed
+import com.music.mkr.ui.component.ChipsRow
+import com.music.mkr.ui.component.EmptyPlaceholder
 import com.music.mkr.ui.component.LibraryAlbumGridItem
 import com.music.mkr.ui.component.LibraryArtistGridItem
 import com.music.mkr.ui.component.LibraryPlaylistGridItem
@@ -344,29 +346,17 @@ fun LibraryMixScreen(
                             span = { GridItemSpan(maxLineSpan) },
                             contentType = CONTENT_TYPE_HEADER,
                         ) {
-                            androidx.compose.foundation.lazy.LazyRow(
-                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 4.dp)
-                            ) {
-                                items(LibraryFilterType.entries.toTypedArray()) { filterType ->
-                                    androidx.compose.material3.FilterChip(
-                                        selected = activeFilter == filterType,
-                                        onClick = { activeFilter = filterType },
-                                        label = {
-                                            androidx.compose.material3.Text(
-                                                text = when (filterType) {
-                                                    LibraryFilterType.ALL -> stringResource(R.string.all) 
-                                                    LibraryFilterType.ARTIST -> stringResource(R.string.artists)
-                                                    LibraryFilterType.ALBUM -> stringResource(R.string.albums)
-                                                    LibraryFilterType.PLAYLIST -> stringResource(R.string.playlists)
-                                                }
-                                            )
-                                        }
-                                    )
-                                }
-                            }
+                            ChipsRow(
+                                chips = listOf(
+                                    LibraryFilterType.ALL to stringResource(R.string.all),
+                                    LibraryFilterType.ARTIST to stringResource(R.string.artists),
+                                    LibraryFilterType.ALBUM to stringResource(R.string.albums),
+                                    LibraryFilterType.PLAYLIST to stringResource(R.string.playlists),
+                                ),
+                                currentValue = activeFilter,
+                                onValueUpdate = { activeFilter = it },
+                                modifier = Modifier.padding(vertical = 4.dp)
+                            )
                         }
                     
                     if (showLiked && activeFilter == LibraryFilterType.ALL) {
@@ -566,6 +556,19 @@ fun LibraryMixScreen(
                                     )
                                 }
                             }
+                        }
+                    }
+
+                    if (finalFilteredItems.isEmpty() && visibleStaticItems.isEmpty()) {
+                        item(
+                            key = "empty_library",
+                            span = { GridItemSpan(maxLineSpan) },
+                        ) {
+                            EmptyPlaceholder(
+                                icon = R.drawable.library_music,
+                                text = stringResource(R.string.library_playlist_empty),
+                                modifier = Modifier.padding(top = 48.dp)
+                            )
                         }
                     }
                 }

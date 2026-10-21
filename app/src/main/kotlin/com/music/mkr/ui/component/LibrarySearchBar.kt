@@ -10,7 +10,9 @@ import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -40,6 +42,7 @@ import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -74,19 +77,23 @@ fun LibrarySearchBar(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .fillMaxWidth()
-            .height(52.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            .height(50.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f))
+            .border(
+                BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.15f)),
+                RoundedCornerShape(16.dp)
+            )
             .clickable {
                 if (!isSearchActive) onSearchActiveChange(true)
             }
-            .padding(horizontal = 16.dp)
+            .padding(horizontal = 14.dp)
     ) {
         Icon(
             painter = painterResource(R.drawable.search),
             contentDescription = "Search",
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(24.dp)
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.size(22.dp)
         )
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -99,7 +106,7 @@ fun LibrarySearchBar(
                 Text(
                     text = placeholder,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                    style = TextStyle(fontSize = 16.sp)
+                    style = TextStyle(fontSize = 15.sp)
                 )
             }
             BasicTextField(
@@ -107,7 +114,7 @@ fun LibrarySearchBar(
                 onValueChange = onQueryChange,
                 textStyle = TextStyle(
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 16.sp
+                    fontSize = 15.sp
                 ),
                 singleLine = true,
                 cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
@@ -125,7 +132,7 @@ fun LibrarySearchBar(
             exit = fadeOut() + shrinkHorizontally()
         ) {
             Row {
-                Spacer(modifier = Modifier.width(10.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 IconButton(
                     onClick = { onQueryChange("") },
                     modifier = Modifier.size(24.dp)
@@ -134,30 +141,30 @@ fun LibrarySearchBar(
                         painter = painterResource(R.drawable.close),
                         contentDescription = "Clear text",
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         onToggleViewChange?.let { onToggle ->
             IconButton(
                 onClick = onToggle,
-                modifier = Modifier.size(24.dp)
+                modifier = Modifier.size(28.dp)
             ) {
                 Icon(
                     painter = painterResource(if (isGridView) R.drawable.list else R.drawable.grid_view),
-                    contentDescription = "Toggle View",
+                    contentDescription = stringResource(if (isGridView) R.string.switch_to_list_view else R.string.switch_to_grid_view),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(24.dp)
+                    modifier = Modifier.size(22.dp)
                 )
             }
         }
 
         sortContent?.let { content ->
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(6.dp))
             content()
         }
     }

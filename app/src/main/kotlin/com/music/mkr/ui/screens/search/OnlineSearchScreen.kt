@@ -472,18 +472,21 @@ fun SuggestionItem(
             .fillMaxWidth()
             .height(SuggestionItemHeight)
             .clip(shape)
-            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .background(if (pureBlack) Color(0xFF16171B) else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f))
             .clickable(onClick = onClick)
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)),
     ) {
         Icon(
             painterResource(if (online) R.drawable.search else R.drawable.history),
             contentDescription = null,
-            modifier = Modifier.padding(horizontal = 16.dp).alpha(0.5f)
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.padding(horizontal = 16.dp).size(20.dp)
         )
 
         Text(
             text = query,
+            style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+            color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f),
@@ -492,22 +495,26 @@ fun SuggestionItem(
         if (!online) {
             IconButton(
                 onClick = onDelete,
-                modifier = Modifier.alpha(0.5f),
+                modifier = Modifier.alpha(0.6f),
             ) {
                 Icon(
                     painter = painterResource(R.drawable.close),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.delete),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(18.dp)
                 )
             }
         }
 
         IconButton(
             onClick = onFillTextField,
-            modifier = Modifier.alpha(0.5f),
+            modifier = Modifier.alpha(0.6f),
         ) {
             Icon(
                 painter = painterResource(R.drawable.arrow_top_left),
                 contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.size(18.dp)
             )
         }
     }

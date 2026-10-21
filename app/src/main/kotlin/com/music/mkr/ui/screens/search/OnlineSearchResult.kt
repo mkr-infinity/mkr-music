@@ -337,7 +337,7 @@ fun OnlineSearchResult(
                                     if (searchActive) R.drawable.arrow_back else R.drawable.search
                                 ),
                                 contentDescription = if (searchActive) stringResource(R.string.dismiss) else null,
-                                tint = MaterialTheme.colorScheme.onSurface
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     },
@@ -348,17 +348,29 @@ fun OnlineSearchResult(
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.close),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurface
+                                    contentDescription = stringResource(R.string.clear),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
                     },
                     colors = SearchBarDefaults.colors(
                         containerColor = if (pureBlack)
-                            MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                            Color(0xFF16171B)
                         else
-                            MaterialTheme.colorScheme.surfaceVariant
+                            MaterialTheme.colorScheme.surfaceContainerHigh,
+                        dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
+                        inputFieldColors = androidx.compose.material3.TextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                            focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                            focusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unfocusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     ),
                     modifier = Modifier
                         .fillMaxWidth()
@@ -437,6 +449,7 @@ fun OnlineSearchResult(
                             EmptyPlaceholder(
                                 icon = R.drawable.search,
                                 text = stringResource(R.string.no_results_found),
+                                description = "Check your query or try different artist or track names"
                             )
                         }
                     }
@@ -466,6 +479,7 @@ fun OnlineSearchResult(
                             EmptyPlaceholder(
                                 icon = R.drawable.search,
                                 text = stringResource(R.string.no_results_found),
+                                description = "No items match the selected category filter"
                             )
                         }
                     }

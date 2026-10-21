@@ -240,7 +240,7 @@ fun SearchScreen(
                             Icon(
                                 painter = painterResource(if (searchActive) R.drawable.arrow_back else R.drawable.search),
                                 contentDescription = if (searchActive) stringResource(R.string.dismiss) else null,
-                                tint = MaterialTheme.colorScheme.onSurface
+                                tint = MaterialTheme.colorScheme.primary
                             )
                         }
                     },
@@ -250,32 +250,54 @@ fun SearchScreen(
                                 IconButton(onClick = { query = TextFieldValue("") }) {
                                     Icon(
                                         painter = painterResource(R.drawable.close),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurface
+                                        contentDescription = stringResource(R.string.clear),
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
-                            IconButton(
+                            Surface(
                                 onClick = {
                                     searchSource = if (searchSource == SearchSource.ONLINE) 
                                         SearchSource.LOCAL else SearchSource.ONLINE
-                                }
+                                },
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                                modifier = Modifier
+                                    .padding(end = 4.dp)
+                                    .size(34.dp)
                             ) {
-                                Icon(
-                                    painter = painterResource(
-                                        when (searchSource) {
-                                            SearchSource.LOCAL -> R.drawable.library_music
-                                            SearchSource.ONLINE -> R.drawable.globe_search
-                                        }
-                                    ),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
+                                Box(contentAlignment = Alignment.Center) {
+                                    Icon(
+                                        painter = painterResource(
+                                            when (searchSource) {
+                                                SearchSource.LOCAL -> R.drawable.library_music
+                                                SearchSource.ONLINE -> R.drawable.globe_search
+                                            }
+                                        ),
+                                        contentDescription = stringResource(
+                                            if (searchSource == SearchSource.ONLINE) R.string.online else R.string.local
+                                        ),
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                }
                             }
                         }
                     },
                     colors = SearchBarDefaults.colors(
-                        containerColor = if (pureBlack) MaterialTheme.colorScheme.primary.copy(alpha = 0.15f) else MaterialTheme.colorScheme.surfaceVariant
+                        containerColor = if (pureBlack) Color(0xFF16171B) else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
+                        inputFieldColors = androidx.compose.material3.TextFieldDefaults.colors(
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                            cursorColor = MaterialTheme.colorScheme.primary,
+                            focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                            unfocusedLeadingIconColor = MaterialTheme.colorScheme.primary,
+                            focusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unfocusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
                     ),
                     modifier = Modifier
                         .fillMaxWidth()

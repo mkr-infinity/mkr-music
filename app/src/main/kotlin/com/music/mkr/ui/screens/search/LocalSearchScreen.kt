@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -171,13 +172,16 @@ fun LocalSearchScreen(
                                     LocalFilter.ALL -> error("")
                                 }
                             ),
-                            style = MaterialTheme.typography.titleLarge,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.weight(1f),
                         )
 
                         Icon(
                             painter = painterResource(R.drawable.navigate_next),
                             contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
                         )
                     }
                 }
@@ -293,6 +297,7 @@ fun LocalSearchScreen(
                 EmptyPlaceholder(
                     icon = R.drawable.search,
                     text = stringResource(R.string.no_results_found),
+                    description = "No local songs, albums, or artists match your search"
                 )
             }
         }
