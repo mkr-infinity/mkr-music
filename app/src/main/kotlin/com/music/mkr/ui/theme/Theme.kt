@@ -15,17 +15,16 @@ import androidx.compose.material3.MotionScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.SaverScope
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.palette.graphics.Palette
-import com.materialkolor.PaletteStyle
-import com.materialkolor.dynamiccolor.ColorSpec
-import com.materialkolor.rememberDynamicColorScheme
 import com.materialkolor.score.Score
 
 import androidx.compose.runtime.getValue
@@ -37,13 +36,14 @@ import androidx.compose.ui.text.font.FontFamily
 import android.graphics.Typeface as AndroidTypeface
 import androidx.compose.ui.text.font.Typeface as ComposeTypeface
 
-val DefaultThemeColor = Color(0xFFED5564)
+val DefaultThemeColor = Color(0xFFF59E0B)
 
 @Composable
 fun mkrMusicTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     pureBlack: Boolean = false,
     themeColor: Color = DefaultThemeColor,
+    artworkPalette: PlayerArtworkPalette? = null,
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
@@ -73,43 +73,110 @@ fun mkrMusicTheme(
         }
     }
 
-        val typography = remember(brandFont) {
+    val typography = remember(brandFont) {
         getTypography(brandFont = brandFont, plainFont = brandFont)
     }
 
-
-    // Determine if system dynamic colors should be used (Android S+ and default theme color)
-    val useSystemDynamicColor = (themeColor == DefaultThemeColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
-
-    // Select the appropriate color scheme generation method
-    val baseColorScheme = if (useSystemDynamicColor) {
-        // Use standard Material 3 dynamic color functions for system wallpaper colors
-        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    } else {
-        // Use materialKolor only when a specific seed color is provided
-        rememberDynamicColorScheme(
-            seedColor = themeColor, // themeColor is guaranteed non-default here
-            isDark = darkTheme,
-            specVersion = ColorSpec.SpecVersion.SPEC_2025,
-            style = if (themeColor.toArgb() == 0xFF000000.toInt()) PaletteStyle.Monochrome else PaletteStyle.TonalSpot
-        )
-    }
-
-    // Apply pureBlack modification if needed, similar to original logic
-    val colorScheme = remember(baseColorScheme, pureBlack, darkTheme) {
-        if (darkTheme && pureBlack) {
-            baseColorScheme.pureBlack(true)
+    val effectivePalette = remember(artworkPalette, themeColor) {
+        artworkPalette ?: if (themeColor != DefaultThemeColor && themeColor != Color(0xFFED5564)) {
+            PlayerColorExtractor.createPaletteFromSeed(themeColor)
         } else {
-            baseColorScheme
+            PlayerColorExtractor.DefaultPalette
         }
     }
 
-    MaterialExpressiveTheme(
-        colorScheme = colorScheme,
-        typography = typography, // Use the dynamically configured typography
-        motionScheme = MotionScheme.expressive(),
-        content = content
-    )
+    val colorScheme = remember(effectivePalette, darkTheme, pureBlack) {
+        if (darkTheme) {
+            ColorScheme(
+                primary = effectivePalette.primaryAccent,
+                onPrimary = PlayerColorExtractor.CharcoalDark,
+                primaryContainer = lerp(effectivePalette.surfaceCharcoal, effectivePalette.primaryAccent, 0.22f),
+                onPrimaryContainer = effectivePalette.primaryAccent,
+                inversePrimary = effectivePalette.primaryAccent,
+                secondary = effectivePalette.secondaryAccent,
+                onSecondary = PlayerColorExtractor.CharcoalDark,
+                secondaryContainer = lerp(effectivePalette.surfaceCharcoal, effectivePalette.secondaryAccent, 0.18f),
+                onSecondaryContainer = effectivePalette.textPrimary,
+                tertiary = effectivePalette.secondaryAccent,
+                onTertiary = PlayerColorExtractor.CharcoalDark,
+                tertiaryContainer = lerp(effectivePalette.surfaceCharcoal, effectivePalette.secondaryAccent, 0.14f),
+                onTertiaryContainer = effectivePalette.textPrimary,
+                background = if (pureBlack) Color.Black else effectivePalette.surfaceCharcoal,
+                onBackground = effectivePalette.textPrimary,
+                surface = if (pureBlack) Color.Black else effectivePalette.surfaceCharcoal,
+                onSurface = effectivePalette.textPrimary,
+                surfaceVariant = if (pureBlack) Color(0xFF101012) else effectivePalette.surfaceElevated,
+                onSurfaceVariant = effectivePalette.textSecondary,
+                surfaceTint = effectivePalette.primaryAccent,
+                inverseSurface = effectivePalette.textPrimary,
+                inverseOnSurface = effectivePalette.surfaceCharcoal,
+                error = Color(0xFFEF4444),
+                onError = Color.White,
+                errorContainer = Color(0xFF7F1D1D).copy(alpha = 0.5f),
+                onErrorContainer = Color(0xFFFCA5A5),
+                outline = Color.White.copy(alpha = 0.12f),
+                outlineVariant = Color.White.copy(alpha = 0.08f),
+                scrim = Color.Black,
+                surfaceBright = if (pureBlack) Color(0xFF141418) else Color(0xFF22242B),
+                surfaceDim = if (pureBlack) Color.Black else effectivePalette.surfaceCharcoal,
+                surfaceContainer = if (pureBlack) Color(0xFF121214) else effectivePalette.surfaceElevated,
+                surfaceContainerHigh = if (pureBlack) Color(0xFF18181C) else Color(0xFF1F2026),
+                surfaceContainerHighest = if (pureBlack) Color(0xFF202024) else Color(0xFF262830),
+                surfaceContainerLow = if (pureBlack) Color.Black else effectivePalette.surfaceCharcoal,
+                surfaceContainerLowest = if (pureBlack) Color.Black else Color(0xFF0C0D0F),
+            )
+        } else {
+            ColorScheme(
+                primary = effectivePalette.primaryAccent,
+                onPrimary = Color.White,
+                primaryContainer = lerp(Color.White, effectivePalette.primaryAccent, 0.18f),
+                onPrimaryContainer = effectivePalette.primaryAccent,
+                inversePrimary = effectivePalette.secondaryAccent,
+                secondary = effectivePalette.secondaryAccent,
+                onSecondary = Color.White,
+                secondaryContainer = lerp(Color.White, effectivePalette.secondaryAccent, 0.15f),
+                onSecondaryContainer = Color(0xFF1E293B),
+                tertiary = effectivePalette.secondaryAccent,
+                onTertiary = Color.White,
+                tertiaryContainer = lerp(Color.White, effectivePalette.secondaryAccent, 0.12f),
+                onTertiaryContainer = Color(0xFF1E293B),
+                background = Color(0xFFF8FAFC),
+                onBackground = Color(0xFF0F172A),
+                surface = Color(0xFFFFFFFF),
+                onSurface = Color(0xFF0F172A),
+                surfaceVariant = Color(0xFFF1F5F9),
+                onSurfaceVariant = Color(0xFF475569),
+                surfaceTint = effectivePalette.primaryAccent,
+                inverseSurface = Color(0xFF1E293B),
+                inverseOnSurface = Color(0xFFF8FAFC),
+                error = Color(0xFFDC2626),
+                onError = Color.White,
+                errorContainer = Color(0xFFFEE2E2),
+                onErrorContainer = Color(0xFF991B1B),
+                outline = Color(0xFFCBD5E1),
+                outlineVariant = Color(0xFFE2E8F0),
+                scrim = Color.Black,
+                surfaceBright = Color.White,
+                surfaceDim = Color(0xFFE2E8F0),
+                surfaceContainer = Color(0xFFF1F5F9),
+                surfaceContainerHigh = Color(0xFFE2E8F0),
+                surfaceContainerHighest = Color(0xFFCBD5E1),
+                surfaceContainerLow = Color(0xFFF8FAFC),
+                surfaceContainerLowest = Color.White,
+            )
+        }
+    }
+
+    CompositionLocalProvider(
+        LocalPlayerArtworkPalette provides effectivePalette
+    ) {
+        MaterialExpressiveTheme(
+            colorScheme = colorScheme,
+            typography = typography,
+            motionScheme = MotionScheme.expressive(),
+            content = content
+        )
+    }
 }
 
 fun Bitmap.extractThemeColor(): Color {

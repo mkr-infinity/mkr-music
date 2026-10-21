@@ -46,6 +46,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -68,6 +69,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.materialkolor.PaletteStyle
@@ -104,7 +107,7 @@ val PaletteColors = listOf(
     ThemePalette(R.string.palette_light_green, Color(0xFF7CB342)),
     ThemePalette(R.string.palette_lime, Color(0xFFC0CA33)),
     ThemePalette(R.string.palette_yellow, Color(0xFFFDD835)),
-    ThemePalette(R.string.palette_amber, Color(0xFFFFB300)),
+    ThemePalette(R.string.palette_amber, Color(0xFFF59E0B)),
     ThemePalette(R.string.palette_orange, Color(0xFFFB8C00)),
     ThemePalette(R.string.palette_deep_orange, Color(0xFFF4511E)),
     ThemePalette(R.string.palette_brown, Color(0xFF6D4C41)),
@@ -147,39 +150,48 @@ fun ThemeScreen(
         onDynamicThemeChange(isDynamicColor)
     }
 
-    if (isLandscape) {
-        LandscapeThemeLayout(
-            innerPadding = PaddingValues(0.dp),
-            darkMode = darkMode,
-            onDarkModeChange = onDarkModeChange,
-            pureBlack = pureBlack,
-            onPureBlackChange = onPureBlackChange,
-            selectedThemeColor = selectedThemeColor,
-            onSelectedThemeColorChange = handleColorSelection
-        )
-    } else {
-        PortraitThemeLayout(
-            innerPadding = PaddingValues(0.dp),
-            darkMode = darkMode,
-            onDarkModeChange = onDarkModeChange,
-            pureBlack = pureBlack,
-            onPureBlackChange = onPureBlackChange,
-            selectedThemeColor = selectedThemeColor,
-            onSelectedThemeColorChange = handleColorSelection
-        )
-    }
-
-    TopAppBar(
-        title = { Text(stringResource(R.string.theme_colors)) },
-        navigationIcon = {
-            IconButton(onClick = { navController.navigateUp() }) {
-                Icon(
-                    painter = painterResource(R.drawable.arrow_back),
-                    contentDescription = stringResource(R.string.cd_back)
-                )
-            }
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = stringResource(R.string.theme_colors),
+                        style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
+                    )
+                },
+                navigationIcon = {
+                    IconButton(onClick = { navController.navigateUp() }) {
+                        Icon(
+                            painter = painterResource(R.drawable.arrow_back),
+                            contentDescription = stringResource(R.string.cd_back)
+                        )
+                    }
+                }
+            )
         }
-    )
+    ) { innerPadding ->
+        if (isLandscape) {
+            LandscapeThemeLayout(
+                innerPadding = innerPadding,
+                darkMode = darkMode,
+                onDarkModeChange = onDarkModeChange,
+                pureBlack = pureBlack,
+                onPureBlackChange = onPureBlackChange,
+                selectedThemeColor = selectedThemeColor,
+                onSelectedThemeColorChange = handleColorSelection
+            )
+        } else {
+            PortraitThemeLayout(
+                innerPadding = innerPadding,
+                darkMode = darkMode,
+                onDarkModeChange = onDarkModeChange,
+                pureBlack = pureBlack,
+                onPureBlackChange = onPureBlackChange,
+                selectedThemeColor = selectedThemeColor,
+                onSelectedThemeColorChange = handleColorSelection
+            )
+        }
+    }
 }
 
 @Composable
@@ -199,19 +211,19 @@ fun PortraitThemeLayout(
             .padding(innerPadding),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(modifier = Modifier.height(220.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         ThemePreviewCard(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .height(160.dp),
+                .padding(horizontal = 20.dp)
+                .height(170.dp),
             darkMode = darkMode,
             pureBlack = pureBlack,
             themeColor = selectedThemeColor
         )
 
-        Spacer(modifier = Modifier.height(160.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         ThemeControls(
             darkMode = darkMode,
@@ -222,7 +234,7 @@ fun PortraitThemeLayout(
             onSelectedThemeColorChange = onSelectedThemeColorChange
         )
 
-        Spacer(modifier = Modifier.height(120.dp))
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }
 
@@ -243,7 +255,7 @@ fun LandscapeThemeLayout(
     ) {
         Column(
             modifier = Modifier
-                .weight(0.4f)
+                .weight(0.45f)
                 .fillMaxHeight()
                 .padding(16.dp),
             verticalArrangement = Arrangement.Center,
@@ -252,7 +264,7 @@ fun LandscapeThemeLayout(
             ThemePreviewCard(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(140.dp),
+                    .height(160.dp),
                 darkMode = darkMode,
                 pureBlack = pureBlack,
                 themeColor = selectedThemeColor
@@ -261,7 +273,7 @@ fun LandscapeThemeLayout(
 
         Column(
             modifier = Modifier
-                .weight(0.6f)
+                .weight(0.55f)
                 .fillMaxHeight()
                 .verticalScroll(rememberScrollState())
                 .padding(end = 16.dp, top = 16.dp, bottom = 16.dp)
@@ -275,7 +287,7 @@ fun LandscapeThemeLayout(
                 onSelectedThemeColorChange = onSelectedThemeColorChange
             )
 
-            Spacer(modifier = Modifier.height(80.dp))
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -293,18 +305,18 @@ fun ThemeControls(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(24.dp)
+        verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 text = stringResource(R.string.theme_mode),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // System mode (AUTO)
@@ -313,6 +325,7 @@ fun ThemeControls(
                     pureBlack = pureBlack,
                     targetMode = DarkMode.AUTO,
                     targetPureBlack = pureBlack,
+                    label = "Auto",
                     onClick = {
                         onDarkModeChange(DarkMode.AUTO)
                     },
@@ -323,8 +336,8 @@ fun ThemeControls(
                 Box(
                     modifier = Modifier
                         .width(1.dp)
-                        .height(32.dp)
-                        .background(MaterialTheme.colorScheme.outlineVariant)
+                        .height(36.dp)
+                        .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 )
                 
                 // Manual modes (Light, Dark, Pure Black)
@@ -333,6 +346,7 @@ fun ThemeControls(
                     pureBlack = pureBlack,
                     targetMode = DarkMode.OFF,
                     targetPureBlack = false,
+                    label = "Light",
                     onClick = {
                         onDarkModeChange(DarkMode.OFF)
                         onPureBlackChange(false)
@@ -345,6 +359,7 @@ fun ThemeControls(
                     pureBlack = pureBlack,
                     targetMode = DarkMode.ON,
                     targetPureBlack = false,
+                    label = "Dark",
                     onClick = {
                         onDarkModeChange(DarkMode.ON)
                         onPureBlackChange(false)
@@ -357,6 +372,7 @@ fun ThemeControls(
                     pureBlack = pureBlack,
                     targetMode = DarkMode.ON,
                     targetPureBlack = true,
+                    label = "OLED",
                     onClick = {
                         onDarkModeChange(DarkMode.ON)
                         onPureBlackChange(true)
@@ -369,12 +385,12 @@ fun ThemeControls(
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
                 text = stringResource(R.string.color_palette),
-                style = MaterialTheme.typography.titleMedium,
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.onSurface
             )
             
             LazyRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
                 contentPadding = PaddingValues(horizontal = 4.dp)
             ) {
                 items(PaletteColors) { palette ->
@@ -395,6 +411,38 @@ fun ThemeControls(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // Informational Card for Dynamic/Static Status
+            Surface(
+                shape = RoundedCornerShape(14.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.info),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Text(
+                        text = if (selectedThemeColor == DefaultThemeColor) {
+                            "Dynamic Artwork Theme active: app accents adapt smoothly to currently playing album art."
+                        } else {
+                            "Static palette active. Select 'Dynamic' above to restore artwork-adaptive theming."
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
         }
     }
 }
@@ -405,6 +453,7 @@ fun ModeCircle(
     pureBlack: Boolean,
     targetMode: DarkMode,
     targetPureBlack: Boolean,
+    label: String,
     showIcon: Boolean,
     onClick: () -> Unit
 ) {
@@ -454,93 +503,107 @@ fun ModeCircle(
         else -> stringResource(R.string.cd_system_mode)
     }
     
-    // Outer card container similar to ReadYou's SelectableMiniPalette
-    Box(
-        modifier = Modifier
-            .size(72.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                if (isSelected) {
-                    MaterialTheme.colorScheme.surfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.surfaceContainerHigh
-                }
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = ripple(),
-                onClick = onClick
-            )
-            .semantics {
-                contentDescription = contentDesc
-            },
-        contentAlignment = Alignment.Center
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         Box(
             modifier = Modifier
-                .size(44.dp)
-                .clip(CircleShape)
-                .background(fillColor)
-                .then(
-                    if (targetPureBlack) {
-                        Modifier.border(
-                            width = 1.dp,
-                            color = modeColorScheme.outlineVariant,
-                            shape = CircleShape
-                        )
+                .size(68.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
                     } else {
-                        Modifier
+                        MaterialTheme.colorScheme.surfaceContainerHigh
                     }
-                ),
+                )
+                .then(
+                    if (isSelected) Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
+                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+                )
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = ripple(),
+                    onClick = onClick
+                )
+                .semantics {
+                    contentDescription = contentDesc
+                },
             contentAlignment = Alignment.Center
         ) {
-            when {
-                showIcon -> {
-                    Icon(
-                        painter = painterResource(R.drawable.sync),
-                        contentDescription = null,
-                        tint = modeColorScheme.onSurface,
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
-                else -> {
-                    // Scaled checkmark animation overlaid on color circle (ReadYou style)
-                    AnimatedVisibility(
-                        visible = isSelected,
-                        enter = fadeIn() + scaleIn(
-                            initialScale = 0.4f,
-                            animationSpec = spring(
-                                dampingRatio = Spring.DampingRatioMediumBouncy,
-                                stiffness = Spring.StiffnessMedium
+            Box(
+                modifier = Modifier
+                    .size(42.dp)
+                    .clip(CircleShape)
+                    .background(fillColor)
+                    .then(
+                        if (targetPureBlack) {
+                            Modifier.border(
+                                width = 1.dp,
+                                color = modeColorScheme.outlineVariant,
+                                shape = CircleShape
                             )
-                        ),
-                        exit = fadeOut() + scaleOut(
-                            targetScale = 0.4f,
-                            animationSpec = tween(150)
+                        } else {
+                            Modifier
+                        }
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    showIcon -> {
+                        Icon(
+                            painter = painterResource(R.drawable.sync),
+                            contentDescription = null,
+                            tint = modeColorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
                         )
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(24.dp)
-                                .clip(CircleShape)
-                                .background(MaterialTheme.colorScheme.primary),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.check),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimary,
-                                modifier = Modifier.size(14.dp)
+                    }
+                    else -> {
+                        // Scaled checkmark animation overlaid on color circle (ReadYou style)
+                        AnimatedVisibility(
+                            visible = isSelected,
+                            enter = fadeIn() + scaleIn(
+                                initialScale = 0.4f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                                    stiffness = Spring.StiffnessMedium
+                                )
+                            ),
+                            exit = fadeOut() + scaleOut(
+                                targetScale = 0.4f,
+                                animationSpec = tween(150)
                             )
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .clip(CircleShape)
+                                    .background(MaterialTheme.colorScheme.primary),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.check),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onPrimary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
                         }
                     }
                 }
             }
         }
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -572,104 +635,52 @@ fun PaletteItem(
     val paletteName = stringResource(palette.nameRes)
     val contentDesc = stringResource(R.string.cd_palette_item, paletteName)
     
-    // Outer card container similar to ReadYou's SelectableMiniPalette
-    Box(
-        modifier = Modifier
-            .size(72.dp)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .clip(RoundedCornerShape(16.dp))
-            .background(
-                if (isSelected) {
-                    MaterialTheme.colorScheme.surfaceVariant
-                } else {
-                    MaterialTheme.colorScheme.surfaceContainerHigh
-                }
-            )
-            .clickable(
-                interactionSource = interactionSource,
-                indication = ripple(),
-                onClick = onClick
-            )
-            .semantics {
-                contentDescription = contentDesc
-            },
-        contentAlignment = Alignment.Center
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+        modifier = Modifier.width(68.dp)
     ) {
-        if (palette.seedColor == Color.Transparent) {
-            // Draw Dynamic/System icon using Material Design icon directly in the center
-            Icon(
-                painter = painterResource(R.drawable.palette),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.size(24.dp)
-            )
-            
-            // Scaled checkmark animation overlaid on the center
-            AnimatedVisibility(
-                visible = isSelected,
-                enter = fadeIn() + scaleIn(
-                    initialScale = 0.4f,
-                    animationSpec = spring(
-                        dampingRatio = Spring.DampingRatioMediumBouncy,
-                        stiffness = Spring.StiffnessMedium
-                    )
-                ),
-                exit = fadeOut() + scaleOut(
-                    targetScale = 0.4f,
-                    animationSpec = tween(150)
+        Box(
+            modifier = Modifier
+                .size(64.dp)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .clip(RoundedCornerShape(16.dp))
+                .background(
+                    if (isSelected) {
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
+                    } else {
+                        MaterialTheme.colorScheme.surfaceContainerHigh
+                    }
                 )
-            ) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.check),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                }
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(44.dp)
-                    .clip(CircleShape)
-            ) {
-                Canvas(modifier = Modifier.fillMaxSize()) {
-                    val width = size.width
-                    val height = size.height
-                    
-                    drawRect(
-                        color = colorScheme.onPrimary,
-                        topLeft = Offset(0f, 0f),
-                        size = Size(width, height / 2)
-                    )
-                    
-                    drawRect(
-                        color = colorScheme.secondary,
-                        topLeft = Offset(0f, height / 2),
-                        size = Size(width / 2, height / 2)
-                    )
-                    
-                    drawRect(
-                        color = colorScheme.tertiary,
-                        topLeft = Offset(width / 2, height / 2),
-                        size = Size(width / 2, height / 2)
-                    )
-                }
+                .then(
+                    if (isSelected) Modifier.border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
+                    else Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f), RoundedCornerShape(16.dp))
+                )
+                .clickable(
+                    interactionSource = interactionSource,
+                    indication = ripple(),
+                    onClick = onClick
+                )
+                .semantics {
+                    contentDescription = contentDesc
+                },
+            contentAlignment = Alignment.Center
+        ) {
+            if (palette.seedColor == Color.Transparent) {
+                // Draw Dynamic/System icon using Material Design icon directly in the center
+                Icon(
+                    painter = painterResource(R.drawable.palette),
+                    contentDescription = null,
+                    tint = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(24.dp)
+                )
                 
-                // Scaled checkmark animation overlaid on color circle (ReadYou style)
+                // Scaled checkmark animation overlaid on the center
                 AnimatedVisibility(
                     visible = isSelected,
-                    modifier = Modifier.align(Alignment.Center),
                     enter = fadeIn() + scaleIn(
                         initialScale = 0.4f,
                         animationSpec = spring(
@@ -697,8 +708,77 @@ fun PaletteItem(
                         )
                     }
                 }
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(42.dp)
+                        .clip(CircleShape)
+                ) {
+                    Canvas(modifier = Modifier.fillMaxSize()) {
+                        val width = size.width
+                        val height = size.height
+                        
+                        drawRect(
+                            color = colorScheme.onPrimary,
+                            topLeft = Offset(0f, 0f),
+                            size = Size(width, height / 2)
+                        )
+                        
+                        drawRect(
+                            color = colorScheme.secondary,
+                            topLeft = Offset(0f, height / 2),
+                            size = Size(width / 2, height / 2)
+                        )
+                        
+                        drawRect(
+                            color = colorScheme.tertiary,
+                            topLeft = Offset(width / 2, height / 2),
+                            size = Size(width / 2, height / 2)
+                        )
+                    }
+                    
+                    // Scaled checkmark animation overlaid on color circle (ReadYou style)
+                    AnimatedVisibility(
+                        visible = isSelected,
+                        modifier = Modifier.align(Alignment.Center),
+                        enter = fadeIn() + scaleIn(
+                            initialScale = 0.4f,
+                            animationSpec = spring(
+                                dampingRatio = Spring.DampingRatioMediumBouncy,
+                                stiffness = Spring.StiffnessMedium
+                            )
+                        ),
+                        exit = fadeOut() + scaleOut(
+                            targetScale = 0.4f,
+                            animationSpec = tween(150)
+                        )
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.primary),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.check),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                        }
+                    }
+                }
             }
         }
+        Text(
+            text = paletteName,
+            style = MaterialTheme.typography.labelSmall,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+            color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 

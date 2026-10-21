@@ -5,160 +5,465 @@
 
 package com.music.mkr.ui.theme
 
+import android.content.Context
+import android.graphics.Bitmap
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
+import androidx.core.graphics.drawable.toBitmap
 import androidx.palette.graphics.Palette
+import coil3.imageLoader
+import coil3.request.ImageRequest
+import coil3.toBitmap
+import com.music.innertube.models.MediaMetadata
+import com.music.mkr.models.MediaMetadata as MkrMediaMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.math.pow
 
 /**
- * Player color extraction system for generating gradients from album artwork
- * 
- * This system analyzes album artwork and extracts vibrant, dominant colors
- * to create visually appealing gradients for the music player interface.
+ * Structured palette derived from album artwork.
+ * Provides high-contrast, accessible accents, cohesive charcoal surfaces,
+ * and elegant backgrounds for the expanded player and mini-player.
+ */
+@Immutable
+data class PlayerArtworkPalette(
+    val primaryAccent: Color,
+    val secondaryAccent: Color,
+    val surfaceCharcoal: Color,
+    val surfaceElevated: Color,
+    val backgroundGradient: List<Color>,
+    val textPrimary: Color,
+    val textSecondary: Color,
+    val isFallback: Boolean = false
+)
+
+/**
+ * CompositionLocal carrying the single, global, animated [PlayerArtworkPalette]
+ * across all screens and components in the application.
+ */
+val LocalPlayerArtworkPalette = compositionLocalOf { PlayerColorExtractor.DefaultPalette }
+
+/**
+ * High-performance, memory-efficient color extraction engine for MKR Music.
+ *
+ * Analyzes album artwork asynchronously off the main thread, enforces WCAG contrast
+ * against charcoal surfaces, provides deterministic charcoal & amber fallbacks,
+ * and maintains an in-memory LRU cache to eliminate duplicate extraction.
  */
 object PlayerColorExtractor {
 
+    // Visual design constants - charcoal surfaces & warm amber accents
+    val CharcoalDark = Color(0xFF121316)
+    val CharcoalSurface = Color(0xFF18191E)
+    val CharcoalElevated = Color(0xFF22242B)
+    val WarmAmber = Color(0xFFF59E0B)
+    val WarmAmberLight = Color(0xFFFBBF24)
+    val WarmAmberDeep = Color(0xFFD97706)
+    val TextPrimary = Color(0xFFF8FAFC)
+    val TextSecondary = Color(0xFF94A3B8)
+    val TextMuted = Color(0xFF64748B)
+
+    /** Deterministic charcoal-and-amber fallback palette when artwork is absent or invalid. */
+    val DefaultPalette = PlayerArtworkPalette(
+        primaryAccent = WarmAmber,
+        secondaryAccent = WarmAmberLight,
+        surfaceCharcoal = CharcoalDark,
+        surfaceElevated = CharcoalSurface,
+        backgroundGradient = listOf(
+            Color(0xFF1C1A18), // Subtle warm charcoal tint at the top
+            CharcoalDark,      // Deep charcoal body #121316
+            Color(0xFF090A0C)  // Pitch black base
+        ),
+        textPrimary = TextPrimary,
+        textSecondary = TextSecondary,
+        isFallback = true
+    )
+
     /**
-     * Extracts colors from a palette and creates a gradient
-     * 
-     * @param palette The color palette extracted from album artwork
-     * @param fallbackColor Fallback color to use if extraction fails
-     * @return List of colors for gradient (primary, darker variant, black)
+     * Builds a contrast-safe [PlayerArtworkPalette] from a static seed color (for user-selected static themes).
+     */
+    fun createPaletteFromSeed(seedColor: Color): PlayerArtworkPalette {
+        val primaryAccent = ensureAccessibleContrast(seedColor, CharcoalDark, minRatio = 3.2f)
+        val secondaryAccent = lerp(primaryAccent, Color.White, 0.25f)
+        val surfaceCharcoal = lerp(CharcoalDark, primaryAccent, 0.06f)
+        val surfaceElevated = lerp(CharcoalSurface, primaryAccent, 0.08f)
+        val backgroundGradient = listOf(
+            lerp(CharcoalDark, primaryAccent, 0.14f),
+            surfaceCharcoal,
+            Color(0xFF090A0C)
+        )
+        return PlayerArtworkPalette(
+            primaryAccent = primaryAccent,
+            secondaryAccent = secondaryAccent,
+            surfaceCharcoal = surfaceCharcoal,
+            surfaceElevated = surfaceElevated,
+            backgroundGradient = backgroundGradient,
+            textPrimary = TextPrimary,
+            textSecondary = TextSecondary,
+            isFallback = false
+        )
+    }
+
+    // Thread-safe in-memory LRU cache for extracted palettes
+    private const val MAX_CACHE_SIZE = 64
+    private val paletteCache = object : LinkedHashMap<String, PlayerArtworkPalette>(MAX_CACHE_SIZE, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, PlayerArtworkPalette>?): Boolean {
+            return size > MAX_CACHE_SIZE
+        }
+    }
+
+    @Synchronized
+    fun getCachedPalette(key: String): PlayerArtworkPalette? = paletteCache[key]
+
+    @Synchronized
+    fun putCachedPalette(key: String, palette: PlayerArtworkPalette) {
+        if (key.isNotBlank()) {
+            paletteCache[key] = palette
+        }
+    }
+
+    /**
+     * Extracts a contrast-safe [PlayerArtworkPalette] from an artwork URL asynchronously.
+     * Guaranteed non-blocking (executes network/disk on [Dispatchers.IO] and math on [Dispatchers.Default]).
+     */
+    suspend fun extractPalette(
+        context: Context,
+        thumbnailUrl: String?,
+        mediaId: String? = null
+    ): PlayerArtworkPalette {
+        val cacheKey = mediaId?.takeIf { it.isNotBlank() } ?: thumbnailUrl?.takeIf { it.isNotBlank() }
+        if (cacheKey != null) {
+            getCachedPalette(cacheKey)?.let { return it }
+        }
+
+        if (thumbnailUrl.isNullOrBlank()) {
+            return DefaultPalette
+        }
+
+        val bitmap = withContext(Dispatchers.IO) {
+            runCatching {
+                val request = ImageRequest.Builder(context)
+                    .data(thumbnailUrl)
+                    .size(120, 120)
+                    .allowHardware(false)
+                    .memoryCacheKey("palette_${cacheKey ?: thumbnailUrl}")
+                    .build()
+                val result = context.imageLoader.execute(request)
+                result.image?.toBitmap()
+            }.getOrNull()
+        } ?: return DefaultPalette
+
+        val palette = withContext(Dispatchers.Default) {
+            extractFromBitmap(bitmap)
+        }
+
+        if (cacheKey != null) {
+            putCachedPalette(cacheKey, palette)
+        }
+        return palette
+    }
+
+    /**
+     * Synchronously analyzes a bitmap and derives a contrast-validated [PlayerArtworkPalette].
+     */
+    fun extractFromBitmap(bitmap: Bitmap): PlayerArtworkPalette {
+        if (bitmap.width <= 0 || bitmap.height <= 0) return DefaultPalette
+
+        val palette = runCatching {
+            Palette.from(bitmap)
+                .maximumColorCount(16)
+                .resizeBitmapArea(120 * 120)
+                .generate()
+        }.getOrNull() ?: return DefaultPalette
+
+        return buildPaletteFromPalette(palette)
+    }
+
+    private fun buildPaletteFromPalette(palette: Palette): PlayerArtworkPalette {
+        // Evaluate candidate swatches with dominance and vibrancy weighting
+        val swatches = listOfNotNull(
+            palette.vibrantSwatch,
+            palette.dominantSwatch,
+            palette.lightVibrantSwatch,
+            palette.darkVibrantSwatch,
+            palette.mutedSwatch,
+            palette.lightMutedSwatch
+        )
+
+        if (swatches.isEmpty()) return DefaultPalette
+
+        val bestSwatch = swatches.maxByOrNull { calculateSwatchWeight(it) } ?: return DefaultPalette
+        val rawColor = Color(bestSwatch.rgb)
+
+        // Ensure the primary accent has comfortable contrast against charcoal surfaces
+        val primaryAccent = ensureAccessibleContrast(rawColor, CharcoalDark, minRatio = 3.2f)
+
+        // Derive secondary accent from a complementary or light swatch
+        val secondarySwatch = swatches.firstOrNull { it != bestSwatch }
+        val secondaryAccent = if (secondarySwatch != null) {
+            val secColor = Color(secondarySwatch.rgb)
+            ensureAccessibleContrast(secColor, CharcoalDark, minRatio = 3.0f)
+        } else {
+            lerp(primaryAccent, Color.White, 0.25f)
+        }
+
+        // Generate a subtle 6% tint of the dominant hue blended into charcoal
+        val surfaceCharcoal = lerp(CharcoalDark, primaryAccent, 0.06f)
+        val surfaceElevated = lerp(CharcoalSurface, primaryAccent, 0.08f)
+
+        // Construct a smooth 3-point vertical gradient
+        val backgroundGradient = listOf(
+            lerp(CharcoalDark, primaryAccent, 0.14f), // Top: soft ambient artwork glow
+            surfaceCharcoal,                         // Middle: deep cohesive charcoal
+            Color(0xFF090A0C)                        // Bottom: pitch black base
+        )
+
+        return PlayerArtworkPalette(
+            primaryAccent = primaryAccent,
+            secondaryAccent = secondaryAccent,
+            surfaceCharcoal = surfaceCharcoal,
+            surfaceElevated = surfaceElevated,
+            backgroundGradient = backgroundGradient,
+            textPrimary = TextPrimary,
+            textSecondary = TextSecondary,
+            isFallback = false
+        )
+    }
+
+    /**
+     * Calculates candidate weight balancing population and chromatic saturation.
+     */
+    private fun calculateSwatchWeight(swatch: Palette.Swatch): Float {
+        val color = Color(swatch.rgb)
+        val hsv = FloatArray(3)
+        android.graphics.Color.colorToHSV(color.toArgb(), hsv)
+        val saturation = hsv[1]
+        val brightness = hsv[2]
+
+        // Favor saturated, comfortably bright colors over pure black/white/gray
+        val vibrancyScore = saturation * 2.5f + brightness
+        val populationScore = swatch.population.toFloat().coerceAtMost(5000f) / 1000f
+        return vibrancyScore * 3.0f + populationScore
+    }
+
+    /**
+     * Calculates relative luminance according to WCAG 2.1 specs.
+     */
+    fun calculateLuminance(color: Color): Float {
+        fun channel(c: Float): Float =
+            if (c <= 0.03928f) c / 12.92f else ((c + 0.055f) / 1.055f).pow(2.4f)
+        return 0.2126f * channel(color.red) + 0.7152f * channel(color.green) + 0.0722f * channel(color.blue)
+    }
+
+    /**
+     * Calculates WCAG contrast ratio between two colors (ranging from 1.0 to 21.0).
+     */
+    fun calculateContrast(foreground: Color, background: Color): Float {
+        val lum1 = calculateLuminance(foreground)
+        val lum2 = calculateLuminance(background)
+        val brightest = max(lum1, lum2)
+        val darkest = min(lum1, lum2)
+        return (brightest + 0.05f) / (darkest + 0.05f)
+    }
+
+    /**
+     * Validates and adjusts color brightness to guarantee minimum contrast against [background].
+     * Falls back to deterministic [WarmAmber] if the color is too desaturated or cannot be salvaged.
+     */
+    fun ensureAccessibleContrast(
+        color: Color,
+        background: Color = CharcoalDark,
+        minRatio: Float = 3.2f
+    ): Color {
+        val initialContrast = calculateContrast(color, background)
+        if (initialContrast >= minRatio) return color
+
+        val hsv = FloatArray(3)
+        android.graphics.Color.colorToHSV(color.toArgb(), hsv)
+
+        // If the color is essentially grayscale, fall back to Warm Amber
+        if (hsv[1] < 0.15f) return WarmAmber
+
+        // Incrementally lift brightness to reach accessible contrast
+        var testBrightness = max(hsv[2], 0.5f)
+        var bestColor = color
+        while (testBrightness <= 0.98f) {
+            hsv[2] = testBrightness
+            val adjusted = Color(android.graphics.Color.HSVToColor(hsv))
+            if (calculateContrast(adjusted, background) >= minRatio) {
+                return adjusted
+            }
+            bestColor = adjusted
+            testBrightness += 0.08f
+        }
+
+        // If even full brightness fails (or contrast is weak), return warm amber fallback
+        return if (calculateContrast(bestColor, background) >= 2.8f) bestColor else WarmAmber
+    }
+
+    /**
+     * Backward-compatible gradient generator for existing callers (e.g. [AlbumGradient]).
      */
     suspend fun extractGradientColors(
         palette: Palette,
         fallbackColor: Int
     ): List<Color> = withContext(Dispatchers.Default) {
-        
-        // Extract all available colors with priority for dominant colors
-        val colorCandidates = listOfNotNull(
-            palette.dominantSwatch, // High priority for dominant color
-            palette.vibrantSwatch,
-            palette.darkVibrantSwatch,
-            palette.lightVibrantSwatch,
-            palette.mutedSwatch,
-            palette.darkMutedSwatch,
-            palette.lightMutedSwatch
-        )
-
-        // Select best color based on weight (dominance + vibrancy)
-        val bestSwatch = colorCandidates.maxByOrNull { calculateColorWeight(it) }
-        val fallbackDominant = palette.dominantSwatch?.rgb?.let { Color(it) }
-            ?: Color(palette.getDominantColor(fallbackColor))
-
-        val primaryColor = if (bestSwatch != null) {
-            val bestColor = Color(bestSwatch.rgb)
-            // Ensure the color is suitable for use
-            if (isColorVibrant(bestColor)) {
-                enhanceColorVividness(bestColor, 1.3f)
-            } else {
-                // If not vibrant, use dominant color with slight enhancement
-                enhanceColorVividness(fallbackDominant, 1.1f)
-            }
+        val artworkPalette = buildPaletteFromPalette(palette)
+        if (!artworkPalette.isFallback) {
+            artworkPalette.backgroundGradient
         } else {
-            enhanceColorVividness(fallbackDominant, 1.1f)
+            val fallback = Color(fallbackColor)
+            listOf(
+                lerp(CharcoalDark, fallback, 0.2f),
+                CharcoalDark,
+                Color(0xFF090A0C)
+            )
         }
-        
-        // Create sophisticated gradient with 3 color points
-        listOf(
-            primaryColor, // Start: primary vibrant color
-            primaryColor.copy(
-                red = (primaryColor.red * 0.6f).coerceAtLeast(0f),
-                green = (primaryColor.green * 0.6f).coerceAtLeast(0f),
-                blue = (primaryColor.blue * 0.6f).coerceAtLeast(0f)
-            ), // Middle: darker version of primary color
-            Color.Black // End: black
+    }
+}
+
+/**
+ * Authoritative single source of truth for the app's global song-adaptive color palette.
+ *
+ * Runs asynchronously off the main thread, uses LRU cache, maintains previous palette while loading,
+ * gracefully handles fallbacks and static mode, and animates all tokens across track changes.
+ */
+@Composable
+fun rememberGlobalArtworkPalette(
+    mediaMetadata: MkrMediaMetadata?,
+    enableDynamicTheme: Boolean = true,
+    staticThemeColor: Color = PlayerColorExtractor.WarmAmber
+): PlayerArtworkPalette {
+    val context = LocalContext.current
+    var currentPalette by remember {
+        mutableStateOf(
+            if (!enableDynamicTheme) {
+                if (staticThemeColor != PlayerColorExtractor.WarmAmber && staticThemeColor != Color(0xFFED5564)) {
+                    PlayerColorExtractor.createPaletteFromSeed(staticThemeColor)
+                } else {
+                    PlayerColorExtractor.DefaultPalette
+                }
+            } else {
+                mediaMetadata?.id?.let { PlayerColorExtractor.getCachedPalette(it) }
+                    ?: PlayerColorExtractor.DefaultPalette
+            }
         )
     }
 
-    /**
-     * Determines if a color is vibrant enough for use in player UI
-     * 
-     * @param color The color to analyze
-     * @return true if the color has sufficient saturation and brightness
-     */
-    private fun isColorVibrant(color: Color): Boolean {
-        val argb = color.toArgb()
-        val hsv = FloatArray(3)
-        android.graphics.Color.colorToHSV(argb, hsv)
-        val saturation = hsv[1] // HSV[1] is saturation
-        val brightness = hsv[2] // HSV[2] is brightness
-        
-        // Color is vibrant if it has sufficient saturation and appropriate brightness
-        // Avoid colors that are too dark or too bright
-        return saturation > 0.25f && brightness > 0.2f && brightness < 0.9f
-    }
-    
-    /**
-     * Enhances color vividness by adjusting saturation and brightness
-     * 
-     * @param color The color to enhance
-     * @param saturationFactor Factor to multiply saturation by (default 1.4)
-     * @return Enhanced color with improved vividness
-     */
-    private fun enhanceColorVividness(color: Color, saturationFactor: Float = 1.4f): Color {
-        val argb = color.toArgb()
-        val hsv = FloatArray(3)
-        android.graphics.Color.colorToHSV(argb, hsv)
-        
-        // Increase saturation for more vivid colors
-        hsv[1] = (hsv[1] * saturationFactor).coerceAtMost(1.0f)
-        // Adjust brightness for better visibility
-        hsv[2] = (hsv[2] * 0.9f).coerceIn(0.4f, 0.85f)
-        
-        return Color(android.graphics.Color.HSVToColor(hsv))
+    LaunchedEffect(mediaMetadata?.id, mediaMetadata?.thumbnailUrl, enableDynamicTheme, staticThemeColor) {
+        if (!enableDynamicTheme) {
+            currentPalette = if (staticThemeColor != PlayerColorExtractor.WarmAmber && staticThemeColor != Color(0xFFED5564)) {
+                PlayerColorExtractor.createPaletteFromSeed(staticThemeColor)
+            } else {
+                PlayerColorExtractor.DefaultPalette
+            }
+            return@LaunchedEffect
+        }
+
+        val mediaId = mediaMetadata?.id
+        val thumbnailUrl = mediaMetadata?.thumbnailUrl
+        if (mediaId == null || thumbnailUrl == null) {
+            currentPalette = PlayerColorExtractor.DefaultPalette
+            return@LaunchedEffect
+        }
+
+        val cached = PlayerColorExtractor.getCachedPalette(mediaId)
+        if (cached != null) {
+            currentPalette = cached
+            return@LaunchedEffect
+        }
+
+        val extracted = PlayerColorExtractor.extractPalette(context, thumbnailUrl, mediaId)
+        currentPalette = extracted
     }
 
-    /**
-     * Calculates weight for color selection based on dominance and vibrancy
-     * 
-     * @param swatch The palette swatch to analyze
-     * @return Weight value for color selection priority
-     */
-    private fun calculateColorWeight(swatch: Palette.Swatch?): Float {
-        if (swatch == null) return 0f
-        val population = swatch.population.toFloat()
-        val color = Color(swatch.rgb)
-        val argb = color.toArgb()
-        val hsv = FloatArray(3)
-        android.graphics.Color.colorToHSV(argb, hsv)
-        val saturation = hsv[1]
-        val brightness = hsv[2]
-        
-        // Give higher priority to dominance (population) while considering vibrancy
-        val populationWeight = population * 2f // Double dominance weight
-        val vibrancyBonus = if (saturation > 0.3f && brightness > 0.3f) 1.5f else 1f
-        
-        return populationWeight * vibrancyBonus * (saturation + brightness) / 2f
-    }
+    // Smoothly animate individual palette tokens across track changes
+    val animatedPrimary by animateColorAsState(
+        targetValue = currentPalette.primaryAccent,
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "GlobalPrimaryAccent"
+    )
+    val animatedSecondary by animateColorAsState(
+        targetValue = currentPalette.secondaryAccent,
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "GlobalSecondaryAccent"
+    )
+    val animatedSurface by animateColorAsState(
+        targetValue = currentPalette.surfaceCharcoal,
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "GlobalSurfaceCharcoal"
+    )
+    val animatedElevated by animateColorAsState(
+        targetValue = currentPalette.surfaceElevated,
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "GlobalSurfaceElevated"
+    )
 
-    /**
-     * Configuration constants for color extraction
-     */
-    object Config {
-        const val MAX_COLOR_COUNT = 32
-        const val BITMAP_AREA = 8000
-        const val IMAGE_SIZE = 200
-        
-        // Color enhancement factors
-        const val VIBRANT_SATURATION_THRESHOLD = 0.25f
-        const val VIBRANT_BRIGHTNESS_MIN = 0.2f
-        const val VIBRANT_BRIGHTNESS_MAX = 0.9f
-        
-        const val POPULATION_WEIGHT_MULTIPLIER = 2f
-        const val VIBRANCY_THRESHOLD_SATURATION = 0.3f
-        const val VIBRANCY_THRESHOLD_BRIGHTNESS = 0.3f
-        const val VIBRANCY_BONUS = 1.5f
-        
-        const val DEFAULT_SATURATION_FACTOR = 1.4f
-        const val VIBRANT_SATURATION_FACTOR = 1.3f
-        const val FALLBACK_SATURATION_FACTOR = 1.1f
-        
-        const val BRIGHTNESS_MULTIPLIER = 0.9f
-        const val BRIGHTNESS_MIN = 0.4f
-        const val BRIGHTNESS_MAX = 0.85f
-        
-        const val DARKER_VARIANT_FACTOR = 0.6f
+    val gradTop by animateColorAsState(
+        targetValue = currentPalette.backgroundGradient.getOrElse(0) { PlayerColorExtractor.CharcoalDark },
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "GlobalGradTop"
+    )
+    val gradMid by animateColorAsState(
+        targetValue = currentPalette.backgroundGradient.getOrElse(1) { PlayerColorExtractor.CharcoalDark },
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "GlobalGradMid"
+    )
+    val gradBot by animateColorAsState(
+        targetValue = currentPalette.backgroundGradient.getOrElse(2) { Color(0xFF090A0C) },
+        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        label = "GlobalGradBot"
+    )
+
+    return remember(
+        animatedPrimary,
+        animatedSecondary,
+        animatedSurface,
+        animatedElevated,
+        gradTop,
+        gradMid,
+        gradBot,
+        currentPalette.isFallback
+    ) {
+        PlayerArtworkPalette(
+            primaryAccent = animatedPrimary,
+            secondaryAccent = animatedSecondary,
+            surfaceCharcoal = animatedSurface,
+            surfaceElevated = animatedElevated,
+            backgroundGradient = listOf(gradTop, gradMid, gradBot),
+            textPrimary = currentPalette.textPrimary,
+            textSecondary = currentPalette.textSecondary,
+            isFallback = currentPalette.isFallback
+        )
     }
+}
+
+/**
+ * Reads the active, animated [PlayerArtworkPalette] from [LocalPlayerArtworkPalette].
+ * Connects player, mini-player, and lyrics seamlessly to the single global dynamic theme.
+ */
+@Composable
+fun rememberArtworkPalette(mediaMetadata: MkrMediaMetadata? = null): PlayerArtworkPalette {
+    return LocalPlayerArtworkPalette.current
+}
+
+@JvmName("rememberArtworkPaletteInnertube")
+@Composable
+fun rememberArtworkPalette(mediaMetadata: MediaMetadata?): PlayerArtworkPalette {
+    return LocalPlayerArtworkPalette.current
 }
