@@ -9,6 +9,16 @@
 
 ---
 
+## [v1.0.0 Stable] - 2026-10-22
+
+### 🚀 Milestone Release
+- **Unified Canonical Versioning**: Standardized on canonical semantic version `1.0.0` with deterministic monotonic build code ordering (`versionCode = 10000`).
+- **Listen Together Self-Hosted Infrastructure**: Integrated dedicated self-hosted sync server (`https://listen-together-mkr-music.onrender.com`) with automated heartbeat, reconnection, and room sync protocols.
+- **Four Distinct Navigation Architectures**: Added user-selectable navigation styles: Floating Glass Bar, Expressive Pill, Material 3 Expressive, and Amber Minimal Dock with persistent preference.
+- **Artwork-Adaptive Global Dynamics**: Comprehensive color palette extraction adapting background, navigation, sliders, and synchronized lyrics seamlessly.
+- **Streamlined Home Experience**: Elevated header with direct settings access and cleaned quick-pick presentation.
+- **Security & Reliability**: Purged deprecated external endpoints and legacy fallbacks. Complete emoji-free application UI design.
+
 ## [v6.0.8 Stable] - 2026-10-12
 
 ### ⚡ Playback & Streaming Engine

@@ -41,15 +41,79 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      - name: Extract Version Info
+      - name: Validate and Extract Version Info
         id: version_info
         run: |
-          VERSION_CODE=$(grep "versionCode =" app/build.gradle.kts | tr -d ' ' | cut -d= -f2)
-          VERSION_NAME=$(grep "versionName =" app/build.gradle.kts | sed 's/.*"\(.*\)".*/\1/')
-          echo "Extracted Version Code: $VERSION_CODE"
-          echo "Extracted Version Name: $VERSION_NAME"
-          echo "version_code=$VERSION_CODE" >> $GITHUB_OUTPUT
-          echo "version_name=$VERSION_NAME" >> $GITHUB_OUTPUT
+          echo "=== Validating Canonical Version Configuration ==="
+          if [ ! -f "version.properties" ]; then
+            echo "::error file=version.properties::Canonical version file 'version.properties' not found at repository root!"
+            exit 1
+          fi
+
+          # Extract APP_VERSION line strictly
+          RAW_APP_VERSION=$(grep "^APP_VERSION=" version.properties | head -n 1 | cut -d'=' -f2- | tr -d ' \r\n')
+          if [ -z "$RAW_APP_VERSION" ]; then
+            echo "::error file=version.properties::Missing or empty 'APP_VERSION' key in version.properties!"
+            exit 1
+          fi
+
+          echo "Found APP_VERSION in version.properties: '$RAW_APP_VERSION'"
+
+          # Validate strict semantic version format: MAJOR.MINOR.PATCH
+          if [[ ! "$RAW_APP_VERSION" =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            echo "::error file=version.properties::Invalid APP_VERSION format '$RAW_APP_VERSION'. Must strictly follow MAJOR.MINOR.PATCH (e.g., 1.0.0)."
+            exit 1
+          fi
+
+          MAJOR="${BASH_REMATCH[1]}"
+          MINOR="${BASH_REMATCH[2]}"
+          PATCH="${BASH_REMATCH[3]}"
+
+          # Validate range limits
+          if (( 10#$MINOR > 99 )); then
+            echo "::error file=version.properties::MINOR version '$MINOR' exceeds supported range (0..99)."
+            exit 1
+          fi
+          if (( 10#$PATCH > 99 )); then
+            echo "::error file=version.properties::PATCH version '$PATCH' exceeds supported range (0..99)."
+            exit 1
+          fi
+          if (( 10#$MAJOR > 214748 )); then
+            echo "::error file=version.properties::MAJOR version '$MAJOR' exceeds supported range (0..214748)."
+            exit 1
+          fi
+
+          # Compute deterministic versionCode: MAJOR * 10000 + MINOR * 100 + PATCH
+          COMPUTED_CODE=$(( 10#$MAJOR * 10000 + 10#$MINOR * 100 + 10#$PATCH ))
+
+          # Ensure strictly greater than historical published version code 77
+          if (( COMPUTED_CODE <= 77 )); then
+            echo "::error file=version.properties::Computed versionCode ($COMPUTED_CODE) must be strictly greater than historical version code 77."
+            exit 1
+          fi
+
+          echo "✓ Canonical Version Name: $RAW_APP_VERSION"
+          echo "✓ Computed Version Code: $COMPUTED_CODE"
+          echo "version_name=$RAW_APP_VERSION" >> $GITHUB_OUTPUT
+          echo "version_code=$COMPUTED_CODE" >> $GITHUB_OUTPUT
+
+      - name: Verify Gradle Version Alignment
+        run: |
+          echo "Verifying Gradle configuration matches canonical version..."
+          GRADLE_OUT=$(./gradlew :app:printAppVersion -q --console=plain)
+          echo "$GRADLE_OUT"
+          GRADLE_VN=$(echo "$GRADLE_OUT" | grep "CANONICAL_VERSION_NAME=" | cut -d'=' -f2 | tr -d ' \r\n')
+          GRADLE_VC=$(echo "$GRADLE_OUT" | grep "COMPUTED_VERSION_CODE=" | cut -d'=' -f2 | tr -d ' \r\n')
+
+          if [ "$GRADLE_VN" != "${{ steps.version_info.outputs.version_name }}" ]; then
+            echo "::error::Version Name mismatch! Workflow: ${{ steps.version_info.outputs.version_name }}, Gradle: $GRADLE_VN"
+            exit 1
+          fi
+          if [ "$GRADLE_VC" != "${{ steps.version_info.outputs.version_code }}" ]; then
+            echo "::error::Version Code mismatch! Workflow: ${{ steps.version_info.outputs.version_code }}, Gradle: $GRADLE_VC"
+            exit 1
+          fi
+          echo "✓ Workflow and Gradle version definitions are 100% aligned ($GRADLE_VN / $GRADLE_VC)."
 
       - name: Check Keystore Availability
         id: check_keystore
@@ -133,7 +197,7 @@ jobs:
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: mkr-music-universal-apk
+          name: mkr-music-universal-apk-v${{ steps.version_info.outputs.version_name }}
           path: release_assets/mkr-music-universal.apk
           if-no-files-found: error
 
@@ -142,16 +206,16 @@ jobs:
           UNIVERSAL_SIZE=$(ls -lh release_assets/mkr-music-universal.apk | awk '{print $5}')
 
           cat << EOF >> $GITHUB_STEP_SUMMARY
-          ## 🚀 MKR Music Build Complete
+          ## 🚀 MKR Music Build Complete — v${{ steps.version_info.outputs.version_name }} (Build ${{ steps.version_info.outputs.version_code }})
 
           The single Universal APK has been generated and packaged successfully with all supported architectures:
 
-          | Variant | Target ABI | Filename | Size |
-          | :--- | :--- | :--- | :--- |
-          | **Universal** | All Supported ABIs (\`arm64-v8a\`, \`armeabi-v7a\`, \`x86\`, \`x86_64\`) | \`mkr-music-universal.apk\` | $UNIVERSAL_SIZE |
+          | Variant | Target ABI | Filename | Size | Version Name | Version Code |
+          | :--- | :--- | :--- | :--- | :--- | :--- |
+          | **Universal** | All Supported ABIs (\`arm64-v8a\`, \`armeabi-v7a\`, \`x86\`, \`x86_64\`) | \`mkr-music-universal.apk\` | $UNIVERSAL_SIZE | \`v${{ steps.version_info.outputs.version_name }}\` | \`${{ steps.version_info.outputs.version_code }}\` |
 
           ### 📦 Download Artifacts
-          Download the compiled APK directly from the **Artifacts** section at the top of this run (\`mkr-music-universal-apk\`).
+          Download the compiled APK directly from the **Artifacts** section at the top of this run (\`mkr-music-universal-apk-v${{ steps.version_info.outputs.version_name }}\`).
           EOF
 
       - name: Generate Beautiful Release Notes
@@ -169,36 +233,36 @@ jobs:
             <img src="{banner_url}" alt="MKR Music Banner" width="100%" />
           </p>
 
-          # 🎵 MKR Music v{version_name}
+          # MKR Music v{version_name}
 
-          > ### ✨ Release Highlights
+          > ### Release Highlights
           > This milestone update delivers instant audio playback streaming, intelligent delayed background caching, expressive Material 3 UI refinements, and streamlined settings discovery.
 
           ---
 
-          ### ⚡ Low-Latency Streaming & Smart Caching
+          ### Low-Latency Streaming & Smart Caching
           - **Instant Audio Playback**: Bypasses initial cache write buffer lag to start track streaming immediately upon click.
           - **Configurable Cache Delay**: Added a dedicated slider under Storage & Cache (5s–90s, default 10s) to cache only songs you actually listen to.
           - **Zero Playback Lag**: Background caching runs on low-priority IO threads with automatic cancellation if a track is skipped or paused early.
 
-          ### 🎨 Visual Polish & Expressive Design
+          ### Visual Polish & Expressive Design
           - **Chainsaw Spikes Action Button**: Smooth animated moving teeth border on the Donate & Support button.
           - **Overhauled Contribution Sheet**: Rapid-copy UPI card with tactile spring click feedback, app badges, and rotating gratitude toasts.
           - **Balanced Onboarding Hero**: Centered MKR Music brand logo with structured layout and responsive viewport across all aspect ratios.
           - **Refined Accents**: Subtle borders applied to developer links and the home screen settings dropdown button.
 
-          ### ⚙️ Settings Discovery & Direct Updates
+          ### Settings Discovery & Direct Updates
           - **Granular Keyword Search**: Search across sub-options directly (e.g., searching "hide" brings up all hide toggles) with automatic deduplication.
           - **Simplified Update Guidance**: Direct repository releases with step-by-step backup instructions before updating.
           - **Clutter-Free Headers**: Cleaned up the settings toolbar by removing redundant action capsules.
 
-          ### 🛡️ Storage Integrity & Protection
+          ### Storage Integrity & Protection
           - **Protected Downloads**: Explicit downloads and local library tracks are strictly safeguarded against LRU cache eviction.
           - **Configurable Capacity Limits**: Set maximum cached song limits (50 to 1000 items) alongside storage byte caps.
 
           ---
 
-          ### 💖 Support Development
+          ### Support Development
           MKR Music is 100% free and open-source. If you enjoy using the app, consider supporting continued development:
           - ☕ **Buy Me a Coffee**: https://buymeacoffee.com/mkr_infinity
           - 💸 **UPI**: `mkr-infinity@ybl`

@@ -24,3 +24,9 @@ bash app/src/main/cpp/vibrafp/third_party/build-fftw-android.sh --ndk ~/Android/
 ./gradlew :app:assembleUniversalGmsDebug
 ls app/build/outputs/apk/universalGms/debug/app-universal-gms-debug.apk
 ```
+
+## Versioning & Architecture Notes
+
+- **Canonical Version**: Managed via `version.properties` (`APP_VERSION=1.0.0`). Do not hardcode version numbers in build scripts.
+- **Listen Together Server**: Configured in `ListenTogetherServers.kt` pointing to `wss://listen-together-mkr-music.onrender.com`.
+- **UI Design System**: Charcoal-and-amber theme identity with zero UI emojis (use vector drawables exclusively).
