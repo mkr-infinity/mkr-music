@@ -59,7 +59,7 @@ android {
     ndkVersion = "27.0.12077973"
 
     defaultConfig {
-        applicationId = "com.mkr.music"
+        applicationId = "com.kaif.music"
         minSdk = 26
         targetSdk = 37
         versionCode = computedVersionCode
