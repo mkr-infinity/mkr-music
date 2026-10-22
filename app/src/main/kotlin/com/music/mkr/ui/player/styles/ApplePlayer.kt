@@ -83,6 +83,8 @@ import com.music.mkr.constants.ShowAudioQualityBadgeKey
 import com.music.mkr.constants.ShowPlayerThumbnailShadowKey
 import com.music.mkr.constants.ThumbnailCornerRadius
 import com.music.mkr.extensions.SwipeGesture
+import com.music.mkr.extensions.togglePlayPause
+import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.mkrmusic.getConnectedBluetoothDeviceName
 import com.music.mkr.mkrmusic.isBuds
 import com.music.mkr.mkrmusic.isSpeaker
@@ -269,8 +271,10 @@ fun ApplePlayer(
                         ClickableArtists(
                             artists = mediaMetadata.artists,
                             onArtistClick = titleActions.onArtistClick,
-                            onArtistLongClick = titleActions.onArtistLongClick,
-                            textColor = textBackgroundColor.copy(alpha = 0.7f)
+                            onLongClick = titleActions.onArtistLongClick,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = textBackgroundColor.copy(alpha = 0.7f),
+                            modifier = Modifier.basicMarquee()
                         )
                     }
 
@@ -475,8 +479,10 @@ fun ApplePlayer(
                     ClickableArtists(
                         artists = mediaMetadata.artists,
                         onArtistClick = titleActions.onArtistClick,
-                        onArtistLongClick = titleActions.onArtistLongClick,
-                        textColor = textBackgroundColor.copy(alpha = 0.7f)
+                        onLongClick = titleActions.onArtistLongClick,
+                        style = MaterialTheme.typography.titleMedium,
+                        color = textBackgroundColor.copy(alpha = 0.7f),
+                        modifier = Modifier.basicMarquee()
                     )
                 }
 

@@ -58,6 +58,8 @@ import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
 import com.music.mkr.ui.theme.PlayerSliderColors
 import com.music.mkr.constants.PlayerBackgroundStyle
+import com.music.mkr.extensions.togglePlayPause
+import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
