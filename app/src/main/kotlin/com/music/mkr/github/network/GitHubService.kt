@@ -52,6 +52,15 @@ data class GitHubCommitDto(
 )
 
 @Serializable
+data class GitHubAssetDto(
+    val id: Long = 0,
+    val name: String = "",
+    val size: Long = 0,
+    @SerialName("browser_download_url") val browserDownloadUrl: String = "",
+    @SerialName("content_type") val contentType: String? = null
+)
+
+@Serializable
 data class GitHubReleaseDto(
     val id: Long = 0,
     @SerialName("tag_name") val tagName: String = "",
@@ -59,7 +68,8 @@ data class GitHubReleaseDto(
     val body: String? = null,
     @SerialName("published_at") val publishedAt: String? = null,
     @SerialName("html_url") val htmlUrl: String? = null,
-    val prerelease: Boolean = false
+    val prerelease: Boolean = false,
+    val assets: List<GitHubAssetDto> = emptyList()
 )
 
 @Serializable
@@ -207,6 +217,26 @@ class GitHubService @Inject constructor() {
         } catch (e: Exception) {
             Timber.e(e, "Fetch recent commits failed")
             emptyList()
+        }
+    }
+
+    suspend fun getLatestRelease(
+        owner: String = GitHubConfig.REPO_OWNER,
+        repo: String = GitHubConfig.REPO_NAME
+    ): GitHubReleaseDto? {
+        return try {
+            val response = client.get("https://api.github.com/repos/$owner/$repo/releases/latest") {
+                header("Accept", "application/vnd.github+json")
+                header("X-GitHub-Api-Version", "2022-11-28")
+            }
+            if (response.status == HttpStatusCode.OK) {
+                response.body<GitHubReleaseDto>()
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            Timber.e(e, "Fetch latest release failed")
+            null
         }
     }
 

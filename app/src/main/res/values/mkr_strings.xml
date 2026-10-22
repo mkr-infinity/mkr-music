@@ -1161,4 +1161,12 @@
     <string name="local">Local</string>
     <string name="back">Back</string>
     <string name="info">Information</string>
+    <string name="download_apk">Download APK</string>
+    <string name="view_release">View Release</string>
+    <string name="update_available">Update Available</string>
+    <string name="app_up_to_date">MKR Music is up to date</string>
+    <string name="listening_history">Listening history</string>
+    <string name="no_direct_apk">Direct APK download is unavailable for this release</string>
+    <string name="read_more_github">Read full notes on GitHub</string>
+    <string name="version_code_unverified">Version code verification unavailable</string>
 </resources>

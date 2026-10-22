@@ -234,9 +234,48 @@ fun UpdateScreen(navController: NavHostController) {
                                 modifier = Modifier.fillMaxWidth(),
                                 verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
+                                val releaseUrl = "https://github.com/mkr-infinity/mkr-music/releases/tag/${currentStatus.version}"
+                                val hasDirectApk = !currentStatus.apkUrl.isNullOrBlank()
+
+                                // Button 1: Download APK
                                 Button(
                                     onClick = {
-                                        val releaseUrl = "https://github.com/mkr-infinity/mkr-music/releases/tag/${currentStatus.version}"
+                                        currentStatus.apkUrl?.let { apkUrl ->
+                                            try {
+                                                val uri = Uri.parse(apkUrl)
+                                                val request = android.app.DownloadManager.Request(uri)
+                                                    .setTitle("MKR Music ${currentStatus.version}")
+                                                    .setDescription("Downloading update")
+                                                    .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                                                    .setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, "mkr-music-universal.apk")
+                                                    .setMimeType("application/vnd.android.package-archive")
+
+                                                val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
+                                                manager.enqueue(request)
+                                            } catch (_: Exception) {
+                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl))
+                                                context.startActivity(intent)
+                                            }
+                                        }
+                                    },
+                                    enabled = hasDirectApk,
+                                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.download),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = if (hasDirectApk) stringResource(R.string.download_apk) else stringResource(R.string.no_direct_apk),
+                                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
+                                    )
+                                }
+
+                                // Button 2: View Release
+                                OutlinedButton(
+                                    onClick = {
                                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(releaseUrl))
                                         try {
                                             context.startActivity(intent)
@@ -254,14 +293,14 @@ fun UpdateScreen(navController: NavHostController) {
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = "View Release on GitHub",
+                                        text = stringResource(R.string.view_release),
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                                     )
                                 }
 
-                                OutlinedButton(
+                                TextButton(
                                     onClick = { navController.navigateUp() },
-                                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                                    modifier = Modifier.fillMaxWidth().height(48.dp)
                                 ) {
                                     Text(
                                         text = stringResource(R.string.later),
@@ -725,7 +764,7 @@ fun isNewerVersion(latestVersion: String, currentVersion: String): Boolean {
     return false
 }
 
-// Fetches ALL releases, finds the latest version > current, and returns its info
+// Fetches latest published release from GitHub and compares deterministic version codes
 suspend fun checkForUpdate(
     context: Context,
     onSuccess: (tag: String, isAvailable: Boolean, changelog: List<ChangelogSection>, size: String, date: String, description: String?, imageUrl: String?, apkUrl: String?) -> Unit,
@@ -733,142 +772,141 @@ suspend fun checkForUpdate(
 ) {
     withContext(Dispatchers.IO) {
         try {
-            val url = URL("https://api.github.com/repos/mkr-infinity/mkr-music/releases")
-            val json = url.openStream().bufferedReader().use { it.readText() }
-            val releases = JSONArray(json)
-            
-            val currentVersion = BuildConfig.VERSION_NAME
-            val betaEnabled = getBetaUpdatesSetting(context)
+            val url = URL("https://api.github.com/repos/mkr-infinity/mkr-music/releases/latest")
+            val connection = url.openConnection() as java.net.HttpURLConnection
+            connection.connectTimeout = 15000
+            connection.readTimeout = 30000
+            connection.setRequestProperty("Accept", "application/vnd.github+json")
+            connection.setRequestProperty("User-Agent", "MKR-Music-Android")
 
+            if (connection.responseCode != 200) {
+                withContext(Dispatchers.Main) { onError() }
+                return@withContext
+            }
 
+            val json = connection.inputStream.bufferedReader().use { it.readText() }
+            val targetRelease = JSONObject(json)
 
-            var bestStableRelease: JSONObject? = null
-            var bestOverallRelease: JSONObject? = null
-
-            for (i in 0 until releases.length()) {
-                val release = releases.getJSONObject(i)
-                val tagName = release.getString("tag_name")
-                val isBeta = tagName.startsWith("b")
-                
-                // Track best stable
-                if (!isBeta) {
-                    if (bestStableRelease == null || isNewerVersion(tagName, bestStableRelease.getString("tag_name"))) {
-                        bestStableRelease = release
-                    }
+            val (currentVersion, currentVersionCode) = try {
+                val pInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    context.packageManager.getPackageInfo(context.packageName, android.content.pm.PackageManager.PackageInfoFlags.of(0))
+                } else {
+                    @Suppress("DEPRECATION")
+                    context.packageManager.getPackageInfo(context.packageName, 0)
                 }
-                
-                // Track best overall
-                if (bestOverallRelease == null || isNewerVersion(tagName, bestOverallRelease.getString("tag_name"))) {
-                    bestOverallRelease = release
+                val code = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) pInfo.longVersionCode else @Suppress("DEPRECATION") pInfo.versionCode.toLong()
+                (pInfo.versionName ?: BuildConfig.VERSION_NAME) to code
+            } catch (_: Exception) {
+                BuildConfig.VERSION_NAME to 10000L
+            }
+
+            val targetTagName = targetRelease.getString("tag_name")
+            val assets = targetRelease.optJSONArray("assets") ?: JSONArray()
+
+            // Safe Version Code Extraction:
+            var remoteVersionCode: Long? = null
+            // 1. Check for version.json in release assets
+            for (k in 0 until assets.length()) {
+                val a = assets.getJSONObject(k)
+                if (a.getString("name").equals("version.json", ignoreCase = true)) {
+                    try {
+                        val vUrl = URL(a.getString("browser_download_url"))
+                        val rawMeta = vUrl.openStream().bufferedReader().use { it.readText() }
+                        val vObj = JSONObject(rawMeta)
+                        if (vObj.has("version_code")) {
+                            remoteVersionCode = vObj.getLong("version_code")
+                        }
+                    } catch (_: Exception) {}
+                    break
                 }
             }
 
-            // Select the target release based on user preference
-            val targetRelease = if (betaEnabled) bestOverallRelease else bestStableRelease
-
-            if (targetRelease != null) {
-                val targetTagName = targetRelease.getString("tag_name")
-                val isNewer = isNewerVersion(targetTagName, currentVersion)
-                
-                // Track Switch Logic:
-                // If the user has disabled beta updates, we should offer the latest stable release
-                // even if it's technically a lower version number than their current beta/custom build.
-                // This allows users to correctly "roll back" to the stable track.
-                val currentIsBeta = currentVersion.startsWith("b")
-                val targetIsStable = targetTagName.startsWith("v")
-                
-                // Compare version numbers ignoring prefixes
-                val currentClean = currentVersion.removePrefix("b").removePrefix("v")
-                val targetClean = targetTagName.removePrefix("b").removePrefix("v")
-                val isDifferentVersion = currentClean != targetClean
-                
-                var shouldShow = isNewer
-                if (!shouldShow && !betaEnabled) {
-                    // Logic: If I'm on a Beta (b5.0.7) and latest stable is v5.0.6, 
-                    // and I just turned OFF beta, I want to see v5.0.6.
-                    if (currentIsBeta && targetIsStable) {
-                        shouldShow = true
-                    } else if (isDifferentVersion && targetIsStable) {
-                        // Also show if current is a newer unofficial stable (e.g. built locally as 5.0.7)
-                        // but user wants the official stable 5.0.6.
-                        shouldShow = true
+            // 2. Strict semantic version calculation fallback: MAJOR * 10000 + MINOR * 100 + PATCH
+            if (remoteVersionCode == null) {
+                val semverPattern = Pattern.compile("^v?([0-9]+)\\.([0-9]+)\\.([0-9]+)$")
+                val m = semverPattern.matcher(targetTagName.trim())
+                if (m.matches()) {
+                    val major = m.group(1)?.toLongOrNull()
+                    val minor = m.group(2)?.toLongOrNull()
+                    val patch = m.group(3)?.toLongOrNull()
+                    if (major != null && minor != null && patch != null && minor in 0..99 && patch in 0..99) {
+                        remoteVersionCode = major * 10000L + minor * 100L + patch
                     }
                 }
+            }
 
-                if (shouldShow) {
-                    val tagWithPrefix = targetRelease.getString("tag_name")
-                    val displayTag = tagWithPrefix
+            // An update is available ONLY when the remote release's version code is strictly greater
+            val isAvailable = remoteVersionCode != null && remoteVersionCode > currentVersionCode
 
-                    // Parse release notes directly from GitHub release body
-                    val changelogList = mutableListOf<ChangelogSection>()
-                    val body = targetRelease.optString("body", "").trim()
-                    var description: String? = null
-                    val imageUrl: String? = "https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/banner.png"
+            // Select compatible APK asset
+            var apkSizeInMB = ""
+            var apkDownloadUrl = ""
+            val expectedApkName = "mkr-music-universal.apk"
+            for (j in 0 until assets.length()) {
+                val asset = assets.getJSONObject(j)
+                val assetName = asset.getString("name")
+                if (assetName.equals(expectedApkName, ignoreCase = true) || assetName.endsWith("-universal.apk", ignoreCase = true) || assetName.endsWith(".apk", ignoreCase = true)) {
+                    val apkSizeInBytes = asset.optLong("size", 0L)
+                    apkSizeInMB = String.format(java.util.Locale.US, "%.1f", apkSizeInBytes / (1024.0 * 1024.0))
+                    apkDownloadUrl = asset.getString("browser_download_url")
+                    break
+                }
+            }
 
-                    if (body.isNotBlank()) {
-                        val lines = body.split("\n")
-                            .map { it.trim() }
-                            .filter { it.isNotBlank() && !it.startsWith("<") }
-                        
-                        var currentSectionTitle = context.getString(R.string.changelog)
-                        val currentItems = mutableListOf<String>()
+            // Parse release notes directly from GitHub release body
+            val changelogList = mutableListOf<ChangelogSection>()
+            val body = targetRelease.optString("body", "").trim()
+            var description: String? = null
+            val imageUrl: String? = "https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/banner.png"
 
-                        for (line in lines) {
-                            if (line.startsWith("#")) {
-                                if (currentItems.isNotEmpty()) {
-                                    changelogList.add(ChangelogSection(currentSectionTitle, currentItems.toList()))
-                                    currentItems.clear()
-                                }
-                                currentSectionTitle = line.trimStart('#', ' ')
-                            } else if (line.startsWith("-") || line.startsWith("*") || line.startsWith("•")) {
-                                currentItems.add(line.trimStart('-', '*', '•', ' '))
-                            } else if (!line.startsWith("---")) {
-                                if (description == null) {
-                                    description = line
-                                } else {
-                                    currentItems.add(line)
-                                }
-                            }
-                        }
+            if (body.isNotBlank()) {
+                val lines = body.split("\n")
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() && !it.startsWith("<") }
+                
+                var currentSectionTitle = context.getString(R.string.changelog)
+                val currentItems = mutableListOf<String>()
+
+                for (line in lines) {
+                    if (line.startsWith("#")) {
                         if (currentItems.isNotEmpty()) {
                             changelogList.add(ChangelogSection(currentSectionTitle, currentItems.toList()))
+                            currentItems.clear()
+                        }
+                        currentSectionTitle = line.trimStart('#', ' ')
+                    } else if (line.startsWith("-") || line.startsWith("*") || line.startsWith("•")) {
+                        currentItems.add(line.trimStart('-', '*', '•', ' '))
+                    } else if (!line.startsWith("---")) {
+                        if (description == null) {
+                            description = line
+                        } else {
+                            currentItems.add(line)
                         }
                     }
-
-                    if (changelogList.isEmpty()) {
-                        changelogList.add(ChangelogSection(context.getString(R.string.changelog), listOf("Update available: $displayTag")))
-                    }
-
-                    val publishedAt = targetRelease.getString("published_at")
-                    val formattedReleaseDate = formatGitHubDate(publishedAt)
-                    val assets = targetRelease.getJSONArray("assets")
-
-                    var apkSizeInMB = ""
-                    var apkDownloadUrl = ""
-                    val expectedApkName = "mkr-music-universal.apk"
-                    for (j in 0 until assets.length()) {
-                        val asset = assets.getJSONObject(j)
-                        val assetName = asset.getString("name")
-                        if (assetName == expectedApkName || assetName.endsWith(".apk")) {
-                            val apkSizeInBytes = asset.getLong("size")
-                            apkSizeInMB = String.format("%.1f", apkSizeInBytes / (1024.0 * 1024.0))
-                            apkDownloadUrl = asset.getString("browser_download_url")
-                            break
-                        }
-                    }
-
-                    if (apkDownloadUrl.isNotEmpty()) {
-                        withContext(Dispatchers.Main) {
-                            onSuccess(displayTag, true, changelogList, apkSizeInMB, formattedReleaseDate, description, imageUrl, apkDownloadUrl)
-                        }
-                        return@withContext
-                    }
+                }
+                if (currentItems.isNotEmpty()) {
+                    changelogList.add(ChangelogSection(currentSectionTitle, currentItems.toList()))
                 }
             }
 
-            // No update found or APK missing
+            if (changelogList.isEmpty()) {
+                changelogList.add(ChangelogSection(context.getString(R.string.changelog), listOf("Release: $targetTagName")))
+            }
+
+            val publishedAt = targetRelease.optString("published_at", "")
+            val formattedReleaseDate = formatGitHubDate(publishedAt)
+
             withContext(Dispatchers.Main) {
-                onSuccess(currentVersion, false, emptyList(), "", "", null, null, null)
+                onSuccess(
+                    targetTagName,
+                    isAvailable,
+                    changelogList,
+                    apkSizeInMB,
+                    formattedReleaseDate,
+                    description,
+                    imageUrl,
+                    if (isAvailable && apkDownloadUrl.isNotEmpty()) apkDownloadUrl else null
+                )
             }
         } catch (e: Exception) {
             Log.e("UpdateCheck", "Error checking for updates: ${e.message}", e)
