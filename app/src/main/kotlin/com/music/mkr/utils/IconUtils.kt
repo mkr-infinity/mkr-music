@@ -16,44 +16,37 @@ enum class AppIcon(
     val key: String,
     val title: String,
     val aliasName: String,
-    @DrawableRes val previewDrawableRes: Int,
-    val isHumanMade: Boolean = false
+    @DrawableRes val previewDrawableRes: Int
 ) {
-    // Human Made Icons (at the top)
     DOT_MATRIX(
         key = "dot_matrix",
         title = "Cyber Dots",
         aliasName = "com.music.mkr.icon.DotMatrix",
-        previewDrawableRes = R.drawable.ic_icon_dot_matrix,
-        isHumanMade = true
+        previewDrawableRes = R.drawable.ic_icon_dot_matrix
     ),
     SUNSET_PASTEL(
         key = "sunset_pastel",
         title = "Sunset Pastel",
         aliasName = "com.music.mkr.icon.SunsetPastel",
-        previewDrawableRes = R.drawable.ic_icon_sunset_pastel,
-        isHumanMade = true
+        previewDrawableRes = R.drawable.ic_icon_sunset_pastel
     ),
     RETRO_SYNTHWAVE(
         key = "retro_synthwave",
         title = "Retro Synthwave",
         aliasName = "com.music.mkr.icon.RetroSynthwave",
-        previewDrawableRes = R.drawable.ic_icon_retro_synthwave,
-        isHumanMade = true
+        previewDrawableRes = R.drawable.ic_icon_retro_synthwave
     ),
     AURORA_GLOW(
         key = "aurora_glow",
         title = "Aurora Glow",
         aliasName = "com.music.mkr.icon.AuroraGlow",
-        previewDrawableRes = R.drawable.ic_icon_aurora_glow,
-        isHumanMade = true
+        previewDrawableRes = R.drawable.ic_icon_aurora_glow
     ),
     MATTE_OBSIDIAN(
         key = "matte_obsidian",
         title = "Matte Obsidian",
         aliasName = "com.music.mkr.icon.MatteObsidian",
-        previewDrawableRes = R.drawable.ic_icon_matte_obsidian,
-        isHumanMade = true
+        previewDrawableRes = R.drawable.ic_icon_matte_obsidian
     );
 
     companion object {

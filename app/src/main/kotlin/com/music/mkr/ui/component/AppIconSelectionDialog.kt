@@ -49,7 +49,7 @@ fun AppIconSelectionDialog(
     onDismiss: () -> Unit,
     onSelect: (AppIcon) -> Unit
 ) {
-    val humanMadeIcons = remember { AppIcon.entries.toList() }
+    val icons = remember { AppIcon.entries.toList() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -74,9 +74,9 @@ fun AppIconSelectionDialog(
                     contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        IconCategoryHeader(title = "Human-Made Icons", count = humanMadeIcons.size)
+                        IconCategoryHeader(title = "Custom app icons", count = icons.size)
                     }
-                    items(humanMadeIcons, key = { it.key }) { icon ->
+                    items(icons, key = { it.key }) { icon ->
                         IconGridCard(
                             icon = icon,
                             isSelected = icon == currentIcon,
@@ -113,7 +113,7 @@ private fun IconCategoryHeader(
             color = MaterialTheme.colorScheme.primary
         )
         Surface(
-            shape = RoundedCornerShape(8.dp),
+            shape = RoundedCornerShape(12.dp),
             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
         ) {
             Text(
@@ -121,7 +121,7 @@ private fun IconCategoryHeader(
                 style = MaterialTheme.typography.labelSmall,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp)
             )
         }
     }
@@ -134,7 +134,7 @@ private fun IconGridCard(
     onClick: () -> Unit
 ) {
     Surface(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(22.dp),
         color = if (isSelected) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
         } else {
@@ -143,17 +143,17 @@ private fun IconGridCard(
         border = if (isSelected) {
             BorderStroke(2.dp, MaterialTheme.colorScheme.primary)
         } else {
-            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
         },
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(22.dp))
             .clickable(onClick = onClick)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp, horizontal = 6.dp),
+                .padding(vertical = 12.dp, horizontal = 8.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
@@ -163,14 +163,14 @@ private fun IconGridCard(
                     contentDescription = icon.title,
                     modifier = Modifier
                         .size(54.dp)
-                        .clip(RoundedCornerShape(14.dp))
+                        .clip(RoundedCornerShape(16.dp))
                 )
                 if (isSelected) {
                     Box(
                         modifier = Modifier
                             .matchParentSize()
-                            .clip(RoundedCornerShape(14.dp))
-                            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(14.dp))
+                            .clip(RoundedCornerShape(16.dp))
+                            .border(2.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
                     )
                 }
             }
