@@ -189,110 +189,20 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
-        <!-- Main App Launcher Icon Alias -->
-        <activity-alias
-            android:name=".icon.LineNote"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_mkr_official"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_mkr_official_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.NeonBeat"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_neon_beat"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_neon_beat_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.MidnightNote"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_midnight_note"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_midnight_note_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.Dreamwave"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_dreamwave"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_dreamwave_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.MinimalNote"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_minimal_note"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_minimal_note_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.PulseVinyl"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_pulse_vinyl"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_pulse_vinyl_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <activity-alias
-            android:name=".icon.RetroMelody"
-            android:enabled="false"
-            android:exported="true"
-            android:icon="@mipmap/ic_launcher_retro_melody"
-            android:label="@string/app_name"
-            android:roundIcon="@mipmap/ic_launcher_retro_melody_round"
-            android:targetActivity=".WelcomeActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity-alias>
-
-        <!-- Human Made Icon Aliases (Default: Cyber Dots) -->
+        <!-- Confirmed Human-Made Launcher Icon Alias (Cyber Dots) -->
         <activity-alias
             android:name=".icon.DotMatrix"
             android:enabled="true"
             android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:targetActivity=".WelcomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_round"

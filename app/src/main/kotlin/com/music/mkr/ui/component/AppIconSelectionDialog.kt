@@ -49,8 +49,7 @@ fun AppIconSelectionDialog(
     onDismiss: () -> Unit,
     onSelect: (AppIcon) -> Unit
 ) {
-    val humanMadeIcons = remember { AppIcon.entries.filter { it.isHumanMade } }
-    val aiMadeIcons = remember { AppIcon.entries.filter { !it.isHumanMade } }
+    val humanMadeIcons = remember { AppIcon.entries.toList() }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -74,23 +73,10 @@ fun AppIconSelectionDialog(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
-                    // 1. Human Made Section (at the top)
                     item(span = { GridItemSpan(maxLineSpan) }) {
-                        IconCategoryHeader(title = "Human Made", count = humanMadeIcons.size)
+                        IconCategoryHeader(title = "Human-Made Icons", count = humanMadeIcons.size)
                     }
                     items(humanMadeIcons, key = { it.key }) { icon ->
-                        IconGridCard(
-                            icon = icon,
-                            isSelected = icon == currentIcon,
-                            onClick = { onSelect(icon) }
-                        )
-                    }
-
-                    // 2. AI Made Section (after that)
-                    item(span = { GridItemSpan(maxLineSpan) }) {
-                        IconCategoryHeader(title = "AI Made", count = aiMadeIcons.size)
-                    }
-                    items(aiMadeIcons, key = { it.key }) { icon ->
                         IconGridCard(
                             icon = icon,
                             isSelected = icon == currentIcon,

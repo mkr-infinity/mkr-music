@@ -54,57 +54,6 @@ enum class AppIcon(
         aliasName = "com.music.mkr.icon.MatteObsidian",
         previewDrawableRes = R.drawable.ic_icon_matte_obsidian,
         isHumanMade = true
-    ),
-
-    // AI Made Icons
-    OFFICIAL(
-        key = "mkr_official",
-        title = "MKR Official",
-        aliasName = "com.music.mkr.icon.LineNote",
-        previewDrawableRes = R.drawable.ic_icon_mkr_official,
-        isHumanMade = false
-    ),
-    NEON_BEAT(
-        key = "neon_beat",
-        title = "Neon Beat",
-        aliasName = "com.music.mkr.icon.NeonBeat",
-        previewDrawableRes = R.drawable.ic_icon_neon_beat,
-        isHumanMade = false
-    ),
-    MIDNIGHT_NOTE(
-        key = "midnight_note",
-        title = "Midnight Note",
-        aliasName = "com.music.mkr.icon.MidnightNote",
-        previewDrawableRes = R.drawable.ic_icon_midnight_note,
-        isHumanMade = false
-    ),
-    DREAMWAVE(
-        key = "dreamwave",
-        title = "Dreamwave",
-        aliasName = "com.music.mkr.icon.Dreamwave",
-        previewDrawableRes = R.drawable.ic_icon_dreamwave,
-        isHumanMade = false
-    ),
-    MINIMAL_NOTE(
-        key = "minimal_note",
-        title = "Minimal Note",
-        aliasName = "com.music.mkr.icon.MinimalNote",
-        previewDrawableRes = R.drawable.ic_icon_minimal_note,
-        isHumanMade = false
-    ),
-    PULSE_VINYL(
-        key = "pulse_vinyl",
-        title = "Pulse Vinyl",
-        aliasName = "com.music.mkr.icon.PulseVinyl",
-        previewDrawableRes = R.drawable.ic_icon_pulse_vinyl,
-        isHumanMade = false
-    ),
-    RETRO_MELODY(
-        key = "retro_melody",
-        title = "Retro Melody",
-        aliasName = "com.music.mkr.icon.RetroMelody",
-        previewDrawableRes = R.drawable.ic_icon_retro_melody,
-        isHumanMade = false
     );
 
     companion object {
@@ -117,13 +66,6 @@ enum class AppIcon(
                 "retro_synthwave", "synthwave_sun" -> RETRO_SYNTHWAVE
                 "aurora_glow" -> AURORA_GLOW
                 "matte_obsidian" -> MATTE_OBSIDIAN
-                "official", "mkr_official", "line_note" -> OFFICIAL
-                "neon_beat", "neon_boy" -> NEON_BEAT
-                "midnight_note", "midnight_boy" -> MIDNIGHT_NOTE
-                "dreamwave", "dreamwave_girl" -> DREAMWAVE
-                "minimal_note", "m_note" -> MINIMAL_NOTE
-                "pulse_vinyl", "neon_girl" -> PULSE_VINYL
-                "retro_melody", "retro_boy", "retro_girl" -> RETRO_MELODY
                 else -> entries.firstOrNull { it.key == key } ?: DEFAULT
             }
         }
