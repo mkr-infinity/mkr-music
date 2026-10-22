@@ -70,6 +70,10 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import com.music.mkr.ui.component.EmptyPlaceholder
+import com.music.mkr.ui.component.shimmer.ShimmerHost
+import com.music.mkr.ui.component.shimmer.ListItemPlaceHolder
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
@@ -227,13 +231,41 @@ fun OnlinePlaylistScreen(
             if (playlist == null || songs.isEmpty()) {
                 if (isLoading) {
                     item(key = "loading_placeholder") {
+                        ShimmerHost(modifier = Modifier.fillMaxWidth().padding(top = 16.dp)) {
+                            repeat(8) {
+                                ListItemPlaceHolder()
+                            }
+                        }
+                    }
+                } else {
+                    item(key = "error_placeholder") {
                         Box(
                             modifier = Modifier
-                                .fillMaxWidth()
+                                .fillParentMaxSize()
                                 .padding(32.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            ContainedLoadingIndicator()
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                EmptyPlaceholder(
+                                    icon = R.drawable.error,
+                                    text = error ?: stringResource(R.string.playlist_not_found),
+                                    description = stringResource(R.string.network_error)
+                                )
+                                Spacer(Modifier.height(16.dp))
+                                Button(
+                                    onClick = { viewModel.retry() },
+                                    shape = RoundedCornerShape(20.dp),
+                                    colors = ButtonDefaults.buttonColors(
+                                        containerColor = MaterialTheme.colorScheme.primary,
+                                        contentColor = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                ) {
+                                    Text(stringResource(R.string.retry), fontWeight = FontWeight.Bold)
+                                }
+                            }
                         }
                     }
                 }
@@ -624,11 +656,11 @@ private fun OnlinePlaylistHeader(
         ) {
             Spacer(Modifier.height(20.dp)) // Space for top app bar
 
-            // Artwork - Large and centered
+            // Artwork - Large, elevated with smooth rounded corners
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 48.dp)
+                    .padding(horizontal = 56.dp)
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current).data(playlist.thumbnail)
@@ -637,7 +669,8 @@ private fun OnlinePlaylistHeader(
                     modifier = Modifier
                         .fillMaxWidth()
                         .aspectRatio(1f)
-                        .clip(RoundedCornerShape(8.dp)),
+                        .shadow(elevation = 16.dp, shape = RoundedCornerShape(16.dp))
+                        .clip(RoundedCornerShape(16.dp)),
                     contentScale = ContentScale.Crop
                 )
             }
@@ -697,15 +730,122 @@ private fun OnlinePlaylistHeader(
 
             Spacer(Modifier.height(12.dp))
 
-            // Action Buttons Row (Save, Play, Shuffle) - Expressive Design
+            // Action Buttons Row (Play All, Shuffle, Save) - Expressive Design
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
-                horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                    .padding(horizontal = 24.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Save Button
+                // Play All Button (Prominent Pill Capsule)
+                Box(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .weight(1f)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.primary)
+                        .clickable {
+                            if (songs.isNotEmpty()) {
+                                val isRadio = playlist.id.startsWith("RD") || playlist.id.startsWith("VLRD") 
+                                val queue = if (isRadio) {
+                                    YouTubeQueue(
+                                        endpoint = WatchEndpoint(
+                                            videoId = songs.firstOrNull()?.id,
+                                            playlistId = playlist.id
+                                        ),
+                                        preloadItem = songs.firstOrNull()?.toMediaMetadata()
+                                    )
+                                } else {
+                                    YouTubePlaylistQueue(
+                                        playlistId = playlist.id,
+                                        playlistTitle = playlist.title,
+                                        initialSongs = songs,
+                                        initialContinuation = continuation
+                                    )
+                                }
+                                playerConnection.playQueue(queue)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(
+                                if (isPlaying && mediaMetadata?.album?.id == playlist.id) R.drawable.pause else R.drawable.play
+                            ),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = if (isPlaying && mediaMetadata?.album?.id == playlist.id) stringResource(
+                                R.string.pause
+                            ) else stringResource(R.string.play),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
+                }
+
+                // Shuffle Button (Tonal Pill Capsule)
+                Box(
+                    modifier = Modifier
+                        .height(48.dp)
+                        .weight(1f)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f))
+                        .clickable {
+                            if (songs.isNotEmpty()) {
+                                val isRadio = playlist.id.startsWith("RD") || playlist.id.startsWith("VLRD") 
+                                val queue = if (isRadio) {
+                                    val randomSong = songs.randomOrNull()
+                                    YouTubeQueue(
+                                        endpoint = WatchEndpoint(
+                                            videoId = randomSong?.id,
+                                            playlistId = playlist.id
+                                        ),
+                                        preloadItem = randomSong?.toMediaMetadata()
+                                    )
+                                } else {
+                                    YouTubePlaylistQueue(
+                                        playlistId = playlist.id,
+                                        playlistTitle = playlist.title,
+                                        initialSongs = songs.shuffled(),
+                                        initialContinuation = continuation
+                                    )
+                                }
+                                playerConnection.playQueue(queue)
+                            }
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.shuffle),
+                            contentDescription = stringResource(R.string.shuffle_content_desc),
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(
+                            text = stringResource(R.string.shuffle_content_desc),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Save Button (Circle)
                 Surface(
                     onClick = {
                         coroutineScope.launch(Dispatchers.IO) {
@@ -746,8 +886,8 @@ private fun OnlinePlaylistHeader(
                         }
                     },
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(52.dp)
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
@@ -760,103 +900,6 @@ private fun OnlinePlaylistHeader(
                             contentDescription = null,
                             modifier = Modifier.size(22.dp),
                             tint = if (dbPlaylist?.playlist?.bookmarkedAt != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-
-                // Play Button (Large Pill-Shaped Capsule)
-                Box(
-                    modifier = Modifier
-                        .height(52.dp)
-                        .weight(1.5f)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary)
-                        .clickable {
-                            if (songs.isNotEmpty()) {
-                                val isRadio = playlist.id.startsWith("RD") || playlist.id.startsWith("VLRD") 
-                                val queue = if (isRadio) {
-                                    YouTubeQueue(
-                                        endpoint = WatchEndpoint(
-                                            videoId = songs.firstOrNull()?.id,
-                                            playlistId = playlist.id
-                                        ),
-                                        preloadItem = songs.firstOrNull()?.toMediaMetadata()
-                                    )
-                                } else {
-                                    YouTubePlaylistQueue(
-                                        playlistId = playlist.id,
-                                        playlistTitle = playlist.title,
-                                        initialSongs = songs,
-                                        initialContinuation = continuation
-                                    )
-                                }
-                                playerConnection.playQueue(queue)
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            painter = painterResource(
-                                if (isPlaying && mediaMetadata?.album?.id == playlist.id) R.drawable.pause else R.drawable.play
-                            ),
-                            contentDescription = null,
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.onPrimary
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            text = if (isPlaying && mediaMetadata?.album?.id == playlist.id) stringResource(
-                                R.string.pause
-                            ) else stringResource(R.string.play),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimary
-                        )
-                    }
-                }
-
-                // Shuffle Button
-                Surface(
-                    onClick = {
-                        if (songs.isNotEmpty()) {
-                            val isRadio = playlist.id.startsWith("RD") || playlist.id.startsWith("VLRD") 
-                            val queue = if (isRadio) {
-                                val randomSong = songs.randomOrNull()
-                                YouTubeQueue(
-                                    endpoint = WatchEndpoint(
-                                        videoId = randomSong?.id,
-                                        playlistId = playlist.id
-                                    ),
-                                    preloadItem = randomSong?.toMediaMetadata()
-                                )
-                            } else {
-                                YouTubePlaylistQueue(
-                                    playlistId = playlist.id,
-                                    playlistTitle = playlist.title,
-                                    initialSongs = songs.shuffled(),
-                                    initialContinuation = continuation
-                                )
-                            }
-                            playerConnection.playQueue(queue)
-                        }
-                    },
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
-                    modifier = Modifier.size(52.dp)
-                ) {
-                    Box(
-                        contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.shuffle),
-                            contentDescription = stringResource(R.string.shuffle_content_desc),
-                            modifier = Modifier.size(22.dp),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
