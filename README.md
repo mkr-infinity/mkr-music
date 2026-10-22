@@ -11,12 +11,14 @@
 
 <div align="center">
 
-# 🎵 MKR Music
+# MKR Music
 
-### *Not just a music player — an intelligent, private sonic sanctuary.* ✨
+### *Not just a music player — an intelligent, private sonic sanctuary.*
 
-**MKR Music** is a premier open-source music streaming and offline audio player for Android.
+**MKR Music** (`com.kaif.music`) is a premier open-source music streaming and offline audio player for Android.
 Unifying **YouTube Music**, **JioSaavn**, and **Spotify playlist sync**, it delivers studio-grade lossless sound up to 320 kbps, synchronized lyrics, dynamic canvas visuals, and smart mood queues — completely ad-free and 100% private.
+
+**Current Version:** `1.0.0` (first release under the new application identity)
 
 <br/>
 
@@ -113,7 +115,7 @@ Unifying **YouTube Music**, **JioSaavn**, and **Spotify playlist sync**, it deli
 - 📜 **Synchronized Lyrics** – Live word-by-word scrolling lyrics with dynamic animated glow and blurred backdrops.
 - 🧠 **Mood Queue & Quick Picks** – Smart track recommendations matching your active mood and listening taste.
 - ⚡ **Instant Playback & Smart Cache** – Zero-buffer audio playback with automated offline caching (5s–90s).
-- 🎨 **Expressive Material 3 UI** – Full-bleed dynamic canvas visuals, fluid transitions, and 12 adaptive icons.
+- 🎨 **Expressive Material 3 UI** – Full-bleed dynamic canvas visuals, fluid transitions, and 5 custom adaptive icons.
 - 👥 **Listen Together** – Synchronized listening rooms to stream music in real-time with friends.
 - 🎵 **Bitrate & Output Switcher** – Live kbps stream quality badges and instant Bluetooth audio routing.
 - 🛡️ **Zero Telemetry & 100% Private** – Open-source, no trackers, no ads, and all library data stored locally.
@@ -205,9 +207,24 @@ Crafted with dedication by **Mohammad Kaif Raja**:
 - **JioSaavn Integration** – For high-fidelity regional streaming and catalog fallback.
 - **Innertube & NewPipe Extractor** – For YouTube Music streaming APIs, stream extraction, and search pipelines.
 
-> 💖 **To the open-source community:** Thank you for all the incredible tools, libraries, and APIs that make this project possible!
-> 
-> *Thank you to all the amazing developers who made this project possible!* ✨
+> To the open-source community: Thank you for all the incredible tools, libraries, and APIs that make this project possible!
+>
+> *Thank you to all the amazing developers who made this project possible!*
+
+---
+
+## Attribution and Reuse Policy
+
+MKR Music is open-source under GPL-3.0. If you reuse original MKR Music code, UI components, original design work, or assets in your own project:
+
+- **Provide visible credit** to MKR Music and its author (Mohammad Kaif Raja / @mkr-infinity) in your project's README, About screen, or equivalent documentation.
+- **Do not imply endorsement.** Credit must not suggest that MKR Music or its author endorses your derivative project.
+- **Preserve copyright notices and license terms** as required by GPL-3.0.
+- **Do not present MKR Music's name, branding, or original assets as your own work.**
+- Third-party dependencies and content remain subject to their respective licenses.
+- This project does not claim ownership of third-party code, music, or assets.
+
+The author reserves the right to investigate suspected unauthorized use of original work and may request attribution, removal, or other appropriate remedies where there is a legitimate basis. Where legal requirements are met, the author may submit a copyright or DMCA takedown notice. Not every similar UI is automatically infringing; this policy addresses substantive reuse of original work.
 
 ---
 
