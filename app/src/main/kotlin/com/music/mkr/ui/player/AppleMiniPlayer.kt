@@ -38,6 +38,10 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -151,12 +155,36 @@ fun AppleMiniPlayer(
     val onSurfaceColor = artworkPalette.textPrimary
     val errorColor = MaterialTheme.colorScheme.error
 
+    val previousTrackLabel = stringResource(R.string.widget_previous)
+    val nextTrackLabel = stringResource(R.string.next_track)
+    val customActionsList = remember(canSkipPrevious, canSkipNext, isListenTogetherGuest, previousTrackLabel, nextTrackLabel) {
+        val actions = mutableListOf<CustomAccessibilityAction>()
+        if (canSkipPrevious && !isListenTogetherGuest) {
+            actions.add(CustomAccessibilityAction(previousTrackLabel) {
+                playerConnection.seekToPrevious()
+                true
+            })
+        }
+        if (canSkipNext && !isListenTogetherGuest) {
+            actions.add(CustomAccessibilityAction(nextTrackLabel) {
+                playerConnection.seekToNext()
+                true
+            })
+        }
+        actions
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(MiniPlayerHeight)
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
             .padding(horizontal = 12.dp)
+            .semantics {
+                if (customActionsList.isNotEmpty()) {
+                    customActions = customActionsList
+                }
+            }
             .let { baseModifier ->
                 if (swipeThumbnail) {
                     baseModifier.pointerInput(Unit) {
@@ -389,9 +417,12 @@ fun AppleMiniPlayer(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
-                        .clickable(enabled = canSkipPrevious && !isListenTogetherGuest) {
+                        .clickable(
+                            role = Role.Button,
+                            enabled = canSkipPrevious && !isListenTogetherGuest
+                        ) {
                             val now = android.os.SystemClock.uptimeMillis()
                             if (now - lastPreviousTime >= 300L) {
                                 lastPreviousTime = now
@@ -413,9 +444,9 @@ fun AppleMiniPlayer(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
-                        .clickable {
+                        .clickable(role = Role.Button) {
                             val now = android.os.SystemClock.uptimeMillis()
                             if (now - lastPlayPauseTime >= 300L) {
                                 lastPlayPauseTime = now
@@ -465,9 +496,12 @@ fun AppleMiniPlayer(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
-                        .clickable(enabled = canSkipNext && !isListenTogetherGuest) {
+                        .clickable(
+                            role = Role.Button,
+                            enabled = canSkipNext && !isListenTogetherGuest
+                        ) {
                             val now = android.os.SystemClock.uptimeMillis()
                             if (now - lastNextTime >= 300L) {
                                 lastNextTime = now

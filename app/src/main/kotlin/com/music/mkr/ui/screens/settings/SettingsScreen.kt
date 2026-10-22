@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -128,7 +129,7 @@ fun SettingsScreen(
             leadingIcon = {
                 Icon(
                     painter = painterResource(R.drawable.search),
-                    contentDescription = "Search",
+                    contentDescription = null,
                     tint = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.size(20.dp)
                 )
@@ -138,7 +139,7 @@ fun SettingsScreen(
                     IconButton(onClick = { searchQuery = "" }) {
                         Icon(
                             painter = painterResource(R.drawable.close),
-                            contentDescription = "Clear",
+                            contentDescription = stringResource(R.string.clear),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(18.dp)
                         )
@@ -242,7 +243,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f).height(126.dp),
+                        modifier = Modifier.weight(1f).heightIn(min = 126.dp),
                         key = "appearance_theme_palette",
                         icon = R.drawable.palette,
                         title = "Appearance",
@@ -250,7 +251,7 @@ fun SettingsScreen(
                         onClick = { navController.navigate("settings/appearance") }
                     )
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f).height(126.dp),
+                        modifier = Modifier.weight(1f).heightIn(min = 126.dp),
                         key = "player_audio_quality",
                         icon = R.drawable.earbud_case,
                         title = "Player & Audio",
@@ -263,7 +264,7 @@ fun SettingsScreen(
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f).height(126.dp),
+                        modifier = Modifier.weight(1f).heightIn(min = 126.dp),
                         key = "storage_downloads",
                         icon = R.drawable.storage,
                         title = "Storage & Cache",
@@ -271,7 +272,7 @@ fun SettingsScreen(
                         onClick = { navController.navigate("settings/storage") }
                     )
                     SettingsGridCard(
-                        modifier = Modifier.weight(1f).height(126.dp),
+                        modifier = Modifier.weight(1f).heightIn(min = 126.dp),
                         key = "account_login",
                         icon = R.drawable.google,
                         title = "Account & Sync",
@@ -580,7 +581,7 @@ private fun SettingsGridCard(
         modifier = modifier
             .settingsHighlight(key, RoundedCornerShape(18.dp))
             .clip(RoundedCornerShape(18.dp))
-            .clickable(onClick = onClick),
+            .clickable(role = Role.Button, onClick = onClick),
         shape = RoundedCornerShape(18.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 0.dp,

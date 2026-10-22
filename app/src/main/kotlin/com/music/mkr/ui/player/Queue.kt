@@ -384,7 +384,7 @@ fun Queue(
                                 painter = painterResource(
                                     if (isBluetoothConnected) R.drawable.headphones else R.drawable.home_speaker_devices
                                 ),
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.audio_devices),
                                 modifier = Modifier.size(30.dp)
                             )
                         }
@@ -417,7 +417,7 @@ fun Queue(
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.sleep_timer),
-                                    contentDescription = null,
+                                    contentDescription = stringResource(R.string.sleep_timer),
                                     modifier = Modifier.size(30.dp)
                                 )
                                 if (sleepTimerEnabled) {
@@ -445,7 +445,7 @@ fun Queue(
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.lyrics),
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.lyrics),
                                 modifier = Modifier.size(40.dp),
                                 tint = TextBackgroundColor
                             )

@@ -37,6 +37,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -216,7 +217,7 @@ fun MinimalPlayer(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .clickable {
+                    .clickable(role = Role.Button) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
                     },
@@ -236,7 +237,10 @@ fun MinimalPlayer(
                     .size(52.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .background(textBackgroundColor.copy(alpha = 0.08f))
-                    .clickable(enabled = canSkipPrevious) {
+                    .clickable(
+                        role = Role.Button,
+                        enabled = canSkipPrevious
+                    ) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         playerConnection.seekToPrevious()
                     },
@@ -256,7 +260,7 @@ fun MinimalPlayer(
                     .size(64.dp)
                     .clip(RoundedCornerShape(18.dp))
                     .background(textButtonColor)
-                    .clickable {
+                    .clickable(role = Role.Button) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         if (playbackState == Player.STATE_ENDED) {
                             playerConnection.player.seekTo(0, 0)
@@ -295,7 +299,10 @@ fun MinimalPlayer(
                     .size(52.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .background(textBackgroundColor.copy(alpha = 0.08f))
-                    .clickable(enabled = canSkipNext) {
+                    .clickable(
+                        role = Role.Button,
+                        enabled = canSkipNext
+                    ) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         playerConnection.seekToNext()
                     },
@@ -314,7 +321,7 @@ fun MinimalPlayer(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(RoundedCornerShape(10.dp))
-                    .clickable {
+                    .clickable(role = Role.Button) {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         playerConnection.player.toggleRepeatMode()
                     },
@@ -322,8 +329,8 @@ fun MinimalPlayer(
             ) {
                 Icon(
                     painter = painterResource(
-                        when (repeatMode) {
-                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
+                        when {
+                            repeatMode == Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
                             else -> R.drawable.repeat
                         }
                     ),

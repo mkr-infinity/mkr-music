@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 fun ResizableIconButton(
     @DrawableRes icon: Int,
     modifier: Modifier = Modifier,
+    contentDescription: String? = null,
     color: Color = MaterialTheme.colorScheme.onSurface,
     enabled: Boolean = true,
     indication: Indication? = null,
@@ -46,10 +47,11 @@ fun ResizableIconButton(
 ) {
     Image(
         painter = painterResource(icon),
-        contentDescription = null,
+        contentDescription = contentDescription,
         colorFilter = ColorFilter.tint(color),
         modifier = modifier
             .clickable(
+                role = Role.Button,
                 indication = indication ?: ripple(bounded = false),
                 interactionSource = remember { MutableInteractionSource() },
                 enabled = enabled,

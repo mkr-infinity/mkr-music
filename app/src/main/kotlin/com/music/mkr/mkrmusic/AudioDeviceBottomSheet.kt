@@ -35,6 +35,8 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.foundation.shape.CircleShape
@@ -307,6 +309,7 @@ fun AudioDeviceBottomSheet(onDismiss: () -> Unit, modifier: Modifier = Modifier)
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 16.dp)
                 .padding(bottom = 24.dp)
                 .animateContentSize()
@@ -444,7 +447,7 @@ fun AudioDeviceBottomSheet(onDismiss: () -> Unit, modifier: Modifier = Modifier)
                                             ) {
                                                 Icon(
                                                     painter = painterResource(R.drawable.expand_more),
-                                                    contentDescription = null,
+                                                    contentDescription = stringResource(R.string.audio_devices),
                                                     modifier = Modifier
                                                         .size(28.dp)
                                                         .graphicsLayer { rotationZ = chevronRotation },

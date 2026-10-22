@@ -62,6 +62,7 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -339,6 +340,7 @@ fun ApplePlayer(
                 ) {
                     ResizableIconButton(
                         icon = R.drawable.skip_previous,
+                        contentDescription = stringResource(R.string.widget_previous),
                         enabled = canSkipPrevious,
                         color = textBackgroundColor,
                         modifier = Modifier.size(44.dp).alpha(if (canSkipPrevious) 1f else 0.4f),
@@ -353,7 +355,7 @@ fun ApplePlayer(
                             .size(72.dp)
                             .clip(RoundedCornerShape(playPauseRoundness))
                             .background(textButtonColor)
-                            .clickable {
+                            .clickable(role = Role.Button) {
                                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                 if (playbackState == Player.STATE_ENDED) {
                                     playerConnection.player.seekTo(0, 0)
@@ -372,7 +374,7 @@ fun ApplePlayer(
                                     else -> R.drawable.play
                                 }
                             ),
-                            contentDescription = null,
+                            contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
                             colorFilter = ColorFilter.tint(iconButtonColor),
                             modifier = Modifier.size(36.dp)
                         )
@@ -380,6 +382,7 @@ fun ApplePlayer(
 
                     ResizableIconButton(
                         icon = R.drawable.skip_next,
+                        contentDescription = stringResource(R.string.next),
                         enabled = canSkipNext,
                         color = textBackgroundColor,
                         modifier = Modifier.size(44.dp).alpha(if (canSkipNext) 1f else 0.4f),
@@ -595,6 +598,7 @@ fun ApplePlayer(
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     ResizableIconButton(
                         icon = R.drawable.skip_previous,
+                        contentDescription = stringResource(R.string.widget_previous),
                         enabled = canSkipPrevious,
                         color = textBackgroundColor,
                         modifier = Modifier
@@ -613,7 +617,7 @@ fun ApplePlayer(
                     modifier = Modifier
                         .size(100.dp)
                         .clip(RoundedCornerShape(playPauseRoundness))
-                        .clickable {
+                        .clickable(role = Role.Button) {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                             if (playbackState == Player.STATE_ENDED) {
                                 playerConnection.player.seekTo(0, 0)
@@ -639,7 +643,7 @@ fun ApplePlayer(
                                     else -> R.drawable.play
                                 }
                             ),
-                            contentDescription = null,
+                            contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
                             colorFilter = ColorFilter.tint(textBackgroundColor),
                             modifier = Modifier.size(72.dp)
                         )
@@ -651,6 +655,7 @@ fun ApplePlayer(
                 Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
                     ResizableIconButton(
                         icon = R.drawable.skip_next,
+                        contentDescription = stringResource(R.string.next),
                         enabled = canSkipNext,
                         color = textBackgroundColor,
                         modifier = Modifier

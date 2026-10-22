@@ -221,6 +221,7 @@ fun ClassicPlayer(
                         Player.REPEAT_MODE_ALL -> R.drawable.repeat
                         else -> R.drawable.repeat
                     },
+                    contentDescription = stringResource(R.string.repeat),
                     color = textBackgroundColor,
                     modifier = Modifier
                         .size(36.dp)
@@ -236,6 +237,7 @@ fun ClassicPlayer(
             Box(contentAlignment = Alignment.Center) {
                 ResizableIconButton(
                     icon = R.drawable.skip_previous,
+                    contentDescription = stringResource(R.string.widget_previous),
                     enabled = canSkipPrevious,
                     color = textBackgroundColor,
                     modifier = Modifier
@@ -282,7 +284,7 @@ fun ClassicPlayer(
                                     else -> R.drawable.play
                                 }
                             ),
-                            contentDescription = null,
+                            contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
                             colorFilter = ColorFilter.tint(iconButtonColor),
                             modifier = Modifier.size(34.dp)
                         )
@@ -294,6 +296,7 @@ fun ClassicPlayer(
             Box(contentAlignment = Alignment.Center) {
                 ResizableIconButton(
                     icon = R.drawable.skip_next,
+                    contentDescription = stringResource(R.string.next),
                     enabled = canSkipNext,
                     color = textBackgroundColor,
                     modifier = Modifier
@@ -310,6 +313,7 @@ fun ClassicPlayer(
             Box(contentAlignment = Alignment.Center) {
                 ResizableIconButton(
                     icon = if (isLiked) R.drawable.favorite else R.drawable.favorite_border,
+                    contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
                     color = if (isLiked) MaterialTheme.colorScheme.error else textBackgroundColor,
                     modifier = Modifier.size(36.dp),
                     onClick = {

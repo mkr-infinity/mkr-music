@@ -91,6 +91,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.IntOffset
@@ -298,12 +301,36 @@ private fun NewMiniPlayer(
     val onSurfaceColor = artworkPalette.textPrimary
     val errorColor = MaterialTheme.colorScheme.error
 
+    val previousTrackLabel = stringResource(R.string.widget_previous)
+    val nextTrackLabel = stringResource(R.string.next_track)
+    val customActionsList = remember(canSkipPrevious, canSkipNext, isListenTogetherGuest, previousTrackLabel, nextTrackLabel) {
+        val actions = mutableListOf<CustomAccessibilityAction>()
+        if (canSkipPrevious && !isListenTogetherGuest) {
+            actions.add(CustomAccessibilityAction(previousTrackLabel) {
+                playerConnection.seekToPrevious()
+                true
+            })
+        }
+        if (canSkipNext && !isListenTogetherGuest) {
+            actions.add(CustomAccessibilityAction(nextTrackLabel) {
+                playerConnection.seekToNext()
+                true
+            })
+        }
+        actions
+    }
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .height(MiniPlayerHeight)
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
             .padding(horizontal = 12.dp)
+            .semantics {
+                if (customActionsList.isNotEmpty()) {
+                    customActions = customActionsList
+                }
+            }
             .let { baseModifier ->
                 if (swipeThumbnail) {
                     baseModifier.pointerInput(Unit) {
@@ -478,7 +505,7 @@ private fun NewMiniPlayer(
                             }
                         }
                     },
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.skip_previous),
@@ -503,7 +530,7 @@ private fun NewMiniPlayer(
                             }
                         }
                     },
-                    modifier = Modifier.size(40.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     val isPlaying by playerConnection.isPlaying.collectAsState()
                     val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
@@ -540,7 +567,7 @@ private fun NewMiniPlayer(
                             }
                         }
                     },
-                    modifier = Modifier.size(36.dp)
+                    modifier = Modifier.size(44.dp)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.skip_next),
@@ -802,11 +829,35 @@ private fun LegacyMiniPlayer(
     val primaryColor = MaterialTheme.colorScheme.primary
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
 
+    val previousTrackLabel = stringResource(R.string.widget_previous)
+    val nextTrackLabel = stringResource(R.string.next_track)
+    val customActionsList = remember(canSkipPrevious, canSkipNext, isListenTogetherGuest, previousTrackLabel, nextTrackLabel) {
+        val actions = mutableListOf<CustomAccessibilityAction>()
+        if (canSkipPrevious && !isListenTogetherGuest) {
+            actions.add(CustomAccessibilityAction(previousTrackLabel) {
+                playerConnection.seekToPrevious()
+                true
+            })
+        }
+        if (canSkipNext && !isListenTogetherGuest) {
+            actions.add(CustomAccessibilityAction(nextTrackLabel) {
+                playerConnection.seekToNext()
+                true
+            })
+        }
+        actions
+    }
+
     Box(
         modifier = modifier
             .then(if (isTabletLandscape) Modifier.width(500.dp) else Modifier.fillMaxWidth())
             .height(MiniPlayerHeight)
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
+            .semantics {
+                if (customActionsList.isNotEmpty()) {
+                    customActions = customActionsList
+                }
+            }
             .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
             .background(
                 if (pureBlack && isSystemInDarkTheme()) Color.Black
@@ -959,7 +1010,7 @@ private fun LegacyMiniPlayer(
                         }
                     }
                 },
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(44.dp)
             ) {
                 Icon(
                     painter = painterResource(R.drawable.skip_previous),
@@ -988,7 +1039,7 @@ private fun LegacyMiniPlayer(
                         }
                     }
                 },
-                modifier = Modifier.size(36.dp)
+                modifier = Modifier.size(44.dp)
             ) {
                 Icon(
                     painter = painterResource(R.drawable.skip_next),
@@ -1017,7 +1068,6 @@ private fun LegacyPlayPauseButton(
     val isListenTogetherGuest = listenTogetherManager?.let { it.isInRoom && !it.isHost } ?: false
     val isMuted by playerConnection.isMuted.collectAsState()
 
-
     IconButton(
         onClick = {
             if (isListenTogetherGuest) {
@@ -1033,6 +1083,7 @@ private fun LegacyPlayPauseButton(
                 playerConnection.togglePlayPause()
             }
         },
+        modifier = Modifier.size(48.dp)
     ) {
         Icon(
             painter = painterResource(
@@ -1043,7 +1094,12 @@ private fun LegacyPlayPauseButton(
                     else -> R.drawable.play
                 }
             ),
-            contentDescription = null,
+            contentDescription = if (isListenTogetherGuest) {
+                if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
+            } else {
+                if (effectiveIsPlaying) stringResource(R.string.pause) else stringResource(R.string.play)
+            },
+            modifier = Modifier.size(26.dp)
         )
     }
 }
