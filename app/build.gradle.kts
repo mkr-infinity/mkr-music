@@ -1,6 +1,10 @@
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import java.util.Properties
 import java.net.URL
+import org.gradle.api.DefaultTask
+import org.gradle.api.provider.Property
+import org.gradle.api.tasks.Input
+import org.gradle.api.tasks.TaskAction
 
 val localProperties = Properties()
 val localPropertiesFile = rootProject.file("local.properties")
@@ -350,11 +354,23 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
 }
 
-tasks.register("printAppVersion") {
-    description = "Prints the canonical app version name and computed version code for CI validation"
-    doLast {
-        println("CANONICAL_VERSION_NAME=$canonicalAppVersion")
-        println("COMPUTED_VERSION_CODE=$computedVersionCode")
+abstract class PrintAppVersionTask : DefaultTask() {
+    @get:Input
+    abstract val versionName: Property<String>
+
+    @get:Input
+    abstract val versionCode: Property<Int>
+
+    @TaskAction
+    fun printVersion() {
+        println("CANONICAL_VERSION_NAME=${versionName.get()}")
+        println("COMPUTED_VERSION_CODE=${versionCode.get()}")
     }
+}
+
+tasks.register<PrintAppVersionTask>("printAppVersion") {
+    description = "Prints the canonical app version name and computed version code for CI validation"
+    versionName.set(canonicalAppVersion)
+    versionCode.set(computedVersionCode)
 }
 
