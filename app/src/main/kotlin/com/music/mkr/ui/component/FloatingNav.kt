@@ -253,7 +253,7 @@ private fun AmberDockItem(
 }
 
 // ---------------------------------------------------------------------------
-// STYLE A: Floating Glass Navigation
+// STYLE A: Floating Glass Navigation (Telegram-inspired Floating Glass Capsule)
 // Refined floating dock with authentic translucent frosted glass depth,
 // specular top rim highlight, and illuminated frosted active capsule.
 // ---------------------------------------------------------------------------
@@ -268,24 +268,35 @@ fun FloatingGlassNavigationBar(
     onSearchLongClick: (() -> Unit)? = null,
     bottomInset: Dp = 0.dp,
 ) {
-    val containerColor = if (pureBlack) Color(0xD0000000) else Color(0xD0171820)
-    val glassRimBorder = Color(0x35FFFFFF)
+    val containerColor = if (pureBlack) Color(0xE6121316) else Color(0xDD18191E)
+    val glassRimBrush = Brush.verticalGradient(
+        colors = listOf(
+            Color(0x40FFFFFF),
+            Color(0x18FFFFFF),
+            Color(0x0AFFFFFF)
+        )
+    )
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 26.dp)
-            .padding(bottom = bottomInset + 14.dp),
+            .padding(horizontal = 24.dp)
+            .padding(bottom = bottomInset + 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(66.dp)
-                .shadow(elevation = 14.dp, shape = RoundedCornerShape(26.dp))
-                .background(containerColor, shape = RoundedCornerShape(26.dp))
-                .border(width = 1.dp, color = glassRimBorder, shape = RoundedCornerShape(26.dp))
-                .padding(horizontal = 8.dp),
+                .height(64.dp)
+                .shadow(
+                    elevation = 12.dp,
+                    shape = RoundedCornerShape(32.dp),
+                    ambientColor = Color(0x35000000),
+                    spotColor = Color(0x45000000)
+                )
+                .background(containerColor, shape = RoundedCornerShape(32.dp))
+                .border(width = 1.dp, brush = glassRimBrush, shape = RoundedCornerShape(32.dp))
+                .padding(horizontal = 8.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
@@ -345,22 +356,33 @@ private fun FloatingGlassItem(
     }
 
     val iconRes = if (isSelected) screen.iconIdActive else screen.iconIdInactive
-    val contentColor = if (isSelected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f)
-    }
+    val contentColor by animateColorAsState(
+        targetValue = if (isSelected) {
+            MaterialTheme.colorScheme.primary
+        } else {
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.70f)
+        },
+        animationSpec = tween(durationMillis = 200),
+        label = "glassContentColor"
+    )
 
     val capsuleBg by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent,
-        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else Color.Transparent,
+        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
         label = "glassCapsuleBg"
+    )
+
+    val capsuleBorder by animateColorAsState(
+        targetValue = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else Color.Transparent,
+        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
+        label = "glassCapsuleBorder"
     )
 
     Box(
         modifier = modifier
-            .clip(RoundedCornerShape(18.dp))
-            .background(capsuleBg)
+            .clip(RoundedCornerShape(22.dp))
+            .background(capsuleBg, shape = RoundedCornerShape(22.dp))
+            .border(width = 1.dp, color = capsuleBorder, shape = RoundedCornerShape(22.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true),
@@ -368,7 +390,7 @@ private fun FloatingGlassItem(
                     if (!isSearchItem) onClick()
                 }
             )
-            .padding(vertical = 6.dp),
+            .padding(vertical = 5.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -379,7 +401,7 @@ private fun FloatingGlassItem(
                 painter = painterResource(id = iconRes),
                 contentDescription = stringResource(screen.titleId),
                 tint = contentColor,
-                modifier = Modifier.size(23.dp)
+                modifier = Modifier.size(22.dp)
             )
 
             if (!slimNav) {
@@ -388,7 +410,7 @@ private fun FloatingGlassItem(
                     text = stringResource(screen.titleId),
                     color = contentColor,
                     style = MaterialTheme.typography.labelSmall,
-                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
