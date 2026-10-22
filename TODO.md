@@ -3,7 +3,7 @@
 **Target Version:** `1.0.0` (`versionCode = 10000`)  
 **Backend:** `https://listen-together-mkr-music.onrender.com` / `wss://listen-together-mkr-music.onrender.com`  
 **Operator:** `mkr-infinity`  
-**Last Updated:** Phase 15 Complete (`20ab2bc`)  
+**Last Updated:** Phase 15 Accessibility Pass Complete (`99516dc`)  
 
 ---
 
