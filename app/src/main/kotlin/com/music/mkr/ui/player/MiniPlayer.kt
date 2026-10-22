@@ -177,7 +177,7 @@ fun MiniPlayer(
     val useAppleMiniPlayer by rememberPreference(UseAppleMiniPlayerKey, false)
     
     // Create stable progress state - doesn't cause recomposition on position changes
-    val progressState = remember { ProgressState(positionState, durationState) }
+    val progressState = remember(positionState, durationState) { ProgressState(positionState, durationState) }
 
     if (useAppleMiniPlayer) {
         AppleMiniPlayer(

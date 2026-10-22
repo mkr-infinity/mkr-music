@@ -1431,6 +1431,7 @@ fun AppearanceSettings(
             title = stringResource(R.string.player),
             items = listOfNotNull(
                 Material3SettingsItem(
+                    key = "appearance_player_style",
                     icon = painterResource(R.drawable.palette),
                     title = { Text(stringResource(R.string.player_style)) },
                     trailingContent = {
@@ -1439,6 +1440,7 @@ fun AppearanceSettings(
                     onClick = { showPlayerDesignDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_player_background",
                     icon = painterResource(R.drawable.gradient),
                     title = { Text(stringResource(R.string.player_background_style)) },
                     trailingContent = {
@@ -1476,6 +1478,7 @@ fun AppearanceSettings(
                     onClick = { onShowAudioQualityBadgeChange(!showAudioQualityBadge) }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_hide_thumbnail",
                     icon = painterResource(R.drawable.hide_image),
                     title = { Text(stringResource(R.string.hide_player_thumbnail)) },
                     description = { Text(stringResource(R.string.hide_player_thumbnail_desc)) },
@@ -1543,6 +1546,7 @@ fun AppearanceSettings(
                     )
                 } else null,
                 Material3SettingsItem(
+                    key = "appearance_thumbnail_radius",
                     icon = painterResource(R.drawable.image),
                     title = { Text(stringResource(R.string.thumbnail_corner_radius)) },
                     description = { Text(stringResource(R.string.thumbnail_corner_radius_desc)) },
@@ -1609,6 +1613,7 @@ fun AppearanceSettings(
                     onClick = { showSliderOptionDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_swipe_thumbnail",
                     icon = painterResource(R.drawable.swipe),
                     title = { Text(stringResource(R.string.enable_swipe_thumbnail)) },
                     trailingContent = {
@@ -1673,6 +1678,7 @@ fun AppearanceSettings(
                 )
             ) + if (swipeThumbnail) listOf(
                 Material3SettingsItem(
+                    key = "appearance_swipe_sensitivity",
                     icon = painterResource(R.drawable.tune),
                     title = { Text(stringResource(R.string.swipe_sensitivity)) },
                     trailingContent = {
@@ -2038,6 +2044,7 @@ fun AppearanceSettings(
                 ),
 
                 Material3SettingsItem(
+                    key = "appearance_swipe_to_song",
                     icon = painterResource(R.drawable.swipe),
                     title = { Text(stringResource(R.string.swipe_song_to_add)) },
                     trailingContent = {
@@ -2058,6 +2065,7 @@ fun AppearanceSettings(
                     onClick = { onSwipeToSongChange(!swipeToSong) }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_swipe_to_remove",
                     icon = painterResource(R.drawable.swipe),
                     title = { Text(stringResource(R.string.swipe_song_to_remove)) },
                     trailingContent = {
@@ -2147,6 +2155,7 @@ fun AppearanceSettings(
                     onClick = { showGridSizeDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_density",
                     icon = painterResource(R.drawable.grid_view),
                     title = { Text(stringResource(R.string.display_density)) },
                     trailingContent = {
