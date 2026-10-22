@@ -25,6 +25,9 @@ import com.music.innertube.models.filterYoutubeShorts
 import com.music.innertube.pages.ExplorePage
 import com.music.innertube.pages.HomePage
 import com.music.innertube.utils.completed
+import com.music.innertube.utils.parseCookieString
+import com.music.mkr.mkrmusic.updater.GitHubUpdateManager
+import com.music.mkr.mkrmusic.updater.ReleasePreviewState
 import com.music.mkr.constants.HideExplicitKey
 import com.music.mkr.constants.HideVideoSongsKey
 import com.music.mkr.constants.HideYoutubeShortsKey
@@ -84,10 +87,21 @@ class HomeViewModel @Inject constructor(
     val syncUtils: SyncUtils,
     val wrappedManager: WrappedManager,
     private val wrappedAudioService: WrappedAudioService,
+    val gitHubUpdateManager: GitHubUpdateManager,
 ) : ViewModel() {
     val isRefreshing = MutableStateFlow(false)
     val isLoading = MutableStateFlow(false)
     val isRandomizing = MutableStateFlow(false)
+
+    val updateState: StateFlow<ReleasePreviewState> = gitHubUpdateManager.updateState
+
+    val isLoggedIn: StateFlow<Boolean> = context.dataStore.data
+        .map { prefs ->
+            val cookie = prefs[InnerTubeCookieKey]
+            !cookie.isNullOrEmpty() && "SAPISID" in parseCookieString(cookie)
+        }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     private val quickPicksEnum = context.dataStore.data.map {
         it[QuickPicksKey].toEnum(QuickPicks.QUICK_PICKS)
@@ -1138,9 +1152,13 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             syncUtils.tryAutoSync()
         }
+        // Force refresh GitHub update metadata
+        gitHubUpdateManager.checkForUpdates(viewModelScope, force = true)
     }
 
     init {
+        // Non-blocking release check with cached TTL
+        gitHubUpdateManager.checkForUpdates(viewModelScope, force = false)
 
         // Load home data immediately — do NOT wait for the cookie read.
         // Phase 2 already guards loadAccountPlaylists() with `if (YouTube.cookie != null)`,

@@ -1,0 +1,57 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Watch Case Outer Ring -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M12,21 C7.03,21 3,16.97 3,12 C3,7.03 7.03,3 12,3 C16.97,3 21,7.03 21,12 C21,16.97 16.97,21 12,21 Z" />
+    <!-- Watch Crown at 3 o'clock -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M21,10.5 H22.8 C23.2,10.5 23.5,10.8 23.5,11.2 V12.8 C23.5,13.2 23.2,13.5 22.8,13.5 H21 Z" />
+    <!-- Top Lug Accent / Strap Notch -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M9,2 H15" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.5"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M9,22 H15" />
+    <!-- Watch Center Pin -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M12,10.8 C11.34,10.8 10.8,11.34 10.8,12 C10.8,12.66 11.34,13.2 12,13.2 C12.66,13.2 13.2,12.66 13.2,12 C13.2,11.34 12.66,10.8 12,10.8 Z" />
+    <!-- Hour and Minute Hands (Indicating Listening Time) -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M12,12 L8.5,8.5" />
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.8"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:fillColor="#00000000"
+        android:pathData="M12,12 L15.5,7.5" />
+    <!-- Counter-clockwise History Sweep Arc -->
+    <path
+        android:strokeColor="#FFFFFF"
+        android:strokeWidth="1.3"
+        android:strokeLineCap="round"
+        android:fillColor="#00000000"
+        android:pathData="M6.5,12 A5.5,5.5 0 0,0 12,17.5 A5.5,5.5 0 0,0 17.5,12" />
+</vector>

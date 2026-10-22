@@ -172,6 +172,9 @@ import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.listItemShape
 import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.utils.rememberPreference
+import com.music.mkr.mkrmusic.component.UpdateAvailableHomeCard
+import com.music.mkr.mkrmusic.component.UpdatePreviewDialog
+import com.music.mkr.mkrmusic.updater.ReleasePreviewState
 import com.music.mkr.viewmodels.CommunityPlaylistItem
 import com.music.mkr.viewmodels.HomeViewModel
 import kotlin.math.min
@@ -530,8 +533,6 @@ fun DailyDiscoverCard(
         }
     }
 }
-    }
-}
 
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -581,6 +582,9 @@ fun HomeScreen(
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
     val (randomizeHomeOrder) = rememberPreference(RandomizeHomeOrderKey, true)
     val (hideSpeedDial) = rememberPreference(HideSpeedDialKey, false)
+    val updateState by viewModel.updateState.collectAsState()
+    var showUpdateDialog by remember { mutableStateOf(false) }
+    var updateDismissed by rememberSaveable { mutableStateOf(false) }
 
     val shouldShowWrappedCard by viewModel.showWrappedCard.collectAsState()
     val wrappedState by viewModel.wrappedManager.state.collectAsState()
@@ -981,6 +985,17 @@ fun HomeScreen(
                     IntOffset(0, (animatedFraction * maxOffsetPx).toInt())
                 }
             ) {
+                if (updateState is ReleasePreviewState.UpdateAvailable && !updateDismissed) {
+                    item(key = "update_available_banner") {
+                        val release = (updateState as ReleasePreviewState.UpdateAvailable).release
+                        UpdateAvailableHomeCard(
+                            release = release,
+                            onPreviewClick = { showUpdateDialog = true },
+                            onDismiss = { updateDismissed = true }
+                        )
+                    }
+                }
+
                 item {
                     ChipsRow(
                         chips = homePage?.chips
@@ -2069,5 +2084,12 @@ fun HomeScreen(
                 }
             )
         }
+    }
+
+    if (showUpdateDialog) {
+        UpdatePreviewDialog(
+            state = updateState,
+            onDismiss = { showUpdateDialog = false }
+        )
     }
 }
