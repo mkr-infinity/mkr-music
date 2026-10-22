@@ -34,6 +34,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -97,6 +99,10 @@ fun AppleMiniPlayer(
     // Swipe settings
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnailPref by rememberPreference(SwipeThumbnailKey, true)
+    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = false)
+    val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
+    val haptic = LocalHapticFeedback.current
+    var hasTriggeredHapticThreshold by remember { mutableStateOf(false) }
     
     // Disable swipe for Listen Together guests
     val listenTogetherManager = LocalListenTogetherManager.current
@@ -158,8 +164,10 @@ fun AppleMiniPlayer(
                             onDragStart = {
                                 dragStartTime = System.currentTimeMillis()
                                 totalDragDistance = 0f
+                                hasTriggeredHapticThreshold = false
                             },
                             onDragCancel = {
+                                hasTriggeredHapticThreshold = false
                                 coroutineScope.launch {
                                     offsetXAnimatable.animateTo(0f, animationSpec)
                                 }
@@ -180,8 +188,15 @@ fun AppleMiniPlayer(
 
                                 if (allowLeft || allowRight || canReturnToCenter) {
                                     totalDragDistance += kotlin.math.abs(adjustedDragAmount)
+                                    val newOffset = offsetXAnimatable.value + adjustedDragAmount
                                     coroutineScope.launch {
-                                        offsetXAnimatable.snapTo(offsetXAnimatable.value + adjustedDragAmount)
+                                        offsetXAnimatable.snapTo(newOffset)
+                                    }
+                                    if (kotlin.math.abs(newOffset) >= autoSwipeThreshold && !hasTriggeredHapticThreshold) {
+                                        hasTriggeredHapticThreshold = true
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } else if (kotlin.math.abs(newOffset) < autoSwipeThreshold && hasTriggeredHapticThreshold) {
+                                        hasTriggeredHapticThreshold = false
                                     }
                                 }
                             },
@@ -199,6 +214,7 @@ fun AppleMiniPlayer(
                                     (kotlin.math.abs(currentOffset) > autoSwipeThreshold)
 
                                 if (shouldChangeSong) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     if (currentOffset > 0 && canSkipPreviousLocal) {
                                         playerConnection.player.seekToPreviousMediaItem()
                                     } else if (currentOffset <= 0 && canSkipNextLocal) {
@@ -214,6 +230,15 @@ fun AppleMiniPlayer(
                 } else baseModifier
             }
     ) {
+        // Directional swipe indicator revealed behind the sliding capsule
+        DirectionalSwipeIndicator(
+            offsetX = offsetXAnimatable.value,
+            threshold = autoSwipeThreshold,
+            canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1,
+            canSkipNext = playerConnection.player.nextMediaItemIndex != -1,
+            modifier = if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth()
+        )
+
         Box(
             modifier = Modifier
                 .then(if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth())
@@ -228,6 +253,15 @@ fun AppleMiniPlayer(
                 style = miniPlayerBackground,
                 mediaMetadata = mediaMetadata,
                 gradientColors = gradientColors
+            )
+
+            // Fluid liquid progress animation
+            LiquidProgressCanvas(
+                progress = progressState.progress,
+                isPlaying = playbackState == Player.STATE_READY && playerConnection.player.playWhenReady,
+                enabled = liquidMiniPlayer,
+                interfaceAnimations = interfaceAnimations,
+                primaryColor = primaryColor
             )
 
             // Bottom Progress Bar

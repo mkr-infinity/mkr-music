@@ -111,6 +111,9 @@ import com.music.mkr.constants.SwipeToSongKey
 import com.music.mkr.constants.ThumbnailCornerRadiusKey
 import com.music.mkr.constants.UseAppleMiniPlayerKey
 import com.music.mkr.constants.UseNewMiniPlayerDesignKey
+import com.music.mkr.constants.LiquidMiniPlayerKey
+import com.music.mkr.constants.InterfaceAnimationsKey
+import com.music.mkr.constants.MiniPlayerOutlineKey
 import com.music.mkr.constants.UseExpressiveAlbumDesignKey
 import com.music.mkr.constants.ExpressiveSongAlbumImageKey
 import com.music.mkr.constants.PlayerStyle
@@ -275,6 +278,18 @@ fun AppearanceSettings(
         }
     }
     var showMiniPlayerDesignDialog by rememberSaveable { mutableStateOf(false) }
+    val (liquidMiniPlayer, onLiquidMiniPlayerChange) = rememberPreference(
+        LiquidMiniPlayerKey,
+        defaultValue = false
+    )
+    val (interfaceAnimations, onInterfaceAnimationsChange) = rememberPreference(
+        InterfaceAnimationsKey,
+        defaultValue = true
+    )
+    val (miniPlayerOutline, onMiniPlayerOutlineChange) = rememberPreference(
+        MiniPlayerOutlineKey,
+        defaultValue = false
+    )
     val (hidePlayerThumbnail, onHidePlayerThumbnailChange) = rememberPreference(
         HidePlayerThumbnailKey,
         defaultValue = false
@@ -1205,6 +1220,30 @@ fun AppearanceSettings(
                 )
                 add(
                     Material3SettingsItem(
+                        key = "appearance_interface_animations",
+                        icon = painterResource(R.drawable.speed),
+                        title = { Text(stringResource(R.string.interface_animations)) },
+                        description = { Text(stringResource(R.string.interface_animations_desc)) },
+                        trailingContent = {
+                            Switch(
+                                checked = interfaceAnimations,
+                                onCheckedChange = onInterfaceAnimationsChange,
+                                thumbContent = {
+                                    Icon(
+                                        painter = painterResource(
+                                            id = if (interfaceAnimations) R.drawable.check else R.drawable.close
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(SwitchDefaults.IconSize)
+                                    )
+                                }
+                            )
+                        },
+                        onClick = { onInterfaceAnimationsChange(!interfaceAnimations) }
+                    )
+                )
+                add(
+                    Material3SettingsItem(
                         icon = painterResource(R.drawable.speed),
                         title = { Text(stringResource(R.string.enable_high_refresh_rate)) },
                         description = { Text(stringResource(R.string.enable_high_refresh_rate_desc)) },
@@ -1306,6 +1345,54 @@ fun AppearanceSettings(
                             )
                         },
                         onClick = { onPureBlackMiniPlayerChange(!pureBlackMiniPlayer) }
+                    )
+                )
+                add(
+                    Material3SettingsItem(
+                        key = "appearance_liquid_mini_player",
+                        icon = painterResource(R.drawable.sparks),
+                        title = { Text(stringResource(R.string.liquid_mini_player)) },
+                        description = { Text(stringResource(R.string.liquid_mini_player_desc)) },
+                        trailingContent = {
+                            Switch(
+                                checked = liquidMiniPlayer,
+                                onCheckedChange = onLiquidMiniPlayerChange,
+                                thumbContent = {
+                                    Icon(
+                                        painter = painterResource(
+                                            id = if (liquidMiniPlayer) R.drawable.check else R.drawable.close
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(SwitchDefaults.IconSize)
+                                    )
+                                }
+                            )
+                        },
+                        onClick = { onLiquidMiniPlayerChange(!liquidMiniPlayer) }
+                    )
+                )
+                add(
+                    Material3SettingsItem(
+                        key = "appearance_mini_player_outline",
+                        icon = painterResource(R.drawable.contrast),
+                        title = { Text("Mini-player outline") },
+                        description = { Text("Display subtle ambient outline border around mini-player") },
+                        trailingContent = {
+                            Switch(
+                                checked = miniPlayerOutline,
+                                onCheckedChange = onMiniPlayerOutlineChange,
+                                thumbContent = {
+                                    Icon(
+                                        painter = painterResource(
+                                            id = if (miniPlayerOutline) R.drawable.check else R.drawable.close
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(SwitchDefaults.IconSize)
+                                    )
+                                }
+                            )
+                        },
+                        onClick = { onMiniPlayerOutlineChange(!miniPlayerOutline) }
                     )
                 )
                 add(

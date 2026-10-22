@@ -119,6 +119,10 @@ import com.music.mkr.constants.SwipeThumbnailKey
 import com.music.mkr.constants.ThumbnailCornerRadius
 import com.music.mkr.constants.UseAppleMiniPlayerKey
 import com.music.mkr.constants.UseNewMiniPlayerDesignKey
+import com.music.mkr.constants.LiquidMiniPlayerKey
+import com.music.mkr.constants.InterfaceAnimationsKey
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.music.mkr.db.entities.ArtistEntity
 import com.music.mkr.listentogether.ListenTogetherManager
 import com.music.mkr.models.MediaMetadata
@@ -240,6 +244,10 @@ private fun NewMiniPlayer(
     // Swipe settings
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnailPref by rememberPreference(SwipeThumbnailKey, true)
+    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = false)
+    val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
+    val haptic = LocalHapticFeedback.current
+    var hasTriggeredHapticThreshold by remember { mutableStateOf(false) }
     
     // Disable swipe for Listen Together guests
     val listenTogetherManager = LocalListenTogetherManager.current
@@ -303,8 +311,10 @@ private fun NewMiniPlayer(
                             onDragStart = {
                                 dragStartTime = System.currentTimeMillis()
                                 totalDragDistance = 0f
+                                hasTriggeredHapticThreshold = false
                             },
                             onDragCancel = {
+                                hasTriggeredHapticThreshold = false
                                 coroutineScope.launch {
                                     offsetXAnimatable.animateTo(0f, animationSpec)
                                 }
@@ -325,8 +335,15 @@ private fun NewMiniPlayer(
 
                                 if (allowLeft || allowRight || canReturnToCenter) {
                                     totalDragDistance += kotlin.math.abs(adjustedDragAmount)
+                                    val newOffset = offsetXAnimatable.value + adjustedDragAmount
                                     coroutineScope.launch {
-                                        offsetXAnimatable.snapTo(offsetXAnimatable.value + adjustedDragAmount)
+                                        offsetXAnimatable.snapTo(newOffset)
+                                    }
+                                    if (kotlin.math.abs(newOffset) >= autoSwipeThreshold && !hasTriggeredHapticThreshold) {
+                                        hasTriggeredHapticThreshold = true
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } else if (kotlin.math.abs(newOffset) < autoSwipeThreshold && hasTriggeredHapticThreshold) {
+                                        hasTriggeredHapticThreshold = false
                                     }
                                 }
                             },
@@ -337,10 +354,14 @@ private fun NewMiniPlayer(
                                 val minDistanceThreshold = 50f
                                 val velocityThreshold = (swipeSensitivity * -8.25f) + 8.5f
 
+                                val canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1
+                                val canSkipNext = playerConnection.player.nextMediaItemIndex != -1
+
                                 val shouldChangeSong = (kotlin.math.abs(currentOffset) > minDistanceThreshold && velocity > velocityThreshold) ||
                                     (kotlin.math.abs(currentOffset) > autoSwipeThreshold)
 
                                 if (shouldChangeSong) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     if (currentOffset > 0 && canSkipPrevious) {
                                         if (!playerConnection.service.manualSkipToPreviousWithCrossfade()) {
                                             playerConnection.player.seekToPreviousMediaItem()
@@ -360,6 +381,15 @@ private fun NewMiniPlayer(
                 } else baseModifier
             }
     ) {
+        // Directional swipe indicator revealed behind the sliding capsule
+        DirectionalSwipeIndicator(
+            offsetX = offsetXAnimatable.value,
+            threshold = autoSwipeThreshold,
+            canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1,
+            canSkipNext = playerConnection.player.nextMediaItemIndex != -1,
+            modifier = if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth()
+        )
+
         Box(
             modifier = Modifier
                 .then(if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth())
@@ -374,6 +404,15 @@ private fun NewMiniPlayer(
                 style = miniPlayerBackground,
                 mediaMetadata = mediaMetadata,
                 gradientColors = gradientColors
+            )
+
+            // Fluid liquid progress animation
+            LiquidProgressCanvas(
+                progress = progressState.progress,
+                isPlaying = playbackState == Player.STATE_READY && playerConnection.player.playWhenReady,
+                enabled = liquidMiniPlayer,
+                interfaceAnimations = interfaceAnimations,
+                primaryColor = primaryColor
             )
 
             Row(
@@ -717,6 +756,10 @@ private fun LegacyMiniPlayer(
 
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnailPref by rememberPreference(SwipeThumbnailKey, true)
+    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = false)
+    val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
+    val haptic = LocalHapticFeedback.current
+    var hasTriggeredHapticThreshold by remember { mutableStateOf(false) }
     
     // Disable swipe for Listen Together guests
     val listenTogetherManager = LocalListenTogetherManager.current
@@ -765,8 +808,10 @@ private fun LegacyMiniPlayer(
                             onDragStart = {
                                 dragStartTime = System.currentTimeMillis()
                                 totalDragDistance = 0f
+                                hasTriggeredHapticThreshold = false
                             },
                             onDragCancel = {
+                                hasTriggeredHapticThreshold = false
                                 coroutineScope.launch { offsetXAnimatable.animateTo(0f, animationSpec) }
                             },
                             onHorizontalDrag = { _, dragAmount ->
@@ -785,8 +830,15 @@ private fun LegacyMiniPlayer(
 
                                 if (allowLeft || allowRight || canReturnToCenter) {
                                     totalDragDistance += kotlin.math.abs(adjustedDragAmount)
+                                    val newOffset = offsetXAnimatable.value + adjustedDragAmount
                                     coroutineScope.launch {
-                                        offsetXAnimatable.snapTo(offsetXAnimatable.value + adjustedDragAmount)
+                                        offsetXAnimatable.snapTo(newOffset)
+                                    }
+                                    if (kotlin.math.abs(newOffset) >= autoSwipeThreshold && !hasTriggeredHapticThreshold) {
+                                        hasTriggeredHapticThreshold = true
+                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    } else if (kotlin.math.abs(newOffset) < autoSwipeThreshold && hasTriggeredHapticThreshold) {
+                                        hasTriggeredHapticThreshold = false
                                     }
                                 }
                             },
@@ -801,6 +853,7 @@ private fun LegacyMiniPlayer(
                                     (kotlin.math.abs(currentOffset) > autoSwipeThreshold)
 
                                 if (shouldChangeSong) {
+                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                     if (currentOffset > 0 && canSkipPrevious) {
                                         if (!playerConnection.service.manualSkipToPreviousWithCrossfade()) {
                                             playerConnection.player.seekToPreviousMediaItem()
@@ -818,6 +871,24 @@ private fun LegacyMiniPlayer(
                 } else baseModifier
             }
     ) {
+        // Directional swipe indicator revealed during horizontal swipe
+        DirectionalSwipeIndicator(
+            offsetX = offsetXAnimatable.value,
+            threshold = autoSwipeThreshold,
+            canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1,
+            canSkipNext = playerConnection.player.nextMediaItemIndex != -1,
+            modifier = if (isTabletLandscape) Modifier.width(500.dp) else Modifier.fillMaxWidth()
+        )
+
+        // Fluid liquid progress animation
+        LiquidProgressCanvas(
+            progress = progressState.progress,
+            isPlaying = playbackState == Player.STATE_READY && playerConnection.player.playWhenReady,
+            enabled = liquidMiniPlayer,
+            interfaceAnimations = interfaceAnimations,
+            primaryColor = primaryColor
+        )
+
         // Progress bar - uses drawWithContent to avoid recomposition
         Box(
             modifier = Modifier

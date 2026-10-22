@@ -5,13 +5,11 @@
 
 package com.music.mkr.ui.screens.settings
 
-import com.music.mkr.R
 import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,7 +26,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.ui.draw.clip
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -39,7 +36,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -47,33 +47,22 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.music.mkr.BuildConfig
 import com.music.mkr.LocalPlayerAwareWindowInsets
-import com.music.mkr.ui.component.IconButton
+import com.music.mkr.R
+import com.music.mkr.mkrmusic.updater.checkForUpdate
+import com.music.mkr.mkrmusic.updater.getAutoUpdateCheckSetting
+import com.music.mkr.mkrmusic.updater.getUpdateAvailableState
+import com.music.mkr.mkrmusic.updater.saveUpdateAvailableState
 import com.music.mkr.ui.component.EmptyPlaceholder
 import com.music.mkr.ui.component.ExpressiveSettingGroup
+import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.ui.screens.Screens
 import com.music.mkr.ui.utils.backToMain
-import androidx.compose.ui.platform.LocalUriHandler
 import com.music.mkr.ui.utils.safeOpenUri
-import com.music.mkr.BuildConfig
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
-import com.music.mkr.mkrmusic.updater.getUpdateAvailableState
-import com.music.mkr.mkrmusic.updater.getAutoUpdateCheckSetting
-import com.music.mkr.mkrmusic.updater.checkForUpdate
-import com.music.mkr.mkrmusic.updater.saveUpdateAvailableState
-
-private data class SearchableSetting(
-    val title: String,
-    val description: String,
-    val category: String,
-    val iconRes: Int,
-    val route: String,
-    val targetKey: String,
-    val categoryKey: String? = null,
-    val keywords: List<String> = emptyList()
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,418 +72,12 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    val isAndroid12OrLater = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     val autoUpdateSetting = remember { getAutoUpdateCheckSetting(context) }
     var isUpdateAvailable by remember { mutableStateOf(getUpdateAvailableState(context)) }
     var searchQuery by remember { mutableStateOf("") }
 
-    val searchableSettings = remember {
-        listOf(
-            // --- Appearance & Theming ---
-            SearchableSetting(
-                title = "App Icon Gallery",
-                description = "Choose dynamic launcher icons to customize your home screen",
-                category = "Appearance",
-                iconRes = R.drawable.palette,
-                route = "settings/appearance",
-                targetKey = "appearance_icon_gallery",
-                keywords = listOf("launcher", "icon", "logo", "adaptive", "aesthetic", "homescreen", "gallery")
-            ),
-            SearchableSetting(
-                title = "Themes & Accent Colors",
-                description = "Dynamic Material You colors, palettes, and pure dark mode",
-                category = "Appearance",
-                iconRes = R.drawable.palette,
-                route = "settings/appearance",
-                targetKey = "appearance_theme_palette",
-                keywords = listOf("monet", "color", "accent", "dynamic theme", "palette", "custom color", "dark mode")
-            ),
-            SearchableSetting(
-                title = "Pure Black Mini Player",
-                description = "OLED pitch black background for the player and miniplayer",
-                category = "Appearance",
-                iconRes = R.drawable.contrast,
-                route = "settings/appearance",
-                targetKey = "appearance_pure_black",
-                keywords = listOf("oled", "amoled", "black", "pure black", "miniplayer", "dark")
-            ),
-            SearchableSetting(
-                title = "Floating Navigation Bar",
-                description = "Floating pill-shaped navigation bar with smooth blur effect",
-                category = "Appearance",
-                iconRes = R.drawable.nav_bar,
-                route = "settings/appearance",
-                targetKey = "appearance_floating_nav",
-                keywords = listOf("navbar", "navigation", "floating", "bottom bar", "pill", "dock")
-            ),
-            SearchableSetting(
-                title = "Player Seekbar & Sliders",
-                description = "Animated wavy and squiggly player seekbar sliders",
-                category = "Appearance",
-                iconRes = R.drawable.linear_scale,
-                route = "settings/appearance",
-                targetKey = "appearance_slider_style",
-                keywords = listOf("wavy", "squiggly", "slider", "seekbar", "progress", "wave", "track")
-            ),
-            SearchableSetting(
-                title = "Apple-Style Player Design",
-                description = "Fluid gestures, apple miniplayer layout and modern typography",
-                category = "Appearance",
-                iconRes = R.drawable.lyrics,
-                route = "settings/appearance",
-                targetKey = "appearance_apple_player",
-                keywords = listOf("apple", "player design", "miniplayer", "fluid", "gestures", "ios")
-            ),
-            SearchableSetting(
-                title = "Animated & Liquid Lyrics",
-                description = "Real-time glowing liquid lyrics animation with synchronized rhythm",
-                category = "Appearance",
-                iconRes = R.drawable.lyrics,
-                route = "settings/appearance",
-                targetKey = "appearance_lyrics_animation",
-                keywords = listOf("liquid", "lyrics animation", "glow", "animated lyrics", "karaoke", "blur")
-            ),
-
-            // --- Player & Audio Engine ---
-            SearchableSetting(
-                title = "Streaming Audio Quality",
-                description = "High-fidelity audio streaming and quality selection",
-                category = "Player & Audio",
-                iconRes = R.drawable.graphic_eq,
-                route = "settings/player",
-                targetKey = "player_audio_quality",
-                keywords = listOf("bitrate", "high quality", "lossless", "audio quality", "sound quality", "streaming")
-            ),
-            SearchableSetting(
-                title = "Crossfade Between Songs",
-                description = "Seamless DJ-style crossfade transitions and custom duration curves",
-                category = "Player & Audio",
-                iconRes = R.drawable.linear_scale,
-                route = "settings/player",
-                targetKey = "player_crossfade",
-                keywords = listOf("crossfade", "fade", "transition", "gapless", "mix", "dj", "duration")
-            ),
-            SearchableSetting(
-                title = "Skip Silence In Audio",
-                description = "Automatically skip silent gaps between songs instantly",
-                category = "Player & Audio",
-                iconRes = R.drawable.fast_forward,
-                route = "settings/player",
-                targetKey = "player_skip_silence",
-                keywords = listOf("skip silence", "silence", "quiet", "instant skip", "gaps", "fast forward")
-            ),
-            SearchableSetting(
-                title = "Axion Equalizer & Bass Boost",
-                description = "Parametric equalizer, bass boost & hardware loudness enhancement",
-                category = "Player & Audio",
-                iconRes = R.drawable.mkrequlizer,
-                route = "settings/player",
-                targetKey = "player_equalizer",
-                keywords = listOf("equalizer", "eq", "bass", "loudness", "bass boost", "dsp", "sound", "volume")
-            ),
-            SearchableSetting(
-                title = "SponsorBlock Integration",
-                description = "Skip sponsored segments, intros, music video sketches automatically",
-                category = "Player & Audio",
-                iconRes = R.drawable.fast_forward,
-                route = "settings/player",
-                targetKey = "player_sponsorblock",
-                keywords = listOf("sponsorblock", "sponsor", "skip ads", "intro", "outro", "video skip")
-            ),
-            SearchableSetting(
-                title = "Persistent Playback Queue",
-                description = "Preserve current listening queue across app restarts and app clears",
-                category = "Player & Audio",
-                iconRes = R.drawable.queue_music,
-                route = "settings/player",
-                targetKey = "player_persistent_queue",
-                keywords = listOf("queue", "persistent queue", "resume queue", "save queue", "tracks")
-            ),
-            SearchableSetting(
-                title = "Resume on Bluetooth Connect",
-                description = "Automatically resume audio playback when headphones or car connect",
-                category = "Player & Audio",
-                iconRes = R.drawable.earbud_case,
-                route = "settings/player",
-                targetKey = "player_bluetooth_resume",
-                keywords = listOf("bluetooth", "headphones", "auto play", "connect", "car audio")
-            ),
-
-            // --- Content, Lyrics & AI ---
-            SearchableSetting(
-                title = "Content Language & Location",
-                description = "Customize recommendations, trending charts, and discovery language",
-                category = "Content",
-                iconRes = R.drawable.language,
-                route = "settings/content",
-                targetKey = "content_language",
-                keywords = listOf("language", "country", "region", "charts", "recommendations", "content")
-            ),
-            SearchableSetting(
-                title = "Lyrics Providers & LRCLIB",
-                description = "Real-time synchronized lyrics engine, romanization, and translations",
-                category = "Content",
-                iconRes = R.drawable.lyrics,
-                route = "settings/content",
-                targetKey = "content_lyrics",
-                keywords = listOf("lrclib", "lyrics", "synced lyrics", "subtitles", "lyrics provider")
-            ),
-            SearchableSetting(
-                title = "AI Lyrics Translation",
-                description = "Translate song lyrics on-the-fly using intelligent AI models",
-                category = "Content",
-                iconRes = R.drawable.translate,
-                route = "settings/ai",
-                targetKey = "content_ai_lyrics",
-                keywords = listOf("ai", "translation", "translator", "ai lyrics", "translate")
-            ),
-            SearchableSetting(
-                title = "Explicit Content Filter",
-                description = "Toggle filtering and playback of explicit or mature audio tracks",
-                category = "Content",
-                iconRes = R.drawable.security,
-                route = "settings/content",
-                targetKey = "content_explicit",
-                keywords = listOf("explicit", "clean", "mature", "curse", "parental filter")
-            ),
-
-            // --- Storage & Cache ---
-            SearchableSetting(
-                title = "Disable Song Caching",
-                description = "Play songs directly without saving to offline cache storage",
-                category = "Storage & Cache",
-                iconRes = R.drawable.cached,
-                route = "settings/storage",
-                targetKey = "storage_disable_song_cache",
-                keywords = listOf("disable cache", "cache", "offline cache", "storage", "no cache", "clear cache")
-            ),
-            SearchableSetting(
-                title = "Audio Cache Size Limit",
-                description = "Configurable offline memory buffer up to 10GB for instant playback",
-                category = "Storage & Cache",
-                iconRes = R.drawable.storage,
-                route = "settings/storage",
-                targetKey = "storage_cache_limit",
-                keywords = listOf("cache", "song cache", "buffer", "10gb", "cache size", "memory")
-            ),
-            SearchableSetting(
-                title = "Offline Downloads Library",
-                description = "Manage downloaded songs, storage location, and unmetered play",
-                category = "Storage & Cache",
-                iconRes = R.drawable.download,
-                route = "settings/storage",
-                targetKey = "storage_downloads",
-                keywords = listOf("download", "offline", "saved tracks", "offline music", "downloads")
-            ),
-            SearchableSetting(
-                title = "Clear Cache & Temporary Files",
-                description = "Purge cached album artwork and audio chunks to reclaim free space",
-                category = "Storage & Cache",
-                iconRes = R.drawable.clear_all,
-                route = "settings/storage",
-                targetKey = "storage_clear_cache",
-                keywords = listOf("clear cache", "purge", "free space", "delete cache", "cleanup")
-            ),
-
-            // --- Privacy & Community ---
-            SearchableSetting(
-                title = "Playback History Tracking",
-                description = "Pause or enable tracking of listened songs and music history",
-                category = "Privacy",
-                iconRes = R.drawable.history,
-                route = "settings/privacy",
-                targetKey = "privacy_history",
-                keywords = listOf("history", "listening history", "recently played", "pause history")
-            ),
-            SearchableSetting(
-                title = "Search History Logs",
-                description = "Manage search query suggestions and clear previous searches",
-                category = "Privacy",
-                iconRes = R.drawable.search,
-                route = "settings/privacy",
-                targetKey = "privacy_search_history",
-                keywords = listOf("search history", "queries", "clear search", "recent searches")
-            ),
-            SearchableSetting(
-                title = "Listening Summary & Recap",
-                description = "Weekly recap stats, top artists, top genres, and musical moods",
-                category = "Features & Data",
-                iconRes = R.drawable.history,
-                route = "settings/listening_summary",
-                targetKey = "privacy_listening_summary",
-                keywords = listOf("recap", "summary", "stats", "weekly stats", "genres", "artists")
-            ),
-            SearchableSetting(
-                title = "Listening Statistics & Charts",
-                description = "Personal music analytics, top tracks, listening time, and statistics",
-                category = "Features & Data",
-                iconRes = R.drawable.stats,
-                route = "stats",
-                targetKey = "stats_screen",
-                keywords = listOf("stats", "statistics", "listening stats", "charts", "top songs", "analytics")
-            ),
-            SearchableSetting(
-                title = "Discord Rich Presence",
-                description = "Display live playing song, artist, and album art on Discord status",
-                category = "Integrations",
-                iconRes = R.drawable.discord,
-                route = "settings/integrations",
-                targetKey = "privacy_discord_rpc",
-                keywords = listOf("discord", "rpc", "rich presence", "status", "listening on discord")
-            ),
-            SearchableSetting(
-                title = "Listen Together",
-                description = "Synchronized live group listening sessions with friends",
-                category = "Media & Player Experience",
-                iconRes = R.drawable.group,
-                route = Screens.ListenTogether.route,
-                targetKey = "screen_listen_together",
-                keywords = listOf("listen together", "party", "group session", "sync listen", "friends")
-            ),
-
-            // --- Account & Updates ---
-            SearchableSetting(
-                title = "Google & YouTube Music Sync",
-                description = "Sync your liked songs, playlists, and subscriptions seamlessly",
-                category = "Account",
-                iconRes = R.drawable.google,
-                route = "settings/account",
-                targetKey = "account_login",
-                keywords = listOf("google", "account", "login", "youtube music", "sync", "playlists")
-            ),
-            SearchableSetting(
-                title = "Check for System Updates",
-                description = "Check for MKR Music new releases and install latest universal APK",
-                category = "Updates",
-                iconRes = R.drawable.system_update_uptodate,
-                route = "settings/update",
-                targetKey = "update_check",
-                keywords = listOf("update", "upgrade", "check update", "new version", "apk", "system update")
-            ),
-            SearchableSetting(
-                title = "Automatic Update Check",
-                description = "Automatically check for updates and notify when a new release is available",
-                category = "Updates",
-                iconRes = R.drawable.system_update_uptodate,
-                route = "settings/update",
-                targetKey = "update_auto_check",
-                keywords = listOf("auto update", "notify", "update check", "background check")
-            ),
-            SearchableSetting(
-                title = "Changelog & Release Notes",
-                description = "Read full version history and what's new in latest MKR Music releases",
-                category = "Updates",
-                iconRes = R.drawable.changelog_paper,
-                route = "settings/changelog",
-                targetKey = "update_changelog",
-                keywords = listOf("changelog", "release notes", "what's new", "version history")
-            ),
-
-            // --- System & Support ---
-            SearchableSetting(
-                title = "Backup & Restore",
-                description = "Export and import your playlists, preferences, and database backups",
-                category = "System & Support",
-                iconRes = R.drawable.restore,
-                route = "settings/backup_restore",
-                targetKey = "backup_export_import",
-                keywords = listOf("backup", "restore", "export", "import", "data", "playlists")
-            ),
-            SearchableSetting(
-                title = "About",
-                description = "Version v${BuildConfig.VERSION_NAME}, developer credits, licenses & GitHub repo",
-                category = "System & Support",
-                iconRes = R.drawable.info,
-                route = "settings/about",
-                targetKey = "about_app",
-                keywords = listOf("about", "version", "developer", "mkr", "github", "source code")
-            ),
-            SearchableSetting(
-                title = "Support Developer / Buy Me a Coffee",
-                description = "Support ongoing development of MKR Music directly",
-                category = "System & Support",
-                iconRes = R.drawable.buymeacoffee,
-                route = "settings/about",
-                targetKey = "about_support",
-                keywords = listOf("support", "coffee", "buymeacoffee", "donate", "contribute")
-            ),
-            SearchableSetting(
-                title = "Request a Feature",
-                description = "Propose new ideas & enhancements on GitHub",
-                category = "Feedback & Community",
-                iconRes = R.drawable.support_mkr,
-                route = "settings",
-                targetKey = "support_request_feature",
-                keywords = listOf("feature", "request", "idea", "suggestion", "github", "proposal")
-            ),
-            SearchableSetting(
-                title = "Report a Problem",
-                description = "Submit issue report with device & version details on GitHub",
-                category = "Feedback & Community",
-                iconRes = R.drawable.bug_report,
-                route = "settings",
-                targetKey = "support_report_problem",
-                keywords = listOf("bug", "issue", "problem", "error", "crash", "report", "github")
-            ),
-
-            // --- Granular Content, Filters & Storage Controls ---
-            SearchableSetting(
-                title = "Hide Player Thumbnail",
-                description = "Hide album art thumbnail in player view",
-                category = "Appearance",
-                iconRes = R.drawable.hide_image,
-                route = "settings/appearance",
-                targetKey = "appearance_hide_thumbnail",
-                keywords = listOf("hide", "player", "thumbnail", "album art", "cover", "image")
-            ),
-            SearchableSetting(
-                title = "Hide Explicit Songs",
-                description = "Filter and hide songs with explicit content advisory",
-                category = "Content",
-                iconRes = R.drawable.explicit,
-                route = "settings/content",
-                targetKey = "content_hide_explicit",
-                keywords = listOf("hide", "explicit", "parental", "filter", "curse", "songs")
-            ),
-            SearchableSetting(
-                title = "Hide Video Songs",
-                description = "Filter out and hide music video tracks from results and feeds",
-                category = "Content",
-                iconRes = R.drawable.slow_motion_video,
-                route = "settings/content",
-                targetKey = "content_hide_video",
-                keywords = listOf("hide", "video", "songs", "music videos", "filter")
-            ),
-            SearchableSetting(
-                title = "Hide YouTube Shorts",
-                description = "Hide YouTube Shorts content from queries and home feed",
-                category = "Content",
-                iconRes = R.drawable.hide_image,
-                route = "settings/content",
-                targetKey = "content_hide_shorts",
-                keywords = listOf("hide", "youtube", "shorts", "reels", "filter")
-            ),
-            SearchableSetting(
-                title = "Cache After Listening",
-                description = "Delay song caching (5s–90s) for instant lag-free playback start",
-                category = "Storage & Cache",
-                iconRes = R.drawable.timer,
-                route = "settings/storage",
-                targetKey = "storage_cache_delay",
-                keywords = listOf("cache", "delay", "storage", "instant", "seconds", "fast", "buffer")
-            ),
-            SearchableSetting(
-                title = "Disable Song Caching",
-                description = "Prevent streaming tracks from caching to save disk space",
-                category = "Storage & Cache",
-                iconRes = R.drawable.cached,
-                route = "settings/storage",
-                targetKey = "storage_disable_cache",
-                keywords = listOf("disable", "cache", "song", "storage", "streaming", "disk")
-            )
-        )
-    }
+    val searchCatalog = remember(context) { buildSettingsSearchCatalog(context) }
 
     DisposableEffect(context) {
         val sharedPrefs = context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
@@ -577,39 +160,68 @@ fun SettingsScreen(
         )
 
         if (searchQuery.isNotBlank()) {
-            val filtered = remember(searchQuery) {
-                val query = searchQuery.trim().lowercase()
-                searchableSettings
-                    .filter {
-                        it.title.lowercase().contains(query) ||
-                        it.description.lowercase().contains(query) ||
-                        it.category.lowercase().contains(query) ||
-                        it.keywords.any { kw -> kw.lowercase().contains(query) }
-                    }
-                    .distinctBy { it.targetKey ?: (it.title + it.route) }
+            val searchResults = remember(searchQuery, searchCatalog) {
+                searchSettingsCatalog(searchQuery, searchCatalog)
             }
 
-            if (filtered.isEmpty()) {
+            if (searchResults.isEmpty()) {
                 EmptyPlaceholder(
                     icon = R.drawable.search,
                     text = "No matching settings found",
-                    description = "Try searching with different keywords or terms",
+                    description = "Try searching with different keywords like 'liquid', 'gesture', 'eq', 'theme', or 'audio'",
                     modifier = Modifier.padding(vertical = 32.dp)
                 )
             } else {
-                Text(
-                    text = "Search Results (${filtered.size})",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 4.dp, top = 4.dp)
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 2.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Results (${searchResults.size})",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = "Ranked by relevance",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
 
                 ExpressiveSettingGroup(
-                    items = filtered.map { item ->
+                    items = searchResults.map { item ->
                         Material3SettingsItem(
                             icon = painterResource(item.iconRes),
-                            title = { Text(item.title) },
-                            description = { Text("${item.category} • ${item.description}") },
+                            title = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = item.title,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                    Surface(
+                                        shape = RoundedCornerShape(6.dp),
+                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                    ) {
+                                        Text(
+                                            text = item.category,
+                                            style = MaterialTheme.typography.labelSmall.copy(
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Bold
+                                            ),
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                        )
+                                    }
+                                }
+                            },
+                            description = { Text(item.description) },
                             onClick = {
                                 SettingsHighlightManager.requestHighlight(item.targetKey, item.categoryKey)
                                 if (item.route == "settings") {
@@ -623,7 +235,7 @@ fun SettingsScreen(
                 )
             }
         } else {
-            // Section 2 — Four settings grid cards (adaptive 2-by-2 grid with fixed height alignment)
+            // Section 1 — Four Quick Hub Cards (2-by-2 Grid)
             Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -669,43 +281,122 @@ fun SettingsScreen(
                 }
             }
 
-            // Section 3 — Features & Updates
+            // Section 2 — Player Styles & Mini-Player
             ExpressiveSettingGroup(
-                title = "Features & Updates",
+                title = "Player Styles & Mini-Player",
                 itemMinHeight = 64.dp,
                 items = listOf(
                     Material3SettingsItem(
-                        key = "update_check",
-                        icon = painterResource(if (isUpdateAvailable) R.drawable.update_alert else R.drawable.system_update_uptodate),
-                        title = { Text(if (isUpdateAvailable) "Update Available" else "System Updates") },
-                        description = { Text(if (isUpdateAvailable) "New MKR Music release is ready to install" else "MKR Music is up to date • Check for updates") },
-                        onClick = { navController.navigate("settings/update") }
+                        key = "appearance_player_style",
+                        icon = painterResource(R.drawable.lyrics),
+                        title = { Text("Player Architecture") },
+                        description = { Text("Apple Player signature design alongside 8 ArchiveTune styles") },
+                        onClick = {
+                            SettingsHighlightManager.requestHighlight("appearance_player_style")
+                            navController.navigate("settings/appearance")
+                        }
                     ),
                     Material3SettingsItem(
-                        key = "stats_screen",
-                        icon = painterResource(R.drawable.stats),
-                        title = { Text(stringResource(R.string.stats)) },
-                        description = { Text("Detailed personal listening statistics, top tracks & artists") },
-                        onClick = { navController.navigate("stats") }
+                        key = "appearance_apple_player",
+                        icon = painterResource(R.drawable.nav_bar),
+                        title = { Text("Mini-Player Style") },
+                        description = { Text("Select Classic bar, New expressive pill, or Apple capsule") },
+                        onClick = {
+                            SettingsHighlightManager.requestHighlight("appearance_apple_player")
+                            navController.navigate("settings/appearance")
+                        }
                     ),
                     Material3SettingsItem(
-                        key = "privacy_listening_summary",
-                        icon = painterResource(R.drawable.history),
-                        title = { Text("Listening Recap") },
-                        description = { Text("Weekly listening stats, top artists, moods & highlights") },
-                        onClick = { navController.navigate("settings/listening_summary") }
+                        key = "appearance_liquid_mini_player",
+                        icon = painterResource(R.drawable.sparks),
+                        title = { Text("Liquid Mini-Player") },
+                        description = { Text("Fluid organic water progress animation on mini-player") },
+                        onClick = {
+                            SettingsHighlightManager.requestHighlight("appearance_liquid_mini_player")
+                            navController.navigate("settings/appearance")
+                        }
                     ),
                     Material3SettingsItem(
-                        key = "screen_listen_together",
-                        icon = painterResource(R.drawable.group),
-                        title = { Text("Listen Together") },
-                        description = { Text("Synchronized live group listening sessions with friends") },
-                        onClick = { navController.navigate(Screens.ListenTogether.route) }
+                        key = "appearance_mini_player_outline",
+                        icon = painterResource(R.drawable.contrast),
+                        title = { Text("Mini-Player Outline & Pure Black") },
+                        description = { Text("Ambient border outline and OLED pitch black background") },
+                        onClick = {
+                            SettingsHighlightManager.requestHighlight("appearance_pure_black")
+                            navController.navigate("settings/appearance")
+                        }
                     )
                 )
             )
 
-            // Section 4 — Content & Lyrics
+            // Section 3 — Gestures & Performance
+            ExpressiveSettingGroup(
+                title = "Gestures & Performance",
+                itemMinHeight = 64.dp,
+                items = listOf(
+                    Material3SettingsItem(
+                        key = "appearance_swipe_thumbnail",
+                        icon = painterResource(R.drawable.swipe),
+                        title = { Text("Mini-Player Swipe Gestures") },
+                        description = { Text("Interactive directional skip feedback with real-time haptics") },
+                        onClick = {
+                            SettingsHighlightManager.requestHighlight("appearance_swipe_thumbnail")
+                            navController.navigate("settings/appearance")
+                        }
+                    ),
+                    Material3SettingsItem(
+                        key = "appearance_interface_animations",
+                        icon = painterResource(R.drawable.speed),
+                        title = { Text("Interface Animations") },
+                        description = { Text("Enable smooth transitions, liquid wave motion, and effects") },
+                        onClick = {
+                            SettingsHighlightManager.requestHighlight("appearance_interface_animations")
+                            navController.navigate("settings/appearance")
+                        }
+                    ),
+                    Material3SettingsItem(
+                        key = "appearance_high_refresh_rate",
+                        icon = painterResource(R.drawable.speed),
+                        title = { Text("High Refresh Rate") },
+                        description = { Text("Smooth 90Hz / 120Hz display refresh rate optimization") },
+                        onClick = {
+                            SettingsHighlightManager.requestHighlight("appearance_high_refresh_rate")
+                            navController.navigate("settings/appearance")
+                        }
+                    )
+                )
+            )
+
+            // Section 4 — Playback & Audio
+            ExpressiveSettingGroup(
+                title = "Playback & Audio",
+                itemMinHeight = 64.dp,
+                items = listOf(
+                    Material3SettingsItem(
+                        key = "player_audio_quality",
+                        icon = painterResource(R.drawable.graphic_eq),
+                        title = { Text(stringResource(R.string.audio_quality)) },
+                        description = { Text("Opus streaming bitrate, audio offload, and sound settings") },
+                        onClick = { navController.navigate("settings/player") }
+                    ),
+                    Material3SettingsItem(
+                        key = "player_equalizer",
+                        icon = painterResource(R.drawable.mkrequlizer),
+                        title = { Text("Axion Equalizer & Bass Boost") },
+                        description = { Text("Parametric EQ, Dolby Atmos and Dirac sound enhancement") },
+                        onClick = { navController.navigate("settings/equalizer") }
+                    ),
+                    Material3SettingsItem(
+                        key = "player_sponsorblock",
+                        icon = painterResource(R.drawable.fast_forward),
+                        title = { Text("SponsorBlock") },
+                        description = { Text("Skip non-music video scenes and sponsorships automatically") },
+                        onClick = { navController.navigate("settings/player/sponsorblock") }
+                    )
+                )
+            )
+
+            // Section 5 — Content & Lyrics
             ExpressiveSettingGroup(
                 title = "Content & Lyrics",
                 itemMinHeight = 64.dp,
@@ -727,7 +418,43 @@ fun SettingsScreen(
                 )
             )
 
-            // Section 5 — Security & Data
+            // Section 6 — Features & Listen Together
+            ExpressiveSettingGroup(
+                title = "Features & Community",
+                itemMinHeight = 64.dp,
+                items = listOf(
+                    Material3SettingsItem(
+                        key = "screen_listen_together",
+                        icon = painterResource(R.drawable.group),
+                        title = { Text("Listen Together") },
+                        description = { Text("Synchronized live group listening sessions with friends") },
+                        onClick = { navController.navigate(Screens.ListenTogether.route) }
+                    ),
+                    Material3SettingsItem(
+                        key = "stats_screen",
+                        icon = painterResource(R.drawable.stats),
+                        title = { Text(stringResource(R.string.stats)) },
+                        description = { Text("Detailed personal listening statistics, top tracks & artists") },
+                        onClick = { navController.navigate("stats") }
+                    ),
+                    Material3SettingsItem(
+                        key = "privacy_listening_summary",
+                        icon = painterResource(R.drawable.history),
+                        title = { Text("Listening Recap") },
+                        description = { Text("Weekly listening stats, top artists, moods & highlights") },
+                        onClick = { navController.navigate("settings/listening_summary") }
+                    ),
+                    Material3SettingsItem(
+                        key = "privacy_discord_rpc",
+                        icon = painterResource(R.drawable.discord),
+                        title = { Text("Discord Rich Presence") },
+                        description = { Text("Display live playing track and album art on Discord") },
+                        onClick = { navController.navigate("settings/integrations") }
+                    )
+                )
+            )
+
+            // Section 7 — Security & Data
             ExpressiveSettingGroup(
                 title = "Security & Data",
                 itemMinHeight = 64.dp,
@@ -749,11 +476,18 @@ fun SettingsScreen(
                 )
             )
 
-            // Section 6 — Feedback & Community
+            // Section 8 — Updates & Feedback
             ExpressiveSettingGroup(
-                title = "Feedback & Community",
+                title = "Updates & Feedback",
                 itemMinHeight = 64.dp,
                 items = listOf(
+                    Material3SettingsItem(
+                        key = "update_check",
+                        icon = painterResource(if (isUpdateAvailable) R.drawable.update_alert else R.drawable.system_update_uptodate),
+                        title = { Text(if (isUpdateAvailable) "Update Available" else "System Updates") },
+                        description = { Text(if (isUpdateAvailable) "New MKR Music release is ready to install" else "MKR Music is up to date • Check for updates") },
+                        onClick = { navController.navigate("settings/update") }
+                    ),
                     Material3SettingsItem(
                         key = "support_request_feature",
                         icon = painterResource(R.drawable.support_mkr),
@@ -790,17 +524,6 @@ fun SettingsScreen(
 
                                 ### Description of the Issue
                                 Please describe what occurred.
-
-                                ### Steps to Reproduce
-                                1.
-                                2.
-                                3.
-
-                                ### Expected Behavior
-                                What should have happened.
-
-                                ### Actual Behavior
-                                What actually happened.
                             """.trimIndent()
                             val url = "https://github.com/mkr-infinity/mkr-music/issues/new?title=" +
                                 URLEncoder.encode(bugTitle, StandardCharsets.UTF_8.name()) +
@@ -808,20 +531,12 @@ fun SettingsScreen(
                             uriHandler.safeOpenUri(context, url)
                         },
                         isExternalLink = true
-                    )
-                )
-            )
-
-            // Section 7 — About
-            ExpressiveSettingGroup(
-                title = "About",
-                itemMinHeight = 64.dp,
-                items = listOf(
+                    ),
                     Material3SettingsItem(
                         key = "about_app",
                         icon = painterResource(R.drawable.info),
-                        title = { Text("About") },
-                        description = { Text("About and information") },
+                        title = { Text("About MKR Music") },
+                        description = { Text("Version v${BuildConfig.VERSION_NAME} • Licenses & Credits") },
                         onClick = { navController.navigate("settings/about") }
                     )
                 )

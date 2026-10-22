@@ -68,12 +68,12 @@ object SettingsHighlightManager {
 
 /**
  * Modifier extension that automatically brings a setting item into view
- * and plays a smooth rose-red glow fade animation when targeted.
+ * and plays a smooth warm amber glow fade animation when targeted.
  */
 fun Modifier.settingsHighlight(
     key: String?,
     shape: Shape = RoundedCornerShape(16.dp),
-    highlightColor: Color = Color(0xFFE91E63) // Rose-Red Glow
+    highlightColor: Color = Color(0xFFF59E0B) // MKR Warm Amber Glow
 ): Modifier = composed {
     if (key.isNullOrBlank()) return@composed this
 
