@@ -169,13 +169,16 @@ fun AppleMiniPlayer(
                             onDragCancel = {
                                 hasTriggeredHapticThreshold = false
                                 coroutineScope.launch {
-                                    offsetXAnimatable.animateTo(0f, animationSpec)
+                                    if (interfaceAnimations) {
+                                        offsetXAnimatable.animateTo(0f, animationSpec)
+                                    } else {
+                                        offsetXAnimatable.snapTo(0f)
+                                    }
                                 }
                             },
                             onHorizontalDrag = { _, dragAmount ->
-                                val adjustedDragAmount =
-                                    if (layoutDirection == LayoutDirection.Rtl) -dragAmount else dragAmount
-                                val canSkipPreviousLocal = playerConnection.player.previousMediaItemIndex != -1
+                                val adjustedDragAmount = dragAmount
+                                val canSkipPreviousLocal = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000
                                 val canSkipNextLocal = playerConnection.player.nextMediaItemIndex != -1
                                 val tryingToSwipeRight = adjustedDragAmount > 0
                                 val tryingToSwipeLeft = adjustedDragAmount < 0
@@ -207,22 +210,34 @@ fun AppleMiniPlayer(
                                 val minDistanceThreshold = 50f
                                 val velocityThreshold = (swipeSensitivity * -8.25f) + 8.5f
 
-                                val canSkipPreviousLocal = playerConnection.player.previousMediaItemIndex != -1
+                                val canSkipPreviousLocal = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000
                                 val canSkipNextLocal = playerConnection.player.nextMediaItemIndex != -1
 
                                 val shouldChangeSong = (kotlin.math.abs(currentOffset) > minDistanceThreshold && velocity > velocityThreshold) ||
                                     (kotlin.math.abs(currentOffset) > autoSwipeThreshold)
 
                                 if (shouldChangeSong) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    val now = System.currentTimeMillis()
                                     if (currentOffset > 0 && canSkipPreviousLocal) {
-                                        playerConnection.player.seekToPreviousMediaItem()
-                                    } else if (currentOffset <= 0 && canSkipNextLocal) {
-                                        playerConnection.player.seekToNext()
+                                        if (now - lastPreviousTime >= 400L) {
+                                            lastPreviousTime = now
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            playerConnection.seekToPrevious()
+                                        }
+                                    } else if (currentOffset < 0 && canSkipNextLocal) {
+                                        if (now - lastNextTime >= 400L) {
+                                            lastNextTime = now
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            playerConnection.seekToNext()
+                                        }
                                     }
                                 }
                                 coroutineScope.launch {
-                                    offsetXAnimatable.animateTo(0f, animationSpec)
+                                    if (interfaceAnimations) {
+                                        offsetXAnimatable.animateTo(0f, animationSpec)
+                                    } else {
+                                        offsetXAnimatable.snapTo(0f)
+                                    }
                                 }
                             }
                         )
@@ -234,7 +249,7 @@ fun AppleMiniPlayer(
         DirectionalSwipeIndicator(
             offsetX = offsetXAnimatable.value,
             threshold = autoSwipeThreshold,
-            canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1,
+            canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000,
             canSkipNext = playerConnection.player.nextMediaItemIndex != -1,
             modifier = if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth()
         )
@@ -255,9 +270,9 @@ fun AppleMiniPlayer(
                 gradientColors = gradientColors
             )
 
-            // Fluid liquid progress animation
+            // Fluid liquid progress animation - reads progress in draw phase
             LiquidProgressCanvas(
-                progress = progressState.progress,
+                progress = { progressState.progress },
                 isPlaying = playbackState == Player.STATE_READY && playerConnection.player.playWhenReady,
                 enabled = liquidMiniPlayer,
                 interfaceAnimations = interfaceAnimations,

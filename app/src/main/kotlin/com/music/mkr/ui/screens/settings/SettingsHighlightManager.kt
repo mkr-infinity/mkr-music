@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.foundation.relocation.BringIntoViewRequester
 import androidx.compose.foundation.relocation.bringIntoViewRequester
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -26,6 +27,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.dp
+import com.music.mkr.constants.InterfaceAnimationsKey
+import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.delay
 
 /**
@@ -68,7 +71,11 @@ object SettingsHighlightManager {
 
 /**
  * Modifier extension that automatically brings a setting item into view
- * and plays a smooth warm amber glow fade animation when targeted.
+ * and displays a warm amber glow when targeted.
+ *
+ * When interfaceAnimations is disabled:
+ * - Uses a static hold and immediate snap-to-clear rather than continuous frame animation
+ * - Respects reduced-motion preferences to minimize CPU/GPU load
  */
 fun Modifier.settingsHighlight(
     key: String?,
@@ -79,6 +86,15 @@ fun Modifier.settingsHighlight(
 
     val requester = remember { BringIntoViewRequester() }
     val alphaAnim = remember { Animatable(0f) }
+    val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
+
+    DisposableEffect(key) {
+        onDispose {
+            if (SettingsHighlightManager.targetSettingKey == key) {
+                SettingsHighlightManager.clear()
+            }
+        }
+    }
 
     LaunchedEffect(SettingsHighlightManager.targetSettingKey, SettingsHighlightManager.targetTimestamp) {
         if (SettingsHighlightManager.targetSettingKey == key) {
@@ -87,13 +103,17 @@ fun Modifier.settingsHighlight(
             runCatching {
                 requester.bringIntoView()
             }
-            // Animate rose-red glow & subtle tinted background
             alphaAnim.snapTo(1f)
             delay(350)
-            alphaAnim.animateTo(
-                targetValue = 0f,
-                animationSpec = tween(durationMillis = 1350, easing = FastOutSlowInEasing)
-            )
+            if (interfaceAnimations) {
+                alphaAnim.animateTo(
+                    targetValue = 0f,
+                    animationSpec = tween(durationMillis = 1350, easing = FastOutSlowInEasing)
+                )
+            } else {
+                delay(700)
+                alphaAnim.snapTo(0f)
+            }
             if (SettingsHighlightManager.targetSettingKey == key) {
                 SettingsHighlightManager.clear()
             }

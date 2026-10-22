@@ -316,13 +316,16 @@ private fun NewMiniPlayer(
                             onDragCancel = {
                                 hasTriggeredHapticThreshold = false
                                 coroutineScope.launch {
-                                    offsetXAnimatable.animateTo(0f, animationSpec)
+                                    if (interfaceAnimations) {
+                                        offsetXAnimatable.animateTo(0f, animationSpec)
+                                    } else {
+                                        offsetXAnimatable.snapTo(0f)
+                                    }
                                 }
                             },
                             onHorizontalDrag = { _, dragAmount ->
-                                val adjustedDragAmount =
-                                    if (layoutDirection == LayoutDirection.Rtl) -dragAmount else dragAmount
-                                val canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1
+                                val adjustedDragAmount = dragAmount
+                                val canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000
                                 val canSkipNext = playerConnection.player.nextMediaItemIndex != -1
                                 val tryingToSwipeRight = adjustedDragAmount > 0
                                 val tryingToSwipeLeft = adjustedDragAmount < 0
@@ -354,26 +357,34 @@ private fun NewMiniPlayer(
                                 val minDistanceThreshold = 50f
                                 val velocityThreshold = (swipeSensitivity * -8.25f) + 8.5f
 
-                                val canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1
+                                val canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000
                                 val canSkipNext = playerConnection.player.nextMediaItemIndex != -1
 
                                 val shouldChangeSong = (kotlin.math.abs(currentOffset) > minDistanceThreshold && velocity > velocityThreshold) ||
                                     (kotlin.math.abs(currentOffset) > autoSwipeThreshold)
 
                                 if (shouldChangeSong) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                    val now = System.currentTimeMillis()
                                     if (currentOffset > 0 && canSkipPrevious) {
-                                        if (!playerConnection.service.manualSkipToPreviousWithCrossfade()) {
-                                            playerConnection.player.seekToPreviousMediaItem()
+                                        if (now - lastPreviousClickTime >= 400L) {
+                                            lastPreviousClickTime = now
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            playerConnection.seekToPrevious()
                                         }
-                                    } else if (currentOffset <= 0 && canSkipNext) {
-                                        if (!playerConnection.service.manualSkipToNextWithCrossfade()) {
-                                            playerConnection.player.seekToNext()
+                                    } else if (currentOffset < 0 && canSkipNext) {
+                                        if (now - lastNextClickTime >= 400L) {
+                                            lastNextClickTime = now
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            playerConnection.seekToNext()
                                         }
                                     }
                                 }
                                 coroutineScope.launch {
-                                    offsetXAnimatable.animateTo(0f, animationSpec)
+                                    if (interfaceAnimations) {
+                                        offsetXAnimatable.animateTo(0f, animationSpec)
+                                    } else {
+                                        offsetXAnimatable.snapTo(0f)
+                                    }
                                 }
                             }
                         )
@@ -385,7 +396,7 @@ private fun NewMiniPlayer(
         DirectionalSwipeIndicator(
             offsetX = offsetXAnimatable.value,
             threshold = autoSwipeThreshold,
-            canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1,
+            canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000,
             canSkipNext = playerConnection.player.nextMediaItemIndex != -1,
             modifier = if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth()
         )
@@ -406,9 +417,9 @@ private fun NewMiniPlayer(
                 gradientColors = gradientColors
             )
 
-            // Fluid liquid progress animation
+            // Fluid liquid progress animation - reads progress in draw phase
             LiquidProgressCanvas(
-                progress = progressState.progress,
+                progress = { progressState.progress },
                 isPlaying = playbackState == Player.STATE_READY && playerConnection.player.playWhenReady,
                 enabled = liquidMiniPlayer,
                 interfaceAnimations = interfaceAnimations,
@@ -812,12 +823,17 @@ private fun LegacyMiniPlayer(
                             },
                             onDragCancel = {
                                 hasTriggeredHapticThreshold = false
-                                coroutineScope.launch { offsetXAnimatable.animateTo(0f, animationSpec) }
+                                coroutineScope.launch {
+                                    if (interfaceAnimations) {
+                                        offsetXAnimatable.animateTo(0f, animationSpec)
+                                    } else {
+                                        offsetXAnimatable.snapTo(0f)
+                                    }
+                                }
                             },
                             onHorizontalDrag = { _, dragAmount ->
-                                val adjustedDragAmount =
-                                    if (layoutDirection == LayoutDirection.Rtl) -dragAmount else dragAmount
-                                val canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1
+                                val adjustedDragAmount = dragAmount
+                                val canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000
                                 val canSkipNext = playerConnection.player.nextMediaItemIndex != -1
                                 val tryingToSwipeRight = adjustedDragAmount > 0
                                 val tryingToSwipeLeft = adjustedDragAmount < 0
@@ -849,22 +865,35 @@ private fun LegacyMiniPlayer(
                                 val minDistanceThreshold = 50f
                                 val velocityThreshold = (swipeSensitivity * -8.25f) + 8.5f
 
+                                val canSkipPreviousAction = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000
+                                val canSkipNextAction = playerConnection.player.nextMediaItemIndex != -1
+
                                 val shouldChangeSong = (kotlin.math.abs(currentOffset) > minDistanceThreshold && velocity > velocityThreshold) ||
                                     (kotlin.math.abs(currentOffset) > autoSwipeThreshold)
 
                                 if (shouldChangeSong) {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    if (currentOffset > 0 && canSkipPrevious) {
-                                        if (!playerConnection.service.manualSkipToPreviousWithCrossfade()) {
-                                            playerConnection.player.seekToPreviousMediaItem()
+                                    val now = System.currentTimeMillis()
+                                    if (currentOffset > 0 && canSkipPreviousAction) {
+                                        if (now - lastLegacyPreviousClickTime >= 400L) {
+                                            lastLegacyPreviousClickTime = now
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            playerConnection.seekToPrevious()
                                         }
-                                    } else if (currentOffset <= 0 && canSkipNext) {
-                                        if (!playerConnection.service.manualSkipToNextWithCrossfade()) {
-                                            playerConnection.player.seekToNext()
+                                    } else if (currentOffset < 0 && canSkipNextAction) {
+                                        if (now - lastLegacyNextClickTime >= 400L) {
+                                            lastLegacyNextClickTime = now
+                                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                            playerConnection.seekToNext()
                                         }
                                     }
                                 }
-                                coroutineScope.launch { offsetXAnimatable.animateTo(0f, animationSpec) }
+                                coroutineScope.launch {
+                                    if (interfaceAnimations) {
+                                        offsetXAnimatable.animateTo(0f, animationSpec)
+                                    } else {
+                                        offsetXAnimatable.snapTo(0f)
+                                    }
+                                }
                             }
                         )
                     }
@@ -875,14 +904,14 @@ private fun LegacyMiniPlayer(
         DirectionalSwipeIndicator(
             offsetX = offsetXAnimatable.value,
             threshold = autoSwipeThreshold,
-            canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1,
+            canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000,
             canSkipNext = playerConnection.player.nextMediaItemIndex != -1,
             modifier = if (isTabletLandscape) Modifier.width(500.dp) else Modifier.fillMaxWidth()
         )
 
-        // Fluid liquid progress animation
+        // Fluid liquid progress animation - reads progress in draw phase
         LiquidProgressCanvas(
-            progress = progressState.progress,
+            progress = { progressState.progress },
             isPlaying = playbackState == Player.STATE_READY && playerConnection.player.playWhenReady,
             enabled = liquidMiniPlayer,
             interfaceAnimations = interfaceAnimations,
@@ -970,25 +999,7 @@ private fun LegacyMiniPlayer(
             }
         }
 
-        // Swipe indicator
-        if (offsetXAnimatable.value.absoluteValue > 50f) {
-            Box(
-                modifier = Modifier
-                    .align(if (offsetXAnimatable.value > 0) Alignment.CenterStart else Alignment.CenterEnd)
-                    .padding(horizontal = 16.dp)
-            ) {
-                Icon(
-                    painter = painterResource(
-                        if (offsetXAnimatable.value > 0) R.drawable.skip_previous else R.drawable.skip_next
-                    ),
-                    contentDescription = null,
-                    tint = primaryColor.copy(
-                        alpha = (offsetXAnimatable.value.absoluteValue / autoSwipeThreshold).coerceIn(0f, 1f)
-                    ),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
+
     }
 }
 

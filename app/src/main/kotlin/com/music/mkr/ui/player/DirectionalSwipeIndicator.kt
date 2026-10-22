@@ -25,9 +25,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.music.mkr.R
@@ -40,6 +42,7 @@ import kotlin.math.abs
  * Behavior:
  * - Drag right (offsetX > 0): Reveals "Previous track" pill on the left
  * - Drag left (offsetX < 0): Reveals "Next track" pill on the right
+ * - Handles both LTR and RTL layouts correctly so visual placement matches finger reveal
  * - Proportional scaling and alpha reveal up to threshold
  * - Glowing highlight state when crossing skip threshold
  */
@@ -70,11 +73,18 @@ fun DirectionalSwipeIndicator(
     val activeColor = if (isAllowed) amberColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
     val borderColor = if (isTriggered && isAllowed) amberLight else activeColor.copy(alpha = 0.35f)
 
+    val layoutDirection = LocalLayoutDirection.current
+    val contentAlignment = if (isSwipingRight) {
+        if (layoutDirection == LayoutDirection.Rtl) Alignment.CenterEnd else Alignment.CenterStart
+    } else {
+        if (layoutDirection == LayoutDirection.Rtl) Alignment.CenterStart else Alignment.CenterEnd
+    }
+
     Box(
         modifier = modifier
             .fillMaxSize()
             .padding(horizontal = 8.dp),
-        contentAlignment = if (isSwipingRight) Alignment.CenterStart else Alignment.CenterEnd
+        contentAlignment = contentAlignment
     ) {
         Surface(
             modifier = Modifier

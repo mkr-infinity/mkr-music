@@ -5,16 +5,14 @@
 
 package com.music.mkr.ui.player
 
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -34,41 +32,50 @@ import kotlin.math.sin
  * - Highlight crest stroke along the leading edge
  * - Disables continuous wave oscillation when paused or when interfaceAnimations is disabled
  * - Translucent amber/primary tint maintaining complete legibility of text and controls
+ * - Reads progress in the draw phase via lambda () -> Float to avoid recomposition churn
+ * - Reuses Path objects to eliminate allocations inside the 60fps draw loop
  */
 @Composable
 fun LiquidProgressCanvas(
-    progress: Float,
+    progress: () -> Float,
     isPlaying: Boolean,
     enabled: Boolean,
     interfaceAnimations: Boolean,
     primaryColor: Color = Color(0xFFF59E0B),
     modifier: Modifier = Modifier
 ) {
-    if (!enabled || progress <= 0.001f) return
+    if (!enabled) return
 
-    val animatedPhase: Float = if (isPlaying && interfaceAnimations) {
-        val infiniteTransition = rememberInfiniteTransition(label = "liquidWaveTransition")
-        val phase by infiniteTransition.animateFloat(
-            initialValue = 0f,
-            targetValue = (2f * Math.PI).toFloat(),
-            animationSpec = infiniteRepeatable(
-                animation = tween(durationMillis = 2800, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart
-            ),
-            label = "liquidPhase"
-        )
-        phase
-    } else {
-        0f
+    val phaseAnimatable = remember { Animatable(0f) }
+    LaunchedEffect(isPlaying, interfaceAnimations, enabled) {
+        if (isPlaying && interfaceAnimations && enabled) {
+            while (true) {
+                phaseAnimatable.animateTo(
+                    targetValue = (2f * Math.PI).toFloat(),
+                    animationSpec = tween(durationMillis = 2800, easing = LinearEasing)
+                )
+                phaseAnimatable.snapTo(0f)
+            }
+        } else {
+            phaseAnimatable.snapTo(0f)
+        }
     }
 
+    val backWavePath = remember { Path() }
+    val frontWavePath = remember { Path() }
+    val crestPath = remember { Path() }
+
     Canvas(modifier = modifier.fillMaxSize()) {
+        val rawProgress = progress()
+        if (rawProgress.isNaN() || rawProgress <= 0.001f) return@Canvas
+
         val width = size.width
         val height = size.height
         if (width <= 0f || height <= 0f) return@Canvas
 
-        val clampedProgress = progress.coerceIn(0f, 1f)
+        val clampedProgress = rawProgress.coerceIn(0f, 1f)
         val fillWidth = width * clampedProgress
+        val animatedPhase = phaseAnimatable.value
 
         // Amplitude scales down smoothly at extremes (0% or 100%) to avoid harsh clipping
         val edgeFactor = (clampedProgress * 15f).coerceAtMost(1f) * ((1f - clampedProgress) * 15f).coerceAtMost(1f)
@@ -76,19 +83,18 @@ fun LiquidProgressCanvas(
         val frequency = 0.08f
 
         // 1. Back wave (secondary depth wave with slight phase offset)
-        val backWavePath = Path().apply {
-            moveTo(0f, 0f)
-            val step = 6f
-            var y = 0f
-            while (y <= height) {
-                val waveX = (fillWidth + amplitude * 0.7f * sin(y * frequency + animatedPhase + 1.2f))
-                    .coerceIn(0f, width)
-                lineTo(waveX, y)
-                y += step
-            }
-            lineTo(0f, height)
-            close()
+        backWavePath.reset()
+        backWavePath.moveTo(0f, 0f)
+        val step = 6f
+        var y = 0f
+        while (y <= height) {
+            val waveX = (fillWidth + amplitude * 0.7f * sin(y * frequency + animatedPhase + 1.2f))
+                .coerceIn(0f, width)
+            backWavePath.lineTo(waveX, y)
+            y += step
         }
+        backWavePath.lineTo(0f, height)
+        backWavePath.close()
 
         drawPath(
             path = backWavePath,
@@ -103,19 +109,17 @@ fun LiquidProgressCanvas(
         )
 
         // 2. Front wave (main liquid fill)
-        val frontWavePath = Path().apply {
-            moveTo(0f, 0f)
-            val step = 6f
-            var y = 0f
-            while (y <= height) {
-                val waveX = (fillWidth + amplitude * sin(y * frequency + animatedPhase))
-                    .coerceIn(0f, width)
-                lineTo(waveX, y)
-                y += step
-            }
-            lineTo(0f, height)
-            close()
+        frontWavePath.reset()
+        frontWavePath.moveTo(0f, 0f)
+        y = 0f
+        while (y <= height) {
+            val waveX = (fillWidth + amplitude * sin(y * frequency + animatedPhase))
+                .coerceIn(0f, width)
+            frontWavePath.lineTo(waveX, y)
+            y += step
         }
+        frontWavePath.lineTo(0f, height)
+        frontWavePath.close()
 
         drawPath(
             path = frontWavePath,
@@ -130,17 +134,15 @@ fun LiquidProgressCanvas(
         )
 
         // 3. Highlight crest stroke along the leading edge
-        val crestPath = Path().apply {
-            var y = 0f
-            val startX = (fillWidth + amplitude * sin(0f + animatedPhase)).coerceIn(0f, width)
-            moveTo(startX, 0f)
-            val step = 6f
-            while (y <= height) {
-                val waveX = (fillWidth + amplitude * sin(y * frequency + animatedPhase))
-                    .coerceIn(0f, width)
-                lineTo(waveX, y)
-                y += step
-            }
+        crestPath.reset()
+        y = 0f
+        val startX = (fillWidth + amplitude * sin(0f + animatedPhase)).coerceIn(0f, width)
+        crestPath.moveTo(startX, 0f)
+        while (y <= height) {
+            val waveX = (fillWidth + amplitude * sin(y * frequency + animatedPhase))
+                .coerceIn(0f, width)
+            crestPath.lineTo(waveX, y)
+            y += step
         }
 
         drawPath(
@@ -152,4 +154,26 @@ fun LiquidProgressCanvas(
             )
         )
     }
+}
+
+/**
+ * Backward-compatible overload accepting a direct Float progress value.
+ */
+@Composable
+fun LiquidProgressCanvas(
+    progress: Float,
+    isPlaying: Boolean,
+    enabled: Boolean,
+    interfaceAnimations: Boolean,
+    primaryColor: Color = Color(0xFFF59E0B),
+    modifier: Modifier = Modifier
+) {
+    LiquidProgressCanvas(
+        progress = { progress },
+        isPlaying = isPlaying,
+        enabled = enabled,
+        interfaceAnimations = interfaceAnimations,
+        primaryColor = primaryColor,
+        modifier = modifier
+    )
 }

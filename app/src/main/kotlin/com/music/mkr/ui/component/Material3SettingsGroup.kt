@@ -5,6 +5,8 @@
 
 package com.music.mkr.ui.component
 
+import com.music.mkr.ui.screens.settings.settingsHighlight
+
 import androidx.compose.ui.text.font.FontWeight
 import com.music.mkr.utils.listItemShape
 import androidx.compose.ui.res.painterResource
@@ -117,6 +119,7 @@ internal fun Material3SettingsItemRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .settingsHighlight(item.key)
             .clickable(
                 enabled = item.enabled && item.onClick != null,
                 onClick = { item.onClick?.invoke() }
@@ -278,6 +281,7 @@ internal fun ExpressiveSettingsItemRow(
     Row(
         modifier = Modifier
             .fillMaxWidth()
+            .settingsHighlight(item.key)
             .clickable(
                 enabled = item.enabled && item.onClick != null,
                 onClick = { item.onClick?.invoke() }
