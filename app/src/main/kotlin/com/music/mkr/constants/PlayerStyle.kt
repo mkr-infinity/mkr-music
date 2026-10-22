@@ -1,0 +1,57 @@
+/**
+ * MKR Music Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
+package com.music.mkr.constants
+
+import androidx.annotation.StringRes
+import com.music.mkr.R
+
+/**
+ * Exactly eight supported player styles in MKR Music.
+ * Mapped directly to ArchiveTune player visual architectures.
+ */
+enum class PlayerStyle(
+    @StringRes val titleRes: Int,
+    @StringRes val descriptionRes: Int
+) {
+    CLASSIC(
+        titleRes = R.string.player_style_classic,
+        descriptionRes = R.string.player_style_classic_desc
+    ),
+    MODERN(
+        titleRes = R.string.player_style_modern,
+        descriptionRes = R.string.player_style_modern_desc
+    ),
+    MINIMAL(
+        titleRes = R.string.player_style_minimal,
+        descriptionRes = R.string.player_style_minimal_desc
+    ),
+    CINEMATIC(
+        titleRes = R.string.player_style_cinematic,
+        descriptionRes = R.string.player_style_cinematic_desc
+    ),
+    IMMERSIVE(
+        titleRes = R.string.player_style_immersive,
+        descriptionRes = R.string.player_style_immersive_desc
+    ),
+    IMMERSIVE_EXTENDED(
+        titleRes = R.string.player_style_immersive_extended,
+        descriptionRes = R.string.player_style_immersive_extended_desc
+    ),
+    MATERIAL_EXTENDED(
+        titleRes = R.string.player_style_material_extended,
+        descriptionRes = R.string.player_style_material_extended_desc
+    ),
+    EDITORIAL(
+        titleRes = R.string.player_style_editorial,
+        descriptionRes = R.string.player_style_editorial_desc
+    );
+
+    companion object {
+        fun fromString(name: String?): PlayerStyle {
+            return entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: CINEMATIC
+        }
+    }
+}

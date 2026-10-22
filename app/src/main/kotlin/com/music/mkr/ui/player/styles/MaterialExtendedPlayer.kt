@@ -1,0 +1,436 @@
+/**
+ * MKR Music Project (C) 2026
+ * Licensed under GPL-3.0 | See git history for contributors
+ */
+
+package com.music.mkr.ui.player.styles
+
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.media3.common.Player
+import androidx.navigation.NavController
+import coil3.compose.AsyncImage
+import com.music.mkr.R
+import com.music.mkr.models.MediaMetadata
+import com.music.mkr.playback.PlayerConnection
+import com.music.mkr.ui.component.BottomSheetState
+import com.music.mkr.ui.component.PlayerSliderTrack
+import com.music.mkr.ui.player.ClickableArtists
+import com.music.mkr.ui.player.rememberPlayerTitleActions
+import com.music.mkr.ui.theme.PlayerSliderColors
+import com.music.mkr.constants.PlayerBackgroundStyle
+import com.music.mkr.utils.makeTimeString
+
+/**
+ * Material Extended Player style (ArchiveTune V9 layout):
+ * Material 3 expressive player with animated spring controls, header quick buttons, and wavy progress.
+ */
+@Composable
+fun MaterialExtendedPlayer(
+    mediaMetadata: MediaMetadata,
+    playbackState: Int,
+    isPlaying: Boolean,
+    isLoading: Boolean,
+    canSkipPrevious: Boolean,
+    canSkipNext: Boolean,
+    sliderPosition: Long?,
+    position: Long,
+    duration: Long,
+    repeatMode: Int,
+    shuffleModeEnabled: Boolean,
+    isLiked: Boolean,
+    playerConnection: PlayerConnection,
+    navController: NavController,
+    state: BottomSheetState,
+    textButtonColor: Color,
+    iconButtonColor: Color,
+    textBackgroundColor: Color,
+    onSliderValueChange: (Long) -> Unit,
+    onSliderValueChangeFinished: () -> Unit,
+    onShowLyrics: () -> Unit,
+    onShowQueue: () -> Unit,
+    onShowMenu: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val haptic = LocalHapticFeedback.current
+    val titleActions = rememberPlayerTitleActions(mediaMetadata, navController, state)
+
+    val prevSource = remember { MutableInteractionSource() }
+    val playSource = remember { MutableInteractionSource() }
+    val nextSource = remember { MutableInteractionSource() }
+
+    val isPrevPressed by prevSource.collectIsPressedAsState()
+    val isPlayPressed by playSource.collectIsPressedAsState()
+    val isNextPressed by nextSource.collectIsPressedAsState()
+
+    val playWeight by animateFloatAsState(
+        targetValue = if (isPlayPressed) 1.8f else if (isPrevPressed || isNextPressed) 1.15f else 1.35f,
+        animationSpec = spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMediumLow),
+        label = "v9PlayWeight"
+    )
+
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp, vertical = 12.dp)
+    ) {
+        // V9 Header Bar (Collapse, Title context, Lyrics, Queue)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = CircleShape,
+                color = textButtonColor.copy(alpha = 0.16f),
+                onClick = { state.collapseSoft() },
+                modifier = Modifier.size(40.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = painterResource(R.drawable.expand_more),
+                        contentDescription = "Collapse",
+                        tint = textBackgroundColor,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+
+            Text(
+                text = stringResource(R.string.player_style_material_extended),
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+                color = textBackgroundColor.copy(alpha = 0.85f)
+            )
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Surface(
+                    shape = CircleShape,
+                    color = textButtonColor.copy(alpha = 0.16f),
+                    onClick = onShowLyrics,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.lyrics),
+                            contentDescription = stringResource(R.string.lyrics),
+                            tint = textBackgroundColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = CircleShape,
+                    color = textButtonColor.copy(alpha = 0.16f),
+                    onClick = onShowQueue,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.queue_music),
+                            contentDescription = stringResource(R.string.queue),
+                            tint = textBackgroundColor,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        // Large 1:1 Album Artwork Squircle
+        Box(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxWidth(),
+            contentAlignment = Alignment.Center
+        ) {
+            Surface(
+                shape = RoundedCornerShape(32.dp),
+                shadowElevation = 14.dp,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier
+                    .fillMaxWidth(0.92f)
+                    .aspectRatio(1f)
+            ) {
+                AsyncImage(
+                    model = mediaMetadata.thumbnailUrl,
+                    contentDescription = mediaMetadata.title,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        Spacer(Modifier.height(18.dp))
+
+        // Title and Like Action (Left Title + Artists, Right Heart)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = mediaMetadata.title,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = textBackgroundColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .basicMarquee()
+                        .clickable { titleActions.onTitleClick() }
+                )
+                Spacer(Modifier.height(4.dp))
+                ClickableArtists(
+                    artists = mediaMetadata.artists,
+                    onArtistClick = titleActions.onArtistClick,
+                    style = MaterialTheme.typography.titleMedium,
+                    color = textBackgroundColor.copy(alpha = 0.72f),
+                    modifier = Modifier.basicMarquee()
+                )
+            }
+
+            Spacer(Modifier.width(12.dp))
+
+            IconButton(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    playerConnection.toggleLike()
+                },
+                modifier = Modifier.size(48.dp)
+            ) {
+                Icon(
+                    painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
+                    contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
+                    tint = if (isLiked) MaterialTheme.colorScheme.primary else textBackgroundColor,
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(14.dp))
+
+        // Progress Slider
+        PlayerSliderTrack(
+            sliderColors = PlayerSliderColors.getSliderColors(PlayerBackgroundStyle.DEFAULT, false),
+            value = (sliderPosition ?: position).toFloat(),
+            onValueChange = { onSliderValueChange(it.toLong()) },
+            onValueChangeFinished = onSliderValueChangeFinished,
+            valueRange = 0f..duration.coerceAtLeast(0L).toFloat(),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 4.dp, vertical = 2.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = makeTimeString(sliderPosition ?: position),
+                style = MaterialTheme.typography.labelMedium,
+                color = textBackgroundColor.copy(alpha = 0.7f)
+            )
+            Text(
+                text = makeTimeString(duration),
+                style = MaterialTheme.typography.labelMedium,
+                color = textBackgroundColor.copy(alpha = 0.7f)
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // V9 Animated Playback Controls Strip
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            FilledIconButton(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    playerConnection.seekToPrevious()
+                },
+                enabled = canSkipPrevious,
+                interactionSource = prevSource,
+                shape = RoundedCornerShape(28.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = textBackgroundColor.copy(alpha = 0.08f),
+                    contentColor = textBackgroundColor
+                ),
+                modifier = Modifier
+                    .weight(0.5f)
+                    .height(72.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.skip_previous),
+                    contentDescription = stringResource(R.string.widget_previous),
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+
+            FilledIconButton(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    if (playbackState == Player.STATE_ENDED) {
+                        playerConnection.player.seekTo(0, 0)
+                        playerConnection.player.playWhenReady = true
+                    } else {
+                        playerConnection.player.togglePlayPause()
+                    }
+                },
+                interactionSource = playSource,
+                shape = RoundedCornerShape(28.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = textButtonColor,
+                    contentColor = iconButtonColor
+                ),
+                modifier = Modifier
+                    .weight(playWeight)
+                    .height(72.dp)
+            ) {
+                if (isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(32.dp),
+                        color = iconButtonColor,
+                        strokeWidth = 3.dp
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(
+                            when {
+                                playbackState == Player.STATE_ENDED -> R.drawable.replay
+                                isPlaying -> R.drawable.pause
+                                else -> R.drawable.play
+                            }
+                        ),
+                        contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
+                        modifier = Modifier.size(36.dp)
+                    )
+                }
+            }
+
+            FilledIconButton(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    playerConnection.seekToNext()
+                },
+                enabled = canSkipNext,
+                interactionSource = nextSource,
+                shape = RoundedCornerShape(28.dp),
+                colors = IconButtonDefaults.filledIconButtonColors(
+                    containerColor = textBackgroundColor.copy(alpha = 0.08f),
+                    contentColor = textBackgroundColor
+                ),
+                modifier = Modifier
+                    .weight(0.5f)
+                    .height(72.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.skip_next),
+                    contentDescription = stringResource(R.string.next),
+                    modifier = Modifier.size(30.dp)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Secondary controls: Shuffle, Repeat, Menu
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
+            }) {
+                Icon(
+                    painter = painterResource(R.drawable.shuffle),
+                    contentDescription = stringResource(R.string.shuffle),
+                    tint = if (shuffleModeEnabled) MaterialTheme.colorScheme.primary else textBackgroundColor.copy(alpha = 0.5f),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            IconButton(onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                playerConnection.player.toggleRepeatMode()
+            }) {
+                Icon(
+                    painter = painterResource(
+                        when (repeatMode) {
+                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
+                            else -> R.drawable.repeat
+                        }
+                    ),
+                    contentDescription = stringResource(R.string.repeat),
+                    tint = if (repeatMode != Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else textBackgroundColor.copy(alpha = 0.5f),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
+            IconButton(onClick = onShowMenu) {
+                Icon(
+                    painter = painterResource(R.drawable.more_vert),
+                    contentDescription = stringResource(R.string.more_label),
+                    tint = textBackgroundColor.copy(alpha = 0.8f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+    }
+}
