@@ -345,13 +345,13 @@ object PlayerColorExtractor {
  */
 @Composable
 fun rememberGlobalArtworkPalette(
-    mediaMetadata: MkrMediaMetadata?,
+    mediaMetadata: MediaMetadata?,
     enableDynamicTheme: Boolean = true,
     staticThemeColor: Color = PlayerColorExtractor.WarmAmber
 ): PlayerArtworkPalette {
     val context = LocalContext.current
     var currentPalette by remember {
-        mutableStateOf(
+        mutableStateOf<PlayerArtworkPalette>(
             if (!enableDynamicTheme) {
                 if (staticThemeColor != PlayerColorExtractor.WarmAmber && staticThemeColor != Color(0xFFED5564)) {
                     PlayerColorExtractor.createPaletteFromSeed(staticThemeColor)
