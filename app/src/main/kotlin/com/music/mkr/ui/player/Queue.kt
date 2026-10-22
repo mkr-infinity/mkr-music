@@ -947,7 +947,7 @@ fun Queue(
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.close),
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.close),
                             )
                         }
                         Text(

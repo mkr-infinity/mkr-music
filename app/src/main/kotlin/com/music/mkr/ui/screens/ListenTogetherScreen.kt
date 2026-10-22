@@ -430,7 +430,7 @@ fun ListenTogetherScreen(
                 ) {
                     Icon(
                         painterResource(R.drawable.arrow_back),
-                        contentDescription = null
+                        contentDescription = stringResource(R.string.back)
                     )
                 }
             },
@@ -1624,7 +1624,7 @@ private fun UserActionDialog(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.close),
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.close),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(24.dp)
                     )
@@ -1659,7 +1659,7 @@ private fun UserActionDialog(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.close),
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.close),
                         tint = MaterialTheme.colorScheme.error,
                         modifier = Modifier.size(24.dp)
                     )

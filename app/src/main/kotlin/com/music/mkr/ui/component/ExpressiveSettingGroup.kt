@@ -29,6 +29,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -59,7 +62,9 @@ fun ExpressiveSettingGroup(
                 text = it,
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(start = 16.dp, bottom = 8.dp, top = 12.dp)
+                modifier = Modifier
+                    .semantics { heading() }
+                    .padding(start = 16.dp, bottom = 8.dp, top = 12.dp)
             )
         }
         items.forEachIndexed { index, item ->
@@ -81,6 +86,7 @@ fun ExpressiveSettingGroup(
                 ListItem(
                     modifier = Modifier
                         .clickable(
+                            role = Role.Button,
                             enabled = item.enabled && item.onClick != null,
                             onClick = { item.onClick?.invoke() }
                         ),

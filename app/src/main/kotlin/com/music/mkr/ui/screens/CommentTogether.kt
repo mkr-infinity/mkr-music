@@ -91,7 +91,7 @@ fun CommentTogetherScreen(navController: NavController) {
                 },
                 navigationIcon = {
                     IconButton(onClick = { navController.navigateUp() }) {
-                        Icon(painterResource(R.drawable.arrow_back), contentDescription = null)
+                        Icon(painterResource(R.drawable.arrow_back), contentDescription = stringResource(R.string.back))
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -155,7 +155,7 @@ fun CommentTogetherScreen(navController: NavController) {
                                 IconButton(onClick = { replyingTo = null }) {
                                     Icon(
                                         painter = painterResource(R.drawable.close),
-                                        contentDescription = null,
+                                        contentDescription = stringResource(R.string.close),
                                         modifier = Modifier.size(16.dp)
                                     )
                                 }

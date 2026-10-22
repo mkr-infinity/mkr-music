@@ -1159,4 +1159,6 @@
     <string name="network_error">Network error</string>
     <string name="online">Online</string>
     <string name="local">Local</string>
+    <string name="back">Back</string>
+    <string name="info">Information</string>
 </resources>

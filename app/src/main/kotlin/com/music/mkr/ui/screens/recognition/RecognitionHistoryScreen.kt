@@ -196,7 +196,7 @@ fun RecognitionHistoryScreen(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
-                            contentDescription = null
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -241,7 +241,7 @@ fun RecognitionHistoryScreen(
                         IconButton(onClick = { query = TextFieldValue() }) {
                             Icon(
                                 painter = painterResource(R.drawable.close),
-                                contentDescription = null,
+                                contentDescription = stringResource(R.string.close),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }

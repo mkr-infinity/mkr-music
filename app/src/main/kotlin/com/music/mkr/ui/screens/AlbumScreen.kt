@@ -986,7 +986,7 @@ fun AlbumScreen(
                 IconButton(onClick = onExitSelectionMode) {
                     Icon(
                         painter = painterResource(R.drawable.close),
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.close),
                     )
                 }
             } else {

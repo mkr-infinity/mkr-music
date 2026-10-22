@@ -179,7 +179,7 @@ fun RecognitionScreen(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
-                            contentDescription = null
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -539,7 +539,7 @@ private fun SuccessState(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.close),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.close),
                     modifier = Modifier.size(18.dp)
                 )
                 Spacer(modifier = Modifier.width(8.dp))
@@ -567,7 +567,7 @@ private fun NoMatchState(
         ) {
             Icon(
                 painter = painterResource(R.drawable.close),
-                contentDescription = null,
+                contentDescription = stringResource(R.string.close),
                 modifier = Modifier.size(48.dp),
                 tint = MaterialTheme.colorScheme.onErrorContainer
             )

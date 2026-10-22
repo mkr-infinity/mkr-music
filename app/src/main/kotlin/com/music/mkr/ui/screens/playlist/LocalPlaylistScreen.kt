@@ -768,7 +768,7 @@ fun LocalPlaylistScreen(
                     IconButton(onClick = onExitSelectionMode) {
                         Icon(
                             painter = painterResource(R.drawable.close),
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.close),
                         )
                     }
                 } else {
@@ -789,7 +789,7 @@ fun LocalPlaylistScreen(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.arrow_back),
-                            contentDescription = null
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 }
@@ -836,7 +836,7 @@ fun LocalPlaylistScreen(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.search),
-                            contentDescription = null
+                            contentDescription = stringResource(R.string.search)
                         )
                     }
                 }

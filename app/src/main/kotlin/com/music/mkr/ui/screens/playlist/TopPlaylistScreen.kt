@@ -505,7 +505,7 @@ fun TopPlaylistScreen(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.search),
-                            contentDescription = null
+                            contentDescription = stringResource(R.string.search)
                         )
                     }
                 }

@@ -5,6 +5,7 @@
 
 package com.music.mkr.ui.screens.artist
 
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -298,7 +299,7 @@ fun ArtistItemsScreen(
             ) {
                 Icon(
                     painterResource(R.drawable.arrow_back),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.back),
                 )
             }
         },

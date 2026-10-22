@@ -42,6 +42,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
@@ -66,7 +69,9 @@ fun Material3SettingsGroup(
                 text = it,
                 style = MaterialTheme.typography.labelLarge,
                 color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(bottom = 8.dp, top = 8.dp)
+                modifier = Modifier
+                    .semantics { heading() }
+                    .padding(bottom = 8.dp, top = 8.dp)
             )
         }
 
@@ -121,6 +126,7 @@ internal fun Material3SettingsItemRow(
             .fillMaxWidth()
             .settingsHighlight(item.key)
             .clickable(
+                role = Role.Button,
                 enabled = item.enabled && item.onClick != null,
                 onClick = { item.onClick?.invoke() }
             )
@@ -283,6 +289,7 @@ internal fun ExpressiveSettingsItemRow(
             .fillMaxWidth()
             .settingsHighlight(item.key)
             .clickable(
+                role = Role.Button,
                 enabled = item.enabled && item.onClick != null,
                 onClick = { item.onClick?.invoke() }
             )

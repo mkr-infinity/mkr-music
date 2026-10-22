@@ -448,7 +448,7 @@ fun CachePlaylistScreen(
                     IconButton(onClick = { isSearching = true }) {
                         Icon(
                             painter = painterResource(R.drawable.search),
-                            contentDescription = null
+                            contentDescription = stringResource(R.string.search)
                         )
                     }
                 }

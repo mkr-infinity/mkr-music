@@ -938,7 +938,7 @@ fun ListenTogetherDialog(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.close),
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.close),
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(24.dp)
                         )
@@ -987,7 +987,7 @@ fun ListenTogetherDialog(
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.close),
-                            contentDescription = null,
+                            contentDescription = stringResource(R.string.close),
                             tint = MaterialTheme.colorScheme.error,
                             modifier = Modifier.size(24.dp)
                         )

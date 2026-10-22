@@ -4,6 +4,7 @@
  */
 
 package com.music.mkr.ui.screens
+import androidx.compose.ui.res.stringResource
  
  import androidx.compose.foundation.ExperimentalFoundationApi
  import androidx.compose.foundation.combinedClickable
@@ -145,7 +146,7 @@ package com.music.mkr.ui.screens
              ) {
                  Icon(
                      painterResource(R.drawable.arrow_back),
-                     contentDescription = null
+                     contentDescription = stringResource(R.string.back)
                  )
              }
          }

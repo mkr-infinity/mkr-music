@@ -219,7 +219,7 @@ fun ListenTogetherSettings(
                 trailingIcon = {
                     if (tempUsername.isNotBlank()) {
                         IconButton(onClick = { tempUsername = "" }, onLongClick = {}) {
-                            Icon(painterResource(R.drawable.close), contentDescription = null)
+                            Icon(painterResource(R.drawable.close), contentDescription = stringResource(R.string.close))
                         }
                     }
                 },
@@ -559,7 +559,7 @@ fun ListenTogetherSettings(
             ) {
                 Icon(
                     painterResource(R.drawable.arrow_back),
-                    contentDescription = null,
+                    contentDescription = stringResource(R.string.back),
                 )
             }
         }
