@@ -20,6 +20,18 @@ import com.music.mkr.constants.PlayerBackgroundStyle
  */
 object PlayerSliderColors {
 
+    @Composable
+    fun getSliderColors(
+        playerBackground: PlayerBackgroundStyle = PlayerBackgroundStyle.DEFAULT,
+        useDarkTheme: Boolean = true
+    ): SliderColors {
+        return getSliderColors(
+            activeColor = MaterialTheme.colorScheme.primary,
+            playerBackground = playerBackground,
+            useDarkTheme = useDarkTheme
+        )
+    }
+
     /**
      * Standard slider colors for all slider types
      * 

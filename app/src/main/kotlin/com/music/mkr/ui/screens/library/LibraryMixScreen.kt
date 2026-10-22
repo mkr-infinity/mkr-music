@@ -144,7 +144,8 @@ fun LibraryMixScreen(
 
     val (ytmSync) = rememberPreference(YtmSyncKey, true)
 
-    val topSize by viewModel.topValue.collectAsState(initial = 50)
+    val topSizeRaw by viewModel.topValue.collectAsState(initial = "50")
+    val topSize = topSizeRaw.toIntOrNull() ?: 50
     val recentLikedThumbnails by viewModel.recentLikedThumbnails.collectAsState()
     val recentDownloadedThumbnails by viewModel.recentDownloadedThumbnails.collectAsState()
     val likedPlaylist =
