@@ -264,7 +264,7 @@ fun LyricsV2(
                                     LyricsMenu(
                                         lyricsProvider = { currentLyrics },
                                         songProvider = { currentSong?.song },
-                                        mediaMetadataProvider = { mediaMetadata ?: return@LyricsMenu },
+                                        mediaMetadataProvider = { mediaMetadata ?: MediaMetadata(id = "", title = "", artists = emptyList(), duration = 0) },
                                         onDismiss = menuState::dismiss,
                                         onShowOffsetDialog = {
                                             bottomSheetPageState.show {

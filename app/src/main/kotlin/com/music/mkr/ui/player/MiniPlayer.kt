@@ -1243,7 +1243,7 @@ internal fun MiniPlayerColorExtractor(
 
     LaunchedEffect(mediaMetadata?.id, miniPlayerBackground) {
         if (miniPlayerBackground == PlayerBackgroundStyle.GRADIENT) {
-            val palette = PlayerColorExtractor.extractPalette(context, mediaMetadata)
+            val palette = PlayerColorExtractor.extractPalette(context, mediaMetadata?.thumbnailUrl, mediaMetadata?.id)
             onGradientColorsChange(palette.backgroundGradient)
         } else if (miniPlayerBackground == PlayerBackgroundStyle.GLOW_ANIMATED) {
             val currentMetadata = mediaMetadata
@@ -1278,10 +1278,9 @@ internal fun MiniPlayerColorExtractor(
                     }
                 }
             } else {
-                val palette = PlayerColorExtractor.extractPalette(context, mediaMetadata)
+                val palette = PlayerColorExtractor.extractPalette(context, mediaMetadata?.thumbnailUrl, mediaMetadata?.id)
                 onGradientColorsChange(palette.backgroundGradient)
             }
-        } else {
         } else {
             onGradientColorsChange(emptyList())
         }

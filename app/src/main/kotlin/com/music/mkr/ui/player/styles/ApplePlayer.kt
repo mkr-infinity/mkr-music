@@ -134,7 +134,7 @@ fun ApplePlayer(
     onShowQueue: () -> Unit,
     onShowMenu: () -> Unit,
     modifier: Modifier = Modifier,
-    currentFormat: Format? = null,
+    currentFormat: com.music.mkr.db.entities.FormatEntity? = null,
 ) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
@@ -271,7 +271,6 @@ fun ApplePlayer(
                         ClickableArtists(
                             artists = mediaMetadata.artists,
                             onArtistClick = titleActions.onArtistClick,
-                            onLongClick = titleActions.onArtistLongClick,
                             style = MaterialTheme.typography.bodyMedium,
                             color = textBackgroundColor.copy(alpha = 0.7f),
                             modifier = Modifier.basicMarquee()
@@ -479,7 +478,6 @@ fun ApplePlayer(
                     ClickableArtists(
                         artists = mediaMetadata.artists,
                         onArtistClick = titleActions.onArtistClick,
-                        onLongClick = titleActions.onArtistLongClick,
                         style = MaterialTheme.typography.titleMedium,
                         color = textBackgroundColor.copy(alpha = 0.7f),
                         modifier = Modifier.basicMarquee()
