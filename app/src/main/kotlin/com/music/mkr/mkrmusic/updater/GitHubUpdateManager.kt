@@ -117,8 +117,22 @@ class GitHubUpdateManager @Inject constructor(
                 withContext(Dispatchers.IO) {
                     val rawJson = URL(versionJsonAsset.browserDownloadUrl).openStream().bufferedReader().use { it.readText() }
                     val json = JSONObject(rawJson)
-                    if (json.has("version_code")) {
-                        remoteVersionCode = json.getLong("version_code")
+                    val pkg = when {
+                        json.has("packageName") -> json.optString("packageName")
+                        json.has("package_id") -> json.optString("package_id")
+                        else -> null
+                    }
+                    if (pkg == null || pkg == context.packageName || pkg == "com.kaif.music") {
+                        val code = when {
+                            json.has("versionCode") -> json.optLong("versionCode", -1L)
+                            json.has("version_code") -> json.optLong("version_code", -1L)
+                            else -> -1L
+                        }
+                        if (code > 0) {
+                            remoteVersionCode = code
+                        }
+                    } else {
+                        Timber.tag(TAG).w("Rejecting version.json: Package mismatch ($pkg vs ${context.packageName})")
                     }
                 }
             } catch (e: Exception) {

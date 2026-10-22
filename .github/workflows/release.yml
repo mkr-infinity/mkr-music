@@ -1,6 +1,6 @@
 name: Production Release Build
 
-on:
+'on':
   workflow_dispatch:
     inputs:
       publish_release:
@@ -8,6 +8,8 @@ on:
         required: false
         default: false
         type: boolean
+  release:
+    types: [published]
 
 permissions:
   contents: write
@@ -23,6 +25,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
+          ref: ${{ github.event.release.tag_name || github.ref }}
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -33,7 +36,7 @@ jobs:
       - name: Set Up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          cache-disabled: true
+          cache-disabled: false
 
       - name: Setup FFTW for Android
         uses: ./.github/actions/setup-fftw
@@ -90,6 +93,16 @@ jobs:
           if (( COMPUTED_CODE <= 77 )); then
             echo "::error file=version.properties::Computed versionCode ($COMPUTED_CODE) must be strictly greater than historical version code 77."
             exit 1
+          fi
+
+          # Enforce tag-version consistency if triggered by release event
+          if [ "${{ github.event_name }}" = "release" ]; then
+            RELEASE_TAG="${{ github.event.release.tag_name }}"
+            if [ "$RELEASE_TAG" != "v$RAW_APP_VERSION" ] && [ "$RELEASE_TAG" != "$RAW_APP_VERSION" ]; then
+              echo "::error::Release tag '$RELEASE_TAG' does not match canonical version '$RAW_APP_VERSION' in version.properties!"
+              exit 1
+            fi
+            echo "✓ Release tag '$RELEASE_TAG' matches canonical version '$RAW_APP_VERSION'."
           fi
 
           echo "✓ Canonical Version Name: $RAW_APP_VERSION"
@@ -157,7 +170,7 @@ jobs:
           keyPassword: ${{ secrets.KEY_PASSWORD }}
           buildToolsVersion: 35.0.0
 
-      - name: Prepare and Validate Release Assets
+      - name: Prepare, Validate & Provenance Universal APK
         id: prepare_assets
         run: |
           mkdir -p release_assets
@@ -175,62 +188,124 @@ jobs:
             exit 1
           fi
 
-          # Copy and rename to exact required filename
+          # Copy and rename to exact mandatory filename
           cp "$UNIVERSAL_SRC" release_assets/mkr-music-universal.apk
 
           echo "=== Generating Release Metadata (version.json) ==="
-          cat << EOF > release_assets/version.json
-{
-  "version_name": "${{ steps.version_info.outputs.version_name }}",
-  "version_code": ${{ steps.version_info.outputs.version_code }},
-  "package_id": "com.kaif.music",
-  "min_sdk": 26,
-  "target_sdk": 37
-}
-EOF
+          python3 -c "
+          import json
+          meta = {
+              'versionName': '${{ steps.version_info.outputs.version_name }}',
+              'versionCode': int('${{ steps.version_info.outputs.version_code }}'),
+              'packageName': 'com.kaif.music',
+              'version_name': '${{ steps.version_info.outputs.version_name }}',
+              'version_code': int('${{ steps.version_info.outputs.version_code }}'),
+              'package_id': 'com.kaif.music',
+              'min_sdk': 26,
+              'target_sdk': 37
+          }
+          with open('release_assets/version.json', 'w') as f:
+              json.dump(meta, f, indent=2)
+          "
+          cat release_assets/version.json
 
-          echo "=== Validating Generated Universal APK ==="
+          echo "=== Generating SHA-256 Checksum ==="
+          (cd release_assets && sha256sum mkr-music-universal.apk > mkr-music-universal.apk.sha256)
+          SHA256_HASH=$(awk '{print $1}' release_assets/mkr-music-universal.apk.sha256)
+          echo "sha256=$SHA256_HASH" >> $GITHUB_OUTPUT
+          echo "SHA-256 Checksum: $SHA256_HASH"
+
+          echo "=== Validating Universal APK Presence & Size ==="
           apk_path="release_assets/mkr-music-universal.apk"
           if [ ! -f "$apk_path" ]; then
             echo "::error::Required APK mkr-music-universal.apk is missing!"
             exit 1
           fi
           size=$(wc -c < "$apk_path")
-          if [ "$size" -lt 1000000 ]; then
-            echo "::error::Required APK mkr-music-universal.apk is suspiciously small ($size bytes)!"
+          if [ "$size" -lt 5000000 ]; then
+            echo "::error::Required APK mkr-music-universal.apk is suspiciously small ($size bytes)! Minimum expected: 5MB."
             exit 1
           fi
           echo "✓ Verified mkr-music-universal.apk ($size bytes)"
 
-          echo "=== Inspecting Native ABIs in Universal APK ==="
-          unzip -l release_assets/mkr-music-universal.apk | grep "lib/" | head -n 15 || echo "No lib entries"
+          echo "=== Verifying APK Archive Integrity ==="
+          if ! unzip -tq "$apk_path"; then
+            echo "::error::Universal APK archive integrity test failed! File is corrupt or truncated."
+            exit 1
+          fi
+          echo "✓ Verified APK archive integrity (valid ZIP container)"
+
+          echo "=== Inspecting Application ID and Manifest ==="
+          AAPT_BIN=$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -name "aapt" -type f 2>/dev/null | sort -V | tail -n 1)
+          if [ -n "$AAPT_BIN" ] && [ -x "$AAPT_BIN" ]; then
+            echo "Inspecting APK badging with: $AAPT_BIN"
+            BADGING=$("$AAPT_BIN" dump badging "$apk_path")
+
+            if echo "$BADGING" | grep -q "package: name='com.kaif.music'"; then
+              echo "✓ Application ID confirmed: com.kaif.music"
+            else
+              echo "::error::Application ID mismatch in APK! Expected com.kaif.music"
+              exit 1
+            fi
+
+            EXPECTED_VC="${{ steps.version_info.outputs.version_code }}"
+            if echo "$BADGING" | grep -q "versionCode='$EXPECTED_VC'"; then
+              echo "✓ Version Code confirmed in APK: $EXPECTED_VC"
+            else
+              echo "::error::Version Code mismatch in APK! Expected $EXPECTED_VC"
+              exit 1
+            fi
+          else
+            echo "Notice: aapt binary not directly available; verifying manifest entry in archive..."
+            if ! unzip -l "$apk_path" | grep -q "AndroidManifest.xml"; then
+              echo "::error::AndroidManifest.xml missing from universal APK!"
+              exit 1
+            fi
+            echo "✓ AndroidManifest.xml verified present in APK archive"
+          fi
+
+          echo "=== Inspecting Native Multi-ABI Libraries in Universal APK ==="
+          LIB_ENTRIES=$(unzip -l "$apk_path" | grep "lib/" || true)
+          echo "$LIB_ENTRIES" | head -n 25 || true
+
+          # Verify multi-ABI inclusion (ensures it is not an architecture-specific build)
+          HAS_ARM64=$(echo "$LIB_ENTRIES" | grep -c "lib/arm64-v8a/" || true)
+          HAS_ARMV7=$(echo "$LIB_ENTRIES" | grep -c "lib/armeabi-v7a/" || true)
+
+          if [ "$HAS_ARM64" -eq 0 ] || [ "$HAS_ARMV7" -eq 0 ]; then
+            echo "::error::Universal APK missing required native ABIs! arm64: $HAS_ARM64, armeabi-v7a: $HAS_ARMV7"
+            exit 1
+          fi
+          echo "✓ Confirmed genuine universal APK: includes arm64-v8a ($HAS_ARM64 libs) and armeabi-v7a ($HAS_ARMV7 libs)"
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: mkr-music-universal-apk-v${{ steps.version_info.outputs.version_name }}
-          path: release_assets/mkr-music-universal.apk
+          path: |
+            release_assets/mkr-music-universal.apk
+            release_assets/version.json
+            release_assets/mkr-music-universal.apk.sha256
           if-no-files-found: error
 
       - name: Write Step Summary
         run: |
           UNIVERSAL_SIZE=$(ls -lh release_assets/mkr-music-universal.apk | awk '{print $5}')
+          SHA256_HASH="${{ steps.prepare_assets.outputs.sha256 }}"
 
-          cat << EOF >> $GITHUB_STEP_SUMMARY
-          ## 🚀 MKR Music Build Complete — v${{ steps.version_info.outputs.version_name }} (Build ${{ steps.version_info.outputs.version_code }})
-
-          The single Universal APK has been generated and packaged successfully with all supported architectures:
-
-          | Variant | Target ABI | Filename | Size | Version Name | Version Code |
-          | :--- | :--- | :--- | :--- | :--- | :--- |
-          | **Universal** | All Supported ABIs (\`arm64-v8a\`, \`armeabi-v7a\`, \`x86\`, \`x86_64\`) | \`mkr-music-universal.apk\` | $UNIVERSAL_SIZE | \`v${{ steps.version_info.outputs.version_name }}\` | \`${{ steps.version_info.outputs.version_code }}\` |
-
-          ### 📦 Download Artifacts
-          Download the compiled APK directly from the **Artifacts** section at the top of this run (\`mkr-music-universal-apk-v${{ steps.version_info.outputs.version_name }}\`).
-          EOF
+          echo "## 🚀 MKR Music Build Complete — v${{ steps.version_info.outputs.version_name }} (Build ${{ steps.version_info.outputs.version_code }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "The single Universal APK has been generated and validated successfully with all supported architectures:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Variant | Target ABI | Filename | Size | SHA-256 Checksum |" >> $GITHUB_STEP_SUMMARY
+          echo "| :--- | :--- | :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Universal** | All Supported ABIs (\`arm64-v8a\`, \`armeabi-v7a\`, \`x86\`, \`x86_64\`) | \`mkr-music-universal.apk\` | $UNIVERSAL_SIZE | \`$SHA256_HASH\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Download Artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "Download the compiled APK directly from the **Artifacts** section at the top of this run (\`mkr-music-universal-apk-v${{ steps.version_info.outputs.version_name }}\`)." >> $GITHUB_STEP_SUMMARY
 
       - name: Generate Beautiful Release Notes
-        if: github.event.inputs.publish_release == 'true'
+        if: github.event_name == 'release' || github.event.inputs.publish_release == 'true' || github.event.inputs.publish_release == true
         env:
           VERSION_NAME: ${{ steps.version_info.outputs.version_name }}
         shell: python
@@ -247,7 +322,7 @@ EOF
           # MKR Music v{version_name}
 
           > ### Release Highlights
-          > This milestone update delivers instant audio playback streaming, intelligent delayed background caching, expressive Material 3 UI refinements, and streamlined settings discovery.
+          > This milestone update delivers instant audio playback streaming, intelligent delayed background caching, expressive Material 3 UI refinements, reliable update previews, watch-inspired listening history navigation, and streamlined settings discovery.
 
           ---
 
@@ -257,12 +332,15 @@ EOF
           - **Zero Playback Lag**: Background caching runs on low-priority IO threads with automatic cancellation if a track is skipped or paused early.
 
           ### Visual Polish & Expressive Design
+          - **Watch-Inspired Listening History**: Dedicated timepiece action capsule with quick navigation to history.
+          - **Account-Aware Navigation**: Reactive avatar button displaying authenticated account status.
           - **Chainsaw Spikes Action Button**: Smooth animated moving teeth border on the Donate & Support button.
           - **Overhauled Contribution Sheet**: Rapid-copy UPI card with tactile spring click feedback, app badges, and rotating gratitude toasts.
           - **Balanced Onboarding Hero**: Centered MKR Music brand logo with structured layout and responsive viewport across all aspect ratios.
           - **Refined Accents**: Subtle borders applied to developer links and the home screen settings dropdown button.
 
           ### Settings Discovery & Direct Updates
+          - **In-App Update Detection**: Safe GitHub release preview with version code validation and direct APK download.
           - **Granular Keyword Search**: Search across sub-options directly (e.g., searching "hide" brings up all hide toggles) with automatic deduplication.
           - **Simplified Update Guidance**: Direct repository releases with step-by-step backup instructions before updating.
           - **Clutter-Free Headers**: Cleaned up the settings toolbar by removing redundant action capsules.
@@ -282,20 +360,28 @@ EOF
           with open("release_notes.txt", "w", encoding="utf-8") as f:
               f.write(body.strip())
 
-      - name: Create GitHub Release & Upload Assets
-        if: github.event.inputs.publish_release == 'true'
+      - name: Publish or Attach Assets to GitHub Release
+        if: github.event_name == 'release' || github.event.inputs.publish_release == 'true' || github.event.inputs.publish_release == true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           VERSION_NAME="${{ steps.version_info.outputs.version_name }}"
-          
-          # Delete existing release/tag with same name if it exists so re-running works cleanly
-          gh release delete "v$VERSION_NAME" --yes || true
-          git tag -d "v$VERSION_NAME" 2>/dev/null || true
-          git push --delete origin "v$VERSION_NAME" 2>/dev/null || true
+          TAG_NAME="v$VERSION_NAME"
 
-          gh release create "v$VERSION_NAME" release_assets/* \
-            --title "MKR Music v$VERSION_NAME" \
-            --notes-file release_notes.txt \
-            --target main
-
+          if [ "${{ github.event_name }}" = "release" ]; then
+            TARGET_TAG="${{ github.event.release.tag_name }}"
+            echo "Attaching assets to published release: $TARGET_TAG"
+            gh release upload "$TARGET_TAG" release_assets/* --clobber
+          else
+            echo "Publishing via workflow_dispatch to tag: $TAG_NAME"
+            if gh release view "$TAG_NAME" >/dev/null 2>&1; then
+              echo "Release $TAG_NAME already exists, uploading assets with --clobber..."
+              gh release upload "$TAG_NAME" release_assets/* --clobber
+            else
+              echo "Creating new release $TAG_NAME..."
+              gh release create "$TAG_NAME" release_assets/* \
+                --title "MKR Music v$VERSION_NAME" \
+                --notes-file release_notes.txt \
+                --target "${{ github.sha }}"
+            fi
+          fi

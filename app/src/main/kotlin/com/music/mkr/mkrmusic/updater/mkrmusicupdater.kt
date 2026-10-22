@@ -813,8 +813,20 @@ suspend fun checkForUpdate(
                         val vUrl = URL(a.getString("browser_download_url"))
                         val rawMeta = vUrl.openStream().bufferedReader().use { it.readText() }
                         val vObj = JSONObject(rawMeta)
-                        if (vObj.has("version_code")) {
-                            remoteVersionCode = vObj.getLong("version_code")
+                        val pkg = when {
+                            vObj.has("packageName") -> vObj.optString("packageName")
+                            vObj.has("package_id") -> vObj.optString("package_id")
+                            else -> null
+                        }
+                        if (pkg == null || pkg == context.packageName || pkg == "com.kaif.music") {
+                            val code = when {
+                                vObj.has("versionCode") -> vObj.optLong("versionCode", -1L)
+                                vObj.has("version_code") -> vObj.optLong("version_code", -1L)
+                                else -> -1L
+                            }
+                            if (code > 0) {
+                                remoteVersionCode = code
+                            }
                         }
                     } catch (_: Exception) {}
                     break
