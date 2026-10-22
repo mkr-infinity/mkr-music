@@ -113,6 +113,9 @@ fun AppleMiniPlayer(
 
     // Swipe animation state
     val offsetXAnimatable = remember { Animatable(0f) }
+    var lastPreviousTime by remember { mutableLongStateOf(0L) }
+    var lastPlayPauseTime by remember { mutableLongStateOf(0L) }
+    var lastNextTime by remember { mutableLongStateOf(0L) }
     var dragStartTime by remember { mutableLongStateOf(0L) }
     var totalDragDistance by remember { mutableFloatStateOf(0f) }
 
@@ -333,6 +336,30 @@ fun AppleMiniPlayer(
                     Spacer(modifier = Modifier.width(8.dp))
                 }
 
+                // Previous Button
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(CircleShape)
+                        .clickable(enabled = canSkipPrevious && !isListenTogetherGuest) {
+                            val now = android.os.SystemClock.uptimeMillis()
+                            if (now - lastPreviousTime >= 300L) {
+                                lastPreviousTime = now
+                                playerConnection.seekToPrevious()
+                            }
+                        }
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.skip_previous),
+                        contentDescription = stringResource(R.string.widget_previous),
+                        tint = if (canSkipPrevious && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(6.dp))
+
                 // Play/Pause Button
                 Box(
                     contentAlignment = Alignment.Center,
@@ -340,18 +367,22 @@ fun AppleMiniPlayer(
                         .size(40.dp)
                         .clip(CircleShape)
                         .clickable {
-                            if (isListenTogetherGuest) {
-                                playerConnection.toggleMute()
-                                return@clickable
-                            }
-                            if (isCasting) {
-                                val castIsPlaying = castHandler?.castIsPlaying?.value ?: false
-                                if (castIsPlaying) castHandler?.pause() else castHandler?.play()
-                            } else if (playbackState == Player.STATE_ENDED) {
-                                playerConnection.player.seekTo(0, 0)
-                                playerConnection.player.playWhenReady = true
-                            } else {
-                                playerConnection.togglePlayPause()
+                            val now = android.os.SystemClock.uptimeMillis()
+                            if (now - lastPlayPauseTime >= 300L) {
+                                lastPlayPauseTime = now
+                                if (isListenTogetherGuest) {
+                                    playerConnection.toggleMute()
+                                    return@clickable
+                                }
+                                if (isCasting) {
+                                    val castIsPlaying = castHandler?.castIsPlaying?.value ?: false
+                                    if (castIsPlaying) castHandler?.pause() else castHandler?.play()
+                                } else if (playbackState == Player.STATE_ENDED) {
+                                    playerConnection.player.seekTo(0, 0)
+                                    playerConnection.player.playWhenReady = true
+                                } else {
+                                    playerConnection.togglePlayPause()
+                                }
                             }
                         }
                 ) {
@@ -379,7 +410,7 @@ fun AppleMiniPlayer(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                Spacer(modifier = Modifier.width(6.dp))
 
                 // Next Button
                 Box(
@@ -388,12 +419,16 @@ fun AppleMiniPlayer(
                         .size(40.dp)
                         .clip(CircleShape)
                         .clickable(enabled = canSkipNext && !isListenTogetherGuest) {
-                            playerConnection.seekToNext()
+                            val now = android.os.SystemClock.uptimeMillis()
+                            if (now - lastNextTime >= 300L) {
+                                lastNextTime = now
+                                playerConnection.seekToNext()
+                            }
                         }
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.skip_next),
-                        contentDescription = "Next",
+                        contentDescription = stringResource(R.string.next),
                         tint = if (canSkipNext && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
                         modifier = Modifier.size(28.dp)
                     )

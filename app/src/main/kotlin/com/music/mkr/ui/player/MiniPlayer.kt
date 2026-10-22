@@ -258,6 +258,11 @@ private fun NewMiniPlayer(
     val offsetXAnimatable = remember { Animatable(0f) }
     var dragStartTime by remember { mutableLongStateOf(0L) }
     var totalDragDistance by remember { mutableFloatStateOf(0f) }
+    var lastLegacyPreviousClickTime by remember { mutableLongStateOf(0L) }
+    var lastLegacyNextClickTime by remember { mutableLongStateOf(0L) }
+    var lastPreviousClickTime by remember { mutableLongStateOf(0L) }
+    var lastPlayPauseClickTime by remember { mutableLongStateOf(0L) }
+    var lastNextClickTime by remember { mutableLongStateOf(0L) }
 
     val animationSpec = remember {
         spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow)
@@ -411,33 +416,88 @@ private fun NewMiniPlayer(
                     Spacer(modifier = Modifier.width(12.dp))
                 }
 
-                // Audio Device Button (Replacing SubscribeButton)
-                Box(
-                    contentAlignment = Alignment.Center,
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(CircleShape)
-                        .background(color = primaryColor.copy(alpha = 0.1f))
-                        .clickable { showAudioDeviceBottomSheet = true }
+                // Transport controls: Previous, Play/Pause, Next
+                IconButton(
+                    enabled = canSkipPrevious && !isListenTogetherGuest,
+                    onClick = {
+                        val now = android.os.SystemClock.uptimeMillis()
+                        if (now - lastPreviousClickTime >= 300L) {
+                            lastPreviousClickTime = now
+                            if (!isListenTogetherGuest && canSkipPrevious) {
+                                playerConnection.seekToPrevious()
+                            }
+                        }
+                    },
+                    modifier = Modifier.size(36.dp)
                 ) {
                     Icon(
-                        painter = painterResource(if (isBluetoothConnected) R.drawable.bluetooth else R.drawable.home_speaker_devices),
-                        contentDescription = stringResource(R.string.audio_devices),
-                        tint = primaryColor,
-                        modifier = Modifier.size(20.dp)
+                        painter = painterResource(R.drawable.skip_previous),
+                        contentDescription = stringResource(R.string.widget_previous),
+                        tint = if (canSkipPrevious && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
+                        modifier = Modifier.size(22.dp)
                     )
                 }
 
-                Spacer(modifier = Modifier.width(8.dp))
+                IconButton(
+                    onClick = {
+                        val now = android.os.SystemClock.uptimeMillis()
+                        if (now - lastPlayPauseClickTime >= 300L) {
+                            lastPlayPauseClickTime = now
+                            if (isListenTogetherGuest) {
+                                playerConnection.toggleMute()
+                            } else if (playbackState == Player.STATE_ENDED) {
+                                playerConnection.player.seekTo(0, 0)
+                                playerConnection.player.playWhenReady = true
+                            } else {
+                                playerConnection.togglePlayPause()
+                            }
+                        }
+                    },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    val isPlaying by playerConnection.isPlaying.collectAsState()
+                    val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
+                    val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
+                    val isMuted by playerConnection.isMuted.collectAsState()
 
-                // Favorite button - isolated composable
-                mediaMetadata?.let { 
-                    FavoriteButton(
-                        songId = it.id,
-                        onSurfaceColor = onSurfaceColor,
-                        errorColor = errorColor,
-                        outlineColor = outlineColor
-                    ) 
+                    Icon(
+                        painter = painterResource(
+                            when {
+                                isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
+                                playbackState == Player.STATE_ENDED -> R.drawable.replay
+                                effectiveIsPlaying -> R.drawable.pause
+                                else -> R.drawable.play
+                            }
+                        ),
+                        contentDescription = if (isListenTogetherGuest) {
+                            if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
+                        } else {
+                            if (effectiveIsPlaying) stringResource(R.string.pause) else stringResource(R.string.play)
+                        },
+                        tint = onSurfaceColor,
+                        modifier = Modifier.size(26.dp)
+                    )
+                }
+
+                IconButton(
+                    enabled = canSkipNext && !isListenTogetherGuest,
+                    onClick = {
+                        val now = android.os.SystemClock.uptimeMillis()
+                        if (now - lastNextClickTime >= 300L) {
+                            lastNextClickTime = now
+                            if (!isListenTogetherGuest && canSkipNext) {
+                                playerConnection.seekToNext()
+                            }
+                        }
+                    },
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.skip_next),
+                        contentDescription = stringResource(R.string.next),
+                        tint = if (canSkipNext && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
             }
         }
@@ -674,6 +734,8 @@ private fun LegacyMiniPlayer(
     val offsetXAnimatable = remember { Animatable(0f) }
     var dragStartTime by remember { mutableLongStateOf(0L) }
     var totalDragDistance by remember { mutableFloatStateOf(0f) }
+    var lastLegacyPreviousClickTime by remember { mutableLongStateOf(0L) }
+    var lastLegacyNextClickTime by remember { mutableLongStateOf(0L) }
 
     val animationSpec = remember {
         spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow)
@@ -786,6 +848,27 @@ private fun LegacyMiniPlayer(
                 }
             }
 
+            IconButton(
+                enabled = canSkipPrevious && !isListenTogetherGuest,
+                onClick = {
+                    val now = android.os.SystemClock.uptimeMillis()
+                    if (now - lastLegacyPreviousClickTime >= 300L) {
+                        lastLegacyPreviousClickTime = now
+                        if (!isListenTogetherGuest && canSkipPrevious) {
+                            playerConnection.seekToPrevious()
+                        }
+                    }
+                },
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.skip_previous),
+                    contentDescription = stringResource(R.string.widget_previous),
+                    tint = if (canSkipPrevious && !isListenTogetherGuest) primaryColor else primaryColor.copy(alpha = 0.3f),
+                    modifier = Modifier.size(22.dp)
+                )
+            }
+
             LegacyPlayPauseButton(
                 playbackState = playbackState,
                 isCasting = isCasting,
@@ -795,10 +878,24 @@ private fun LegacyMiniPlayer(
             )
 
             IconButton(
-                    enabled = canSkipNext && !isListenTogetherGuest,
-                    onClick = if (isListenTogetherGuest) ({}) else ({ playerConnection.seekToNext() }),
+                enabled = canSkipNext && !isListenTogetherGuest,
+                onClick = {
+                    val now = android.os.SystemClock.uptimeMillis()
+                    if (now - lastLegacyNextClickTime >= 300L) {
+                        lastLegacyNextClickTime = now
+                        if (!isListenTogetherGuest && canSkipNext) {
+                            playerConnection.seekToNext()
+                        }
+                    }
+                },
+                modifier = Modifier.size(36.dp)
             ) {
-                Icon(painter = painterResource(R.drawable.skip_next), contentDescription = null)
+                Icon(
+                    painter = painterResource(R.drawable.skip_next),
+                    contentDescription = stringResource(R.string.next),
+                    tint = if (canSkipNext && !isListenTogetherGuest) primaryColor else primaryColor.copy(alpha = 0.3f),
+                    modifier = Modifier.size(22.dp)
+                )
             }
         }
 
