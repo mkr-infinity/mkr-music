@@ -114,6 +114,9 @@ import com.music.mkr.constants.UseNewMiniPlayerDesignKey
 import com.music.mkr.constants.UseNewPlayerDesignKey
 import com.music.mkr.constants.UseExpressiveAlbumDesignKey
 import com.music.mkr.constants.ExpressiveSongAlbumImageKey
+import com.music.mkr.constants.PlayerStyle
+import com.music.mkr.constants.PlayerStyleKey
+import com.music.mkr.ui.component.PlayerStyleSelectionDialog
 import com.music.mkr.ui.component.ThumbnailCornerRadiusModal
 import com.music.mkr.ui.component.DefaultDialog
 import com.music.mkr.ui.component.EnumDialog
@@ -243,6 +246,10 @@ fun AppearanceSettings(
     }
 
 
+    val (playerStyle, onPlayerStyleChange) = rememberEnumPreference(
+        PlayerStyleKey,
+        defaultValue = PlayerStyle.CINEMATIC
+    )
     val (useNewPlayerDesign, onUseNewPlayerDesignChange) = rememberPreference(
         UseNewPlayerDesignKey,
         defaultValue = false
@@ -252,10 +259,10 @@ fun AppearanceSettings(
         defaultValue = false
     )
     
-    val currentPlayerDesign = remember(useNewPlayerDesign, usePlayerV2) {
+    val currentPlayerDesign = remember(useNewPlayerDesign, usePlayerV2, playerStyle) {
         when {
-            usePlayerV2 -> PlayerDesignOption.V2
-            useNewPlayerDesign -> PlayerDesignOption.NEW
+            playerStyle == PlayerStyle.MATERIAL_EXTENDED || useNewPlayerDesign -> PlayerDesignOption.NEW
+            playerStyle == PlayerStyle.MODERN || playerStyle == PlayerStyle.CINEMATIC || usePlayerV2 -> PlayerDesignOption.V2
             else -> PlayerDesignOption.CLASSIC
         }
     }
@@ -463,37 +470,17 @@ fun AppearanceSettings(
     }
 
     if (showPlayerDesignDialog) {
-        EnumDialog(
+        PlayerStyleSelectionDialog(
+            currentStyle = playerStyle,
             onDismiss = { showPlayerDesignDialog = false },
-            onSelect = { option ->
-                when (option) {
-                    PlayerDesignOption.CLASSIC -> {
-                        onUsePlayerV2Change(false)
-                        onUseNewPlayerDesignChange(false)
-                    }
-                    PlayerDesignOption.NEW -> {
-                        onUsePlayerV2Change(false)
-                        onUseNewPlayerDesignChange(true)
-                    }
-                    PlayerDesignOption.V2 -> {
-                        onUsePlayerV2Change(true)
-                        onUseNewPlayerDesignChange(false)
-                        if (playerBackground == PlayerBackgroundStyle.APPLE_MUSIC) {
-                            onPlayerBackgroundChange(PlayerBackgroundStyle.DEFAULT)
-                        }
-                    }
+            onSelect = { selectedStyle ->
+                onPlayerStyleChange(selectedStyle)
+                onUsePlayerV2Change(selectedStyle == PlayerStyle.MODERN || selectedStyle == PlayerStyle.CINEMATIC)
+                onUseNewPlayerDesignChange(selectedStyle == PlayerStyle.MATERIAL_EXTENDED)
+                if (selectedStyle != PlayerStyle.CLASSIC && playerBackground == PlayerBackgroundStyle.APPLE_MUSIC) {
+                    onPlayerBackgroundChange(PlayerBackgroundStyle.DEFAULT)
                 }
                 showPlayerDesignDialog = false
-            },
-            title = stringResource(R.string.player),
-            current = currentPlayerDesign,
-            values = PlayerDesignOption.values().toList(),
-            valueText = {
-                when (it) {
-                    PlayerDesignOption.CLASSIC -> stringResource(R.string.classic_player)
-                    PlayerDesignOption.NEW -> stringResource(R.string.new_player_design)
-                    PlayerDesignOption.V2 -> stringResource(R.string.player_v2)
-                }
             }
         )
     }
@@ -1379,15 +1366,9 @@ fun AppearanceSettings(
             items = listOfNotNull(
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.palette),
-                    title = { Text(stringResource(R.string.player_design)) },
+                    title = { Text(stringResource(R.string.player_style)) },
                     trailingContent = {
-                        Text(
-                            when (currentPlayerDesign) {
-                                PlayerDesignOption.CLASSIC -> stringResource(R.string.classic_player)
-                                PlayerDesignOption.NEW -> stringResource(R.string.new_player_design)
-                                PlayerDesignOption.V2 -> stringResource(R.string.player_v2)
-                            }
-                        )
+                        Text(stringResource(playerStyle.titleRes))
                     },
                     onClick = { showPlayerDesignDialog = true }
                 ),
