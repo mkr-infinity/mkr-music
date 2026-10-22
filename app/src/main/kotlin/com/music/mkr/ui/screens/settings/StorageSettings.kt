@@ -61,8 +61,6 @@ import com.music.mkr.constants.DisableSongCacheKey
 import com.music.mkr.constants.SongCacheDelaySecondsKey
 import com.music.mkr.constants.MaxImageCacheSizeKey
 import com.music.mkr.constants.MaxSongCacheSizeKey
-import com.music.mkr.constants.MaxSongCacheCountKey
-import com.music.mkr.playback.SongCacheManager
 import com.music.mkr.extensions.tryOrNull
 import com.music.mkr.ui.component.ActionPromptDialog
 import com.music.mkr.ui.component.IconButton
@@ -111,11 +109,6 @@ fun StorageSettings(
         key = SongCacheDelaySecondsKey,
         defaultValue = 10
     )
-    val (maxSongCacheCount, onMaxSongCacheCountChange) = rememberPreference(
-        key = MaxSongCacheCountKey,
-        defaultValue = 100
-    )
-    var showCustomCountDialog by remember { mutableStateOf(false) }
     var showCustomSizeDialog by remember { mutableStateOf(false) }
 
     var clearDownloads by remember { mutableStateOf(false) }
@@ -188,13 +181,7 @@ fun StorageSettings(
         }
     }
 
-    LaunchedEffect(maxSongCacheCount) {
-        if (maxSongCacheCount > 0) {
-            coroutineScope.launch(Dispatchers.IO) {
-                SongCacheManager.trimStreamingCache(playerCache, database, maxSongCacheCount)
-            }
-        }
-    }
+
 
     LaunchedEffect(imageDiskCache) {
         while (isActive) {
@@ -372,43 +359,7 @@ fun StorageSettings(
         )
     }
 
-    if (showCustomCountDialog) {
-        var tempInput by remember { mutableStateOf(if (maxSongCacheCount > 0) maxSongCacheCount.toString() else "100") }
-        AlertDialog(
-            onDismissRequest = { showCustomCountDialog = false },
-            title = { Text("Custom Song Count Limit") },
-            text = {
-                Column {
-                    Text("Enter maximum number of streaming songs to retain in cache:")
-                    Spacer(Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = tempInput,
-                        onValueChange = { if (it.all { char -> char.isDigit() }) tempInput = it },
-                        keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                            keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
-                        ),
-                        singleLine = true
-                    )
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        val count = tempInput.toIntOrNull() ?: 100
-                        onMaxSongCacheCountChange(count.coerceIn(10, 10000))
-                        showCustomCountDialog = false
-                    }
-                ) {
-                    Text("Apply")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showCustomCountDialog = false }) {
-                    Text(stringResource(id = android.R.string.cancel))
-                }
-            }
-        )
-    }
+
 
     Column(
         Modifier
@@ -639,62 +590,6 @@ fun StorageSettings(
                                         }"
                                     },
                                     style = MaterialTheme.typography.bodyMedium,
-                                )
-                            }
-                        }
-                    }
-                ),
-                Material3SettingsItem(
-                    enabled = !disableSongCache,
-                    icon = painterResource(R.drawable.queue_music),
-                    title = { Text("Max Cached Songs (Count Limit)") },
-                    description = @Composable {
-                        if (disableSongCache) {
-                            Text(
-                                text = "Inactive (Song caching is disabled)",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                            )
-                        } else {
-                            val countPresets = remember { listOf(50, 100, 200, 500, 1000, -1) }
-                            val isPreset = maxSongCacheCount in countPresets
-                            Column {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = when {
-                                            maxSongCacheCount == -1 -> "Unlimited"
-                                            maxSongCacheCount == 100 -> "100 songs (Default)"
-                                            !isPreset -> "Custom: $maxSongCacheCount songs"
-                                            else -> "$maxSongCacheCount songs"
-                                        },
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    TextButton(onClick = { showCustomCountDialog = true }) {
-                                        Text("Custom")
-                                    }
-                                }
-                                val sliderIndex = if (isPreset) {
-                                    countPresets.indexOf(maxSongCacheCount).toFloat()
-                                } else {
-                                    countPresets.indexOf(100).toFloat()
-                                }
-                                Slider(
-                                    value = sliderIndex,
-                                    onValueChange = {
-                                        val newValue = countPresets[it.roundToInt()]
-                                        onMaxSongCacheCountChange(newValue)
-                                    },
-                                    steps = countPresets.size - 2,
-                                    valueRange = 0f..(countPresets.size - 1).toFloat()
-                                )
-                                Text(
-                                    text = "Currently cached: ${playerCache.keys.size} items in streaming cache",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }

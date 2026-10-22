@@ -2141,8 +2141,6 @@ class MusicService :
         database.query {
             update(song.song.copy(dateDownload = java.time.LocalDateTime.now()))
         }
-        val maxSongCount = dataStore.get(com.music.mkr.constants.MaxSongCacheCountKey, 100)
-        SongCacheManager.trimStreamingCache(playerCache, database, maxSongCount)
     }
 
     fun addToQueue(items: List<MediaItem>) {
@@ -3367,8 +3365,6 @@ class MusicService :
                     val writer = CacheWriter(cacheDataSource, dataSpec, buffer, null)
                     writer.cache()
 
-                    val maxSongCount = dataStore.get(MaxSongCacheCountKey, 100)
-                    SongCacheManager.trimStreamingCache(playerCache, database, maxSongCount)
                     Timber.tag("MusicService").d("Successfully background-cached $mediaId after $delaySeconds seconds")
                 } catch (e: Exception) {
                     Timber.tag("MusicService").w(e, "Background cacheWriter failed for $mediaId")

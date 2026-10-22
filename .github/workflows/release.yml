@@ -178,6 +178,17 @@ jobs:
           # Copy and rename to exact required filename
           cp "$UNIVERSAL_SRC" release_assets/mkr-music-universal.apk
 
+          echo "=== Generating Release Metadata (version.json) ==="
+          cat << EOF > release_assets/version.json
+{
+  "version_name": "${{ steps.version_info.outputs.version_name }}",
+  "version_code": ${{ steps.version_info.outputs.version_code }},
+  "package_id": "com.kaif.music",
+  "min_sdk": 26,
+  "target_sdk": 37
+}
+EOF
+
           echo "=== Validating Generated Universal APK ==="
           apk_path="release_assets/mkr-music-universal.apk"
           if [ ! -f "$apk_path" ]; then
@@ -258,7 +269,7 @@ jobs:
 
           ### Storage Integrity & Protection
           - **Protected Downloads**: Explicit downloads and local library tracks are strictly safeguarded against LRU cache eviction.
-          - **Configurable Capacity Limits**: Set maximum cached song limits (50 to 1000 items) alongside storage byte caps.
+          - **Size-Based Storage Caps**: Pure storage capacity limits (MB/GB) with zero song-count caps, preserving all cached audio smoothly.
 
           ---
 
