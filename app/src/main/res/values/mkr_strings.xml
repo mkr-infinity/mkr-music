@@ -165,6 +165,17 @@
     <string name="player_style_material_extended_desc">Material 3 expressive player with animated spring controls and wavy progress</string>
     <string name="player_style_editorial">Editorial</string>
     <string name="player_style_editorial_desc">High-contrast two-tone layout with bold serif typography and die-cut art</string>
+    <!-- Library 5-Category Cards -->
+    <string name="library_liked_songs">Liked songs</string>
+    <string name="library_liked_songs_desc">Your favorite tracks</string>
+    <string name="library_offline">Offline</string>
+    <string name="library_offline_desc">Downloaded for offline</string>
+    <string name="library_cached">Cached</string>
+    <string name="library_cached_desc">Instant local cache</string>
+    <string name="library_local_files">Local files</string>
+    <string name="library_local_files_desc">Audio on your device</string>
+    <string name="library_top_50">Top 50</string>
+    <string name="library_top_50_desc">Your most played</string>
     <string name="use_expressive_album_design">Expressive album design</string>
     <string name="use_expressive_album_design_desc">Minimal list without thumbnails</string>
     <string name="show_song_thumbnail_in_list">Show album song thumbnails</string>

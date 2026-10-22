@@ -96,6 +96,7 @@ import com.music.mkr.ui.component.EmptyPlaceholder
 import com.music.mkr.ui.component.LibraryAlbumGridItem
 import com.music.mkr.ui.component.LibraryArtistGridItem
 import com.music.mkr.ui.component.LibraryPlaylistGridItem
+import com.music.mkr.ui.component.LibraryCategoryCardsSection
 import com.music.mkr.ui.component.LibraryAlbumListItem
 import com.music.mkr.ui.component.LibraryArtistListItem
 import com.music.mkr.ui.component.LibraryPlaylistListItem
@@ -359,123 +360,17 @@ fun LibraryMixScreen(
                             )
                         }
                     
-                    if (showLiked && activeFilter == LibraryFilterType.ALL) {
+                    if (activeFilter == LibraryFilterType.ALL) {
                         item(
-                            key = "likedPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
+                            key = "library_category_cards",
+                            span = { GridItemSpan(maxLineSpan) },
+                            contentType = CONTENT_TYPE_HEADER,
                         ) {
-                            if (isGridView.value) {
-                                PlaylistGridItem(
-                                    playlist = likedPlaylist,
-                                    fillMaxWidth = true,
-                                    autoPlaylist = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .combinedClickable(
-                                            onClick = { navController.navigate("auto_playlist/liked") },
-                                        ).animateItem(),
-                                )
-                            } else {
-                                PlaylistListItem(
-                                    playlist = likedPlaylist,
-                                    shape = getShapeForIndex(visibleStaticItems.indexOf("liked")),
-                                    autoPlaylist = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { navController.navigate("auto_playlist/liked") }
-                                        .animateItem(),
-                                )
-                            }
-                        }
-                    }
-
-                    if (showDownloaded && activeFilter == LibraryFilterType.ALL) {
-                        item(
-                            key = "downloadedPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            if (isGridView.value) {
-                                PlaylistGridItem(
-                                    playlist = downloadPlaylist,
-                                    fillMaxWidth = true,
-                                    autoPlaylist = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .combinedClickable(
-                                            onClick = { navController.navigate("auto_playlist/downloaded") },
-                                        ).animateItem(),
-                                )
-                            } else {
-                                PlaylistListItem(
-                                    playlist = downloadPlaylist,
-                                    shape = getShapeForIndex(visibleStaticItems.indexOf("downloaded")),
-                                    autoPlaylist = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { navController.navigate("auto_playlist/downloaded") }
-                                        .animateItem(),
-                                )
-                            }
-                        }
-                    }
-
-                    if (showTop && activeFilter == LibraryFilterType.ALL) {
-                        item(
-                            key = "TopPlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            if (isGridView.value) {
-                                PlaylistGridItem(
-                                    playlist = topPlaylist,
-                                    fillMaxWidth = true,
-                                    autoPlaylist = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .combinedClickable(
-                                            onClick = { navController.navigate("top_playlist/$topSize") },
-                                        ).animateItem(),
-                                )
-                            } else {
-                                PlaylistListItem(
-                                    playlist = topPlaylist,
-                                    shape = getShapeForIndex(visibleStaticItems.indexOf("top")),
-                                    autoPlaylist = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { navController.navigate("top_playlist/$topSize") }
-                                        .animateItem(),
-                                )
-                            }
-                        }
-                    }
-
-                    if (showCached && activeFilter == LibraryFilterType.ALL) {
-                        item(
-                            key = "cachePlaylist",
-                            contentType = { CONTENT_TYPE_PLAYLIST },
-                        ) {
-                            if (isGridView.value) {
-                                PlaylistGridItem(
-                                    playlist = cachePlaylist,
-                                    fillMaxWidth = true,
-                                    autoPlaylist = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .combinedClickable(
-                                            onClick = { navController.navigate("cache_playlist/cached") },
-                                        ).animateItem(),
-                                )
-                            } else {
-                                PlaylistListItem(
-                                    playlist = cachePlaylist,
-                                    shape = getShapeForIndex(visibleStaticItems.indexOf("cached")),
-                                    autoPlaylist = true,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .clickable { navController.navigate("cache_playlist/cached") }
-                                        .animateItem(),
-                                )
-                            }
+                            LibraryCategoryCardsSection(
+                                navController = navController,
+                                topSize = topSize,
+                                modifier = Modifier.animateItem()
+                            )
                         }
                     }
 
