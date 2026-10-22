@@ -149,7 +149,6 @@
     <string name="seek_backward_dynamic">-%1$d segundos hacia atrás</string>
     <string name="seek_seconds_addup">Búsqueda progresiva</string>
     <string name="seek_seconds_addup_description">Si se activa, incrementará 5 segundos en cada salto de búsqueda</string>
-    <string name="new_player_design">Nuevo diseño del reproductor</string>
     <string name="new_mini_player_design">Nuevo diseño del mini reproductor</string>
     <string name="lyrics_romanize_japanese">Romanizar letras japonesas</string>
     <string name="lyrics_romanize_korean">Romanizar letras coreanas</string>

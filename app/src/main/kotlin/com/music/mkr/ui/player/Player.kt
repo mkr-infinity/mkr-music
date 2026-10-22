@@ -178,6 +178,7 @@ import com.music.mkr.ui.player.styles.ClassicPlayer
 import com.music.mkr.ui.player.styles.ModernPlayer
 import com.music.mkr.ui.player.styles.MinimalPlayer
 import com.music.mkr.ui.player.styles.CinematicPlayer
+import com.music.mkr.ui.player.styles.ApplePlayer
 import com.music.mkr.ui.player.styles.ImmersivePlayer
 import com.music.mkr.ui.player.styles.ImmersiveExtendedPlayer
 import com.music.mkr.ui.player.styles.MaterialExtendedPlayer
@@ -188,8 +189,6 @@ import com.music.mkr.constants.SliderStyleKey
 import com.music.mkr.constants.SquigglySliderKey
 import com.music.mkr.constants.SwipeLyricsKey
 import com.music.mkr.constants.ThumbnailCornerRadius
-import com.music.mkr.constants.UseNewPlayerDesignKey
-import com.music.mkr.constants.UsePlayerV2Key
 import com.music.mkr.constants.ShowAudioQualityBadgeKey
 import com.music.mkr.db.entities.LyricsEntity
 import com.music.mkr.extensions.SwipeGesture
@@ -255,10 +254,6 @@ fun BottomSheetPlayer(
     val playerConnection = LocalPlayerConnection.current ?: return
     val playerHazeState = remember { HazeState() }
 
-    val (useNewPlayerDesign, onUseNewPlayerDesignChange) = rememberPreference(
-        UseNewPlayerDesignKey,
-        defaultValue = false
-    )
     val (showAudioQualityBadge) = rememberPreference(
         ShowAudioQualityBadgeKey,
         defaultValue = false
@@ -1288,6 +1283,36 @@ fun BottomSheetPlayer(
             } else {
                 mediaMetadata?.let { metadata ->
                     when (playerStyle) {
+                        PlayerStyle.APPLE -> ApplePlayer(
+                            mediaMetadata = metadata,
+                            playbackState = playbackState,
+                            isPlaying = isPlaying,
+                            isLoading = isLoading,
+                            canSkipPrevious = canSkipPrevious,
+                            canSkipNext = canSkipNext,
+                            sliderPosition = sliderPosition,
+                            position = effectivePosition,
+                            duration = duration,
+                            repeatMode = repeatMode,
+                            shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
+                            isLiked = currentSong?.song?.liked == true,
+                            playerConnection = playerConnection,
+                            navController = navController,
+                            state = state,
+                            textButtonColor = textButtonColor,
+                            iconButtonColor = iconButtonColor,
+                            textBackgroundColor = TextBackgroundColor,
+                            onSliderValueChange = { sliderPosition = it },
+                            onSliderValueChangeFinished = {
+                                sliderPosition?.let { playerConnection.player.seekTo(it) }
+                                sliderPosition = null
+                            },
+                            onShowLyrics = { showInlineLyrics = !showInlineLyrics },
+                            onShowQueue = { queueSheetState.expandSoft() },
+                            onShowMenu = { onOpenMenu(metadata) },
+                            modifier = Modifier.fillMaxSize(),
+                            currentFormat = currentFormat
+                        )
                         PlayerStyle.CLASSIC -> ClassicPlayer(
                             mediaMetadata = metadata,
                             playbackState = playbackState,

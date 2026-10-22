@@ -148,9 +148,7 @@
     <string name="glow_animated">Mouvement lumineux</string>
 	<string name="live_mesh">Live Mesh</string>
     <string name="classic_player">Lecteur Apple</string>
-    <string name="new_player_design">Lecteur M3e</string>
     <string name="player_design">Lecteur</string>
-    <string name="player_v2">Apple Music v17</string>
 	<string name="use_expressive_album_design">Conception d\'album expressive</string>
     <string name="use_expressive_album_design_desc">Liste minimale sans pochette</string>
     <string name="show_song_thumbnail_in_list">Afficher les pochettes des titres de l\'album</string>

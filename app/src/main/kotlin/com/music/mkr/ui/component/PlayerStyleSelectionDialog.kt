@@ -94,7 +94,7 @@ fun PlayerStyleSelectionDialog(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "8 distinct playback architectures",
+                        text = "Apple Player & 8 ArchiveTune styles",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -112,7 +112,35 @@ fun PlayerStyleSelectionDialog(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
-                    items(PlayerStyle.entries, key = { it.name }) { style ->
+                    item(key = "header_apple") {
+                        Text(
+                            text = "Signature Design",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MkrAmberAccent,
+                            modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 2.dp)
+                        )
+                    }
+                    item(key = PlayerStyle.APPLE.name) {
+                        PlayerStyleCard(
+                            style = PlayerStyle.APPLE,
+                            isSelected = currentStyle == PlayerStyle.APPLE,
+                            onClick = { onSelect(PlayerStyle.APPLE) }
+                        )
+                    }
+                    item(key = "header_archivetune") {
+                        Text(
+                            text = "ArchiveTune Architectures (8 Styles)",
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 2.dp)
+                        )
+                    }
+                    items(
+                        items = PlayerStyle.entries.filter { it != PlayerStyle.APPLE },
+                        key = { it.name }
+                    ) { style ->
                         PlayerStyleCard(
                             style = style,
                             isSelected = style == currentStyle,
@@ -248,6 +276,23 @@ private fun StylePreviewBadge(
         contentAlignment = Alignment.Center
     ) {
         when (style) {
+            PlayerStyle.APPLE -> {
+                // Apple signature: rounded art, dynamic pill play/pause, volume track
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(3.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(Modifier.size(4.dp).clip(CircleShape).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.onSurfaceVariant))
+                        Box(Modifier.size(width = 14.dp, height = 10.dp).clip(RoundedCornerShape(3.dp)).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.primary))
+                        Box(Modifier.size(4.dp).clip(CircleShape).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.onSurfaceVariant))
+                    }
+                    Box(Modifier.size(width = 24.dp, height = 2.dp).clip(RoundedCornerShape(1.dp)).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)))
+                }
+            }
             PlayerStyle.CLASSIC -> {
                 // Classic circular control cluster
                 Row(

@@ -123,7 +123,6 @@ import com.music.mkr.constants.ListItemHeight
 import com.music.mkr.constants.PlayerBackgroundStyle
 import com.music.mkr.constants.QueueEditLockKey
 import com.music.mkr.constants.ShowCommentButtonKey
-import com.music.mkr.constants.UseNewPlayerDesignKey
 import com.music.mkr.extensions.metadata
 import com.music.mkr.extensions.move
 import com.music.mkr.extensions.toggleRepeatMode
@@ -284,10 +283,6 @@ fun Queue(
 
     var locked by rememberPreference(QueueEditLockKey, defaultValue = true)
 
-    val (useNewPlayerDesign, onUseNewPlayerDesignChange) = rememberPreference(
-        UseNewPlayerDesignKey,
-        defaultValue = false
-    )
     val (showCommentButton) = rememberPreference(
         ShowCommentButtonKey,
         defaultValue = true
@@ -327,159 +322,7 @@ fun Queue(
             Box(Modifier.fillMaxSize().background(Color.Unspecified))
         },
         collapsedContent = {
-            if (useNewPlayerDesign) {
-                // New design
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 30.dp, vertical = 12.dp)
-                        .windowInsetsPadding(
-                            WindowInsets.systemBars.only(
-                                WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal
-                            ),
-                        ),
-                ) {
-                    val buttonSize = 42.dp
-                    val iconSize = 22.dp
-                    val buttonShape = RoundedCornerShape(12.dp)
-
-                    PlayerQueueButton(
-                        icon = R.drawable.queue_music,
-                        onClick = { state.expandSoft() },
-                        isActive = false,
-                        shape = buttonShape,
-                        modifier = Modifier.size(buttonSize),
-                        textButtonColor = textButtonColor,
-                        iconButtonColor = iconButtonColor,
-                        iconSize = iconSize,
-                        textBackgroundColor = TextBackgroundColor,
-                        playerBackground = playerBackground
-                    )
-
-                    PlayerQueueButton(
-                        icon = R.drawable.bedtime,
-                        onClick = {
-                            if (sleepTimerEnabled) {
-                                playerConnection.service.sleepTimer.clear()
-                            } else {
-                                showSleepTimerDialog = true
-                            }
-                        },
-                        isActive = sleepTimerEnabled,
-                        enabled = !isListenTogetherGuest,
-                        shape = buttonShape,
-                        modifier = Modifier.size(buttonSize),
-                        textButtonColor = textButtonColor,
-                        iconButtonColor = iconButtonColor,
-                        text = if (sleepTimerEnabled) makeTimeString(sleepTimerTimeLeft) else null,
-                        iconSize = iconSize,
-                        textBackgroundColor = TextBackgroundColor,
-                        playerBackground = playerBackground
-                    )
-
-                    PlayerQueueButton(
-                        icon = R.drawable.lyrics,
-                        onClick = { onToggleLyrics() },
-                        isActive = showInlineLyrics,
-                        shape = buttonShape,
-                        modifier = Modifier.size(buttonSize),
-                        textButtonColor = textButtonColor,
-                        iconButtonColor = iconButtonColor,
-                        iconSize = iconSize,
-                        textBackgroundColor = TextBackgroundColor,
-                        playerBackground = playerBackground
-                    )
-
-                    if (showCommentButton) {
-                        PlayerQueueButton(
-                            icon = R.drawable.chat_msg,
-                            onClick = { showCommentSheet = true },
-                            isActive = showCommentSheet,
-                            shape = buttonShape,
-                            modifier = Modifier.size(buttonSize),
-                            textButtonColor = textButtonColor,
-                            iconButtonColor = iconButtonColor,
-                            iconSize = iconSize,
-                            textBackgroundColor = TextBackgroundColor,
-                            playerBackground = playerBackground
-                        )
-                    }
-
-                    val shuffleModeEnabledInside by playerConnection.shuffleModeEnabled.collectAsState()
-                    PlayerQueueButton(
-                        icon = R.drawable.shuffle,
-                        onClick = {
-                            playerConnection.player.shuffleModeEnabled = !shuffleModeEnabledInside
-                        },
-                        isActive = shuffleModeEnabledInside,
-                        enabled = !isListenTogetherGuest,
-                        shape = buttonShape,
-                        modifier = Modifier.size(buttonSize),
-                        textButtonColor = textButtonColor,
-                        iconButtonColor = iconButtonColor,
-                        iconSize = iconSize,
-                        textBackgroundColor = TextBackgroundColor,
-                        playerBackground = playerBackground
-                    )
-
-                    PlayerQueueButton(
-                        icon = when (repeatMode) {
-                            Player.REPEAT_MODE_ALL -> R.drawable.repeat
-                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                            else -> R.drawable.repeat
-                        },
-                        onClick = {
-                            playerConnection.player.toggleRepeatMode()
-                        },
-                        isActive = repeatMode != Player.REPEAT_MODE_OFF,
-                        enabled = !isListenTogetherGuest,
-                        shape = buttonShape,
-                        modifier = Modifier.size(buttonSize),
-                        textButtonColor = textButtonColor,
-                        iconButtonColor = iconButtonColor,
-                        iconSize = iconSize,
-                        textBackgroundColor = TextBackgroundColor,
-                        playerBackground = playerBackground
-                    )
-
-                    Spacer(modifier = Modifier.weight(1f))
-
-                    Box(
-                        modifier = Modifier
-                            .size(buttonSize)
-                            .clip(CircleShape)
-                            .background(textButtonColor)
-                            .clickable {
-                                menuState.show {
-                                    PlayerMenu(
-                                        mediaMetadata = mediaMetadata,
-                                        navController = navController,
-                                        playerBottomSheetState = playerBottomSheetState,
-                                        onShowDetailsDialog = {
-                                            mediaMetadata?.id?.let {
-                                                bottomSheetPageState.show {
-                                                    ShowMediaInfo(it)
-                                                }
-                                            }
-                                        },
-                                        onDismiss = menuState::dismiss
-                                    )
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.more_vert),
-                            contentDescription = null,
-                            modifier = Modifier.size(iconSize),
-                            tint = iconButtonColor
-                        )
-                    }
-                }
-            } else {
-                // Old design
+            // Old design
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
@@ -618,7 +461,7 @@ fun Queue(
                         }
                     }
                 }
-            }
+            
             if (showAudioDeviceBottomSheet) {
                 AudioDeviceBottomSheet(onDismiss = { showAudioDeviceBottomSheet = false })
             }

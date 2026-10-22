@@ -9,13 +9,17 @@ import androidx.annotation.StringRes
 import com.music.mkr.R
 
 /**
- * Exactly eight supported player styles in MKR Music.
- * Mapped directly to ArchiveTune player visual architectures.
+ * Supported playback architectures in MKR Music:
+ * Apple Player (signature fluid design) alongside eight ArchiveTune visual architectures.
  */
 enum class PlayerStyle(
     @StringRes val titleRes: Int,
     @StringRes val descriptionRes: Int
 ) {
+    APPLE(
+        titleRes = R.string.apple_player,
+        descriptionRes = R.string.apple_player_desc
+    ),
     CLASSIC(
         titleRes = R.string.player_style_classic,
         descriptionRes = R.string.player_style_classic_desc

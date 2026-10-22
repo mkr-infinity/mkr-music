@@ -140,7 +140,6 @@
     <string name="import_online">Імпортувати список відтворення у форматі \"m3u\"</string>
     <string name="import_csv">Імпортувати список відтворення у форматі \"csv\"</string>
     <string name="playlist_add_local_to_synced_note">Примітка: додавання локальних пісень до синхронізованих або віддалених списків відтворення не підтримується. Усі інші комбінації можливі</string>
-    <string name="new_player_design">Новий дизайн програвача</string>
     <string name="lyrics_romanize_japanese">Романізувати Японські тексти</string>
     <string name="lyrics_romanize_korean">Романізувати Корейські тексти</string>
     <string name="yt_sync">Автосинхронізація з акаунтом</string>

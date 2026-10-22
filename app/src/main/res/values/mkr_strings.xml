@@ -143,10 +143,9 @@
     <string name="gradient">Gradient</string>
     <string name="glow_animated">Glow motion</string>
     <string name="live_mesh">Live Mesh</string>
-    <string name="classic_player">Classic player</string>
-    <string name="new_player_design">Modern player</string>
+    <string name="apple_player">Apple Player</string>
+    <string name="apple_player_desc">Original fluid layout with dynamic background and system volume</string>
     <string name="player_design">Player style</string>
-    <string name="player_v2">Modern player</string>
     <!-- Player Styles (8 Styles from ArchiveTune) -->
     <string name="player_style">Player style</string>
     <string name="player_style_classic">Classic</string>

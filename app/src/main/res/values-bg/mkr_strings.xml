@@ -112,7 +112,6 @@
     <string name="enable_swipe_thumbnail">Разреши плъзгането за смяна на песента</string>
     <string name="swipe_song_to_add">Плъзнете песента наляво, за да я добавите към опашката, или надясно, за да я пуснете следваща</string>
     <string name="slim">Тесен</string>
-    <string name="new_player_design">Нов дизайн на плеъра</string>
     <string name="open_supported_links">Отвори поддържания линк по подразбиране</string>
     <string name="configure_supported_links">Конфигурация на поддържаните линкове</string>
     <string name="intent_supported_links_not_found">Не бяха намерени настройки за поддържани връзки, моля конфигурирайте ги ръчно</string>

@@ -149,9 +149,7 @@
     <string name="glow_animated">Glow‑animation</string>
     <string name="live_mesh">Live Mesh</string>
     <string name="classic_player">Apple‑spelare</string>
-    <string name="new_player_design">M3e‑spelare</string>
     <string name="player_design">Spelare</string>
-    <string name="player_v2">Apple Music v17</string>
     <string name="use_expressive_album_design">Expressiv albumdesign</string>
     <string name="use_expressive_album_design_desc">Minimal lista utan miniatyrer</string>
     <string name="show_song_thumbnail_in_list">Visa låtminiatyrer</string>

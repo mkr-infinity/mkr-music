@@ -104,7 +104,6 @@
         <item quantity="other">%d回</item>
     </plurals>
     <string name="gradient">グラデーション</string>
-    <string name="new_player_design">新しいプレーヤーのデザイン</string>
     <string name="new_mini_player_design">新しいミニプレーヤーのデザイン</string>
     <string name="swipe_song_to_add">曲を右にスワイプして次に再生、左にスワイプしてキューに追加</string>
     <string name="lyrics_auto_scroll">歌詞を自動でスクロール</string>

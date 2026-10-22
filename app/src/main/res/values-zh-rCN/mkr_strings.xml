@@ -128,7 +128,6 @@
     <string name="likes">点赞</string>
     <string name="dislikes">倒赞</string>
     <string name="now_playing">正在播放</string>
-    <string name="new_player_design">新的播放器外观</string>
     <string name="new_mini_player_design">新的播放控件外观</string>
     <string name="lyrics_auto_scroll">歌词自动滚动</string>
     <string name="lyrics_romanize_japanese">使用日文（罗马音）</string>

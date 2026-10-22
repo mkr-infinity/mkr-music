@@ -111,7 +111,6 @@ import com.music.mkr.constants.SwipeToSongKey
 import com.music.mkr.constants.ThumbnailCornerRadiusKey
 import com.music.mkr.constants.UseAppleMiniPlayerKey
 import com.music.mkr.constants.UseNewMiniPlayerDesignKey
-import com.music.mkr.constants.UseNewPlayerDesignKey
 import com.music.mkr.constants.UseExpressiveAlbumDesignKey
 import com.music.mkr.constants.ExpressiveSongAlbumImageKey
 import com.music.mkr.constants.PlayerStyle
@@ -250,22 +249,6 @@ fun AppearanceSettings(
         PlayerStyleKey,
         defaultValue = PlayerStyle.CINEMATIC
     )
-    val (useNewPlayerDesign, onUseNewPlayerDesignChange) = rememberPreference(
-        UseNewPlayerDesignKey,
-        defaultValue = false
-    )
-    val (usePlayerV2, onUsePlayerV2Change) = rememberPreference(
-        com.music.mkr.constants.UsePlayerV2Key,
-        defaultValue = false
-    )
-    
-    val currentPlayerDesign = remember(useNewPlayerDesign, usePlayerV2, playerStyle) {
-        when {
-            playerStyle == PlayerStyle.MATERIAL_EXTENDED || useNewPlayerDesign -> PlayerDesignOption.NEW
-            playerStyle == PlayerStyle.MODERN || playerStyle == PlayerStyle.CINEMATIC || usePlayerV2 -> PlayerDesignOption.V2
-            else -> PlayerDesignOption.CLASSIC
-        }
-    }
     var showPlayerDesignDialog by rememberSaveable { mutableStateOf(false) }
     
     val (useExpressiveAlbumDesign, onUseExpressiveAlbumDesignChange) = rememberPreference(
@@ -444,9 +427,7 @@ fun AppearanceSettings(
     )
 
     val availableBackgroundStyles = PlayerBackgroundStyle.entries.filter {
-        val blurSupported = it != PlayerBackgroundStyle.BLUR || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-        val notAppleOnV2 = !(it == PlayerBackgroundStyle.APPLE_MUSIC && currentPlayerDesign == PlayerDesignOption.V2)
-        blurSupported && notAppleOnV2
+        it != PlayerBackgroundStyle.BLUR || Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     }
 
     val availableMiniPlayerBackgroundStyles = availableBackgroundStyles.filter { 
@@ -475,9 +456,7 @@ fun AppearanceSettings(
             onDismiss = { showPlayerDesignDialog = false },
             onSelect = { selectedStyle ->
                 onPlayerStyleChange(selectedStyle)
-                onUsePlayerV2Change(selectedStyle == PlayerStyle.MODERN || selectedStyle == PlayerStyle.CINEMATIC)
-                onUseNewPlayerDesignChange(selectedStyle == PlayerStyle.MATERIAL_EXTENDED)
-                if (selectedStyle != PlayerStyle.CLASSIC && playerBackground == PlayerBackgroundStyle.APPLE_MUSIC) {
+                if (selectedStyle != PlayerStyle.CLASSIC && selectedStyle != PlayerStyle.APPLE && playerBackground == PlayerBackgroundStyle.APPLE_MUSIC) {
                     onPlayerBackgroundChange(PlayerBackgroundStyle.DEFAULT)
                 }
                 showPlayerDesignDialog = false
@@ -1389,28 +1368,26 @@ fun AppearanceSettings(
                     },
                     onClick = { showPlayerBackgroundDialog = true }
                 ),
-                if (!useNewPlayerDesign && !usePlayerV2) {
-                    Material3SettingsItem(
-                        icon = painterResource(R.drawable.tune),
-                        title = { Text(stringResource(R.string.show_audio_quality_badge)) },
-                        trailingContent = {
-                            Switch(
-                                checked = showAudioQualityBadge,
-                                onCheckedChange = onShowAudioQualityBadgeChange,
-                                thumbContent = {
-                                    Icon(
-                                        painter = painterResource(
-                                            id = if (showAudioQualityBadge) R.drawable.check else R.drawable.close
-                                        ),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(SwitchDefaults.IconSize)
-                                    )
-                                }
-                            )
-                        },
-                        onClick = { onShowAudioQualityBadgeChange(!showAudioQualityBadge) }
-                    )
-                } else null,
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.tune),
+                    title = { Text(stringResource(R.string.show_audio_quality_badge)) },
+                    trailingContent = {
+                        Switch(
+                            checked = showAudioQualityBadge,
+                            onCheckedChange = onShowAudioQualityBadgeChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (showAudioQualityBadge) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onShowAudioQualityBadgeChange(!showAudioQualityBadge) }
+                ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.hide_image),
                     title = { Text(stringResource(R.string.hide_player_thumbnail)) },
@@ -2222,12 +2199,6 @@ enum class PlayerTextAlignment {
     CENTER,
 }
 
-
-enum class PlayerDesignOption {
-    CLASSIC
-    ,NEW
-    ,V2
-}
 
 enum class MiniPlayerDesignOption {
     CLASSIC,

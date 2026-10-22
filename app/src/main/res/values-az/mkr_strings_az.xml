@@ -133,9 +133,7 @@
     <string name="glow_animated">Parıltı animasiyası</string>
     <string name="live_mesh">Canlı şəbəkə</string>
     <string name="classic_player">Apple pleyer</string>
-    <string name="new_player_design">M3e pleyer</string>
     <string name="player_design">Pleyer</string>
-    <string name="player_v2">Apple Musiqi v17</string>
     <string name="use_expressive_album_design">Expressive albom design</string>
     <string name="use_expressive_album_design_desc">Minimal list olmadan thumbnails</string>
     <string name="show_song_thumbnail_in_list">Göstər albom mahnı thumbnails</string>
