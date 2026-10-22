@@ -26,9 +26,9 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.palette.graphics.Palette
 import coil3.imageLoader
 import coil3.request.ImageRequest
+import coil3.request.allowHardware
 import coil3.toBitmap
-import com.music.innertube.models.MediaMetadata
-import com.music.mkr.models.MediaMetadata as MkrMediaMetadata
+import com.music.mkr.models.MediaMetadata
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.max
@@ -458,12 +458,6 @@ fun rememberGlobalArtworkPalette(
  * Connects player, mini-player, and lyrics seamlessly to the single global dynamic theme.
  */
 @Composable
-fun rememberArtworkPalette(mediaMetadata: MkrMediaMetadata? = null): PlayerArtworkPalette {
-    return LocalPlayerArtworkPalette.current
-}
-
-@JvmName("rememberArtworkPaletteInnertube")
-@Composable
-fun rememberArtworkPalette(mediaMetadata: MediaMetadata?): PlayerArtworkPalette {
+fun rememberArtworkPalette(mediaMetadata: MediaMetadata? = null): PlayerArtworkPalette {
     return LocalPlayerArtworkPalette.current
 }

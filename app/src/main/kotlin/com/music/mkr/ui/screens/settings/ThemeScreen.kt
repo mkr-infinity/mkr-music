@@ -47,6 +47,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.dynamicDarkColorScheme
@@ -565,7 +566,7 @@ fun ModeCircle(
                     }
                     else -> {
                         // Scaled checkmark animation overlaid on color circle (ReadYou style)
-                        AnimatedVisibility(
+                        androidx.compose.animation.AnimatedVisibility(
                             visible = isSelected,
                             enter = fadeIn() + scaleIn(
                                 initialScale = 0.4f,
@@ -679,7 +680,7 @@ fun PaletteItem(
                 )
                 
                 // Scaled checkmark animation overlaid on the center
-                AnimatedVisibility(
+                androidx.compose.animation.AnimatedVisibility(
                     visible = isSelected,
                     enter = fadeIn() + scaleIn(
                         initialScale = 0.4f,
@@ -738,7 +739,7 @@ fun PaletteItem(
                     }
                     
                     // Scaled checkmark animation overlaid on color circle (ReadYou style)
-                    AnimatedVisibility(
+                    androidx.compose.animation.AnimatedVisibility(
                         visible = isSelected,
                         modifier = Modifier.align(Alignment.Center),
                         enter = fadeIn() + scaleIn(
