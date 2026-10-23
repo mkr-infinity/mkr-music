@@ -43,6 +43,8 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.music.mkr.R
+import com.music.mkr.ui.player.AudioQualityBadge
 import androidx.media3.common.Player
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
@@ -127,15 +129,25 @@ fun EditorialPlayer(
                 }
             }
 
-            Text(
-                text = stringResource(R.string.player_style_editorial),
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontFamily = FontFamily.Serif,
-                    fontStyle = FontStyle.Italic,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = accent.copy(alpha = 0.85f)
-            )
+            val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = stringResource(R.string.playing_from),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = accent.copy(alpha = 0.6f)
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelMedium.copy(
+                        fontFamily = FontFamily.Serif,
+                        fontStyle = FontStyle.Italic
+                    ),
+                    fontWeight = FontWeight.SemiBold,
+                    color = accent,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Surface(
@@ -215,6 +227,12 @@ fun EditorialPlayer(
         }
 
         Spacer(Modifier.height(18.dp))
+
+        // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
+        AudioQualityBadge(
+            contentColor = accent,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
         // Editorial Typography Title & Artist + Like Action
         Row(

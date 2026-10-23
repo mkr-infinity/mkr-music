@@ -43,6 +43,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.music.mkr.ui.player.AudioQualityBadge
 import androidx.media3.common.Player
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
@@ -145,12 +146,22 @@ fun ImmersivePlayer(
                     )
                 }
 
-                Text(
-                    text = stringResource(R.string.player_style_immersive),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = secondaryColor,
-                    fontWeight = FontWeight.Medium
-                )
+                val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = stringResource(R.string.playing_from),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = secondaryColor.copy(alpha = 0.6f)
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = contentColor,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
 
                 IconButton(onClick = onShowMenu) {
                     Icon(
@@ -167,40 +178,12 @@ fun ImmersivePlayer(
 
             Spacer(Modifier.height(16.dp))
 
-            // Codec / Quality Badge
-            val codecLabel = currentFormat?.mimeType?.substringAfter("/")?.uppercase()?.let { codec ->
-                when {
-                    codec.contains("FLAC") || codec.contains("ALAC") -> "Lossless"
-                    codec.contains("OPUS") -> "OPUS 160kbps"
-                    codec.contains("AAC") || codec.contains("MP4A") -> "AAC HD"
-                    else -> codec
-                }
-            } ?: "High Fidelity"
-
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = contentColor.copy(alpha = 0.15f),
+            // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
+            AudioQualityBadge(
+                explicitFormat = currentFormat,
+                contentColor = contentColor,
                 modifier = Modifier.padding(bottom = 8.dp)
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.graphic_eq),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(Modifier.width(6.dp))
-                    Text(
-                        text = codecLabel,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = contentColor,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
+            )
 
             // Title & Artist Section
             Row(

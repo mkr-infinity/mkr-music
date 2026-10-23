@@ -51,6 +51,7 @@ import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.ui.component.BottomSheetState
 import com.music.mkr.ui.component.PlayerSliderTrack
+import com.music.mkr.ui.player.AudioQualityBadge
 import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
 import com.music.mkr.ui.theme.PlayerSliderColors
@@ -126,6 +127,12 @@ fun ModernPlayer(
         }
 
         Spacer(Modifier.height(20.dp))
+
+        // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
+        AudioQualityBadge(
+            contentColor = textBackgroundColor,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
         // Title and actions row
         Row(

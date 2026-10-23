@@ -45,6 +45,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.music.mkr.ui.player.AudioQualityBadge
 import androidx.media3.common.Player
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
@@ -179,6 +180,13 @@ fun ImmersiveExtendedPlayer(
             Spacer(Modifier.weight(1f))
 
             Spacer(Modifier.height(16.dp))
+
+            // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
+            AudioQualityBadge(
+                explicitFormat = currentFormat,
+                contentColor = foreground,
+                modifier = Modifier.padding(bottom = 8.dp)
+            )
 
             // Title and Like Action
             Row(

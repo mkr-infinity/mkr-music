@@ -250,20 +250,26 @@ private fun NavigationStyleMiniPreview(
                 }
             }
             NavigationStyle.FLOATING_GLASS -> {
-                // Frosted glass capsule with glow (4 destinations)
+                // Frosted glass capsule with glow (4 destinations balanced spacing)
                 Box(
                     modifier = Modifier
                         .size(width = 46.dp, height = 22.dp)
                         .clip(RoundedCornerShape(11.dp))
-                        .background(Color.White.copy(alpha = 0.12f))
-                        .border(1.dp, Color.White.copy(alpha = 0.3f), RoundedCornerShape(11.dp)),
+                        .background(Color.White.copy(alpha = 0.15f))
+                        .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(11.dp)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
-                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)))
-                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)))
-                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)))
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 6.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
+                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
+                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
+                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
                     }
                 }
             }

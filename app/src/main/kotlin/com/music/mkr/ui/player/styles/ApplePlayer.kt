@@ -67,6 +67,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.music.mkr.ui.player.AudioQualityBadge
 import androidx.media3.common.C
 import androidx.media3.common.Format
 import androidx.media3.common.Player
@@ -564,26 +565,10 @@ fun ApplePlayer(
                     color = textBackgroundColor.copy(alpha = 0.7f)
                 )
 
-                if (showAudioQualityBadge && currentFormat != null) {
-                    val bitrateKbps = currentFormat.bitrate.takeIf { it > 0 }?.let { it / 1000 }
-                    val qualityText = if (bitrateKbps != null) "$bitrateKbps KBPS" else "LOSSLESS"
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = textBackgroundColor.copy(alpha = 0.08f),
-                        border = BorderStroke(0.5.dp, textBackgroundColor.copy(alpha = 0.12f))
-                    ) {
-                        Text(
-                            text = qualityText,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = 1.sp
-                            ),
-                            color = textBackgroundColor.copy(alpha = 0.8f),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                        )
-                    }
-                }
+                AudioQualityBadge(
+                    explicitFormat = currentFormat,
+                    contentColor = textBackgroundColor
+                )
 
                 Text(
                     text = if (duration != C.TIME_UNSET) makeTimeString(duration) else "",

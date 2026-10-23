@@ -43,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import com.music.mkr.ui.player.AudioQualityBadge
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
@@ -145,12 +146,22 @@ fun MaterialExtendedPlayer(
                 }
             }
 
-            Text(
-                text = stringResource(R.string.player_style_material_extended),
-                style = MaterialTheme.typography.labelLarge,
-                fontWeight = FontWeight.SemiBold,
-                color = textBackgroundColor.copy(alpha = 0.85f)
-            )
+            val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = stringResource(R.string.playing_from),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = textBackgroundColor.copy(alpha = 0.6f)
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = textBackgroundColor,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Surface(
@@ -214,6 +225,12 @@ fun MaterialExtendedPlayer(
         }
 
         Spacer(Modifier.height(18.dp))
+
+        // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
+        AudioQualityBadge(
+            contentColor = textBackgroundColor,
+            modifier = Modifier.padding(bottom = 8.dp)
+        )
 
         // Title and Like Action (Left Title + Artists, Right Heart)
         Row(
