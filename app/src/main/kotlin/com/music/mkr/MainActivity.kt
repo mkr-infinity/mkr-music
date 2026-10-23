@@ -947,12 +947,14 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val sharedPrefs = context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
-                val isUpdateAvailable = remember { mutableStateOf(getUpdateAvailableState(context)) }
+                val isUpdateAvailable = remember {
+                    mutableStateOf(if (getAutoUpdateCheckSetting(context)) getUpdateAvailableState(context) else false)
+                }
                 
                 val updateListener = remember {
                     SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-                        if (key == "update_available") {
-                            isUpdateAvailable.value = getUpdateAvailableState(context)
+                        if (key == "update_available" || key == "auto_update_check") {
+                            isUpdateAvailable.value = if (getAutoUpdateCheckSetting(context)) getUpdateAvailableState(context) else false
                         }
                     }
                 }

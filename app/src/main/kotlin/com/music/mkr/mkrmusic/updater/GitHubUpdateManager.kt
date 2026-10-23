@@ -53,6 +53,11 @@ class GitHubUpdateManager @Inject constructor(
      * versionCode is strictly greater than the installed app's versionCode.
      */
     fun checkForUpdates(scope: CoroutineScope, force: Boolean = false) {
+        if (!force && !getAutoUpdateCheckSetting(context)) {
+            Timber.tag(TAG).d("Auto update checks disabled in preferences; skipping.")
+            return
+        }
+
         val now = System.currentTimeMillis()
         if (!force && now - lastCheckedEpoch < CACHE_EXPIRATION_MS && _updateState.value !is ReleasePreviewState.Idle && _updateState.value !is ReleasePreviewState.Error) {
             Timber.tag(TAG).d("Returning cached update state")
