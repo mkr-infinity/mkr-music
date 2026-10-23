@@ -81,7 +81,7 @@ fun LiquidProgressCanvas(
 
         // Amplitude dampens near extremes (0% or 100%) to smoothly meet container edges
         val edgeFactor = (clampedProgress * 15f).coerceAtMost(1f) * ((1f - clampedProgress) * 15f).coerceAtMost(1f)
-        val amplitude = if (interfaceAnimations) (3.2.dp.toPx() * edgeFactor).coerceAtLeast(0.4f) else 0f
+        val amplitude = if (interfaceAnimations && isPlaying) (3.2.dp.toPx() * edgeFactor) else 0f
 
         // Natural frequency scaled to canvas width
         val waveLength1 = (width * 0.75f).coerceIn(180f, 550f)
