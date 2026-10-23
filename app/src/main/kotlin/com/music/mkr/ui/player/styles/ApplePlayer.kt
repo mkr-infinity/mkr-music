@@ -566,6 +566,7 @@ fun ApplePlayer(
                 )
 
                 AudioQualityBadge(
+                    videoId = mediaMetadata.id,
                     explicitFormat = currentFormat,
                     contentColor = textBackgroundColor
                 )

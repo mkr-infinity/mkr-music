@@ -30,16 +30,21 @@ import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.ShowAudioQualityBadgeKey
 import com.music.mkr.db.entities.FormatEntity
+import com.music.mkr.ui.component.LocalBottomSheetPageState
+import com.music.mkr.ui.utils.ShowMediaInfo
 import com.music.mkr.utils.rememberPreference
 
 /**
  * Shared audio quality badge rendering genuine stream codec and bitrate metadata.
  * Controlled by the shared [ShowAudioQualityBadgeKey] preference.
  * Only renders when enabled AND valid format metadata is available.
+ * Tapping opens the contextual [ShowMediaInfo] audio/codec details bottom sheet.
  */
 @Composable
 fun AudioQualityBadge(
     modifier: Modifier = Modifier,
+    videoId: String? = null,
+    onClick: (() -> Unit)? = null,
     explicitFormat: FormatEntity? = null,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
 ) {
@@ -65,10 +70,22 @@ fun AudioQualityBadge(
         else -> null
     } ?: return
 
+    val bottomSheetPageState = LocalBottomSheetPageState.current
+    val effectiveVideoId = videoId ?: playerConnection?.mediaMetadata?.collectAsState(initial = null)?.value?.id
+
     Surface(
         shape = RoundedCornerShape(8.dp),
         color = contentColor.copy(alpha = 0.14f),
         border = BorderStroke(0.5.dp, contentColor.copy(alpha = 0.22f)),
+        onClick = {
+            if (onClick != null) {
+                onClick()
+            } else if (!effectiveVideoId.isNullOrBlank()) {
+                bottomSheetPageState.show {
+                    ShowMediaInfo(effectiveVideoId)
+                }
+            }
+        },
         modifier = modifier
     ) {
         Row(

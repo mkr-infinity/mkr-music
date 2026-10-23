@@ -230,7 +230,8 @@ fun EditorialPlayer(
 
         // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
         AudioQualityBadge(
-            contentColor = accent,
+            videoId = mediaMetadata.id,
+            contentColor = textBackgroundColor,
             modifier = Modifier.padding(bottom = 8.dp)
         )
 

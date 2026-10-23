@@ -153,6 +153,27 @@ fun ShowMediaInfo(videoId: String) {
                         )
                     }
 
+                    // Row 1.5: Album / Audio Source
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        InfoItem(
+                            label = stringResource(R.string.album_label),
+                            value = song?.album?.title ?: "N/A",
+                            modifier = Modifier.weight(1f)
+                        )
+                        val audioSource = when {
+                            song?.song?.isLocal == true || videoId.startsWith("LOCAL_") || videoId.startsWith("content://") || videoId.startsWith("file://") -> "Local Storage"
+                            else -> "YouTube Music"
+                        }
+                        InfoItem(
+                            label = "Source",
+                            value = audioSource,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
                     // Row 2: Duration / Media ID
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -235,7 +256,7 @@ fun ShowMediaInfo(videoId: String) {
                     ) {
                         InfoItem(
                             label = stringResource(R.string.mime_type),
-                            value = currentFormat?.mimeType?.substringBefore(";") ?: stringResource(R.string.song_info_standard),
+                            value = currentFormat?.mimeType?.substringBefore(";") ?: "N/A",
                             modifier = Modifier.weight(1f)
                         )
                         InfoItem(

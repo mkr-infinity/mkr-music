@@ -142,6 +142,7 @@ fun ClassicPlayer(
 
         // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
         AudioQualityBadge(
+            videoId = mediaMetadata.id,
             contentColor = textBackgroundColor,
             modifier = Modifier.padding(bottom = 8.dp)
         )

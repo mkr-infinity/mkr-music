@@ -180,6 +180,7 @@ fun ImmersivePlayer(
 
             // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
             AudioQualityBadge(
+                videoId = mediaMetadata.id,
                 explicitFormat = currentFormat,
                 contentColor = contentColor,
                 modifier = Modifier.padding(bottom = 8.dp)
