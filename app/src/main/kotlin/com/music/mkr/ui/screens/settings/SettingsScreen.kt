@@ -9,7 +9,10 @@ import android.os.Build
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -475,6 +478,7 @@ private fun SettingsCategoryCarousel(
     modifier: Modifier = Modifier
 ) {
     val listState = rememberLazyListState()
+    val lifecycleOwner = LocalLifecycleOwner.current
     var lastInteractionTime by remember { mutableStateOf(0L) }
 
     LaunchedEffect(listState.isScrollInProgress) {
@@ -483,11 +487,14 @@ private fun SettingsCategoryCarousel(
         }
     }
 
-    LaunchedEffect(categories) {
+    LaunchedEffect(categories, lifecycleOwner) {
         if (categories.size <= 1) return@LaunchedEffect
         var forward = true
-        while (true) {
+        while (isActive) {
             delay(3500L)
+            if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                continue
+            }
             if (listState.isScrollInProgress) {
                 lastInteractionTime = System.currentTimeMillis()
                 continue
@@ -568,7 +575,7 @@ private fun SettingsCategoryCarousel(
                 colors = colorScheme,
                 modifier = Modifier
                     .width(235.dp)
-                    .height(94.dp),
+                    .heightIn(min = 94.dp),
                 onClick = {
                     lastInteractionTime = System.currentTimeMillis()
                     onCategoryClick(category)
