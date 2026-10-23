@@ -1333,13 +1333,6 @@ fun HomeScreen(
                                                     .fillMaxSize()
                                                     .maskClip(MaterialTheme.shapes.extraLarge)
                                                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                                    .border(
-                                                        BorderStroke(
-                                                            1.dp,
-                                                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                                                        ),
-                                                        MaterialTheme.shapes.extraLarge
-                                                    )
                                                     .combinedClickable(
                                                         onClick = {
                                                             if (isActive) {
@@ -1951,13 +1944,6 @@ fun HomeScreen(
                                                         .fillMaxSize()
                                                         .maskClip(MaterialTheme.shapes.extraLarge)
                                                         .background(MaterialTheme.colorScheme.surfaceContainerHigh)
-                                                        .border(
-                                                            BorderStroke(
-                                                                1.dp,
-                                                                MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
-                                                            ),
-                                                            MaterialTheme.shapes.extraLarge
-                                                        )
                                                         .combinedClickable(
                                                             onClick = {
                                                                 if (isActive) {

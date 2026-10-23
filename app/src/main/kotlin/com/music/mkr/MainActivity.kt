@@ -1045,7 +1045,11 @@ class MainActivity : ComponentActivity() {
                                                     .clip(CircleShape)
                                                     .clickable {
                                                         val currentTime = System.currentTimeMillis()
-                                                        if (currentTime - lastClickTime > 3000L) {
+                                                        // Debounce rapid bursts (< 180ms)
+                                                        if (currentTime - lastClickTime < 180L) {
+                                                            return@clickable
+                                                        }
+                                                        if (currentTime - lastClickTime > 2500L) {
                                                             logoClickCount = 1
                                                         } else {
                                                             logoClickCount++
@@ -1055,22 +1059,16 @@ class MainActivity : ComponentActivity() {
                                                         // Cancel previous inactivity timer
                                                         resetJob?.cancel()
 
-                                                        // Cancel previous toast immediately so clicks don't queue up
-                                                        currentToast?.cancel()
-
-                                                        if (logoClickCount == 1) {
-                                                            // Display the meaning of MKR in English
-                                                            val mkrExplanation = "MKR Music — MKR stands for Mohammad Kaif Raja"
-                                                            currentToast = Toast.makeText(this@MainActivity, mkrExplanation, Toast.LENGTH_LONG)
-                                                            currentToast?.show()
-                                                        } else if (logoClickCount >= 5) {
+                                                        // Easter egg triggers at 5 or more deliberate clicks
+                                                        if (logoClickCount >= 5) {
+                                                            currentToast?.cancel()
                                                             val toastMessage = when (logoClickCount) {
                                                                 5 -> "Hey, what are you doing?"
                                                                 6 -> "Stop poking the MKR logo bro!"
                                                                 7 -> "One more click and something wild might happen..."
                                                                 8 -> "Bro please don't do it bro! What are you looking for?! There's no secret menu here!"
                                                                 9 -> "Bro really has too much free time today!"
-                                                                10 -> "Are you testing my screen refresh rate or what?!"
+                                                                10 -> "MKR Music — MKR stands for Mohammad Kaif Raja"
                                                                 else -> {
                                                                     val funnyQuotes = listOf(
                                                                         "Go listen to some bangers instead bro!",
@@ -1078,7 +1076,7 @@ class MainActivity : ComponentActivity() {
                                                                         "Still clicking?! You must really love this note!",
                                                                         "Achievement unlocked: Professional Logo Tapper"
                                                                     )
-                                                                    funnyQuotes[logoClickCount % funnyQuotes.size]
+                                                                    funnyQuotes[(logoClickCount - 11) % funnyQuotes.size]
                                                                 }
                                                             }
 
@@ -1086,9 +1084,9 @@ class MainActivity : ComponentActivity() {
                                                             currentToast?.show()
                                                         }
 
-                                                        // Stop toast and reset clicks if user is not clicking for 3 seconds
+                                                        // Stop toast and reset clicks if user is not clicking for 2.5 seconds
                                                         resetJob = logoScope.launch {
-                                                            delay(3000L)
+                                                            delay(2500L)
                                                             currentToast?.cancel()
                                                             currentToast = null
                                                             logoClickCount = 0
@@ -1118,17 +1116,22 @@ class MainActivity : ComponentActivity() {
                                         },
                                         title = {
                                             val isHome = navBackStackEntry?.destination?.route == Screens.Home.route
-                                            Text(
-                                                text = if (isHome) stringResource(R.string.app_name) else (currentTitleRes?.let { stringResource(it) } ?: ""),
-                                                style = MaterialTheme.typography.titleLarge.copy(
-                                                    fontWeight = FontWeight.ExtraBold,
-                                                    fontSize = if (isHome) 22.sp else 20.sp,
-                                                    letterSpacing = (-0.5).sp
-                                                ),
-                                                color = MaterialTheme.colorScheme.onSurface,
-                                                maxLines = 1,
-                                                overflow = TextOverflow.Ellipsis
-                                            )
+                                            if (!isHome) {
+                                                val titleText = currentTitleRes?.let { stringResource(it) } ?: ""
+                                                if (titleText.isNotEmpty()) {
+                                                    Text(
+                                                        text = titleText,
+                                                        style = MaterialTheme.typography.titleLarge.copy(
+                                                            fontWeight = FontWeight.ExtraBold,
+                                                            fontSize = 20.sp,
+                                                            letterSpacing = (-0.5).sp
+                                                        ),
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
+                                            }
                                         },
                                         actions = {
                                             Row(
