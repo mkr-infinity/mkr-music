@@ -106,7 +106,8 @@ fun CinematicPlayer(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 24.dp)
+            .padding(top = 12.dp, bottom = 68.dp)
     ) {
         Spacer(Modifier.height(12.dp))
 
@@ -392,33 +393,6 @@ fun CinematicPlayer(
             }
         }
 
-        Spacer(Modifier.height(18.dp))
-
-        // Bottom Bar (Lyrics & Queue)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = onShowLyrics) {
-                Icon(
-                    painter = painterResource(R.drawable.lyrics),
-                    contentDescription = stringResource(R.string.lyrics),
-                    tint = textBackgroundColor.copy(alpha = 0.8f),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-
-            IconButton(onClick = onShowQueue) {
-                Icon(
-                    painter = painterResource(R.drawable.queue_music),
-                    contentDescription = stringResource(R.string.queue),
-                    tint = textBackgroundColor.copy(alpha = 0.8f),
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(16.dp))
     }
 }

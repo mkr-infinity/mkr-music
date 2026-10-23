@@ -127,6 +127,7 @@ fun ImmersivePlayer(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(horizontal = 24.dp, vertical = 12.dp)
+                .padding(bottom = 68.dp)
         ) {
             // Header Top Bar
             Row(
@@ -162,29 +163,7 @@ fun ImmersivePlayer(
 
             Spacer(Modifier.height(8.dp))
 
-            // Center Artwork Card
-            Box(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
-            ) {
-                Surface(
-                    shape = RoundedCornerShape(28.dp),
-                    shadowElevation = 16.dp,
-                    color = Color.Black.copy(alpha = 0.3f),
-                    modifier = Modifier
-                        .fillMaxWidth(0.88f)
-                        .aspectRatio(1f)
-                ) {
-                    AsyncImage(
-                        model = mediaMetadata.thumbnailUrl,
-                        contentDescription = mediaMetadata.title,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
+            Spacer(Modifier.weight(1f))
 
             Spacer(Modifier.height(16.dp))
 
@@ -404,33 +383,6 @@ fun ImmersivePlayer(
             }
 
             Spacer(Modifier.height(16.dp))
-
-            // Bottom Bar: Lyrics & Queue
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onShowLyrics) {
-                    Icon(
-                        painter = painterResource(R.drawable.lyrics),
-                        contentDescription = stringResource(R.string.lyrics),
-                        tint = secondaryColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-
-                IconButton(onClick = onShowQueue) {
-                    Icon(
-                        painter = painterResource(R.drawable.queue_music),
-                        contentDescription = stringResource(R.string.queue),
-                        tint = secondaryColor,
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(12.dp))
         }
     }
 }

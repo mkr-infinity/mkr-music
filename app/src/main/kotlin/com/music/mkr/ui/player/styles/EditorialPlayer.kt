@@ -100,7 +100,8 @@ fun EditorialPlayer(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 24.dp)
+            .padding(top = 12.dp, bottom = 68.dp)
     ) {
         // Editorial Top Bar
         Row(
@@ -156,6 +157,22 @@ fun EditorialPlayer(
                 Surface(
                     shape = CircleShape,
                     color = accent.copy(alpha = 0.14f),
+                    onClick = onShowQueue,
+                    modifier = Modifier.size(44.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.queue_music),
+                            contentDescription = stringResource(R.string.queue),
+                            tint = accent,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+
+                Surface(
+                    shape = CircleShape,
+                    color = accent.copy(alpha = 0.14f),
                     onClick = onShowMenu,
                     modifier = Modifier.size(44.dp)
                 ) {
@@ -199,34 +216,52 @@ fun EditorialPlayer(
 
         Spacer(Modifier.height(18.dp))
 
-        // Editorial Typography Title & Artist
-        Column(
+        // Editorial Typography Title & Artist + Like Action
+        Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.Start
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(
-                text = mediaMetadata.title,
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    fontFamily = FontFamily.Serif,
-                    fontStyle = FontStyle.Italic,
-                    fontWeight = FontWeight.Bold
-                ),
-                color = accent,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .basicMarquee()
-                    .clickable { titleActions.onTitleClick() }
-            )
-            Spacer(Modifier.height(4.dp))
-            ClickableArtists(
-                artists = mediaMetadata.artists,
-                onArtistClick = titleActions.onArtistClick,
-                style = MaterialTheme.typography.labelLarge,
-                color = accent.copy(alpha = 0.8f),
-                modifier = Modifier.fillMaxWidth().basicMarquee()
-            )
+            Column(
+                modifier = Modifier.weight(1f),
+                horizontalAlignment = Alignment.Start
+            ) {
+                Text(
+                    text = mediaMetadata.title,
+                    style = MaterialTheme.typography.headlineMedium.copy(
+                        fontFamily = FontFamily.Serif,
+                        fontStyle = FontStyle.Italic,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = accent,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .basicMarquee()
+                        .clickable { titleActions.onTitleClick() }
+                )
+                Spacer(Modifier.height(4.dp))
+                ClickableArtists(
+                    artists = mediaMetadata.artists,
+                    onArtistClick = titleActions.onArtistClick,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = accent.copy(alpha = 0.8f),
+                    modifier = Modifier.fillMaxWidth().basicMarquee()
+                )
+            }
+
+            IconButton(onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                playerConnection.toggleLike()
+            }) {
+                Icon(
+                    painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
+                    contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
+                    tint = if (isLiked) MaterialTheme.colorScheme.primary else accent.copy(alpha = 0.8f),
+                    modifier = Modifier.size(26.dp)
+                )
+            }
         }
 
         Spacer(Modifier.height(14.dp))
@@ -377,35 +412,5 @@ fun EditorialPlayer(
         }
 
         Spacer(Modifier.height(16.dp))
-
-        // Bottom Editorial Bar (Like and Queue)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                playerConnection.toggleLike()
-            }) {
-                Icon(
-                    painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
-                    contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
-                    tint = if (isLiked) MaterialTheme.colorScheme.primary else accent.copy(alpha = 0.8f),
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-
-            IconButton(onClick = onShowQueue) {
-                Icon(
-                    painter = painterResource(R.drawable.queue_music),
-                    contentDescription = stringResource(R.string.queue),
-                    tint = accent.copy(alpha = 0.8f),
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        }
-
-        Spacer(Modifier.height(10.dp))
     }
 }

@@ -118,7 +118,8 @@ fun MaterialExtendedPlayer(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 24.dp)
+            .padding(top = 12.dp, bottom = 68.dp)
     ) {
         // V9 Header Bar (Collapse, Title context, Lyrics, Queue)
         Row(

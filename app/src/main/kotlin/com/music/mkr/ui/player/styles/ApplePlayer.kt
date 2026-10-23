@@ -405,7 +405,7 @@ fun ApplePlayer(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = modifier
                 .fillMaxSize()
-                .padding(vertical = 8.dp)
+                .padding(top = 8.dp, bottom = 68.dp)
         ) {
             Spacer(Modifier.height(10.dp))
 
@@ -751,34 +751,7 @@ fun ApplePlayer(
                 }
             }
 
-            Spacer(Modifier.height(8.dp))
-
-            // Bottom Quick Shortcuts: Lyrics and Queue
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = PlayerHorizontalPadding),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(onClick = onShowLyrics) {
-                    Icon(
-                        painter = painterResource(R.drawable.lyrics),
-                        contentDescription = stringResource(R.string.lyrics),
-                        tint = textBackgroundColor.copy(alpha = 0.8f)
-                    )
-                }
-
-                IconButton(onClick = onShowQueue) {
-                    Icon(
-                        painter = painterResource(R.drawable.queue_music),
-                        contentDescription = stringResource(R.string.queue),
-                        tint = textBackgroundColor.copy(alpha = 0.8f)
-                    )
-                }
-            }
-
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(16.dp))
         }
     }
 }

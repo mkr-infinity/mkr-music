@@ -97,7 +97,8 @@ fun ModernPlayer(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp, vertical = 12.dp)
+            .padding(horizontal = 24.dp)
+            .padding(top = 12.dp, bottom = 68.dp)
     ) {
         Spacer(Modifier.height(12.dp))
 
@@ -312,7 +313,7 @@ fun ModernPlayer(
 
         Spacer(Modifier.height(16.dp))
 
-        // Bottom action bar: Shuffle, Lyrics, Queue, Repeat
+        // Bottom action bar: Shuffle, Repeat
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -326,24 +327,6 @@ fun ModernPlayer(
                     painter = painterResource(R.drawable.shuffle),
                     contentDescription = stringResource(R.string.shuffle),
                     tint = if (shuffleModeEnabled) MaterialTheme.colorScheme.primary else textBackgroundColor.copy(alpha = 0.5f),
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            IconButton(onClick = onShowLyrics) {
-                Icon(
-                    painter = painterResource(R.drawable.lyrics),
-                    contentDescription = stringResource(R.string.lyrics),
-                    tint = textBackgroundColor.copy(alpha = 0.8f),
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            IconButton(onClick = onShowQueue) {
-                Icon(
-                    painter = painterResource(R.drawable.queue_music),
-                    contentDescription = stringResource(R.string.queue),
-                    tint = textBackgroundColor.copy(alpha = 0.8f),
                     modifier = Modifier.size(22.dp)
                 )
             }
