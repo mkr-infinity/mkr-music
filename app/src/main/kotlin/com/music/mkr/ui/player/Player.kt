@@ -19,6 +19,8 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -190,6 +192,7 @@ import com.music.mkr.constants.SliderStyleKey
 import com.music.mkr.constants.SquigglySliderKey
 import com.music.mkr.constants.SwipeLyricsKey
 import com.music.mkr.constants.ThumbnailCornerRadius
+import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.constants.ShowAudioQualityBadgeKey
 import com.music.mkr.db.entities.LyricsEntity
 import com.music.mkr.extensions.SwipeGesture
@@ -258,6 +261,10 @@ fun BottomSheetPlayer(
     val (showAudioQualityBadge) = rememberPreference(
         ShowAudioQualityBadgeKey,
         defaultValue = false
+    )
+    val (interfaceAnimations) = rememberPreference(
+        InterfaceAnimationsKey,
+        defaultValue = true
     )
     val (hidePlayerThumbnail, onHidePlayerThumbnailChange) = rememberPreference(HidePlayerThumbnailKey, false)
     val cropAlbumArt by rememberPreference(CropAlbumArtKey, false)
@@ -1245,7 +1252,12 @@ fun BottomSheetPlayer(
                 }
             } else {
                 mediaMetadata?.let { metadata ->
-                    when (playerStyle) {
+                    Crossfade(
+                        targetState = playerStyle,
+                        animationSpec = if (interfaceAnimations) tween(durationMillis = 240) else snap(),
+                        label = "PlayerStyleCrossfade"
+                    ) { currentStyle ->
+                        when (currentStyle) {
                         PlayerStyle.APPLE -> ApplePlayer(
                             mediaMetadata = metadata,
                             playbackState = playbackState,
@@ -1510,6 +1522,7 @@ fun BottomSheetPlayer(
                 }
             }
         }
+    }
         AnimatedVisibility(
             visible = !isFullScreen,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),

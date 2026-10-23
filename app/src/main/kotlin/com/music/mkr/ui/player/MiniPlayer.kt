@@ -12,6 +12,8 @@ import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -537,23 +539,29 @@ private fun NewMiniPlayer(
                     val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
                     val isMuted by playerConnection.isMuted.collectAsState()
 
-                    Icon(
-                        painter = painterResource(
-                            when {
-                                isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
-                                playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                effectiveIsPlaying -> R.drawable.pause
-                                else -> R.drawable.play
-                            }
-                        ),
-                        contentDescription = if (isListenTogetherGuest) {
-                            if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
-                        } else {
-                            if (effectiveIsPlaying) stringResource(R.string.pause) else stringResource(R.string.play)
-                        },
-                        tint = onSurfaceColor,
-                        modifier = Modifier.size(24.dp)
-                    )
+                    Crossfade(
+                        targetState = effectiveIsPlaying,
+                        animationSpec = if (interfaceAnimations) tween(150) else snap(),
+                        label = "MiniPlayerPlayPauseCrossfade"
+                    ) { playing ->
+                        Icon(
+                            painter = painterResource(
+                                when {
+                                    isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
+                                    playbackState == Player.STATE_ENDED -> R.drawable.replay
+                                    playing -> R.drawable.pause
+                                    else -> R.drawable.play
+                                }
+                            ),
+                            contentDescription = if (isListenTogetherGuest) {
+                                if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
+                            } else {
+                                if (playing) stringResource(R.string.pause) else stringResource(R.string.play)
+                            },
+                            tint = onSurfaceColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
 
                 IconButton(
@@ -1090,22 +1098,28 @@ private fun LegacyPlayPauseButton(
         },
         modifier = Modifier.size(48.dp)
     ) {
-        Icon(
-            painter = painterResource(
-                when {
-                    isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
-                    playbackState == Player.STATE_ENDED -> R.drawable.replay
-                    effectiveIsPlaying -> R.drawable.pause
-                    else -> R.drawable.play
-                }
-            ),
-            contentDescription = if (isListenTogetherGuest) {
-                if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
-            } else {
-                if (effectiveIsPlaying) stringResource(R.string.pause) else stringResource(R.string.play)
-            },
-            modifier = Modifier.size(26.dp)
-        )
+        Crossfade(
+            targetState = effectiveIsPlaying,
+            animationSpec = if (interfaceAnimations) tween(150) else snap(),
+            label = "LegacyMiniPlayPauseCrossfade"
+        ) { playing ->
+            Icon(
+                painter = painterResource(
+                    when {
+                        isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
+                        playbackState == Player.STATE_ENDED -> R.drawable.replay
+                        playing -> R.drawable.pause
+                        else -> R.drawable.play
+                    }
+                ),
+                contentDescription = if (isListenTogetherGuest) {
+                    if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
+                } else {
+                    if (playing) stringResource(R.string.pause) else stringResource(R.string.play)
+                },
+                modifier = Modifier.size(26.dp)
+            )
+        }
     }
 }
 

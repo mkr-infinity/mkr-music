@@ -2,9 +2,12 @@ package com.music.mkr.ui.player
 
 import android.content.res.Configuration
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
@@ -476,23 +479,29 @@ fun AppleMiniPlayer(
                     val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
                     val isMuted by playerConnection.isMuted.collectAsState()
 
-                    Icon(
-                        painter = painterResource(
-                            when {
-                                isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
-                                playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                effectiveIsPlaying -> R.drawable.pause
-                                else -> R.drawable.play
-                            }
-                        ),
-                        contentDescription = if (isListenTogetherGuest) {
-                            if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
-                        } else {
-                            if (effectiveIsPlaying) stringResource(R.string.pause) else stringResource(R.string.play)
-                        },
-                        tint = onSurfaceColor,
-                        modifier = Modifier.size(28.dp)
-                    )
+                    Crossfade(
+                        targetState = effectiveIsPlaying,
+                        animationSpec = if (interfaceAnimations) tween(150) else snap(),
+                        label = "AppleMiniPlayPauseCrossfade"
+                    ) { playing ->
+                        Icon(
+                            painter = painterResource(
+                                when {
+                                    isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
+                                    playbackState == Player.STATE_ENDED -> R.drawable.replay
+                                    playing -> R.drawable.pause
+                                    else -> R.drawable.play
+                                }
+                            ),
+                            contentDescription = if (isListenTogetherGuest) {
+                                if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
+                            } else {
+                                if (playing) stringResource(R.string.pause) else stringResource(R.string.play)
+                            },
+                            tint = onSurfaceColor,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.width(6.dp))

@@ -36,6 +36,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
@@ -46,6 +47,8 @@ import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.music.mkr.R
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.PlayerConnection
@@ -127,7 +130,10 @@ fun CinematicPlayer(
                     .aspectRatio(1f)
             ) {
                 AsyncImage(
-                    model = mediaMetadata.thumbnailUrl,
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(mediaMetadata.thumbnailUrl)
+                        .crossfade(true)
+                        .build(),
                     contentDescription = mediaMetadata.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize()
