@@ -70,6 +70,7 @@ import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult
+import androidx.compose.material3.Surface
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
@@ -101,6 +102,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -322,76 +324,78 @@ fun Queue(
             Box(Modifier.fillMaxSize().background(Color.Unspecified))
         },
         collapsedContent = {
-            // Old design
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 30.dp, vertical = 12.dp)
+                        .padding(horizontal = 20.dp, vertical = 8.dp)
                         .windowInsetsPadding(
                             WindowInsets.systemBars
                                 .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
                         ),
                 ) {
-                    TextButton(
+                    // Queue button (pill)
+                    Surface(
                         onClick = { state.expandSoft() },
-                        modifier = Modifier.wrapContentWidth()
+                        shape = RoundedCornerShape(16.dp),
+                        color = TextBackgroundColor.copy(alpha = 0.12f),
+                        modifier = Modifier
+                            .height(46.dp)
+                            .weight(1f),
                     ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.queue_music),
                                 contentDescription = null,
-                                modifier = Modifier.size(40.dp),
-                                tint = TextBackgroundColor
+                                modifier = Modifier.size(20.dp),
+                                tint = TextBackgroundColor,
                             )
-//                            Spacer(modifier = Modifier.width(6.dp))
-//                            Text(
-//                                text = stringResource(id = R.string.queue),
-//                                color = TextBackgroundColor,
-//                                maxLines = 1,
-//                                overflow = TextOverflow.Ellipsis,
-//                                textAlign = TextAlign.Center,
-//                                modifier = Modifier.basicMarquee()
-//                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = stringResource(id = R.string.queue),
+                                color = TextBackgroundColor,
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
                     }
 
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Center utility buttons: Audio device & Sleep timer
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
-                        modifier = Modifier.width(120.dp)
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        ToggleButton(
-                            checked = false,
-                            onCheckedChange = {
-                                showAudioDeviceBottomSheet = true
-                            },
-                            shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
-                            modifier = Modifier
-                                .height(56.dp)
-                                .weight(1f),
-                            colors = ToggleButtonDefaults.colors(
-                                containerColor = TextBackgroundColor.copy(alpha = 0.2f),
-                                contentColor = TextBackgroundColor,
-                                checkedContainerColor = TextBackgroundColor.copy(alpha = 0.4f),
-                                checkedContentColor = TextBackgroundColor
-                            )
+                        Surface(
+                            onClick = { showAudioDeviceBottomSheet = true },
+                            shape = CircleShape,
+                            color = TextBackgroundColor.copy(alpha = 0.12f),
+                            modifier = Modifier.size(46.dp),
                         ) {
-                            Icon(
-                                painter = painterResource(
-                                    if (isBluetoothConnected) R.drawable.headphones else R.drawable.home_speaker_devices
-                                ),
-                                contentDescription = stringResource(R.string.audio_devices),
-                                modifier = Modifier.size(30.dp)
-                            )
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize(),
+                            ) {
+                                Icon(
+                                    painter = painterResource(
+                                        if (isBluetoothConnected) R.drawable.headphones else R.drawable.home_speaker_devices,
+                                    ),
+                                    contentDescription = stringResource(R.string.audio_devices),
+                                    modifier = Modifier.size(20.dp),
+                                    tint = TextBackgroundColor,
+                                )
+                            }
                         }
 
-                        ToggleButton(
-                            checked = sleepTimerEnabled,
-                            onCheckedChange = {
+                        Surface(
+                            onClick = {
                                 if (!isListenTogetherGuest) {
                                     if (sleepTimerEnabled) {
                                         playerConnection.service.sleepTimer.clear()
@@ -400,25 +404,20 @@ fun Queue(
                                     }
                                 }
                             },
-                            shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
-                            modifier = Modifier
-                                .height(56.dp)
-                                .weight(1f),
-                            colors = ToggleButtonDefaults.colors(
-                                containerColor = TextBackgroundColor.copy(alpha = 0.2f),
-                                contentColor = TextBackgroundColor,
-                                checkedContainerColor = TextBackgroundColor.copy(alpha = 0.4f),
-                                checkedContentColor = TextBackgroundColor
-                            )
+                            shape = if (sleepTimerEnabled) RoundedCornerShape(20.dp) else CircleShape,
+                            color = if (sleepTimerEnabled) TextBackgroundColor.copy(alpha = 0.22f) else TextBackgroundColor.copy(alpha = 0.12f),
+                            modifier = if (sleepTimerEnabled) Modifier.height(46.dp) else Modifier.size(46.dp),
                         ) {
                             Row(
                                 verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
+                                horizontalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(horizontal = if (sleepTimerEnabled) 10.dp else 0.dp),
                             ) {
                                 Icon(
                                     painter = painterResource(id = R.drawable.sleep_timer),
                                     contentDescription = stringResource(R.string.sleep_timer),
-                                    modifier = Modifier.size(30.dp)
+                                    modifier = Modifier.size(20.dp),
+                                    tint = TextBackgroundColor,
                                 )
                                 if (sleepTimerEnabled) {
                                     Spacer(modifier = Modifier.width(4.dp))
@@ -426,38 +425,43 @@ fun Queue(
                                         text = makeTimeString(sleepTimerTimeLeft),
                                         style = MaterialTheme.typography.labelSmall,
                                         color = TextBackgroundColor,
-                                        maxLines = 1
+                                        maxLines = 1,
                                     )
                                 }
                             }
                         }
                     }
 
-                    TextButton(
-                        onClick = {
-                            onToggleLyrics()
-                        },
-                        modifier = Modifier.wrapContentWidth()
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    // Lyrics button (pill)
+                    Surface(
+                        onClick = onToggleLyrics,
+                        shape = RoundedCornerShape(16.dp),
+                        color = TextBackgroundColor.copy(alpha = 0.12f),
+                        modifier = Modifier
+                            .height(46.dp)
+                            .weight(1f),
                     ) {
                         Row(
-                            verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp),
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.lyrics),
-                                contentDescription = stringResource(R.string.lyrics),
-                                modifier = Modifier.size(40.dp),
-                                tint = TextBackgroundColor
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp),
+                                tint = TextBackgroundColor,
                             )
-//                            Spacer(modifier = Modifier.width(6.dp))
-//                            Text(
-//                                text = stringResource(R.string.lyrics),
-//                                color = TextBackgroundColor,
-//                                maxLines = 1,
-//                                overflow = TextOverflow.Ellipsis,
-//                                textAlign = TextAlign.Center,
-//                                modifier = Modifier.basicMarquee()
-//                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = stringResource(id = R.string.lyrics),
+                                color = TextBackgroundColor,
+                                style = MaterialTheme.typography.labelMedium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
                         }
                     }
                 }
@@ -625,27 +629,48 @@ fun Queue(
                             .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                     ),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                // Drag handle pill
+                Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
+                        .padding(top = 16.dp, bottom = 12.dp),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .width(48.dp)
+                            .height(5.dp)
+                            .clip(RoundedCornerShape(2.5.dp))
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)),
+                    )
+                }
+
+                // Current song track row
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
                 ) {
                     AsyncImage(
-                        model = mediaMetadata?.thumbnailUrl?.resize(120, 120),
+                        model = mediaMetadata?.thumbnailUrl,
                         contentDescription = null,
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(48.dp)
-                            .clip(RoundedCornerShape(8.dp))
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(12.dp))
+                            .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f)),
                     )
 
-                    Spacer(Modifier.width(12.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(2.dp),
+                    ) {
                         Text(
                             text = mediaMetadata?.title.orEmpty(),
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            fontWeight = FontWeight.Bold,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -659,50 +684,48 @@ fun Queue(
                     }
 
                     val likeDescription = if (currentSong?.song?.liked == true) stringResource(R.string.action_remove_like) else stringResource(R.string.action_like)
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                        tooltip = { PlainTooltip { Text(likeDescription) } },
-                        state = rememberTooltipState(),
+                    IconButton(
+                        onClick = playerConnection::toggleLike,
+                        modifier = Modifier.size(44.dp),
                     ) {
-                        FilledTonalIconButton(
-                            onClick = playerConnection::toggleLike,
-                            modifier = Modifier.padding(end = 8.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(
-                                    if (currentSong?.song?.liked == true) R.drawable.favorite
-                                    else R.drawable.favorite_border
-                                ),
-                                contentDescription = likeDescription,
-                                tint = if (currentSong?.song?.liked == true) MaterialTheme.colorScheme.error else LocalContentColor.current
-                            )
-                        }
+                        Icon(
+                            painter = painterResource(
+                                if (currentSong?.song?.liked == true) R.drawable.favorite
+                                else R.drawable.favorite_border
+                            ),
+                            contentDescription = likeDescription,
+                            tint = if (currentSong?.song?.liked == true) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(24.dp),
+                        )
                     }
+                }
 
-                    val lockDescription = if (locked) stringResource(R.string.unlock_queue) else stringResource(R.string.lock_queue)
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                        tooltip = { PlainTooltip { Text(lockDescription) } },
-                        state = rememberTooltipState(),
+                // Action pill bar: Lock, Menu, Clear queue, and song count • duration
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.06f))
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(0.dp),
                     ) {
-                        FilledTonalIconButton(
+                        IconButton(
                             onClick = { locked = !locked },
-                            modifier = Modifier.padding(end = 8.dp)
+                            modifier = Modifier.size(40.dp),
                         ) {
                             Icon(
                                 painter = painterResource(if (locked) R.drawable.lock else R.drawable.lock_open),
-                                contentDescription = lockDescription,
+                                contentDescription = if (locked) stringResource(R.string.unlock_queue) else stringResource(R.string.lock_queue),
+                                modifier = Modifier.size(20.dp),
                             )
                         }
-                    }
-
-                    val moreDescription = stringResource(R.string.more_options)
-                    TooltipBox(
-                        positionProvider = TooltipDefaults.rememberTooltipPositionProvider(TooltipAnchorPosition.Above),
-                        tooltip = { PlainTooltip { Text(moreDescription) } },
-                        state = rememberTooltipState(),
-                    ) {
-                        FilledTonalIconButton(
+                        IconButton(
                             onClick = {
                                 menuState.show {
                                     PlayerMenu(
@@ -719,21 +742,56 @@ fun Queue(
                                         onDismiss = menuState::dismiss
                                     )
                                 }
-                            }
+                            },
+                            modifier = Modifier.size(40.dp),
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.more_vert),
-                                contentDescription = moreDescription,
+                                contentDescription = stringResource(R.string.more_options),
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                val windowsToRemove = if (currentWindowIndex in queueWindows.indices) {
+                                    queueWindows.filterIndexed { index, _ -> index != currentWindowIndex }
+                                } else {
+                                    emptyList()
+                                }
+                                if (windowsToRemove.isNotEmpty()) {
+                                    windowsToRemove.reversed().forEach { window ->
+                                        playerConnection.player.removeMediaItem(window.firstPeriodIndex)
+                                    }
+                                    selection.clear()
+                                    inSelectMode = false
+                                }
+                            },
+                            modifier = Modifier.size(40.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.delete),
+                                contentDescription = stringResource(R.string.clear),
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(20.dp),
                             )
                         }
                     }
+
+                    Text(
+                        text = pluralStringResource(R.plurals.n_song, queueWindows.size, queueWindows.size) + "  •  " + makeTimeString(queueLength * 1000L),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(end = 12.dp),
+                    )
                 }
 
-                FlowRow(
+                // Connected action controls: Shuffle, Repeat, Radio
+                Row(
                     modifier = Modifier
-                        .padding(horizontal = 12.dp, vertical = 8.dp)
-                        .fillMaxWidth(),
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 6.dp),
                     horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     ToggleButton(
                         checked = shuffleModeEnabled,
@@ -749,27 +807,27 @@ fun Queue(
                         enabled = !isListenTogetherGuest,
                         shapes = ButtonGroupDefaults.connectedLeadingButtonShapes(),
                         colors = ToggleButtonDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         ),
                         modifier = Modifier
                             .weight(1f)
-                            .height(56.dp),
+                            .height(44.dp),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.shuffle),
                             contentDescription = null,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
+                        Spacer(Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.shuffle),
                             style = MaterialTheme.typography.labelMedium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
-                            )
+                        )
                     }
 
                     ToggleButton(
@@ -780,14 +838,14 @@ fun Queue(
                         enabled = !isListenTogetherGuest,
                         shapes = ButtonGroupDefaults.connectedMiddleButtonShapes(),
                         colors = ToggleButtonDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         ),
                         modifier = Modifier
                             .weight(1f)
-                            .height(56.dp),
+                            .height(44.dp),
                     ) {
                         Icon(
                             painter = painterResource(
@@ -798,9 +856,9 @@ fun Queue(
                                 }
                             ),
                             contentDescription = null,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(20.dp)
                         )
-                        Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
+                        Spacer(Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.repeat),
                             style = MaterialTheme.typography.labelMedium,
@@ -818,22 +876,22 @@ fun Queue(
                         enabled = !isListenTogetherGuest,
                         shapes = ButtonGroupDefaults.connectedTrailingButtonShapes(),
                         colors = ToggleButtonDefaults.colors(
-                            containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                             checkedContainerColor = MaterialTheme.colorScheme.primaryContainer,
                             checkedContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                         ),
                         modifier = Modifier
                             .weight(1f)
-                            .height(56.dp),
+                            .height(44.dp),
                     ) {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Icon(
                                 painter = painterResource(R.drawable.radio),
                                 contentDescription = null,
-                                modifier = Modifier.size(22.dp)
+                                modifier = Modifier.size(20.dp)
                             )
-                            Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
+                            Spacer(Modifier.width(6.dp))
                             Text(
                                 text = stringResource(R.string.start_an_radio),
                                 style = MaterialTheme.typography.labelMedium,
@@ -843,53 +901,21 @@ fun Queue(
                         }
                     }
                 }
-                // Moved AnimatedVisibility below the Row
-
 
                 Row(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .padding(horizontal = 16.dp, vertical = 6.dp)
                 ) {
-                    Column(
-                        modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Text(
-                            text = queueTitle ?: stringResource(R.string.continue_playing),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                        Text(
-                            text = stringResource(R.string.next_in_queue),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    Column(
-                        horizontalAlignment = Alignment.End,
-                        verticalArrangement = Arrangement.spacedBy(2.dp)
-                    ) {
-                        Text(
-                            text = pluralStringResource(
-                                R.plurals.n_song,
-                                queueWindows.size,
-                                queueWindows.size
-                            ),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        Text(
-                            text = makeTimeString(queueLength * 1000L),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    Text(
+                        text = queueTitle ?: stringResource(R.string.next_in_queue),
+                        style = MaterialTheme.typography.titleSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
 
                 AnimatedVisibility(visible = radioChips.isNotEmpty()) {
