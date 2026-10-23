@@ -103,7 +103,7 @@ fun AppleMiniPlayer(
     // Swipe settings
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnailPref by rememberPreference(SwipeThumbnailKey, true)
-    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = false)
+    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = true)
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
     val haptic = LocalHapticFeedback.current
     var hasTriggeredHapticThreshold by remember { mutableStateOf(false) }
@@ -369,13 +369,17 @@ fun AppleMiniPlayer(
                             fontWeight = FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                            softWrap = false,
+                            modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
                         )
                         Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
-                            if (metadata.explicit) MIcon.Explicit()
+                            if (metadata.explicit) {
+                                MIcon.Explicit()
+                                Spacer(modifier = Modifier.width(4.dp))
+                            }
                             if (metadata.artists.any { it.name.isNotBlank() }) {
                                 Text(
                                     text = metadata.artists.joinToString { it.name },
@@ -383,7 +387,8 @@ fun AppleMiniPlayer(
                                     fontSize = 12.sp,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    modifier = Modifier.basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                                    softWrap = false,
+                                    modifier = Modifier.weight(1f, fill = false).basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
                                 )
                             }
                         }

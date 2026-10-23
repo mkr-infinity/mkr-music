@@ -240,10 +240,13 @@ fun PlayerSettings(
 
 
 
-    val (playerStyle, onPlayerStyleChange) = rememberEnumPreference(
+    val (rawPlayerStyle, onPlayerStyleChange) = rememberEnumPreference(
         PlayerStyleKey,
-        defaultValue = PlayerStyle.APPLE
+        defaultValue = PlayerStyle.IMMERSIVE_EXTENDED
     )
+    val playerStyle = remember(rawPlayerStyle) {
+        if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.IMMERSIVE_EXTENDED else rawPlayerStyle
+    }
     val (useAppleMiniPlayer, onUseAppleMiniPlayerChange) = rememberPreference(
         UseAppleMiniPlayerKey,
         defaultValue = true
@@ -254,7 +257,7 @@ fun PlayerSettings(
     )
     val (liquidMiniPlayer, onLiquidMiniPlayerChange) = rememberPreference(
         LiquidMiniPlayerKey,
-        defaultValue = false
+        defaultValue = true
     )
     val (playerBackground, onPlayerBackgroundChange) = rememberEnumPreference(
         PlayerBackgroundStyleKey,
@@ -430,6 +433,13 @@ fun PlayerSettings(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
     ) {
+        Spacer(
+            Modifier.windowInsetsPadding(
+                LocalPlayerAwareWindowInsets.current.only(
+                    WindowInsetsSides.Top
+                )
+            )
+        )
         // Group 1 — Player Architecture & Styling
         ExpressiveSettingGroup(
             title = "Player Architecture & Styling",
@@ -438,7 +448,7 @@ fun PlayerSettings(
                     key = "appearance_player_style",
                     icon = painterResource(R.drawable.palette),
                     title = { Text(stringResource(R.string.player_style)) },
-                    description = { Text("Choose from 9 signature and expressive player designs") },
+                    description = { Text("Choose from 8 distinct player designs") },
                     trailingContent = {
                         Text(stringResource(playerStyle.titleRes))
                     },

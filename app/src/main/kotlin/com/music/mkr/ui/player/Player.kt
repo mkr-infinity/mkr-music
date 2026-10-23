@@ -1154,7 +1154,10 @@ fun BottomSheetPlayer(
             )
         },
     ) {
-        val playerStyle by rememberEnumPreference(PlayerStyleKey, defaultValue = PlayerStyle.CINEMATIC)
+        val rawPlayerStyle by rememberEnumPreference(PlayerStyleKey, defaultValue = PlayerStyle.IMMERSIVE_EXTENDED)
+        val playerStyle = remember(rawPlayerStyle) {
+            if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.IMMERSIVE_EXTENDED else rawPlayerStyle
+        }
         val isLoading = playbackState == androidx.media3.common.Player.STATE_BUFFERING
 
         val onOpenMenu: (MediaMetadata) -> Unit = { metadata ->

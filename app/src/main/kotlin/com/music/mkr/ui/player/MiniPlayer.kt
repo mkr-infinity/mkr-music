@@ -247,7 +247,7 @@ private fun NewMiniPlayer(
     // Swipe settings
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnailPref by rememberPreference(SwipeThumbnailKey, true)
-    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = false)
+    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = true)
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
     val haptic = LocalHapticFeedback.current
     var hasTriggeredHapticThreshold by remember { mutableStateOf(false) }
@@ -470,7 +470,7 @@ private fun NewMiniPlayer(
                     listenTogetherManager = listenTogetherManager
                 )
 
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 // Song info - isolated composable
                 NewMiniPlayerSongInfo(
@@ -480,7 +480,7 @@ private fun NewMiniPlayer(
                     modifier = Modifier.weight(1f)
                 )
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(8.dp))
                 
                 // Cast indicator
                 if (isCasting) {
@@ -490,7 +490,7 @@ private fun NewMiniPlayer(
                         tint = primaryColor,
                         modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(8.dp))
                 }
 
                 // Transport controls: Previous, Play/Pause, Next
@@ -505,13 +505,13 @@ private fun NewMiniPlayer(
                             }
                         }
                     },
-                    modifier = Modifier.size(44.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.skip_previous),
                         contentDescription = stringResource(R.string.widget_previous),
                         tint = if (canSkipPrevious && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
 
@@ -530,7 +530,7 @@ private fun NewMiniPlayer(
                             }
                         }
                     },
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.size(42.dp)
                 ) {
                     val isPlaying by playerConnection.isPlaying.collectAsState()
                     val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
@@ -552,7 +552,7 @@ private fun NewMiniPlayer(
                             if (effectiveIsPlaying) stringResource(R.string.pause) else stringResource(R.string.play)
                         },
                         tint = onSurfaceColor,
-                        modifier = Modifier.size(26.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
@@ -567,13 +567,13 @@ private fun NewMiniPlayer(
                             }
                         }
                     },
-                    modifier = Modifier.size(44.dp)
+                    modifier = Modifier.size(38.dp)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.skip_next),
                         contentDescription = stringResource(R.string.next),
                         tint = if (canSkipNext && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
-                        modifier = Modifier.size(22.dp)
+                        modifier = Modifier.size(20.dp)
                     )
                 }
             }
@@ -734,13 +734,17 @@ private fun NewMiniPlayerSongInfo(
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                softWrap = false,
+                modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
             )
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                if (metadata.explicit) MIcon.Explicit()
+                if (metadata.explicit) {
+                    MIcon.Explicit()
+                    Spacer(modifier = Modifier.width(4.dp))
+                }
                 if (metadata.artists.any { it.name.isNotBlank() }) {
                     Text(
                         text = metadata.artists.joinToString { it.name },
@@ -748,7 +752,8 @@ private fun NewMiniPlayerSongInfo(
                         fontSize = 12.sp,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                        softWrap = false,
+                        modifier = Modifier.weight(1f, fill = false).basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
                     )
                 }
             }
@@ -794,7 +799,7 @@ private fun LegacyMiniPlayer(
 
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnailPref by rememberPreference(SwipeThumbnailKey, true)
-    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = false)
+    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = true)
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
     val haptic = LocalHapticFeedback.current
     var hasTriggeredHapticThreshold by remember { mutableStateOf(false) }
@@ -1171,11 +1176,12 @@ private fun LegacyMiniMediaInfo(
             Text(
                 text = mediaMetadata.title,
                 color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 16.sp,
+                fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.basicMarquee(),
+                softWrap = false,
+                modifier = Modifier.fillMaxWidth().basicMarquee(),
             )
 
             if (mediaMetadata.artists.any { it.name.isNotBlank() }) {
@@ -1185,6 +1191,8 @@ private fun LegacyMiniMediaInfo(
                     fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
+                    softWrap = false,
+                    modifier = Modifier.fillMaxWidth().basicMarquee(),
                 )
             }
         }

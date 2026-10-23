@@ -96,7 +96,7 @@ fun PlayerStyleSelectionDialog(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "9 Native Playback Interfaces",
+                        text = "8 Playback Interfaces",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -114,33 +114,8 @@ fun PlayerStyleSelectionDialog(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     contentPadding = PaddingValues(vertical = 4.dp)
                 ) {
-                    item(key = "header_apple") {
-                        Text(
-                            text = "Signature Design",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MkrAmberAccent,
-                            modifier = Modifier.padding(start = 4.dp, top = 2.dp, bottom = 2.dp)
-                        )
-                    }
-                    item(key = PlayerStyle.APPLE.name) {
-                        PlayerStyleCard(
-                            style = PlayerStyle.APPLE,
-                            isSelected = currentStyle == PlayerStyle.APPLE,
-                            onClick = { onSelect(PlayerStyle.APPLE) }
-                        )
-                    }
-                    item(key = "header_expressive") {
-                        Text(
-                            text = "Expressive Architectures (8 Styles)",
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 4.dp, top = 8.dp, bottom = 2.dp)
-                        )
-                    }
                     items(
-                        items = PlayerStyle.entries.filter { it != PlayerStyle.APPLE },
+                        items = PlayerStyle.selectableStyles,
                         key = { it.name }
                     ) { style ->
                         PlayerStyleCard(

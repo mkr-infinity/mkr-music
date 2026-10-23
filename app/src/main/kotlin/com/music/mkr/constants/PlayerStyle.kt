@@ -10,7 +10,7 @@ import com.music.mkr.R
 
 /**
  * Supported playback architectures in MKR Music:
- * Apple Player alongside eight native expressive visual architectures.
+ * Eight native expressive visual architectures.
  */
 enum class PlayerStyle(
     @StringRes val titleRes: Int,
@@ -54,8 +54,12 @@ enum class PlayerStyle(
     );
 
     companion object {
+        val DEFAULT = IMMERSIVE_EXTENDED
+        val selectableStyles: List<PlayerStyle> = entries.filter { it != APPLE }
+
         fun fromString(name: String?): PlayerStyle {
-            return entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: CINEMATIC
+            val style = entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: IMMERSIVE_EXTENDED
+            return if (style == APPLE) IMMERSIVE_EXTENDED else style
         }
     }
 }
