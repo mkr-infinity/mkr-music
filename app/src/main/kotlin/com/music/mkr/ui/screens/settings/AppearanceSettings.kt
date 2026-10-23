@@ -634,13 +634,17 @@ fun AppearanceSettings(
                 showDefaultOpenTabDialog = false
             },
             title = stringResource(R.string.default_open_tab),
-            current = defaultOpenTab,
-            values = NavigationTab.values().toList(),
+            current = if (defaultOpenTab == NavigationTab.ACCOUNT) NavigationTab.HOME else defaultOpenTab,
+            values = listOf(
+                NavigationTab.HOME,
+                NavigationTab.LIBRARY,
+                NavigationTab.SEARCH
+            ),
             valueText = {
                 when (it) {
                     NavigationTab.HOME -> stringResource(R.string.home)
-                    NavigationTab.SEARCH -> stringResource(R.string.search)
                     NavigationTab.LIBRARY -> stringResource(R.string.filter_library)
+                    NavigationTab.SEARCH -> stringResource(R.string.search)
                     NavigationTab.ACCOUNT -> stringResource(R.string.account)
                 }
             }

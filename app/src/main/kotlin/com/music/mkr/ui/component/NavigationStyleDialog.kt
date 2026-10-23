@@ -234,14 +234,13 @@ private fun NavigationStyleMiniPreview(
     ) {
         when (style) {
             NavigationStyle.AMBER_DOCK -> {
-                // Dock with glowing indicator under active tab (4 destinations)
+                // Dock with glowing indicator under active tab (3 destinations)
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(3.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
-                        Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)))
                         Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)))
                         Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)))
                     }
@@ -250,7 +249,7 @@ private fun NavigationStyleMiniPreview(
                 }
             }
             NavigationStyle.FLOATING_GLASS -> {
-                // Frosted glass capsule with glow (4 destinations balanced spacing)
+                // Frosted glass capsule with glow (3 destinations balanced spacing)
                 Box(
                     modifier = Modifier
                         .size(width = 46.dp, height = 22.dp)
@@ -262,23 +261,22 @@ private fun NavigationStyleMiniPreview(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 6.dp),
+                            .padding(horizontal = 7.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
                         Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
                         Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
-                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
                     }
                 }
             }
             NavigationStyle.EXPRESSIVE_PILL -> {
-                // Pill with expanded active tab (4 destinations)
+                // Pill with expanded active tab (3 destinations)
                 Row(
                     modifier = Modifier.padding(horizontal = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -289,11 +287,10 @@ private fun NavigationStyleMiniPreview(
                     )
                     Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)))
                     Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)))
-                    Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)))
                 }
             }
             NavigationStyle.CLEAN_MATERIAL -> {
-                // Full-width bar with pill indicator (4 destinations)
+                // Full-width bar with pill indicator (3 destinations)
                 Column(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 3.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
