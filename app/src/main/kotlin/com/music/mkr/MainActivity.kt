@@ -1532,7 +1532,16 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleDeepLinkIntent(intent: Intent, navController: NavHostController) {
-        val uri = intent.data ?: intent.extras?.getString(Intent.EXTRA_TEXT)?.toUri() ?: return
+        val rawText = intent.extras?.getString(Intent.EXTRA_TEXT)
+        val uri: Uri = intent.data ?: run {
+            if (rawText != null) {
+                val urlMatch = Regex("""(https?://[^\s]+)""").find(rawText)?.value
+                urlMatch?.toUri() ?: runCatching { rawText.trim().toUri() }.getOrNull()
+            } else {
+                null
+            }
+        } ?: return
+
         intent.data = null
         intent.removeExtra(Intent.EXTRA_TEXT)
         val coroutineScope = lifecycle.coroutineScope
@@ -1546,8 +1555,6 @@ class MainActivity : ComponentActivity() {
             listenTogetherManager.joinRoom(listenCode, username)
             return
         }
-
-
 
         when (val path = uri.pathSegments.firstOrNull()) {
             "playlist" -> uri.getQueryParameter("list")?.let { playlistId ->
@@ -1583,41 +1590,91 @@ class MainActivity : ComponentActivity() {
             else -> {
                 val videoId = when {
                     path == "watch" -> uri.getQueryParameter("v")
-                    uri.host == "youtu.be" -> uri.pathSegments.firstOrNull()
-                    else -> null
+                    uri.host?.contains("youtu.be") == true -> uri.pathSegments.firstOrNull()
+                    uri.pathSegments.contains("shorts") -> {
+                        val idx = uri.pathSegments.indexOf("shorts")
+                        uri.pathSegments.getOrNull(idx + 1)
+                    }
+                    uri.pathSegments.contains("live") -> {
+                        val idx = uri.pathSegments.indexOf("live")
+                        uri.pathSegments.getOrNull(idx + 1)
+                    }
+                    uri.pathSegments.contains("embed") -> {
+                        val idx = uri.pathSegments.indexOf("embed")
+                        uri.pathSegments.getOrNull(idx + 1)
+                    }
+                    uri.pathSegments.contains("v") -> {
+                        val idx = uri.pathSegments.indexOf("v")
+                        uri.pathSegments.getOrNull(idx + 1)
+                    }
+                    else -> {
+                        Regex("""(?:v=|/(?:v|embed|shorts|live)/|youtu\.be/)([a-zA-Z0-9_-]{11})""")
+                            .find(uri.toString())?.groupValues?.get(1)
+                    }
                 }
 
                 val playlistId = uri.getQueryParameter("list")
 
                 if (videoId != null) {
                     coroutineScope.launch(Dispatchers.IO) {
+                        var attempts = 0
+                        while (playerConnection == null && attempts < 15) {
+                            delay(200)
+                            attempts++
+                        }
+
                         YouTube.queue(listOf(videoId), playlistId).onSuccess { queue ->
-                            withContext(Dispatchers.Main) {
-                                playerConnection?.playQueue(
-                                    YouTubeQueue(
-                                        WatchEndpoint(videoId = queue.firstOrNull()?.id, playlistId = playlistId),
-                                        queue.firstOrNull()?.toMediaMetadata()
+                            val firstItem = queue.firstOrNull()
+                            if (firstItem != null) {
+                                withContext(Dispatchers.Main) {
+                                    playerConnection?.playQueue(
+                                        YouTubeQueue(
+                                            WatchEndpoint(videoId = firstItem.id, playlistId = playlistId),
+                                            firstItem.toMediaMetadata()
+                                        )
                                     )
-                                )
+                                }
+                            } else {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(this@MainActivity, R.string.error_playback_failed, Toast.LENGTH_SHORT).show()
+                                }
                             }
-                        }.onFailure {
-                            reportException(it)
+                        }.onFailure { ex ->
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(this@MainActivity, R.string.error_no_stream, Toast.LENGTH_SHORT).show()
+                            }
+                            reportException(ex)
                         }
                     }
                 } else if (playlistId != null) {
                     coroutineScope.launch(Dispatchers.IO) {
+                        var attempts = 0
+                        while (playerConnection == null && attempts < 15) {
+                            delay(200)
+                            attempts++
+                        }
+
                         YouTube.queue(null, playlistId).onSuccess { queue ->
                             val firstItem = queue.firstOrNull()
-                            withContext(Dispatchers.Main) {
-                                playerConnection?.playQueue(
-                                    YouTubeQueue(
-                                        WatchEndpoint(videoId = firstItem?.id, playlistId = playlistId),
-                                        firstItem?.toMediaMetadata()
+                            if (firstItem != null) {
+                                withContext(Dispatchers.Main) {
+                                    playerConnection?.playQueue(
+                                        YouTubeQueue(
+                                            WatchEndpoint(videoId = firstItem.id, playlistId = playlistId),
+                                            firstItem.toMediaMetadata()
+                                        )
                                     )
-                                )
+                                }
+                            } else {
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(this@MainActivity, R.string.error_playback_failed, Toast.LENGTH_SHORT).show()
+                                }
                             }
-                        }.onFailure {
-                            reportException(it)
+                        }.onFailure { ex ->
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(this@MainActivity, R.string.error_no_stream, Toast.LENGTH_SHORT).show()
+                            }
+                            reportException(ex)
                         }
                     }
                 }
