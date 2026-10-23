@@ -69,6 +69,8 @@ import com.music.mkr.constants.SkipSilenceInstantKey
 import com.music.mkr.constants.SkipSilenceKey
 import com.music.mkr.constants.StopMusicOnTaskClearKey
 import com.music.mkr.constants.LiquidMiniPlayerKey
+import com.music.mkr.constants.PureBlackMiniPlayerKey
+import com.music.mkr.constants.MiniPlayerBackgroundStyleKey
 import com.music.mkr.constants.PlayerBackgroundStyle
 import com.music.mkr.constants.PlayerBackgroundStyleKey
 import com.music.mkr.constants.PlayerStyle
@@ -259,9 +261,21 @@ fun PlayerSettings(
         defaultValue = PlayerBackgroundStyle.GRADIENT
     )
 
+    val (pureBlackMiniPlayer, onPureBlackMiniPlayerChange) = rememberPreference(
+        PureBlackMiniPlayerKey,
+        defaultValue = false
+    )
+    val (miniPlayerBackground, onMiniPlayerBackgroundChange) = rememberEnumPreference(
+        MiniPlayerBackgroundStyleKey,
+        defaultValue = PlayerBackgroundStyle.DEFAULT
+    )
+
     var showPlayerDesignDialog by remember { mutableStateOf(false) }
     var showMiniPlayerDesignDialog by remember { mutableStateOf(false) }
     var showPlayerBackgroundDialog by remember { mutableStateOf(false) }
+    var showMiniPlayerBackgroundDialog by remember { mutableStateOf(false) }
+    var showCrossfadeBetaDialog by remember { mutableStateOf(false) }
+    var showCrossfadeCurveDialog by remember { mutableStateOf(false) }
 
     if (showPlayerDesignDialog) {
         PlayerStyleSelectionDialog(
@@ -341,6 +355,71 @@ fun PlayerSettings(
         )
     }
 
+    if (showMiniPlayerBackgroundDialog) {
+        EnumDialog(
+            onDismiss = { showMiniPlayerBackgroundDialog = false },
+            onSelect = {
+                onMiniPlayerBackgroundChange(it)
+                showMiniPlayerBackgroundDialog = false
+            },
+            title = stringResource(R.string.miniplayer_background_style),
+            current = miniPlayerBackground,
+            values = listOf(
+                PlayerBackgroundStyle.DEFAULT,
+                PlayerBackgroundStyle.GRADIENT,
+                PlayerBackgroundStyle.BLUR,
+                PlayerBackgroundStyle.GLOW_ANIMATED,
+                PlayerBackgroundStyle.LIVE_MESH
+            ),
+            valueText = {
+                when (it) {
+                    PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
+                    PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
+                    PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
+                    PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
+                    PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
+                    else -> stringResource(R.string.follow_theme)
+                }
+            }
+        )
+    }
+
+    if (showCrossfadeCurveDialog) {
+        EnumDialog(
+            onDismiss = { showCrossfadeCurveDialog = false },
+            onSelect = {
+                onCrossfadeCurveChange(it)
+                showCrossfadeCurveDialog = false
+            },
+            title = stringResource(R.string.crossfade_curve),
+            current = crossfadeCurve,
+            values = CrossfadeCurve.entries,
+            valueText = {
+                when (it) {
+                    CrossfadeCurve.EQUAL_POWER -> stringResource(R.string.crossfade_curve_entry_equal_power)
+                    CrossfadeCurve.EASE_OUT_QUAD -> stringResource(R.string.crossfade_curve_entry_ease_out_quad)
+                    CrossfadeCurve.EASE_OUT_CUBIC -> stringResource(R.string.crossfade_curve_entry_ease_out_cubic)
+                    CrossfadeCurve.SMOOTHSTEP -> stringResource(R.string.crossfade_curve_entry_smoothstep)
+                }
+            }
+        )
+    }
+
+    if (showCrossfadeBetaDialog) {
+        ActionPromptDialog(
+            onDismiss = { showCrossfadeBetaDialog = false },
+            title = stringResource(R.string.crossfade_beta_title),
+            onCancel = { showCrossfadeBetaDialog = false },
+            onConfirm = {
+                showCrossfadeBetaDialog = false
+                onCrossfadeEnabledChange(true)
+            },
+            content = {
+                Text(stringResource(R.string.crossfade_beta_message))
+            }
+        )
+    }
+
     Column(
         Modifier
             .windowInsetsPadding(
@@ -351,6 +430,7 @@ fun PlayerSettings(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
     ) {
+        // Group 1 — Player Architecture & Styling
         ExpressiveSettingGroup(
             title = "Player Architecture & Styling",
             items = listOf(
@@ -364,6 +444,34 @@ fun PlayerSettings(
                     },
                     onClick = { showPlayerDesignDialog = true }
                 ),
+                Material3SettingsItem(
+                    key = "appearance_player_background",
+                    icon = painterResource(R.drawable.gradient),
+                    title = { Text(stringResource(R.string.player_background_style)) },
+                    description = { Text("Apple Music fluid mesh, gradient, animated glow or theme") },
+                    trailingContent = {
+                        Text(
+                            when (playerBackground) {
+                                PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
+                                PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
+                                PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
+                                PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
+                                PlayerBackgroundStyle.APPLE_MUSIC -> stringResource(R.string.apple_music)
+                                PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
+                            }
+                        )
+                    },
+                    onClick = { showPlayerBackgroundDialog = true }
+                )
+            )
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Group 2 — Mini Player
+        ExpressiveSettingGroup(
+            title = stringResource(R.string.mini_player),
+            items = listOf(
                 Material3SettingsItem(
                     key = "appearance_apple_player",
                     icon = painterResource(R.drawable.nav_bar),
@@ -403,77 +511,53 @@ fun PlayerSettings(
                     onClick = { onLiquidMiniPlayerChange(!liquidMiniPlayer) }
                 ),
                 Material3SettingsItem(
-                    key = "appearance_player_background",
-                    icon = painterResource(R.drawable.gradient),
-                    title = { Text(stringResource(R.string.player_background_style)) },
-                    description = { Text("Apple Music fluid mesh, gradient, animated glow or theme") },
+                    key = "appearance_pure_black",
+                    icon = painterResource(R.drawable.contrast),
+                    title = { Text(stringResource(R.string.pure_black_mini_player)) },
+                    description = { Text("Use pure AMOLED black background on mini player") },
+                    trailingContent = {
+                        Switch(
+                            checked = pureBlackMiniPlayer,
+                            onCheckedChange = onPureBlackMiniPlayerChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (pureBlackMiniPlayer) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onPureBlackMiniPlayerChange(!pureBlackMiniPlayer) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.palette),
+                    title = { Text(stringResource(R.string.miniplayer_background_style)) },
+                    description = { Text("Follow theme, gradient, blur, or animated glow") },
                     trailingContent = {
                         Text(
-                            when (playerBackground) {
+                            when (miniPlayerBackground) {
                                 PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
                                 PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
                                 PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
                                 PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
-                                PlayerBackgroundStyle.APPLE_MUSIC -> stringResource(R.string.apple_music)
                                 PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
+                                else -> stringResource(R.string.follow_theme)
                             }
                         )
                     },
-                    onClick = { showPlayerBackgroundDialog = true }
+                    onClick = { showMiniPlayerBackgroundDialog = true }
                 )
             )
         )
 
-        Spacer(modifier = Modifier.height(10.dp))
-        var showCrossfadeBetaDialog by remember { mutableStateOf(false) }
-        var showCrossfadeCurveDialog by remember { mutableStateOf(false) }
+        Spacer(modifier = Modifier.height(16.dp))
 
-        if (showCrossfadeCurveDialog) {
-            EnumDialog(
-                onDismiss = { showCrossfadeCurveDialog = false },
-                onSelect = {
-                    onCrossfadeCurveChange(it)
-                    showCrossfadeCurveDialog = false
-                },
-                title = stringResource(R.string.crossfade_curve),
-                current = crossfadeCurve,
-                values = CrossfadeCurve.entries,
-                valueText = {
-                    when (it) {
-                        CrossfadeCurve.EQUAL_POWER -> stringResource(R.string.crossfade_curve_entry_equal_power)
-                        CrossfadeCurve.EASE_OUT_QUAD -> stringResource(R.string.crossfade_curve_entry_ease_out_quad)
-                        CrossfadeCurve.EASE_OUT_CUBIC -> stringResource(R.string.crossfade_curve_entry_ease_out_cubic)
-                        CrossfadeCurve.SMOOTHSTEP -> stringResource(R.string.crossfade_curve_entry_smoothstep)
-                    }
-                }
-            )
-        }
-
-        if (showCrossfadeBetaDialog) {
-            ActionPromptDialog(
-                onDismiss = { showCrossfadeBetaDialog = false },
-                title = stringResource(R.string.crossfade_beta_title),
-                onCancel = { showCrossfadeBetaDialog = false },
-                onConfirm = {
-                    showCrossfadeBetaDialog = false
-                    onCrossfadeEnabledChange(true)
-                },
-                content = {
-                    Text(stringResource(R.string.crossfade_beta_message))
-                }
-            )
-        }
-
-        Spacer(
-            Modifier.windowInsetsPadding(
-                LocalPlayerAwareWindowInsets.current.only(
-                    WindowInsetsSides.Top
-                )
-            )
-        )
-
+        // Group 3 — Audio Quality & Sound
         ExpressiveSettingGroup(
-            title = stringResource(R.string.player),
+            title = "Audio Quality & Sound",
             items = buildList {
                 add(Material3SettingsItem(
                     key = "player_audio_quality",
@@ -490,23 +574,158 @@ fun PlayerSettings(
                     },
                     onClick = { showAudioQualityDialog = true }
                 ))
-                // SponsorBlock settings navigation
                 add(Material3SettingsItem(
-                    key = "player_sponsorblock",
-                    icon = painterResource(R.drawable.fast_forward),
-                    title = { Text(stringResource(R.string.sponsorblock)) },
-                    description = { Text(stringResource(R.string.sponsorblock_desc)) },
+                    key = "player_equalizer",
+                    icon = painterResource(R.drawable.mkrequlizer),
+                    title = { Text(stringResource(R.string.mkr_equalizer)) },
+                    description = { Text(stringResource(R.string.mkr_equalizer_desc)) },
+                    onClick = { navController.navigate("settings/equalizer") }
+                ))
+                add(Material3SettingsItem(
+                    icon = painterResource(R.drawable.volume_up),
+                    title = { Text(stringResource(R.string.audio_normalization)) },
                     trailingContent = {
-                        Text(
-                            if (sponsorBlockEnabled) {
-                                stringResource(R.string.enabled)
-                            } else {
-                                stringResource(R.string.disabled)
+                        Switch(
+                            checked = audioNormalization,
+                            onCheckedChange = onAudioNormalizationChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (audioNormalization) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
                             }
                         )
                     },
-                    onClick = { navController.navigate("settings/player/sponsorblock") }
+                    onClick = { onAudioNormalizationChange(!audioNormalization) }
                 ))
+                add(Material3SettingsItem(
+                    icon = painterResource(R.drawable.graphic_eq),
+                    title = { Text(stringResource(R.string.audio_offload)) },
+                    description = {
+                        Text(
+                            if (crossfadeEnabled) stringResource(R.string.audio_offload_disabled_by_crossfade)
+                            else stringResource(R.string.audio_offload_description)
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = if (crossfadeEnabled) false else audioOffload,
+                            onCheckedChange = onAudioOffloadChange,
+                            enabled = !crossfadeEnabled,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (!crossfadeEnabled && audioOffload) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { if (!crossfadeEnabled) onAudioOffloadChange(!audioOffload) }
+                ))
+                add(Material3SettingsItem(
+                    key = "player_skip_silence",
+                    icon = painterResource(R.drawable.fast_forward),
+                    title = { Text(stringResource(R.string.skip_silence)) },
+                    description = { Text(stringResource(R.string.skip_silence_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = skipSilence,
+                            onCheckedChange = onSkipSilenceChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (skipSilence) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onSkipSilenceChange(!skipSilence) }
+                ))
+                add(Material3SettingsItem(
+                    icon = painterResource(R.drawable.skip_next),
+                    title = { Text(stringResource(R.string.skip_silence_instant)) },
+                    description = { Text(stringResource(R.string.skip_silence_instant_desc)) },
+                    trailingContent = {
+                        Switch(
+                            checked = skipSilenceInstant,
+                            onCheckedChange = { onSkipSilenceInstantChange(it) },
+                            enabled = skipSilence,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (skipSilenceInstant) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { if (skipSilence) onSkipSilenceInstantChange(!skipSilenceInstant) }
+                ))
+                add(Material3SettingsItem(
+                    icon = painterResource(R.drawable.arrow_forward),
+                    title = { Text(stringResource(R.string.seek_seconds_addup)) },
+                    description = { Text(stringResource(R.string.seek_seconds_addup_description)) },
+                    trailingContent = {
+                        Switch(
+                            checked = seekExtraSeconds,
+                            onCheckedChange = onSeekExtraSeconds,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (seekExtraSeconds) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onSeekExtraSeconds(!seekExtraSeconds) }
+                ))
+                // Only show Cast setting in GMS builds (not in F-Droid/FOSS)
+                if (BuildConfig.CAST_AVAILABLE) {
+                    add(Material3SettingsItem(
+                        icon = painterResource(R.drawable.cast),
+                        title = { Text(stringResource(R.string.google_cast)) },
+                        description = { Text(stringResource(R.string.google_cast_description)) },
+                        trailingContent = {
+                            Switch(
+                                checked = enableGoogleCast,
+                                onCheckedChange = onEnableGoogleCastChange,
+                                thumbContent = {
+                                    Icon(
+                                        painter = painterResource(
+                                            id = if (enableGoogleCast) R.drawable.check else R.drawable.close
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(SwitchDefaults.IconSize)
+                                    )
+                                }
+                            )
+                        },
+                        onClick = { onEnableGoogleCastChange(!enableGoogleCast) }
+                    ))
+                }
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Group 4 — Transitions & Crossfade
+        ExpressiveSettingGroup(
+            title = stringResource(R.string.crossfade),
+            items = buildList {
                 add(Material3SettingsItem(
                     key = "player_crossfade",
                     icon = painterResource(R.drawable.linear_scale),
@@ -623,167 +842,10 @@ fun PlayerSettings(
                         onClick = { onCrossfadeManualSkipChange(!crossfadeManualSkip) }
                     ))
                 }
-                add(Material3SettingsItem(
-                    icon = painterResource(R.drawable.history),
-                    title = { Text(stringResource(R.string.history_duration)) },
-                    description = {
-                        Column {
-                            Text(historyDuration.roundToInt().toString())
-                            Slider(
-                                value = historyDuration,
-                                onValueChange = onHistoryDurationChange,
-                                valueRange = 1f..100f
-                            )
-                        }
-                    }
-                ))
-                add(Material3SettingsItem(
-                    key = "player_skip_silence",
-                    icon = painterResource(R.drawable.fast_forward),
-                    title = { Text(stringResource(R.string.skip_silence)) },
-                    description = { Text(stringResource(R.string.skip_silence_desc)) },
-                    trailingContent = {
-                        Switch(
-                            checked = skipSilence,
-                            onCheckedChange = onSkipSilenceChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (skipSilence) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onSkipSilenceChange(!skipSilence) }
-                ))
-                add(Material3SettingsItem(
-                    icon = painterResource(R.drawable.skip_next),
-                    title = { Text(stringResource(R.string.skip_silence_instant)) },
-                    description = { Text(stringResource(R.string.skip_silence_instant_desc)) },
-                    trailingContent = {
-                        Switch(
-                            checked = skipSilenceInstant,
-                            onCheckedChange = { onSkipSilenceInstantChange(it) },
-                            enabled = skipSilence,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (skipSilenceInstant) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { if (skipSilence) onSkipSilenceInstantChange(!skipSilenceInstant) }
-                ))
-                add(Material3SettingsItem(
-                    icon = painterResource(R.drawable.volume_up),
-                    title = { Text(stringResource(R.string.audio_normalization)) },
-                    trailingContent = {
-                        Switch(
-                            checked = audioNormalization,
-                            onCheckedChange = onAudioNormalizationChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (audioNormalization) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onAudioNormalizationChange(!audioNormalization) }
-                ))
-                add(Material3SettingsItem(
-                    icon = painterResource(R.drawable.graphic_eq),
-                    title = { Text(stringResource(R.string.audio_offload)) },
-                    description = {
-                        Text(
-                            if (crossfadeEnabled) stringResource(R.string.audio_offload_disabled_by_crossfade)
-                            else stringResource(R.string.audio_offload_description)
-                        )
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = if (crossfadeEnabled) false else audioOffload,
-                            onCheckedChange = onAudioOffloadChange,
-                            enabled = !crossfadeEnabled,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (!crossfadeEnabled && audioOffload) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { if (!crossfadeEnabled) onAudioOffloadChange(!audioOffload) }
-                ))
-                // Only show Cast setting in GMS builds (not in F-Droid/FOSS)
-                if (BuildConfig.CAST_AVAILABLE) {
-                    add(Material3SettingsItem(
-                        icon = painterResource(R.drawable.cast),
-                        title = { Text(stringResource(R.string.google_cast)) },
-                        description = { Text(stringResource(R.string.google_cast_description)) },
-                        trailingContent = {
-                            Switch(
-                                checked = enableGoogleCast,
-                                onCheckedChange = onEnableGoogleCastChange,
-                                thumbContent = {
-                                    Icon(
-                                        painter = painterResource(
-                                            id = if (enableGoogleCast) R.drawable.check else R.drawable.close
-                                        ),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(SwitchDefaults.IconSize)
-                                    )
-                                }
-                            )
-                        },
-                        onClick = { onEnableGoogleCastChange(!enableGoogleCast) }
-                    ))
-                }
-                add(Material3SettingsItem(
-                    icon = painterResource(R.drawable.arrow_forward),
-                    title = { Text(stringResource(R.string.seek_seconds_addup)) },
-                    description = { Text(stringResource(R.string.seek_seconds_addup_description)) },
-                    trailingContent = {
-                        Switch(
-                            checked = seekExtraSeconds,
-                            onCheckedChange = onSeekExtraSeconds,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (seekExtraSeconds) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onSeekExtraSeconds(!seekExtraSeconds) }
-                ))
-                add(Material3SettingsItem(
-                    key = "player_equalizer",
-                    icon = painterResource(R.drawable.mkrequlizer),
-                    title = { Text(stringResource(R.string.mkr_equalizer)) },
-                    description = { Text(stringResource(R.string.mkr_equalizer_desc)) },
-                    onClick = { navController.navigate("settings/equalizer") }
-                ))
             }
         )
 
-        Spacer(modifier = Modifier.height(27.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         ExpressiveSettingGroup(
             title = stringResource(R.string.queue),
@@ -998,15 +1060,45 @@ fun PlayerSettings(
                         )
                     },
                     onClick = { onAutoSkipNextOnErrorChange(!autoSkipNextOnError) }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.history),
+                    title = { Text(stringResource(R.string.history_duration)) },
+                    description = {
+                        Column {
+                            Text(historyDuration.roundToInt().toString())
+                            Slider(
+                                value = historyDuration,
+                                onValueChange = onHistoryDurationChange,
+                                valueRange = 1f..100f
+                            )
+                        }
+                    }
                 )
             )
         )
 
-        Spacer(modifier = Modifier.height(27.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         ExpressiveSettingGroup(
             title = stringResource(R.string.misc),
             items = listOf(
+                Material3SettingsItem(
+                    key = "player_sponsorblock",
+                    icon = painterResource(R.drawable.fast_forward),
+                    title = { Text(stringResource(R.string.sponsorblock)) },
+                    description = { Text(stringResource(R.string.sponsorblock_desc)) },
+                    trailingContent = {
+                        Text(
+                            if (sponsorBlockEnabled) {
+                                stringResource(R.string.enabled)
+                            } else {
+                                stringResource(R.string.disabled)
+                            }
+                        )
+                    },
+                    onClick = { navController.navigate("settings/player/sponsorblock") }
+                ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.clear_all),
                     title = { Text(stringResource(R.string.stop_music_on_task_clear)) },

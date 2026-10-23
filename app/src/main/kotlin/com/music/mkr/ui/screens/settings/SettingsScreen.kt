@@ -240,8 +240,8 @@ fun SettingsScreen(
                 )
             }
         } else {
-            // Section 1 — Horizontally Scrolling 2×2 Category Hub Grid (8 Authentic Categories)
-            val hubCategories = remember {
+            // Section 1 — Four Primary Categories in Card-Style UI
+            val primaryCards = remember {
                 listOf(
                     SettingsHubCategory(
                         key = "appearance_theme_palette",
@@ -253,23 +253,9 @@ fun SettingsScreen(
                     SettingsHubCategory(
                         key = "player_audio_quality",
                         icon = R.drawable.earbud_case,
-                        title = "Player & Audio",
+                        title = "Player and Audio",
                         subtitle = "Quality, styling & EQ",
                         route = "settings/player"
-                    ),
-                    SettingsHubCategory(
-                        key = "content_language",
-                        icon = R.drawable.language,
-                        title = "Content",
-                        subtitle = "Languages & explicit filter",
-                        route = "settings/content"
-                    ),
-                    SettingsHubCategory(
-                        key = "storage_downloads",
-                        icon = R.drawable.storage,
-                        title = "Storage",
-                        subtitle = "Cache & download budget",
-                        route = "settings/storage"
                     ),
                     SettingsHubCategory(
                         key = "account_login",
@@ -279,103 +265,72 @@ fun SettingsScreen(
                         route = "settings/account"
                     ),
                     SettingsHubCategory(
-                        key = "privacy_history",
-                        icon = R.drawable.security,
-                        title = "Privacy",
-                        subtitle = "History & tracking controls",
-                        route = "settings/privacy"
-                    ),
-                    SettingsHubCategory(
-                        key = "backup_export_import",
-                        icon = R.drawable.restore,
-                        title = "Backup & Restore",
-                        subtitle = "Import & export data",
-                        route = "settings/backup_restore"
-                    ),
-                    SettingsHubCategory(
-                        key = "about_app",
-                        icon = R.drawable.info,
-                        title = "About",
-                        subtitle = "Version, licenses & credits",
-                        route = "settings/about"
+                        key = "storage_downloads",
+                        icon = R.drawable.storage,
+                        title = "Storage",
+                        subtitle = "Cache & download budget",
+                        route = "settings/storage"
                     )
                 )
             }
 
-            LazyHorizontalGrid(
-                rows = GridCells.Fixed(2),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(184.dp),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
+            Column(
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                items(hubCategories) { category ->
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
                     SettingsGridCard(
                         modifier = Modifier
-                            .width(172.dp)
-                            .height(87.dp),
-                        key = category.key,
-                        icon = category.icon,
-                        title = category.title,
-                        subtitle = category.subtitle,
-                        onClick = { navController.navigate(category.route) }
+                            .weight(1f)
+                            .height(88.dp),
+                        key = primaryCards[0].key,
+                        icon = primaryCards[0].icon,
+                        title = primaryCards[0].title,
+                        subtitle = primaryCards[0].subtitle,
+                        onClick = { navController.navigate(primaryCards[0].route) }
+                    )
+                    SettingsGridCard(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(88.dp),
+                        key = primaryCards[1].key,
+                        icon = primaryCards[1].icon,
+                        title = primaryCards[1].title,
+                        subtitle = primaryCards[1].subtitle,
+                        onClick = { navController.navigate(primaryCards[1].route) }
+                    )
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    SettingsGridCard(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(88.dp),
+                        key = primaryCards[2].key,
+                        icon = primaryCards[2].icon,
+                        title = primaryCards[2].title,
+                        subtitle = primaryCards[2].subtitle,
+                        onClick = { navController.navigate(primaryCards[2].route) }
+                    )
+                    SettingsGridCard(
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(88.dp),
+                        key = primaryCards[3].key,
+                        icon = primaryCards[3].icon,
+                        title = primaryCards[3].title,
+                        subtitle = primaryCards[3].subtitle,
+                        onClick = { navController.navigate(primaryCards[3].route) }
                     )
                 }
             }
 
-            // Section 2 — Playback & Audio
-            ExpressiveSettingGroup(
-                title = "Playback & Audio",
-                itemMinHeight = 64.dp,
-                items = listOf(
-                    Material3SettingsItem(
-                        key = "player_audio_quality",
-                        icon = painterResource(R.drawable.graphic_eq),
-                        title = { Text(stringResource(R.string.audio_quality)) },
-                        description = { Text("Opus streaming bitrate, audio offload, and sound settings") },
-                        onClick = { navController.navigate("settings/player") }
-                    ),
-                    Material3SettingsItem(
-                        key = "player_equalizer",
-                        icon = painterResource(R.drawable.mkrequlizer),
-                        title = { Text("Axion Equalizer & Bass Boost") },
-                        description = { Text("Parametric EQ, Dolby Atmos and Dirac sound enhancement") },
-                        onClick = { navController.navigate("settings/equalizer") }
-                    ),
-                    Material3SettingsItem(
-                        key = "player_sponsorblock",
-                        icon = painterResource(R.drawable.fast_forward),
-                        title = { Text("SponsorBlock") },
-                        description = { Text("Skip non-music video scenes and sponsorships automatically") },
-                        onClick = { navController.navigate("settings/player/sponsorblock") }
-                    )
-                )
-            )
-
-            // Section 3 — UI & Appearance
-            ExpressiveSettingGroup(
-                title = "UI & Appearance",
-                itemMinHeight = 64.dp,
-                items = listOf(
-                    Material3SettingsItem(
-                        key = "appearance_theme_palette",
-                        icon = painterResource(R.drawable.palette),
-                        title = { Text("Theme & Palette") },
-                        description = { Text("Dynamic Material You colors, amber accents, and pure black OLED mode") },
-                        onClick = { navController.navigate("settings/appearance") }
-                    ),
-                    Material3SettingsItem(
-                        key = "appearance_custom_font",
-                        icon = painterResource(R.drawable.palette),
-                        title = { Text("Typography & Fonts") },
-                        description = { Text("Google Sans, Sans Flex, Outfit, Plus Jakarta Sans, or custom font") },
-                        onClick = { navController.navigate("settings/appearance/font") }
-                    )
-                )
-            )
-
-            // Section 4 — Content & AI
+            // Section 2 — Content & AI
             ExpressiveSettingGroup(
                 title = "Content & AI",
                 itemMinHeight = 64.dp,
@@ -393,13 +348,6 @@ fun SettingsScreen(
                         title = { Text(stringResource(R.string.ai_lyrics_translation)) },
                         description = { Text("Real-time song lyrics translation using intelligent AI") },
                         onClick = { navController.navigate("settings/ai") }
-                    ),
-                    Material3SettingsItem(
-                        key = "content_romanization",
-                        icon = painterResource(R.drawable.language),
-                        title = { Text("Romanization") },
-                        description = { Text("Romanize Japanese, Korean, Chinese & other non-Latin titles") },
-                        onClick = { navController.navigate("settings/content/romanization") }
                     )
                 )
             )
