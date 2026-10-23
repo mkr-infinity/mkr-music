@@ -3636,27 +3636,16 @@ class MusicService :
                 }
             }
 
-            // Automatically cache songs recorded in listening history so they are available offline
+            // Transient playback caching: ensure played song is cached in playerCache without invoking explicit download workflow
             if (!dataStore.get(DisableSongCacheKey, false)) {
                 scope.launch(Dispatchers.IO) {
                     try {
-                        if (!downloadCache.isCached(mediaItem.mediaId, 0, 1024)) {
-                            val downloadRequest =
-                                androidx.media3.exoplayer.offline.DownloadRequest
-                                    .Builder(mediaItem.mediaId, mediaItem.mediaId.toUri())
-                                    .setCustomCacheKey(mediaItem.mediaId)
-                                    .setData((mediaItem.mediaMetadata.title?.toString() ?: mediaItem.mediaId).toByteArray())
-                                    .build()
-                            androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
-                                this@MusicService,
-                                ExoDownloadService::class.java,
-                                downloadRequest,
-                                false
-                            )
-                            Timber.tag(TAG).d("Auto-cached listening history song ${mediaItem.mediaId} for offline playback")
+                        if (!playerCache.isCached(mediaItem.mediaId, 0, 1024) && !downloadCache.isCached(mediaItem.mediaId, 0, 1024)) {
+                            scheduleDelayedCache(mediaItem.mediaId)
+                            Timber.tag(TAG).d("Scheduled background playerCache caching for ${mediaItem.mediaId}")
                         }
                     } catch (e: Exception) {
-                        Timber.tag(TAG).w(e, "Could not auto-cache history song ${mediaItem.mediaId}")
+                        Timber.tag(TAG).w(e, "Could not background cache playback song ${mediaItem.mediaId}")
                     }
                 }
             }

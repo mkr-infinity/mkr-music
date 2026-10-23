@@ -94,8 +94,20 @@ object AppModule {
         @ApplicationContext context: Context,
         databaseProvider: DatabaseProvider,
     ): SimpleCache {
+        val downloadDir = runCatching {
+            val customPath = context.getSharedPreferences("mkr_storage_prefs", Context.MODE_PRIVATE)
+                .getString("custom_download_path", null)
+                ?.takeIf { it.isNotBlank() }
+            if (customPath != null) {
+                val dir = java.io.File(customPath)
+                if ((dir.exists() || dir.mkdirs()) && dir.canWrite()) {
+                    dir
+                } else null
+            } else null
+        }.getOrNull() ?: context.filesDir.resolve("download").also { it.mkdirs() }
+
         return SimpleCache(
-            context.filesDir.resolve("download"),
+            downloadDir,
             NoOpCacheEvictor(),
             databaseProvider
         )

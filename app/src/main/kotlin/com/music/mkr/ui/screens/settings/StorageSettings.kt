@@ -49,6 +49,13 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import android.content.Context
+import android.content.Intent
+import android.net.Uri
+import android.provider.DocumentsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toUri
 import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
 import coil3.annotation.ExperimentalCoilApi
@@ -61,6 +68,9 @@ import com.music.mkr.constants.DisableSongCacheKey
 import com.music.mkr.constants.SongCacheDelaySecondsKey
 import com.music.mkr.constants.MaxImageCacheSizeKey
 import com.music.mkr.constants.MaxSongCacheSizeKey
+import com.music.mkr.constants.CustomDownloadFolderUriKey
+import com.music.mkr.constants.CustomDownloadFolderNameKey
+import com.music.mkr.constants.CustomDownloadFolderPathKey
 import com.music.mkr.extensions.tryOrNull
 import com.music.mkr.ui.component.ActionPromptDialog
 import com.music.mkr.ui.component.IconButton
@@ -109,6 +119,86 @@ fun StorageSettings(
         key = SongCacheDelaySecondsKey,
         defaultValue = 10
     )
+    val (customDownloadFolderUri, onCustomDownloadFolderUriChange) = rememberPreference(
+        key = CustomDownloadFolderUriKey,
+        defaultValue = ""
+    )
+    val (customDownloadFolderName, onCustomDownloadFolderNameChange) = rememberPreference(
+        key = CustomDownloadFolderNameKey,
+        defaultValue = ""
+    )
+    val (customDownloadFolderPath, onCustomDownloadFolderPathChange) = rememberPreference(
+        key = CustomDownloadFolderPathKey,
+        defaultValue = ""
+    )
+    var showResetFolderDialog by remember { mutableStateOf(false) }
+
+    val folderPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocumentTree()
+    ) { treeUri: Uri? ->
+        if (treeUri != null) {
+            try {
+                val takeFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                context.contentResolver.takePersistableUriPermission(treeUri, takeFlags)
+
+                if (customDownloadFolderUri.isNotBlank() && customDownloadFolderUri != treeUri.toString()) {
+                    try {
+                        context.contentResolver.releasePersistableUriPermission(
+                            customDownloadFolderUri.toUri(),
+                            takeFlags
+                        )
+                    } catch (_: Exception) {}
+                }
+
+                val docId = runCatching { DocumentsContract.getTreeDocumentId(treeUri) }.getOrNull()
+                val folderName = docId?.substringAfterLast(':')?.ifBlank { null }
+                    ?: treeUri.lastPathSegment
+                    ?: "Custom Folder"
+
+                val resolvedPath = runCatching {
+                    val raw = treeUri.path.orEmpty()
+                    if (raw.contains(":")) {
+                        val sub = raw.substringAfter(':')
+                        if (raw.contains("primary")) {
+                            "/storage/emulated/0/$sub"
+                        } else {
+                            val volume = raw.substringBefore(':').substringAfterLast('/')
+                            if (volume.isNotBlank()) "/storage/$volume/$sub" else null
+                        }
+                    } else null
+                }.getOrNull().orEmpty()
+
+                onCustomDownloadFolderUriChange(treeUri.toString())
+                onCustomDownloadFolderNameChange(folderName)
+                onCustomDownloadFolderPathChange(resolvedPath)
+
+                val sp = context.getSharedPreferences("mkr_storage_prefs", Context.MODE_PRIVATE)
+                sp.edit()
+                    .putString("custom_download_uri", treeUri.toString())
+                    .putString("custom_download_name", folderName)
+                    .putString("custom_download_path", resolvedPath)
+                    .apply()
+            } catch (e: Exception) {
+                Timber.w(e, "Failed to persist SAF permission for custom download folder")
+            }
+        }
+    }
+
+    val isCustomFolderActive = remember(customDownloadFolderUri) {
+        if (customDownloadFolderUri.isBlank()) {
+            false
+        } else {
+            try {
+                val parsed = customDownloadFolderUri.toUri()
+                context.contentResolver.persistedUriPermissions.any {
+                    it.uri == parsed && (it.isReadPermission || it.isWritePermission)
+                }
+            } catch (_: Exception) {
+                false
+            }
+        }
+    }
+
     var showCustomSizeDialog by remember { mutableStateOf(false) }
 
     var clearDownloads by remember { mutableStateOf(false) }
@@ -217,6 +307,36 @@ fun StorageSettings(
             onCancel = { clearDownloads = false },
             content = {
                 Text(text = stringResource(R.string.clear_downloads_dialog))
+            }
+        )
+    }
+    if (showResetFolderDialog) {
+        ActionPromptDialog(
+            title = "Reset Download Location",
+            onDismiss = { showResetFolderDialog = false },
+            onConfirm = {
+                try {
+                    if (customDownloadFolderUri.isNotBlank()) {
+                        context.contentResolver.releasePersistableUriPermission(
+                            customDownloadFolderUri.toUri(),
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                        )
+                    }
+                } catch (_: Exception) {}
+                onCustomDownloadFolderUriChange("")
+                onCustomDownloadFolderNameChange("")
+                onCustomDownloadFolderPathChange("")
+                val sp = context.getSharedPreferences("mkr_storage_prefs", Context.MODE_PRIVATE)
+                sp.edit()
+                    .remove("custom_download_uri")
+                    .remove("custom_download_name")
+                    .remove("custom_download_path")
+                    .apply()
+                showResetFolderDialog = false
+            },
+            onCancel = { showResetFolderDialog = false },
+            content = {
+                Text(text = "Are you sure you want to reset the download location to the default internal app storage?")
             }
         )
     }
@@ -387,6 +507,44 @@ fun StorageSettings(
                     title = { Text(stringResource(R.string.downloaded_songs)) },
                     trailingContent = {
                         Text(text = formatFileSize(downloadCacheSize))
+                    }
+                ),
+                Material3SettingsItem(
+                    key = "storage_download_location",
+                    icon = painterResource(R.drawable.snippet_folder),
+                    title = { Text("Download Location") },
+                    description = {
+                        Text(
+                            text = if (isCustomFolderActive) {
+                                customDownloadFolderName.ifBlank { "Custom Directory" }
+                            } else if (customDownloadFolderUri.isNotBlank()) {
+                                "Permission revoked (Using internal storage fallback)"
+                            } else {
+                                "Default: App Internal Storage"
+                            },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (!isCustomFolderActive && customDownloadFolderUri.isNotBlank()) {
+                                MaterialTheme.colorScheme.error
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant
+                            }
+                        )
+                    },
+                    trailingContent = if (customDownloadFolderUri.isNotBlank()) {
+                        {
+                            IconButton(
+                                onClick = { showResetFolderDialog = true }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.close),
+                                    contentDescription = "Reset to default location",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    } else null,
+                    onClick = {
+                        folderPickerLauncher.launch(null)
                     }
                 ),
                 Material3SettingsItem(
