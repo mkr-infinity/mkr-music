@@ -1332,6 +1332,7 @@ fun HomeScreen(
                                                 modifier = Modifier
                                                     .fillMaxSize()
                                                     .maskClip(MaterialTheme.shapes.extraLarge)
+                                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                                     .border(
                                                         BorderStroke(
                                                             1.dp,
@@ -1365,11 +1366,22 @@ fun HomeScreen(
                                                         }
                                                     )
                                             ) {
+                                                var currentThumbnailUrl by remember(currentSong.song.thumbnailUrl) {
+                                                    mutableStateOf(currentSong.song.thumbnailUrl?.resize(1200, 1200))
+                                                }
+
                                                 AsyncImage(
                                                     model = ImageRequest.Builder(LocalContext.current)
-                                                        .data(currentSong.song.thumbnailUrl)
+                                                        .data(currentThumbnailUrl)
                                                         .crossfade(true)
                                                         .build(),
+                                                    onError = {
+                                                        val url = currentThumbnailUrl
+                                                        if (url != null && url.contains("maxresdefault")) {
+                                                            currentThumbnailUrl = url.replace("maxresdefault.webp", "hqdefault.webp")
+                                                                .replace("maxresdefault.jpg", "hqdefault.jpg")
+                                                        }
+                                                    },
                                                     contentDescription = null,
                                                     contentScale = ContentScale.Crop,
                                                     modifier = Modifier.fillMaxSize()
@@ -1938,6 +1950,7 @@ fun HomeScreen(
                                                     modifier = Modifier
                                                         .fillMaxSize()
                                                         .maskClip(MaterialTheme.shapes.extraLarge)
+                                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                                         .border(
                                                             BorderStroke(
                                                                 1.dp,
@@ -1967,11 +1980,22 @@ fun HomeScreen(
                                                             }
                                                         )
                                                 ) {
+                                                    var currentThumbnailUrl by remember(song.thumbnail) {
+                                                        mutableStateOf(song.thumbnail.resize(1200, 1200))
+                                                    }
+
                                                     AsyncImage(
                                                         model = ImageRequest.Builder(LocalContext.current)
-                                                            .data(song.thumbnail)
+                                                            .data(currentThumbnailUrl)
                                                             .crossfade(true)
                                                             .build(),
+                                                        onError = {
+                                                            val url = currentThumbnailUrl
+                                                            if (url != null && url.contains("maxresdefault")) {
+                                                                currentThumbnailUrl = url.replace("maxresdefault.webp", "hqdefault.webp")
+                                                                    .replace("maxresdefault.jpg", "hqdefault.jpg")
+                                                            }
+                                                        },
                                                         contentDescription = null,
                                                         contentScale = ContentScale.Crop,
                                                         modifier = Modifier.fillMaxSize()
