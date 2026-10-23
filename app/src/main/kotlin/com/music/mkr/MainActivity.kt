@@ -112,10 +112,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import com.airbnb.lottie.compose.LottieAnimation
-import com.airbnb.lottie.compose.LottieCompositionSpec
-import com.airbnb.lottie.compose.animateLottieCompositionAsState
-import com.airbnb.lottie.compose.rememberLottieComposition
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -1137,145 +1133,77 @@ class MainActivity : ComponentActivity() {
                                                 horizontalArrangement = Arrangement.spacedBy(4.dp),
                                                 modifier = Modifier.padding(end = 4.dp)
                                             ) {
-                                                // Dedicated watch/timer-inspired Listening History button
+                                                // Listening History navigation action (clean history vector icon)
                                                 if (showHistoryButton) {
                                                     val historyDesc = stringResource(R.string.listening_history)
-                                                    Box(
-                                                        modifier = Modifier.size(48.dp),
-                                                        contentAlignment = Alignment.Center
+                                                    IconButton(
+                                                        onClick = { navController.navigate("history") },
+                                                        modifier = Modifier.size(48.dp)
                                                     ) {
-                                                        Surface(
-                                                            onClick = { navController.navigate("history") },
-                                                            shape = CircleShape,
-                                                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f),
-                                                            border = BorderStroke(
-                                                                1.dp,
-                                                                MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                                                            ),
-                                                            modifier = Modifier
-                                                                .size(40.dp)
-                                                                .semantics {
-                                                                    role = Role.Button
-                                                                    contentDescription = historyDesc
-                                                                }
-                                                        ) {
-                                                            Box(
-                                                                contentAlignment = Alignment.Center,
-                                                                modifier = Modifier.fillMaxSize()
-                                                            ) {
-                                                                Icon(
-                                                                    painter = painterResource(R.drawable.ic_listening_history_watch),
-                                                                    contentDescription = null,
-                                                                    tint = MaterialTheme.colorScheme.primary,
-                                                                    modifier = Modifier.size(20.dp)
-                                                                )
-                                                            }
-                                                        }
+                                                        Icon(
+                                                            painter = painterResource(R.drawable.history),
+                                                            contentDescription = historyDesc,
+                                                            tint = MaterialTheme.colorScheme.onSurface,
+                                                            modifier = Modifier.size(24.dp)
+                                                        )
                                                     }
                                                 }
 
                                                 // Account-aware button reactive to auth state (hidden when not authenticated)
                                                 if (isLoggedIn) {
                                                     val accountDesc = stringResource(R.string.account)
-                                                    Box(
-                                                        modifier = Modifier.size(48.dp),
-                                                        contentAlignment = Alignment.Center
+                                                    IconButton(
+                                                        onClick = { navController.navigate("settings/account") },
+                                                        modifier = Modifier.size(48.dp)
                                                     ) {
-                                                        Surface(
-                                                            onClick = { navController.navigate("settings/account") },
-                                                            shape = CircleShape,
-                                                            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f),
-                                                            border = BorderStroke(
-                                                                1.5.dp,
-                                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)
-                                                            ),
-                                                            modifier = Modifier
-                                                                .size(40.dp)
-                                                                .semantics {
-                                                                    role = Role.Button
-                                                                    contentDescription = accountDesc
-                                                                }
-                                                        ) {
-                                                            Box(
-                                                                contentAlignment = Alignment.Center,
-                                                                modifier = Modifier.fillMaxSize()
-                                                            ) {
-                                                                if (accountImageUrl != null) {
-                                                                    AsyncImage(
-                                                                        model = accountImageUrl,
-                                                                        contentDescription = null,
-                                                                        contentScale = ContentScale.Crop,
-                                                                        modifier = Modifier
-                                                                            .size(32.dp)
-                                                                            .clip(CircleShape)
+                                                        if (accountImageUrl != null) {
+                                                            AsyncImage(
+                                                                model = accountImageUrl,
+                                                                contentDescription = accountDesc,
+                                                                contentScale = ContentScale.Crop,
+                                                                modifier = Modifier
+                                                                    .size(28.dp)
+                                                                    .clip(CircleShape)
+                                                                    .border(
+                                                                        width = 1.dp,
+                                                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
+                                                                        shape = CircleShape
                                                                     )
-                                                                } else {
-                                                                    Icon(
-                                                                        painter = painterResource(R.drawable.account),
-                                                                        contentDescription = null,
-                                                                        tint = MaterialTheme.colorScheme.primary,
-                                                                        modifier = Modifier.size(20.dp)
-                                                                    )
-                                                                }
-                                                            }
+                                                            )
+                                                        } else {
+                                                            Icon(
+                                                                painter = painterResource(R.drawable.account),
+                                                                contentDescription = accountDesc,
+                                                                tint = MaterialTheme.colorScheme.onSurface,
+                                                                modifier = Modifier.size(24.dp)
+                                                            )
                                                         }
                                                     }
                                                 }
 
-                                                // Direct Settings navigation button with refined proportions, ripple & update indicator
+                                                // Settings navigation action (clean gear vector icon with subtle update dot)
                                                 val settingsDesc = stringResource(R.string.settings)
                                                 val hasUpdate = isUpdateAvailable.value || updateState is ReleasePreviewState.UpdateAvailable
-                                                Box(
-                                                    modifier = Modifier.size(48.dp),
-                                                    contentAlignment = Alignment.Center
+                                                IconButton(
+                                                    onClick = { navController.navigate("settings") },
+                                                    modifier = Modifier.size(48.dp)
                                                 ) {
-                                                    Surface(
-                                                        onClick = { navController.navigate("settings") },
-                                                        shape = CircleShape,
-                                                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f),
-                                                        border = BorderStroke(
-                                                            1.dp,
-                                                            MaterialTheme.colorScheme.outline.copy(alpha = 0.2f)
-                                                        ),
-                                                        modifier = Modifier
-                                                            .size(40.dp)
-                                                            .semantics {
-                                                                role = Role.Button
-                                                                contentDescription = settingsDesc
-                                                            }
-                                                    ) {
-                                                        Box(
-                                                            contentAlignment = Alignment.Center,
-                                                            modifier = Modifier.fillMaxSize()
-                                                        ) {
-                                                            BadgedBox(
-                                                                badge = {
-                                                                    if (hasUpdate) {
-                                                                        Badge(
-                                                                            containerColor = MaterialTheme.colorScheme.primary,
-                                                                            modifier = Modifier.size(8.dp)
-                                                                        )
-                                                                    }
-                                                                }
-                                                            ) {
-                                                                val composition by rememberLottieComposition(
-                                                                    LottieCompositionSpec.RawRes(R.raw.setting)
-                                                                )
-                                                                val progress by animateLottieCompositionAsState(
-                                                                    composition = composition,
-                                                                    isPlaying = true,
-                                                                    iterations = 1,
-                                                                    speed = 1.5f
-                                                                )
-
-                                                                LottieAnimation(
-                                                                    composition = composition,
-                                                                    progress = { progress },
-                                                                    modifier = Modifier.size(22.dp),
-                                                                    contentScale = ContentScale.Fit
+                                                    BadgedBox(
+                                                        badge = {
+                                                            if (hasUpdate) {
+                                                                Badge(
+                                                                    containerColor = MaterialTheme.colorScheme.primary,
+                                                                    modifier = Modifier.size(8.dp)
                                                                 )
                                                             }
                                                         }
+                                                    ) {
+                                                        Icon(
+                                                            painter = painterResource(R.drawable.settings),
+                                                            contentDescription = settingsDesc,
+                                                            tint = MaterialTheme.colorScheme.onSurface,
+                                                            modifier = Modifier.size(24.dp)
+                                                        )
                                                     }
                                                 }
                                             }

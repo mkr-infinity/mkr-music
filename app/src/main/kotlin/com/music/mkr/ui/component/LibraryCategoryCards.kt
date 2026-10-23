@@ -6,10 +6,10 @@
 package com.music.mkr.ui.component
 
 import androidx.annotation.DrawableRes
-import androidx.annotation.StringRes
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -19,11 +19,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -31,14 +31,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -46,12 +46,13 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.music.mkr.LocalDatabase
 import com.music.mkr.R
 
 private val AmberAccent = Color(0xFFF59E0B)
 
 /**
- * Five primary library categories connecting to real data routes:
+ * ArchiveTune-style compact library shortcut cards connecting to real data routes:
  * 1. Liked Songs -> auto_playlist/liked
  * 2. Offline -> auto_playlist/downloaded
  * 3. Cached -> cache_playlist/cached
@@ -64,10 +65,13 @@ fun LibraryCategoryCardsSection(
     topSize: Int = 50,
     modifier: Modifier = Modifier
 ) {
+    val database = LocalDatabase.current
+    val likedSongsCount by database.likedSongsCount().collectAsState(initial = 0)
+
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // Row 1: Liked Songs & Offline
@@ -75,22 +79,22 @@ fun LibraryCategoryCardsSection(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            LibraryCategoryCard(
-                titleRes = R.string.library_liked_songs,
-                descriptionRes = R.string.library_liked_songs_desc,
+            ShortcutCard(
+                title = stringResource(R.string.library_liked_songs),
+                countText = if (likedSongsCount > 0) "$likedSongsCount tracks" else stringResource(R.string.library_liked_songs_desc),
                 iconRes = R.drawable.favorite,
-                accentColor = Color(0xFFEF4444),
-                onClick = { navController.navigate("auto_playlist/liked") },
-                modifier = Modifier.weight(1f)
+                iconColor = Color(0xFFEF4444),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("auto_playlist/liked") }
             )
 
-            LibraryCategoryCard(
-                titleRes = R.string.library_offline,
-                descriptionRes = R.string.library_offline_desc,
+            ShortcutCard(
+                title = stringResource(R.string.library_offline),
+                countText = stringResource(R.string.library_offline_desc),
                 iconRes = R.drawable.offline,
-                accentColor = Color(0xFF06B6D4),
-                onClick = { navController.navigate("auto_playlist/downloaded") },
-                modifier = Modifier.weight(1f)
+                iconColor = Color(0xFF06B6D4),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("auto_playlist/downloaded") }
             )
         }
 
@@ -99,22 +103,22 @@ fun LibraryCategoryCardsSection(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            LibraryCategoryCard(
-                titleRes = R.string.library_cached,
-                descriptionRes = R.string.library_cached_desc,
+            ShortcutCard(
+                title = stringResource(R.string.library_cached),
+                countText = stringResource(R.string.library_cached_desc),
                 iconRes = R.drawable.cached,
-                accentColor = AmberAccent,
-                onClick = { navController.navigate("cache_playlist/cached") },
-                modifier = Modifier.weight(1f)
+                iconColor = AmberAccent,
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("cache_playlist/cached") }
             )
 
-            LibraryCategoryCard(
-                titleRes = R.string.library_local_files,
-                descriptionRes = R.string.library_local_files_desc,
+            ShortcutCard(
+                title = stringResource(R.string.library_local_files),
+                countText = stringResource(R.string.library_local_files_desc),
                 iconRes = R.drawable.snippet_folder,
-                accentColor = Color(0xFF6366F1),
-                onClick = { navController.navigate("local_playlist/0") },
-                modifier = Modifier.weight(1f)
+                iconColor = Color(0xFF6366F1),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("local_playlist/0") }
             )
         }
 
@@ -123,13 +127,13 @@ fun LibraryCategoryCardsSection(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            LibraryCategoryCard(
-                titleRes = R.string.library_top_50,
-                descriptionRes = R.string.library_top_50_desc,
+            ShortcutCard(
+                title = stringResource(R.string.library_top_50),
+                countText = "Top $topSize • Most played",
                 iconRes = R.drawable.trending_up,
-                accentColor = Color(0xFF10B981),
-                onClick = { navController.navigate("top_playlist/$topSize") },
-                modifier = Modifier.weight(1f)
+                iconColor = Color(0xFF10B981),
+                modifier = Modifier.weight(1f),
+                onClick = { navController.navigate("top_playlist/$topSize") }
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -138,13 +142,13 @@ fun LibraryCategoryCardsSection(
 }
 
 @Composable
-fun LibraryCategoryCard(
-    @StringRes titleRes: Int,
-    @StringRes descriptionRes: Int,
+fun ShortcutCard(
+    title: String,
+    countText: String,
     @DrawableRes iconRes: Int,
-    accentColor: Color,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    iconColor: Color,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
@@ -154,64 +158,71 @@ fun LibraryCategoryCard(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
         ),
-        label = "LibraryCategoryCardScale"
+        label = "ShortcutCardScale"
     )
 
+    val surfaceContainerColor = MaterialTheme.colorScheme.surfaceContainer
+    val finalBgColor = remember(surfaceContainerColor, iconColor) {
+        surfaceContainerColor.copy(alpha = 0.85f)
+    }
+    val iconBgColor = remember(iconColor) {
+        iconColor.copy(alpha = 0.14f)
+    }
+
     Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainer,
         modifier = modifier
-            .scale(scale)
-            .clip(RoundedCornerShape(16.dp))
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(RoundedCornerShape(22.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
-            )
+            ),
+        shape = RoundedCornerShape(22.dp),
+        color = finalBgColor,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(14.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(horizontal = 14.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Icon container with tinted circular background
             Box(
                 modifier = Modifier
-                    .size(44.dp)
+                    .size(36.dp)
                     .clip(CircleShape)
-                    .background(accentColor.copy(alpha = 0.16f)),
+                    .background(iconBgColor),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    painter = painterResource(iconRes),
-                    contentDescription = stringResource(titleRes),
-                    tint = accentColor,
-                    modifier = Modifier.size(24.dp)
+                    painter = painterResource(id = iconRes),
+                    contentDescription = null,
+                    tint = iconColor,
+                    modifier = Modifier.size(18.dp)
                 )
             }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
             Column(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = stringResource(titleRes),
-                    style = MaterialTheme.typography.titleMedium,
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-
                 Spacer(modifier = Modifier.height(2.dp))
-
                 Text(
-                    text = stringResource(descriptionRes),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    text = countText,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

@@ -68,6 +68,15 @@ import com.music.mkr.constants.SimilarContent
 import com.music.mkr.constants.SkipSilenceInstantKey
 import com.music.mkr.constants.SkipSilenceKey
 import com.music.mkr.constants.StopMusicOnTaskClearKey
+import com.music.mkr.constants.LiquidMiniPlayerKey
+import com.music.mkr.constants.PlayerBackgroundStyle
+import com.music.mkr.constants.PlayerBackgroundStyleKey
+import com.music.mkr.constants.PlayerStyle
+import com.music.mkr.constants.PlayerStyleKey
+import com.music.mkr.constants.UseAppleMiniPlayerKey
+import com.music.mkr.constants.UseNewMiniPlayerDesignKey
+import com.music.mkr.ui.component.PlayerStyleSelectionDialog
+import com.music.mkr.ui.screens.settings.MiniPlayerDesignOption
 import com.music.mkr.ui.component.ActionPromptDialog
 import com.music.mkr.ui.component.CrossfadeCurvePreview
 import com.music.mkr.ui.component.DefaultDialog
@@ -229,6 +238,109 @@ fun PlayerSettings(
 
 
 
+    val (playerStyle, onPlayerStyleChange) = rememberEnumPreference(
+        PlayerStyleKey,
+        defaultValue = PlayerStyle.APPLE
+    )
+    val (useAppleMiniPlayer, onUseAppleMiniPlayerChange) = rememberPreference(
+        UseAppleMiniPlayerKey,
+        defaultValue = true
+    )
+    val (useNewMiniPlayerDesign, onUseNewMiniPlayerDesignChange) = rememberPreference(
+        UseNewMiniPlayerDesignKey,
+        defaultValue = false
+    )
+    val (liquidMiniPlayer, onLiquidMiniPlayerChange) = rememberPreference(
+        LiquidMiniPlayerKey,
+        defaultValue = false
+    )
+    val (playerBackground, onPlayerBackgroundChange) = rememberEnumPreference(
+        PlayerBackgroundStyleKey,
+        defaultValue = PlayerBackgroundStyle.GRADIENT
+    )
+
+    var showPlayerDesignDialog by remember { mutableStateOf(false) }
+    var showMiniPlayerDesignDialog by remember { mutableStateOf(false) }
+    var showPlayerBackgroundDialog by remember { mutableStateOf(false) }
+
+    if (showPlayerDesignDialog) {
+        PlayerStyleSelectionDialog(
+            currentStyle = playerStyle,
+            onDismiss = { showPlayerDesignDialog = false },
+            onSelect = { selectedStyle ->
+                onPlayerStyleChange(selectedStyle)
+                if (selectedStyle != PlayerStyle.CLASSIC && selectedStyle != PlayerStyle.APPLE && playerBackground == PlayerBackgroundStyle.APPLE_MUSIC) {
+                    onPlayerBackgroundChange(PlayerBackgroundStyle.DEFAULT)
+                }
+                showPlayerDesignDialog = false
+            }
+        )
+    }
+
+    val currentMiniPlayerOption = remember(useAppleMiniPlayer, useNewMiniPlayerDesign) {
+        when {
+            useAppleMiniPlayer -> MiniPlayerDesignOption.APPLE
+            useNewMiniPlayerDesign -> MiniPlayerDesignOption.NEW
+            else -> MiniPlayerDesignOption.CLASSIC
+        }
+    }
+
+    if (showMiniPlayerDesignDialog) {
+        EnumDialog(
+            onDismiss = { showMiniPlayerDesignDialog = false },
+            onSelect = { option ->
+                when (option) {
+                    MiniPlayerDesignOption.CLASSIC -> {
+                        onUseAppleMiniPlayerChange(false)
+                        onUseNewMiniPlayerDesignChange(false)
+                    }
+                    MiniPlayerDesignOption.NEW -> {
+                        onUseAppleMiniPlayerChange(false)
+                        onUseNewMiniPlayerDesignChange(true)
+                    }
+                    MiniPlayerDesignOption.APPLE -> {
+                        onUseAppleMiniPlayerChange(true)
+                        onUseNewMiniPlayerDesignChange(false)
+                    }
+                }
+                showMiniPlayerDesignDialog = false
+            },
+            title = stringResource(R.string.mini_player_design),
+            current = currentMiniPlayerOption,
+            values = MiniPlayerDesignOption.values().toList(),
+            valueText = {
+                when (it) {
+                    MiniPlayerDesignOption.CLASSIC -> stringResource(R.string.classic_mini_player)
+                    MiniPlayerDesignOption.NEW -> stringResource(R.string.new_mini_player_design)
+                    MiniPlayerDesignOption.APPLE -> stringResource(R.string.apple_mini_player_design)
+                }
+            }
+        )
+    }
+
+    if (showPlayerBackgroundDialog) {
+        EnumDialog(
+            onDismiss = { showPlayerBackgroundDialog = false },
+            onSelect = {
+                onPlayerBackgroundChange(it)
+                showPlayerBackgroundDialog = false
+            },
+            title = stringResource(R.string.player_background_style),
+            current = playerBackground,
+            values = PlayerBackgroundStyle.values().toList(),
+            valueText = {
+                when (it) {
+                    PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
+                    PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
+                    PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
+                    PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
+                    PlayerBackgroundStyle.APPLE_MUSIC -> stringResource(R.string.apple_music)
+                    PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
+                }
+            }
+        )
+    }
+
     Column(
         Modifier
             .windowInsetsPadding(
@@ -239,6 +351,80 @@ fun PlayerSettings(
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp)
     ) {
+        ExpressiveSettingGroup(
+            title = "Player Architecture & Styling",
+            items = listOf(
+                Material3SettingsItem(
+                    key = "appearance_player_style",
+                    icon = painterResource(R.drawable.palette),
+                    title = { Text(stringResource(R.string.player_style)) },
+                    description = { Text("Apple Player signature design alongside 8 ArchiveTune styles") },
+                    trailingContent = {
+                        Text(stringResource(playerStyle.titleRes))
+                    },
+                    onClick = { showPlayerDesignDialog = true }
+                ),
+                Material3SettingsItem(
+                    key = "appearance_apple_player",
+                    icon = painterResource(R.drawable.nav_bar),
+                    title = { Text(stringResource(R.string.mini_player_design)) },
+                    description = { Text("Choose between Classic bar, Expressive pill, or Apple capsule") },
+                    trailingContent = {
+                        Text(
+                            when (currentMiniPlayerOption) {
+                                MiniPlayerDesignOption.CLASSIC -> stringResource(R.string.classic_mini_player)
+                                MiniPlayerDesignOption.NEW -> stringResource(R.string.new_mini_player_design)
+                                MiniPlayerDesignOption.APPLE -> stringResource(R.string.apple_mini_player_design)
+                            }
+                        )
+                    },
+                    onClick = { showMiniPlayerDesignDialog = true }
+                ),
+                Material3SettingsItem(
+                    key = "appearance_liquid_mini_player",
+                    icon = painterResource(R.drawable.sparks),
+                    title = { Text("Liquid Mini-Player") },
+                    description = { Text("Fluid organic water progress animation on mini-player") },
+                    trailingContent = {
+                        Switch(
+                            checked = liquidMiniPlayer,
+                            onCheckedChange = onLiquidMiniPlayerChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (liquidMiniPlayer) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onLiquidMiniPlayerChange(!liquidMiniPlayer) }
+                ),
+                Material3SettingsItem(
+                    key = "appearance_player_background",
+                    icon = painterResource(R.drawable.gradient),
+                    title = { Text(stringResource(R.string.player_background_style)) },
+                    description = { Text("Apple Music fluid mesh, gradient, animated glow or theme") },
+                    trailingContent = {
+                        Text(
+                            when (playerBackground) {
+                                PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
+                                PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
+                                PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
+                                PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
+                                PlayerBackgroundStyle.APPLE_MUSIC -> stringResource(R.string.apple_music)
+                                PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
+                            }
+                        )
+                    },
+                    onClick = { showPlayerBackgroundDialog = true }
+                )
+            )
+        )
+
+        Spacer(modifier = Modifier.height(10.dp))
         var showCrossfadeBetaDialog by remember { mutableStateOf(false) }
         var showCrossfadeCurveDialog by remember { mutableStateOf(false) }
 

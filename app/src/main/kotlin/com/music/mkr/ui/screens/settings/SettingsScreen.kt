@@ -6,6 +6,9 @@
 package com.music.mkr.ui.screens.settings
 
 import android.os.Build
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -237,139 +240,91 @@ fun SettingsScreen(
                 )
             }
         } else {
-            // Section 1 — Four Quick Hub Cards (2-by-2 Grid)
-            Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    SettingsGridCard(
-                        modifier = Modifier.weight(1f).heightIn(min = 126.dp),
+            // Section 1 — Horizontally Scrolling 2×2 Category Hub Grid (8 Authentic Categories)
+            val hubCategories = remember {
+                listOf(
+                    SettingsHubCategory(
                         key = "appearance_theme_palette",
                         icon = R.drawable.palette,
                         title = "Appearance",
-                        subtitle = "Themes, accents & launcher icons",
-                        onClick = { navController.navigate("settings/appearance") }
-                    )
-                    SettingsGridCard(
-                        modifier = Modifier.weight(1f).heightIn(min = 126.dp),
+                        subtitle = "Themes, accents & fonts",
+                        route = "settings/appearance"
+                    ),
+                    SettingsHubCategory(
                         key = "player_audio_quality",
                         icon = R.drawable.earbud_case,
                         title = "Player & Audio",
-                        subtitle = "Dual engine, equalizer & sound",
-                        onClick = { navController.navigate("settings/player") }
-                    )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    SettingsGridCard(
-                        modifier = Modifier.weight(1f).heightIn(min = 126.dp),
+                        subtitle = "Quality, styling & EQ",
+                        route = "settings/player"
+                    ),
+                    SettingsHubCategory(
+                        key = "content_language",
+                        icon = R.drawable.language,
+                        title = "Content",
+                        subtitle = "Languages & explicit filter",
+                        route = "settings/content"
+                    ),
+                    SettingsHubCategory(
                         key = "storage_downloads",
                         icon = R.drawable.storage,
-                        title = "Storage & Cache",
-                        subtitle = "Offline tracks & cache budgets",
-                        onClick = { navController.navigate("settings/storage") }
-                    )
-                    SettingsGridCard(
-                        modifier = Modifier.weight(1f).heightIn(min = 126.dp),
+                        title = "Storage",
+                        subtitle = "Cache & download budget",
+                        route = "settings/storage"
+                    ),
+                    SettingsHubCategory(
                         key = "account_login",
-                        icon = R.drawable.google,
-                        title = "Account & Sync",
-                        subtitle = "Sync playlists & library",
-                        onClick = { navController.navigate("settings/account") }
+                        icon = R.drawable.account,
+                        title = "Account",
+                        subtitle = "Profiles, login & sync",
+                        route = "settings/account"
+                    ),
+                    SettingsHubCategory(
+                        key = "privacy_history",
+                        icon = R.drawable.security,
+                        title = "Privacy",
+                        subtitle = "History & tracking controls",
+                        route = "settings/privacy"
+                    ),
+                    SettingsHubCategory(
+                        key = "backup_export_import",
+                        icon = R.drawable.restore,
+                        title = "Backup & Restore",
+                        subtitle = "Import & export data",
+                        route = "settings/backup_restore"
+                    ),
+                    SettingsHubCategory(
+                        key = "about_app",
+                        icon = R.drawable.info,
+                        title = "About",
+                        subtitle = "Version, licenses & credits",
+                        route = "settings/about"
+                    )
+                )
+            }
+
+            LazyHorizontalGrid(
+                rows = GridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(184.dp),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                items(hubCategories) { category ->
+                    SettingsGridCard(
+                        modifier = Modifier
+                            .width(172.dp)
+                            .height(87.dp),
+                        key = category.key,
+                        icon = category.icon,
+                        title = category.title,
+                        subtitle = category.subtitle,
+                        onClick = { navController.navigate(category.route) }
                     )
                 }
             }
 
-            // Section 2 — Player Styles & Mini-Player
-            ExpressiveSettingGroup(
-                title = "Player Styles & Mini-Player",
-                itemMinHeight = 64.dp,
-                items = listOf(
-                    Material3SettingsItem(
-                        key = "appearance_player_style",
-                        icon = painterResource(R.drawable.lyrics),
-                        title = { Text("Player Architecture") },
-                        description = { Text("Apple Player signature design alongside 8 ArchiveTune styles") },
-                        onClick = {
-                            SettingsHighlightManager.requestHighlight("appearance_player_style")
-                            navController.navigate("settings/appearance")
-                        }
-                    ),
-                    Material3SettingsItem(
-                        key = "appearance_apple_player",
-                        icon = painterResource(R.drawable.nav_bar),
-                        title = { Text("Mini-Player Style") },
-                        description = { Text("Select Classic bar, New expressive pill, or Apple capsule") },
-                        onClick = {
-                            SettingsHighlightManager.requestHighlight("appearance_apple_player")
-                            navController.navigate("settings/appearance")
-                        }
-                    ),
-                    Material3SettingsItem(
-                        key = "appearance_liquid_mini_player",
-                        icon = painterResource(R.drawable.sparks),
-                        title = { Text("Liquid Mini-Player") },
-                        description = { Text("Fluid organic water progress animation on mini-player") },
-                        onClick = {
-                            SettingsHighlightManager.requestHighlight("appearance_liquid_mini_player")
-                            navController.navigate("settings/appearance")
-                        }
-                    ),
-                    Material3SettingsItem(
-                        key = "appearance_mini_player_outline",
-                        icon = painterResource(R.drawable.contrast),
-                        title = { Text("Mini-Player Outline & Pure Black") },
-                        description = { Text("Ambient border outline and OLED pitch black background") },
-                        onClick = {
-                            SettingsHighlightManager.requestHighlight("appearance_pure_black")
-                            navController.navigate("settings/appearance")
-                        }
-                    )
-                )
-            )
-
-            // Section 3 — Gestures & Performance
-            ExpressiveSettingGroup(
-                title = "Gestures & Performance",
-                itemMinHeight = 64.dp,
-                items = listOf(
-                    Material3SettingsItem(
-                        key = "appearance_swipe_thumbnail",
-                        icon = painterResource(R.drawable.swipe),
-                        title = { Text("Mini-Player Swipe Gestures") },
-                        description = { Text("Interactive directional skip feedback with real-time haptics") },
-                        onClick = {
-                            SettingsHighlightManager.requestHighlight("appearance_swipe_thumbnail")
-                            navController.navigate("settings/appearance")
-                        }
-                    ),
-                    Material3SettingsItem(
-                        key = "appearance_interface_animations",
-                        icon = painterResource(R.drawable.speed),
-                        title = { Text("Interface Animations") },
-                        description = { Text("Enable smooth transitions, liquid wave motion, and effects") },
-                        onClick = {
-                            SettingsHighlightManager.requestHighlight("appearance_interface_animations")
-                            navController.navigate("settings/appearance")
-                        }
-                    ),
-                    Material3SettingsItem(
-                        key = "appearance_high_refresh_rate",
-                        icon = painterResource(R.drawable.speed),
-                        title = { Text("High Refresh Rate") },
-                        description = { Text("Smooth 90Hz / 120Hz display refresh rate optimization") },
-                        onClick = {
-                            SettingsHighlightManager.requestHighlight("appearance_high_refresh_rate")
-                            navController.navigate("settings/appearance")
-                        }
-                    )
-                )
-            )
-
-            // Section 4 — Playback & Audio
+            // Section 2 — Playback & Audio
             ExpressiveSettingGroup(
                 title = "Playback & Audio",
                 itemMinHeight = 64.dp,
@@ -398,9 +353,31 @@ fun SettingsScreen(
                 )
             )
 
-            // Section 5 — Content & Lyrics
+            // Section 3 — UI & Appearance
             ExpressiveSettingGroup(
-                title = "Content & Lyrics",
+                title = "UI & Appearance",
+                itemMinHeight = 64.dp,
+                items = listOf(
+                    Material3SettingsItem(
+                        key = "appearance_theme_palette",
+                        icon = painterResource(R.drawable.palette),
+                        title = { Text("Theme & Palette") },
+                        description = { Text("Dynamic Material You colors, amber accents, and pure black OLED mode") },
+                        onClick = { navController.navigate("settings/appearance") }
+                    ),
+                    Material3SettingsItem(
+                        key = "appearance_custom_font",
+                        icon = painterResource(R.drawable.palette),
+                        title = { Text("Typography & Fonts") },
+                        description = { Text("Google Sans, Sans Flex, Outfit, Plus Jakarta Sans, or custom font") },
+                        onClick = { navController.navigate("settings/appearance/font") }
+                    )
+                )
+            )
+
+            // Section 4 — Content & AI
+            ExpressiveSettingGroup(
+                title = "Content & AI",
                 itemMinHeight = 64.dp,
                 items = listOf(
                     Material3SettingsItem(
@@ -416,6 +393,13 @@ fun SettingsScreen(
                         title = { Text(stringResource(R.string.ai_lyrics_translation)) },
                         description = { Text("Real-time song lyrics translation using intelligent AI") },
                         onClick = { navController.navigate("settings/ai") }
+                    ),
+                    Material3SettingsItem(
+                        key = "content_romanization",
+                        icon = painterResource(R.drawable.language),
+                        title = { Text("Romanization") },
+                        description = { Text("Romanize Japanese, Korean, Chinese & other non-Latin titles") },
+                        onClick = { navController.navigate("settings/content/romanization") }
                     )
                 )
             )
@@ -569,6 +553,14 @@ fun SettingsScreen(
     )
 }
 
+private data class SettingsHubCategory(
+    val key: String,
+    val icon: Int,
+    val title: String,
+    val subtitle: String,
+    val route: String
+)
+
 @Composable
 private fun SettingsGridCard(
     modifier: Modifier = Modifier,
@@ -580,50 +572,42 @@ private fun SettingsGridCard(
 ) {
     Surface(
         modifier = modifier
-            .settingsHighlight(key, RoundedCornerShape(18.dp))
-            .clip(RoundedCornerShape(18.dp))
+            .settingsHighlight(key, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(16.dp))
             .clickable(role = Role.Button, onClick = onClick),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 0.dp,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 14.dp, vertical = 14.dp),
-            verticalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Box(
+                modifier = Modifier
+                    .size(38.dp)
+                    .clip(RoundedCornerShape(11.dp))
+                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(icon),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
                 Icon(
-                    painter = painterResource(R.drawable.navigate_next),
+                    painter = painterResource(icon),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f),
-                    modifier = Modifier.size(18.dp)
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(20.dp)
                 )
             }
-            Column {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
@@ -632,11 +616,9 @@ private fun SettingsGridCard(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 14.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                    minLines = 2,
                     maxLines = 2,
-                    lineHeight = 15.sp,
                     overflow = TextOverflow.Ellipsis
                 )
             }
