@@ -207,7 +207,11 @@ fun LibraryMixScreen(
         }
     }
 
-    val isGridView = rememberPreference(LibraryMixIsGridViewKey, true)
+    val (isGridViewPref, setIsGridViewPref) = rememberPreference(LibraryMixIsGridViewKey, true)
+    var isGridView by rememberSaveable { mutableStateOf(isGridViewPref) }
+    LaunchedEffect(isGridViewPref) {
+        isGridView = isGridViewPref
+    }
     
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -223,7 +227,7 @@ fun LibraryMixScreen(
         }
     }
 
-    val totalListItems = visibleStaticItems.size + (if (!isGridView.value) finalFilteredItems.size else 0)
+    val totalListItems = visibleStaticItems.size + (if (!isGridView) finalFilteredItems.size else 0)
     val getShapeForIndex: (Int) -> Shape = { index ->
         val size = totalListItems
         when {
@@ -288,7 +292,7 @@ fun LibraryMixScreen(
     ) {
                 LazyVerticalGrid(
                     state = lazyGridState,
-                    columns = if (isGridView.value) {
+                    columns = if (isGridView) {
                          GridCells.Adaptive(
                             minSize = GridThumbnailHeight + if (gridItemSize == GridItemSize.BIG) 24.dp else (-24).dp,
                          )
@@ -322,8 +326,12 @@ fun LibraryMixScreen(
                                 onQueryChange = { viewModel.searchQuery.value = it },
                                 isSearchActive = isSearchActive,
                                 onSearchActiveChange = { isSearchActive = it },
-                                isGridView = isGridView.value,
-                                onToggleViewChange = { isGridView.value = !isGridView.value },
+                                isGridView = isGridView,
+                                onToggleViewChange = {
+                                    val next = !isGridView
+                                    isGridView = next
+                                    setIsGridViewPref(next)
+                                },
                                 modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
                                 sortContent = {
                                     com.music.mkr.ui.component.SortDropdownMenu(
@@ -378,19 +386,20 @@ fun LibraryMixScreen(
                     itemsIndexed(
                         items = finalFilteredItems,
                         key = { _, item ->
-                            when (item) {
+                            val id = when (item) {
                                 is Playlist -> item.id
                                 is Album -> item.id
                                 is Artist -> item.id
-                                else -> item.hashCode()
+                                else -> item.hashCode().toString()
                             }
+                            "${id}_${if (isGridView) "grid" else "list"}"
                         }
                     ) { index, item ->
                         val modifier = Modifier.animateItem().fillMaxWidth()
                         val dynamicShape = getShapeForIndex(visibleStaticItems.size + index)
                         when (item) {
                             is Playlist -> {
-                                if (isGridView.value) {
+                                if (isGridView) {
                                     LibraryPlaylistGridItem(
                                         playlist = item,
                                         navController = navController,
@@ -410,7 +419,7 @@ fun LibraryMixScreen(
                                 }
                             }
                             is Album -> {
-                                if (isGridView.value) {
+                                if (isGridView) {
                                     LibraryAlbumGridItem(
                                         navController = navController,
                                         menuState = menuState,
@@ -433,7 +442,7 @@ fun LibraryMixScreen(
                                 }
                             }
                             is Artist -> {
-                                if (isGridView.value) {
+                                if (isGridView) {
                                     LibraryArtistGridItem(
                                         navController = navController,
                                         menuState = menuState,

@@ -83,14 +83,13 @@ fun LibraryCategoryCardsSection(
     val (showLiked) = rememberPreference(ShowLikedPlaylistKey, defaultValue = true)
     val (showDownloaded) = rememberPreference(ShowDownloadedPlaylistKey, defaultValue = true)
     val (showCached) = rememberPreference(ShowCachedPlaylistKey, defaultValue = true)
-    val (showTop) = rememberPreference(ShowTopPlaylistKey, defaultValue = true)
 
     val items = buildList {
         if (showLiked) {
             add(
                 LibraryShortcutItem(
                     title = stringResource(R.string.library_liked_songs),
-                    countText = if (likedSongsCount > 0) "$likedSongsCount tracks" else stringResource(R.string.library_liked_songs_desc),
+                    countText = if (likedSongsCount > 0) "$likedSongsCount tracks" else "Favorite tracks",
                     iconRes = R.drawable.favorite,
                     iconColor = Color(0xFFEF4444),
                     route = "auto_playlist/liked"
@@ -101,7 +100,7 @@ fun LibraryCategoryCardsSection(
             add(
                 LibraryShortcutItem(
                     title = stringResource(R.string.library_offline),
-                    countText = stringResource(R.string.library_offline_desc),
+                    countText = "Offline playback",
                     iconRes = R.drawable.offline,
                     iconColor = Color(0xFF06B6D4),
                     route = "auto_playlist/downloaded"
@@ -112,7 +111,7 @@ fun LibraryCategoryCardsSection(
             add(
                 LibraryShortcutItem(
                     title = stringResource(R.string.library_cached),
-                    countText = stringResource(R.string.library_cached_desc),
+                    countText = "Instant playback",
                     iconRes = R.drawable.cached,
                     iconColor = AmberAccent,
                     route = "cache_playlist/cached"
@@ -122,23 +121,12 @@ fun LibraryCategoryCardsSection(
         add(
             LibraryShortcutItem(
                 title = stringResource(R.string.library_local_files),
-                countText = stringResource(R.string.library_local_files_desc),
+                countText = "On device",
                 iconRes = R.drawable.snippet_folder,
                 iconColor = Color(0xFF6366F1),
                 route = "local_playlist/0"
             )
         )
-        if (showTop) {
-            add(
-                LibraryShortcutItem(
-                    title = stringResource(R.string.library_top_50),
-                    countText = "Top $topSize • Most played",
-                    iconRes = R.drawable.trending_up,
-                    iconColor = Color(0xFF10B981),
-                    route = "top_playlist/$topSize"
-                )
-            )
-        }
     }
 
     if (items.isEmpty()) return
@@ -147,12 +135,12 @@ fun LibraryCategoryCardsSection(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp)
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items.chunked(2).forEach { rowItems ->
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 rowItems.forEach { item ->
                     ShortcutCard(
@@ -206,26 +194,25 @@ fun ShortcutCard(
                 scaleX = scale
                 scaleY = scale
             }
-            .clip(RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(24.dp))
             .clickable(
                 interactionSource = interactionSource,
                 indication = null,
                 onClick = onClick
             ),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         color = finalBgColor,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(36.dp)
+                    .size(38.dp)
                     .clip(CircleShape)
                     .background(iconBgColor),
                 contentAlignment = Alignment.Center
@@ -234,26 +221,28 @@ fun ShortcutCard(
                     painter = painterResource(id = iconRes),
                     contentDescription = null,
                     tint = iconColor,
-                    modifier = Modifier.size(18.dp)
+                    modifier = Modifier.size(20.dp)
                 )
             }
             Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
                     color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
+                    maxLines = 2,
+                    softWrap = true,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = countText,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.85f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )

@@ -118,6 +118,11 @@ fun LibraryPlaylistsScreen(
         true
     )
     val gridItemSize by rememberEnumPreference(GridItemsSizeKey, GridItemSize.BIG)
+    val (isGridViewPref, setIsGridViewPref) = rememberPreference(PlaylistGridViewKey, true)
+    var isGridView by rememberSaveable { mutableStateOf(isGridViewPref) }
+    LaunchedEffect(isGridViewPref) {
+        isGridView = isGridViewPref
+    }
 
     var isSearchActive by rememberSaveable { mutableStateOf(false) }
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -234,10 +239,13 @@ fun LibraryPlaylistsScreen(
     ) {
                 LazyVerticalGrid(
                     state = lazyGridState,
-                    columns =
-                    GridCells.Adaptive(
-                        minSize = GridThumbnailHeight + if (gridItemSize == GridItemSize.BIG) 24.dp else (-24).dp,
-                    ),
+                    columns = if (isGridView) {
+                        GridCells.Adaptive(
+                            minSize = GridThumbnailHeight + if (gridItemSize == GridItemSize.BIG) 24.dp else (-24).dp,
+                        )
+                    } else {
+                        GridCells.Fixed(1)
+                    },
                     contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
                 ) {
                     /*item(
@@ -266,6 +274,12 @@ fun LibraryPlaylistsScreen(
                             onQueryChange = { viewModel.searchQuery.value = it },
                             isSearchActive = isSearchActive,
                             onSearchActiveChange = { isSearchActive = it },
+                            isGridView = isGridView,
+                            onToggleViewChange = {
+                                val next = !isGridView
+                                isGridView = next
+                                setIsGridViewPref(next)
+                            },
                             modifier = Modifier.padding(horizontal = 6.dp, vertical = 8.dp),
                             sortContent = {
                                 com.music.mkr.ui.component.SortDropdownMenu(
@@ -395,16 +409,26 @@ fun LibraryPlaylistsScreen(
 
                         items(
                             items = playlists.distinctBy { it.id },
-                            key = { it.id },
+                            key = { "${it.id}_${if (isGridView) "grid" else "list"}" },
                             contentType = { CONTENT_TYPE_PLAYLIST },
                         ) { playlist ->
-                            LibraryPlaylistGridItem(
-                                navController = navController,
-                                menuState = menuState,
-                                coroutineScope = coroutineScope,
-                                playlist = playlist,
-                                modifier = Modifier.animateItem()
-                            )
+                            if (isGridView) {
+                                LibraryPlaylistGridItem(
+                                    navController = navController,
+                                    menuState = menuState,
+                                    coroutineScope = coroutineScope,
+                                    playlist = playlist,
+                                    modifier = Modifier.animateItem()
+                                )
+                            } else {
+                                LibraryPlaylistListItem(
+                                    playlist = playlist,
+                                    navController = navController,
+                                    menuState = menuState,
+                                    coroutineScope = coroutineScope,
+                                    modifier = Modifier.animateItem().fillMaxWidth()
+                                )
+                            }
                         }
                     }
                 }
