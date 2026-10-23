@@ -119,7 +119,7 @@ fun ArtistAlbumsScreen(
                     Text(
                         text = pluralStringResource(R.plurals.n_album, albums.size, albums.size),
                         style = MaterialTheme.typography.titleSmall,
-                        color = MaterialTheme.colorScheme.secondary
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }

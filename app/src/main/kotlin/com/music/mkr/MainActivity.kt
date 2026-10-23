@@ -1178,30 +1178,18 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 }
 
-                                                // Settings navigation action (clean gear vector icon with subtle update dot)
+                                                // Settings navigation action (clean gear vector icon)
                                                 val settingsDesc = stringResource(R.string.settings)
-                                                val hasUpdate = isUpdateAvailable.value || updateState is ReleasePreviewState.UpdateAvailable
                                                 IconButton(
                                                     onClick = { navController.navigate("settings") },
                                                     modifier = Modifier.size(48.dp)
                                                 ) {
-                                                    BadgedBox(
-                                                        badge = {
-                                                            if (hasUpdate) {
-                                                                Badge(
-                                                                    containerColor = MaterialTheme.colorScheme.primary,
-                                                                    modifier = Modifier.size(8.dp)
-                                                                )
-                                                            }
-                                                        }
-                                                    ) {
-                                                        Icon(
-                                                            painter = painterResource(R.drawable.settings),
-                                                            contentDescription = settingsDesc,
-                                                            tint = MaterialTheme.colorScheme.onSurface,
-                                                            modifier = Modifier.size(24.dp)
-                                                        )
-                                                    }
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.settings),
+                                                        contentDescription = settingsDesc,
+                                                        tint = MaterialTheme.colorScheme.onSurface,
+                                                        modifier = Modifier.size(24.dp)
+                                                    )
                                                 }
                                             }
                                         },

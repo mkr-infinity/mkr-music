@@ -652,7 +652,7 @@ fun Queue(
                         Text(
                             text = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.secondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )

@@ -156,7 +156,7 @@ fun DetailedListeningHistoryScreen(
                                     text = topArtist.artist.name,
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.secondary
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                         }
