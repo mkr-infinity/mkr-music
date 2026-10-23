@@ -61,7 +61,7 @@ fun ExpressiveSettingGroup(
             Text(
                 text = it,
                 style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
                     .semantics { heading() }
                     .padding(start = 16.dp, bottom = 8.dp, top = 12.dp)

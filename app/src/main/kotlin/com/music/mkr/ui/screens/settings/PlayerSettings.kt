@@ -741,7 +741,6 @@ fun PlayerSettings(
                     icon = painterResource(R.drawable.linear_scale),
                     title = { Text(stringResource(R.string.crossfade)) },
                     description = { Text(stringResource(R.string.crossfade_desc)) },
-                    showBadge = true,
                     trailingContent = {
                         Switch(
                             checked = crossfadeEnabled,
