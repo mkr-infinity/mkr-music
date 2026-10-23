@@ -48,8 +48,21 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.music.mkr.LocalDatabase
 import com.music.mkr.R
+import com.music.mkr.constants.ShowCachedPlaylistKey
+import com.music.mkr.constants.ShowDownloadedPlaylistKey
+import com.music.mkr.constants.ShowLikedPlaylistKey
+import com.music.mkr.constants.ShowTopPlaylistKey
+import com.music.mkr.utils.rememberPreference
 
 private val AmberAccent = Color(0xFFF59E0B)
+
+private data class LibraryShortcutItem(
+    val title: String,
+    val countText: String,
+    val iconRes: Int,
+    val iconColor: Color,
+    val route: String
+)
 
 /**
  * Compact library shortcut cards connecting to real data routes:
@@ -67,6 +80,68 @@ fun LibraryCategoryCardsSection(
 ) {
     val database = LocalDatabase.current
     val likedSongsCount by database.likedSongsCount().collectAsState(initial = 0)
+    val (showLiked) = rememberPreference(ShowLikedPlaylistKey, defaultValue = true)
+    val (showDownloaded) = rememberPreference(ShowDownloadedPlaylistKey, defaultValue = true)
+    val (showCached) = rememberPreference(ShowCachedPlaylistKey, defaultValue = true)
+    val (showTop) = rememberPreference(ShowTopPlaylistKey, defaultValue = true)
+
+    val items = buildList {
+        if (showLiked) {
+            add(
+                LibraryShortcutItem(
+                    title = stringResource(R.string.library_liked_songs),
+                    countText = if (likedSongsCount > 0) "$likedSongsCount tracks" else stringResource(R.string.library_liked_songs_desc),
+                    iconRes = R.drawable.favorite,
+                    iconColor = Color(0xFFEF4444),
+                    route = "auto_playlist/liked"
+                )
+            )
+        }
+        if (showDownloaded) {
+            add(
+                LibraryShortcutItem(
+                    title = stringResource(R.string.library_offline),
+                    countText = stringResource(R.string.library_offline_desc),
+                    iconRes = R.drawable.offline,
+                    iconColor = Color(0xFF06B6D4),
+                    route = "auto_playlist/downloaded"
+                )
+            )
+        }
+        if (showCached) {
+            add(
+                LibraryShortcutItem(
+                    title = stringResource(R.string.library_cached),
+                    countText = stringResource(R.string.library_cached_desc),
+                    iconRes = R.drawable.cached,
+                    iconColor = AmberAccent,
+                    route = "cache_playlist/cached"
+                )
+            )
+        }
+        add(
+            LibraryShortcutItem(
+                title = stringResource(R.string.library_local_files),
+                countText = stringResource(R.string.library_local_files_desc),
+                iconRes = R.drawable.snippet_folder,
+                iconColor = Color(0xFF6366F1),
+                route = "local_playlist/0"
+            )
+        )
+        if (showTop) {
+            add(
+                LibraryShortcutItem(
+                    title = stringResource(R.string.library_top_50),
+                    countText = "Top $topSize • Most played",
+                    iconRes = R.drawable.trending_up,
+                    iconColor = Color(0xFF10B981),
+                    route = "top_playlist/$topSize"
+                )
+            )
+        }
+    }
+
+    if (items.isEmpty()) return
 
     Column(
         modifier = modifier
@@ -74,69 +149,25 @@ fun LibraryCategoryCardsSection(
             .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Row 1: Liked Songs & Offline
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            ShortcutCard(
-                title = stringResource(R.string.library_liked_songs),
-                countText = if (likedSongsCount > 0) "$likedSongsCount tracks" else stringResource(R.string.library_liked_songs_desc),
-                iconRes = R.drawable.favorite,
-                iconColor = Color(0xFFEF4444),
-                modifier = Modifier.weight(1f),
-                onClick = { navController.navigate("auto_playlist/liked") }
-            )
-
-            ShortcutCard(
-                title = stringResource(R.string.library_offline),
-                countText = stringResource(R.string.library_offline_desc),
-                iconRes = R.drawable.offline,
-                iconColor = Color(0xFF06B6D4),
-                modifier = Modifier.weight(1f),
-                onClick = { navController.navigate("auto_playlist/downloaded") }
-            )
-        }
-
-        // Row 2: Cached & Local Files
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            ShortcutCard(
-                title = stringResource(R.string.library_cached),
-                countText = stringResource(R.string.library_cached_desc),
-                iconRes = R.drawable.cached,
-                iconColor = AmberAccent,
-                modifier = Modifier.weight(1f),
-                onClick = { navController.navigate("cache_playlist/cached") }
-            )
-
-            ShortcutCard(
-                title = stringResource(R.string.library_local_files),
-                countText = stringResource(R.string.library_local_files_desc),
-                iconRes = R.drawable.snippet_folder,
-                iconColor = Color(0xFF6366F1),
-                modifier = Modifier.weight(1f),
-                onClick = { navController.navigate("local_playlist/0") }
-            )
-        }
-
-        // Row 3: Top 50
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            ShortcutCard(
-                title = stringResource(R.string.library_top_50),
-                countText = "Top $topSize • Most played",
-                iconRes = R.drawable.trending_up,
-                iconColor = Color(0xFF10B981),
-                modifier = Modifier.weight(1f),
-                onClick = { navController.navigate("top_playlist/$topSize") }
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
+        items.chunked(2).forEach { rowItems ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                rowItems.forEach { item ->
+                    ShortcutCard(
+                        title = item.title,
+                        countText = item.countText,
+                        iconRes = item.iconRes,
+                        iconColor = item.iconColor,
+                        modifier = Modifier.weight(1f),
+                        onClick = { navController.navigate(item.route) }
+                    )
+                }
+                if (rowItems.size == 1) {
+                    Spacer(modifier = Modifier.weight(1f))
+                }
+            }
         }
     }
 }
