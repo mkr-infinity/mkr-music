@@ -52,7 +52,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material3.ContainedLoadingIndicator
@@ -1282,7 +1281,7 @@ fun HomeScreen(
                         }
                         HomeSection.QuickPicks -> {
                             quickPicks?.takeIf { it.isNotEmpty() }?.let { qpList ->
-                                val distinctQuickPicks = remember(qpList) { qpList.distinctBy { it.id } }
+                                val distinctQuickPicks = qpList.distinctBy { it.id }
                                 item(key = "quick_picks_title") {
                                     val quickPicksTitle = stringResource(R.string.quick_picks)
                                     NavigationTitle(
@@ -1314,7 +1313,7 @@ fun HomeScreen(
                                             .coerceAtLeast(232.dp)
                                             .coerceAtMost(440.dp)
 
-                                        HorizontalCenteredHeroCarousel(
+                                        HorizontalMultiBrowseCarousel(
                                             state = rememberCarouselState { distinctQuickPicks.size },
                                             preferredItemWidth = heroMaxWidth,
                                             itemSpacing = 10.dp,
@@ -1340,11 +1339,10 @@ fun HomeScreen(
                                                         ),
                                                         MaterialTheme.shapes.extraLarge
                                                     )
-                                                    .focusable()
                                                     .combinedClickable(
                                                         onClick = {
                                                             if (isActive) {
-                                                                playerConnection.player.togglePlayPause()
+                                                                playerConnection.togglePlayPause()
                                                             } else {
                                                                 playerConnection.playQueue(
                                                                     if (currentSong.song.isLocal) {
@@ -1909,7 +1907,7 @@ fun HomeScreen(
                                 if (sectionData.title.equals("Quick picks", ignoreCase = true)) {
                                     // ArchiveTune-style Hero Card Carousel for YouTube Quick picks
                                     item(key = "home_section_cards_${section.index}") {
-                                        val distinctSongs = remember(sectionSongs) { sectionSongs.distinctBy { it.id } }
+                                        val distinctSongs = sectionSongs.distinctBy { it.id }
                                         BoxWithConstraints(
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -1924,7 +1922,7 @@ fun HomeScreen(
                                                 .coerceAtLeast(232.dp)
                                                 .coerceAtMost(440.dp)
 
-                                            HorizontalCenteredHeroCarousel(
+                                            HorizontalMultiBrowseCarousel(
                                                 state = rememberCarouselState { distinctSongs.size },
                                                 preferredItemWidth = heroMaxWidth,
                                                 itemSpacing = 10.dp,
@@ -1947,11 +1945,10 @@ fun HomeScreen(
                                                             ),
                                                             MaterialTheme.shapes.extraLarge
                                                         )
-                                                        .focusable()
                                                         .combinedClickable(
                                                             onClick = {
                                                                 if (isActive) {
-                                                                    playerConnection.player.togglePlayPause()
+                                                                    playerConnection.togglePlayPause()
                                                                 } else {
                                                                     playerConnection.playQueue(
                                                                         YouTubeQueue.radio(song.toMediaMetadata())

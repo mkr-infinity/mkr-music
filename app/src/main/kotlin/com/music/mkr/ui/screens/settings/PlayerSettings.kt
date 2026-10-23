@@ -305,7 +305,7 @@ fun PlayerSettings(
                 }
                 showMiniPlayerDesignDialog = false
             },
-            title = stringResource(R.string.mini_player_design),
+            title = stringResource(R.string.mini_player),
             current = currentMiniPlayerOption,
             values = MiniPlayerDesignOption.values().toList(),
             valueText = {
@@ -367,7 +367,7 @@ fun PlayerSettings(
                 Material3SettingsItem(
                     key = "appearance_apple_player",
                     icon = painterResource(R.drawable.nav_bar),
-                    title = { Text(stringResource(R.string.mini_player_design)) },
+                    title = { Text(stringResource(R.string.mini_player)) },
                     description = { Text("Choose between Classic bar, Expressive pill, or Apple capsule") },
                     trailingContent = {
                         Text(
