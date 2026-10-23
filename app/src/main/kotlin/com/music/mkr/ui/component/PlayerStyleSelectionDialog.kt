@@ -244,7 +244,7 @@ private fun PlayerStyleCard(
 
                 RadioButton(
                     selected = isSelected,
-                    onClick = onClick,
+                    onClick = null,
                     colors = RadioButtonDefaults.colors(
                         selectedColor = MkrAmberAccent,
                         unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
