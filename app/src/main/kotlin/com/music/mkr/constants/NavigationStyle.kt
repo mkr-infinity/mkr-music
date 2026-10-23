@@ -13,14 +13,14 @@ enum class NavigationStyle(
     @StringRes val descriptionRes: Int,
     val isFloating: Boolean,
 ) {
-    AMBER_DOCK(
-        titleRes = R.string.nav_style_amber_dock,
-        descriptionRes = R.string.nav_style_amber_dock_desc,
-        isFloating = true,
-    ),
     FLOATING_GLASS(
         titleRes = R.string.nav_style_floating_glass,
         descriptionRes = R.string.nav_style_floating_glass_desc,
+        isFloating = true,
+    ),
+    AMBER_DOCK(
+        titleRes = R.string.nav_style_amber_dock,
+        descriptionRes = R.string.nav_style_amber_dock_desc,
         isFloating = true,
     ),
     EXPRESSIVE_PILL(
@@ -35,6 +35,6 @@ enum class NavigationStyle(
     );
 
     companion object {
-        val DEFAULT = AMBER_DOCK
+        val DEFAULT = FLOATING_GLASS
     }
 }

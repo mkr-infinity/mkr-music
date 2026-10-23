@@ -734,13 +734,7 @@ class MainActivity : ComponentActivity() {
                 val (previousTab, setPreviousTab) = rememberSaveable { mutableStateOf("home") }
 
                 val (listenTogetherInTopBar) = rememberPreference(ListenTogetherInTopBarKey, defaultValue = true)
-                val navigationItems = remember(listenTogetherInTopBar) { 
-                    if (listenTogetherInTopBar) {
-                        Screens.MainScreens.filter { it != Screens.ListenTogether }
-                    } else {
-                        Screens.MainScreens
-                    }
-                }
+                val navigationItems = remember { Screens.MainScreens }
                 val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
                 val (floatingNav) = rememberPreference(FloatingNavBarKey, defaultValue = true)
                 val (navigationStyle) = rememberEnumPreference(NavigationStyleKey, defaultValue = NavigationStyle.DEFAULT)
@@ -760,7 +754,9 @@ class MainActivity : ComponentActivity() {
                 val topLevelScreens = remember {
                     listOf(
                         Screens.Home.route,
+                        Screens.Search.route,
                         Screens.Library.route,
+                        Screens.Account.route,
                         Screens.ListenTogether.route,
                         "settings",
                     )
@@ -1418,7 +1414,9 @@ class MainActivity : ComponentActivity() {
                                     navController = navController,
                                     startDestination = when (tabOpenedFromShortcut ?: defaultOpenTab) {
                                         NavigationTab.HOME -> Screens.Home
+                                        NavigationTab.SEARCH -> Screens.Search
                                         NavigationTab.LIBRARY -> Screens.Library
+                                        NavigationTab.ACCOUNT -> Screens.Account
                                         else -> Screens.Home
                                     }.route,
                                     // Enter Transition - smoother with smaller offset and longer duration

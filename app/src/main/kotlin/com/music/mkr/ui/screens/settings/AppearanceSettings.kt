@@ -804,6 +804,7 @@ fun AppearanceSettings(
                     NavigationTab.HOME -> stringResource(R.string.home)
                     NavigationTab.SEARCH -> stringResource(R.string.search)
                     NavigationTab.LIBRARY -> stringResource(R.string.filter_library)
+                    NavigationTab.ACCOUNT -> stringResource(R.string.account)
                 }
             }
         )
@@ -2038,6 +2039,7 @@ fun AppearanceSettings(
                                 NavigationTab.HOME -> stringResource(R.string.home)
                                 NavigationTab.SEARCH -> stringResource(R.string.search)
                                 NavigationTab.LIBRARY -> stringResource(R.string.filter_library)
+                                NavigationTab.ACCOUNT -> stringResource(R.string.account)
                             }
                         )
                     },
@@ -2283,6 +2285,7 @@ enum class NavigationTab {
     HOME,
     SEARCH,
     LIBRARY,
+    ACCOUNT,
 }
 
 enum class LyricsPosition {
