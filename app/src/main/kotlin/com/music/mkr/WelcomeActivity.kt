@@ -314,24 +314,23 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
     val pages = listOf(
         OnboardingPageInfo(
             content = { _ ->
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .verticalScroll(rememberScrollState())
-                        .padding(horizontal = 24.dp, vertical = 24.dp),
-                    horizontalAlignment = Alignment.Start
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Spacer(modifier = Modifier.height(28.dp))
-
-                    // App Logo at Centre in structured position
-                    Box(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 12.dp),
-                        contentAlignment = Alignment.Center
+                            .verticalScroll(rememberScrollState())
+                            .padding(horizontal = 24.dp, vertical = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // App Logo at Centre in structured elevated container
                         Surface(
-                            shape = RoundedCornerShape(28.dp),
+                            shape = RoundedCornerShape(32.dp),
                             color = MaterialTheme.colorScheme.surfaceContainerHigh,
                             shadowElevation = 8.dp,
                             border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
@@ -340,69 +339,83 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                                 painter = painterResource(id = R.drawable.icon),
                                 contentDescription = "MKR Music Logo",
                                 modifier = Modifier
-                                    .size(118.dp)
-                                    .clip(RoundedCornerShape(28.dp)),
+                                    .size(112.dp)
+                                    .clip(RoundedCornerShape(32.dp)),
                                 contentScale = ContentScale.Crop
                             )
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(28.dp))
+                        Spacer(modifier = Modifier.height(28.dp))
 
-                    // App Brand Name & Welcome Message below logo
-                    Text(
-                        text = "MKR Music",
-                        style = thinHeaderStyle.copy(
-                            fontSize = 42.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = MaterialTheme.colorScheme.primary
-                    )
+                        // App Brand Name & Welcome Message below logo
+                        Text(
+                            text = "MKR Music",
+                            style = thinHeaderStyle.copy(
+                                fontSize = 42.sp,
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = (-0.5).sp
+                            ),
+                            color = MaterialTheme.colorScheme.primary,
+                            textAlign = TextAlign.Center
+                        )
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
 
-                    Text(
-                        text = "Welcome to the world of music",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontFamily = GoogleSansFlex,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = (-0.2).sp
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-
-                    Spacer(modifier = Modifier.height(18.dp))
-
-                    // Small beautiful "by Mohammad Kaif Raja" below the message on the left
-                    AssistChip(
-                        onClick = {},
-                        label = {
-                            Text(
-                                text = "by ${com.music.mkr.github.GitHubConfig.DEV_NAME}",
+                        Text(
+                            text = "Welcome to the world of music",
+                            style = MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = GoogleSansFlex,
-                                fontWeight = FontWeight.Medium,
-                                fontSize = 13.sp
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(
-                                painter = painterResource(id = R.drawable.person),
-                                contentDescription = null,
-                                modifier = Modifier.size(AssistChipDefaults.IconSize),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        shape = CircleShape,
-                        colors = AssistChipDefaults.assistChipColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            labelColor = MaterialTheme.colorScheme.onSurface,
-                            leadingIconContentColor = MaterialTheme.colorScheme.primary
-                        ),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-                    )
+                                fontWeight = FontWeight.SemiBold,
+                                letterSpacing = (-0.2).sp
+                            ),
+                            color = MaterialTheme.colorScheme.onBackground,
+                            textAlign = TextAlign.Center
+                        )
 
-                    Spacer(modifier = Modifier.height(32.dp))
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Text(
+                            text = "Stream, discover, and enjoy your favorite tracks with crystal-clear playback and zero interruptions.",
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                fontFamily = GoogleSansFlex
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.padding(horizontal = 16.dp)
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+
+                        // Small beautiful "by Mohammad Kaif Raja" below the message
+                        AssistChip(
+                            onClick = {},
+                            label = {
+                                Text(
+                                    text = "by ${com.music.mkr.github.GitHubConfig.DEV_NAME}",
+                                    fontFamily = GoogleSansFlex,
+                                    fontWeight = FontWeight.Medium,
+                                    fontSize = 13.sp
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    painter = painterResource(id = R.drawable.person),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(AssistChipDefaults.IconSize),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            shape = CircleShape,
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                labelColor = MaterialTheme.colorScheme.onSurface,
+                                leadingIconContentColor = MaterialTheme.colorScheme.primary
+                            ),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
                 }
             }
         ),
