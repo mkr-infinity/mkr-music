@@ -264,7 +264,19 @@ constructor(
                         scope.launch {
                             when (download.state) {
                                 Download.STATE_COMPLETED -> {
-                                    database.updateDownloadedInfo(download.request.id, true, LocalDateTime.now())
+                                    val writeSuccess = DownloadDestinationWriter.writeCompletedDownload(
+                                        context = context,
+                                        downloadCache = downloadCache,
+                                        database = database,
+                                        songId = download.request.id
+                                    )
+                                    if (writeSuccess) {
+                                        database.updateDownloadedInfo(download.request.id, true, LocalDateTime.now())
+                                        Timber.tag("DownloadDiagnostics").i("Download successfully saved to destination for %s", download.request.id)
+                                    } else {
+                                        database.updateDownloadedInfo(download.request.id, false, null)
+                                        Timber.tag("DownloadDiagnostics").e("Download destination write failed for %s", download.request.id)
+                                    }
                                 }
                                 Download.STATE_FAILED,
                                 Download.STATE_STOPPED,

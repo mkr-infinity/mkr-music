@@ -104,7 +104,8 @@ object AppModule {
                     dir
                 } else null
             } else null
-        }.getOrNull() ?: context.filesDir.resolve("download").also { it.mkdirs() }
+        }.getOrNull() ?: context.getExternalFilesDir(android.os.Environment.DIRECTORY_MUSIC)?.resolve("download")?.also { it.mkdirs() }
+        ?: context.filesDir.resolve("download").also { it.mkdirs() }
 
         return SimpleCache(
             downloadDir,
