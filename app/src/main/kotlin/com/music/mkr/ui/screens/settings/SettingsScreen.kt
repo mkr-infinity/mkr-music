@@ -6,9 +6,10 @@
 package com.music.mkr.ui.screens.settings
 
 import android.os.Build
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import kotlinx.coroutines.delay
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -274,61 +275,12 @@ fun SettingsScreen(
                 )
             }
 
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    SettingsGridCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(88.dp),
-                        key = primaryCards[0].key,
-                        icon = primaryCards[0].icon,
-                        title = primaryCards[0].title,
-                        subtitle = primaryCards[0].subtitle,
-                        onClick = { navController.navigate(primaryCards[0].route) }
-                    )
-                    SettingsGridCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(88.dp),
-                        key = primaryCards[1].key,
-                        icon = primaryCards[1].icon,
-                        title = primaryCards[1].title,
-                        subtitle = primaryCards[1].subtitle,
-                        onClick = { navController.navigate(primaryCards[1].route) }
-                    )
+            SettingsCategoryCarousel(
+                categories = primaryCards,
+                onCategoryClick = { category ->
+                    navController.navigate(category.route)
                 }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    SettingsGridCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(88.dp),
-                        key = primaryCards[2].key,
-                        icon = primaryCards[2].icon,
-                        title = primaryCards[2].title,
-                        subtitle = primaryCards[2].subtitle,
-                        onClick = { navController.navigate(primaryCards[2].route) }
-                    )
-                    SettingsGridCard(
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(88.dp),
-                        key = primaryCards[3].key,
-                        icon = primaryCards[3].icon,
-                        title = primaryCards[3].title,
-                        subtitle = primaryCards[3].subtitle,
-                        onClick = { navController.navigate(primaryCards[3].route) }
-                    )
-                }
-            }
+            )
 
             // Section 2 — Content & AI
             ExpressiveSettingGroup(
@@ -509,44 +461,163 @@ private data class SettingsHubCategory(
     val route: String
 )
 
+private data class CardColorScheme(
+    val container: Color,
+    val content: Color,
+    val iconBg: Color,
+    val iconTint: Color
+)
+
 @Composable
-private fun SettingsGridCard(
+private fun SettingsCategoryCarousel(
+    categories: List<SettingsHubCategory>,
+    onCategoryClick: (SettingsHubCategory) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val listState = rememberLazyListState()
+    var lastInteractionTime by remember { mutableStateOf(0L) }
+
+    LaunchedEffect(listState.isScrollInProgress) {
+        if (listState.isScrollInProgress) {
+            lastInteractionTime = System.currentTimeMillis()
+        }
+    }
+
+    LaunchedEffect(categories) {
+        if (categories.size <= 1) return@LaunchedEffect
+        var forward = true
+        while (true) {
+            delay(3500L)
+            if (listState.isScrollInProgress) {
+                lastInteractionTime = System.currentTimeMillis()
+                continue
+            }
+
+            val elapsedSinceInteraction = System.currentTimeMillis() - lastInteractionTime
+            if (elapsedSinceInteraction < 6000L) {
+                delay(6000L - elapsedSinceInteraction)
+                continue
+            }
+            if (listState.isScrollInProgress) {
+                lastInteractionTime = System.currentTimeMillis()
+                continue
+            }
+
+            val currentIdx = listState.firstVisibleItemIndex
+            val targetIdx = if (forward) {
+                if (currentIdx >= categories.size - 1) {
+                    forward = false
+                    (categories.size - 2).coerceAtLeast(0)
+                } else {
+                    currentIdx + 1
+                }
+            } else {
+                if (currentIdx <= 0) {
+                    forward = true
+                    1.coerceAtMost(categories.size - 1)
+                } else {
+                    currentIdx - 1
+                }
+            }.coerceIn(0, categories.size - 1)
+
+            if (targetIdx != currentIdx) {
+                try {
+                    listState.animateScrollToItem(targetIdx)
+                } catch (e: Exception) {
+                    lastInteractionTime = System.currentTimeMillis()
+                }
+            }
+        }
+    }
+
+    LazyRow(
+        state = listState,
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = modifier.fillMaxWidth()
+    ) {
+        itemsIndexed(categories, key = { _, cat -> cat.key }) { index, category ->
+            val colorScheme = when (index % 4) {
+                0 -> CardColorScheme(
+                    container = MaterialTheme.colorScheme.primaryContainer,
+                    content = MaterialTheme.colorScheme.onPrimaryContainer,
+                    iconBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
+                1 -> CardColorScheme(
+                    container = MaterialTheme.colorScheme.secondaryContainer,
+                    content = MaterialTheme.colorScheme.onSecondaryContainer,
+                    iconBg = MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f),
+                    iconTint = MaterialTheme.colorScheme.secondary
+                )
+                2 -> CardColorScheme(
+                    container = MaterialTheme.colorScheme.tertiaryContainer,
+                    content = MaterialTheme.colorScheme.onTertiaryContainer,
+                    iconBg = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f),
+                    iconTint = MaterialTheme.colorScheme.tertiary
+                )
+                else -> CardColorScheme(
+                    container = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    content = MaterialTheme.colorScheme.onSurface,
+                    iconBg = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
+                    iconTint = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            SettingsCarouselCard(
+                category = category,
+                colors = colorScheme,
+                modifier = Modifier
+                    .width(235.dp)
+                    .height(94.dp),
+                onClick = {
+                    lastInteractionTime = System.currentTimeMillis()
+                    onCategoryClick(category)
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsCarouselCard(
+    category: SettingsHubCategory,
+    colors: CardColorScheme,
     modifier: Modifier = Modifier,
-    key: String? = null,
-    icon: Int,
-    title: String,
-    subtitle: String,
     onClick: () -> Unit
 ) {
     Surface(
         modifier = modifier
-            .settingsHighlight(key, RoundedCornerShape(16.dp))
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(role = Role.Button, onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            .settingsHighlight(category.key, RoundedCornerShape(18.dp))
+            .clip(RoundedCornerShape(18.dp))
+            .clickable(
+                role = Role.Button,
+                onClickLabel = category.title,
+                onClick = onClick
+            ),
+        shape = RoundedCornerShape(18.dp),
+        color = colors.container,
         tonalElevation = 0.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.22f))
     ) {
         Row(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
+                .padding(horizontal = 14.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(38.dp)
-                    .clip(RoundedCornerShape(11.dp))
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)),
+                    .size(42.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(colors.iconBg),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    painter = painterResource(icon),
+                    painter = painterResource(category.icon),
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
+                    tint = colors.iconTint,
+                    modifier = Modifier.size(22.dp)
                 )
             }
             Column(
@@ -554,18 +625,18 @@ private fun SettingsGridCard(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = title,
+                    text = category.title,
                     style = MaterialTheme.typography.titleSmall,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = colors.content,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp, lineHeight = 14.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    text = category.subtitle,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp, lineHeight = 15.sp),
+                    color = colors.content.copy(alpha = 0.78f),
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis
                 )
