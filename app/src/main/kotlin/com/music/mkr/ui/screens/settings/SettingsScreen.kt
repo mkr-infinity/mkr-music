@@ -107,7 +107,9 @@ fun SettingsScreen(
             checkForUpdate(
                 context = context,
                 onSuccess = { _, isAvailable, _, _, _, _, _, _ ->
-                    saveUpdateAvailableState(context, isAvailable)
+                    if (getAutoUpdateCheckSetting(context)) {
+                        saveUpdateAvailableState(context, isAvailable)
+                    }
                 },
                 onError = {}
             )

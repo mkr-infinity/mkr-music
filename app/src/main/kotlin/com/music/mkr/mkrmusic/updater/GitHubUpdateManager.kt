@@ -83,6 +83,12 @@ class GitHubUpdateManager @Inject constructor(
 
                 lastCheckedEpoch = System.currentTimeMillis()
 
+                if (!force && !getAutoUpdateCheckSetting(context)) {
+                    Timber.tag(TAG).d("Auto update checks disabled in preferences while request was in-flight; discarding.")
+                    _updateState.value = ReleasePreviewState.Idle
+                    return@launch
+                }
+
                 val remoteCode = releaseMetadata.remoteVersionCode
                 if (remoteCode != null && remoteCode > installedVersionCode) {
                     _updateState.value = ReleasePreviewState.UpdateAvailable(

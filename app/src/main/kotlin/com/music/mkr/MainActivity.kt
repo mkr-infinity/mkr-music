@@ -456,6 +456,10 @@ class MainActivity : ComponentActivity() {
                 checkForUpdate(
                     context = context,
                     onSuccess = { latestVersion, isAvailable, _, _, _, _, _, _ ->
+                        if (!getAutoUpdateCheckSetting(context)) {
+                            Log.d("UpdateCheck", "Auto update check disabled while in-flight; skipping startup update notification")
+                            return@checkForUpdate
+                        }
                         val currentVersion = BuildConfig.VERSION_NAME
                         Log.d("UpdateCheck", "Startup check success. Latest: $latestVersion, Current: $currentVersion, isAvailable: $isAvailable")
                         saveUpdateAvailableState(context, isAvailable)
