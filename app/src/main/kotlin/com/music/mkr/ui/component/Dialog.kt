@@ -16,7 +16,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.draw.clip
@@ -76,7 +78,10 @@ fun DefaultDialog(
         properties = DialogProperties(usePlatformDefaultWidth = false)
     ) {
         Surface(
-            modifier = Modifier.padding(24.dp),
+            modifier = Modifier
+                .padding(horizontal = 24.dp, vertical = 32.dp)
+                .widthIn(min = 280.dp, max = 560.dp)
+                .fillMaxWidth(0.92f),
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
@@ -157,8 +162,8 @@ fun ActionPromptDialog(
                 Text(
                     text = title,
                     overflow = TextOverflow.Ellipsis,
-                    maxLines = 1,
-                    style = MaterialTheme.typography.headlineSmall,
+                    maxLines = 2,
+                    style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                 )
             }
         } else null,
@@ -184,7 +189,7 @@ fun ActionPromptDialog(
                         .fillMaxWidth()
                         .padding(vertical = 1.dp)
                         .clip(shape)
-                        .clickable { action() },
+                        .clickable(role = Role.Button) { action() },
                     shape = shape,
                     color = if (isSystemInDarkTheme()) {
                         MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
@@ -223,7 +228,8 @@ fun ListDialog(
     ) {
         Surface(
             modifier = Modifier
-                .padding(24.dp)
+                .padding(horizontal = 24.dp, vertical = 32.dp)
+                .widthIn(min = 280.dp, max = 560.dp)
                 .fillMaxWidth(0.92f),
             shape = RoundedCornerShape(24.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHigh,

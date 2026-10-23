@@ -8,7 +8,9 @@ package com.music.mkr.ui.component
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
@@ -45,7 +47,7 @@ fun <T> EnumDialog(
                         role = Role.RadioButton,
                         onClick = { onSelect(value) }
                     )
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = 24.dp, vertical = 12.dp),
             ) {
                 AnimatedRadioButton(
                     selected = isSelected,
@@ -64,6 +66,7 @@ fun <T> EnumDialog(
                         color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                     )
                     if (valueDescription != null) {
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
                             text = valueDescription(value),
                             style = MaterialTheme.typography.bodySmall,
