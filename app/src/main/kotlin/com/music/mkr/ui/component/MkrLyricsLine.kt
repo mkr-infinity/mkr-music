@@ -253,7 +253,7 @@ fun MkrLyricsLine(
                         fontStyle = FontStyle.Italic,
                         lineHeight = (textSize * 0.85f).coerceAtLeast(18f).sp
                     ),
-                    color = palette.primaryAccent.copy(alpha = if (isActive) 0.92f else animatedAlpha * 0.65f),
+                    color = palette.textPrimary.copy(alpha = if (isActive) 0.90f else animatedAlpha * 0.65f),
                     textAlign = textAlign,
                     modifier = Modifier
                         .fillMaxWidth()

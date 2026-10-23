@@ -1243,7 +1243,7 @@ fun Queue(
                                 text = stringResource(R.string.similar_content),
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.padding(start = 16.dp, top = 12.dp, bottom = 4.dp),
                             )
                         }

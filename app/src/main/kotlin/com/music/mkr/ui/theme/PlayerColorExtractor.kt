@@ -98,12 +98,12 @@ object PlayerColorExtractor {
      * Builds a contrast-safe [PlayerArtworkPalette] from a static seed color (for user-selected static themes).
      */
     fun createPaletteFromSeed(seedColor: Color): PlayerArtworkPalette {
-        val primaryAccent = ensureAccessibleContrast(seedColor, CharcoalDark, minRatio = 3.2f)
+        val primaryAccent = ensureAccessibleContrast(seedColor, CharcoalDark, minRatio = 4.5f)
         val secondaryAccent = lerp(primaryAccent, Color.White, 0.25f)
-        val surfaceCharcoal = lerp(CharcoalDark, primaryAccent, 0.06f)
-        val surfaceElevated = lerp(CharcoalSurface, primaryAccent, 0.08f)
+        val surfaceCharcoal = lerp(CharcoalDark, primaryAccent, 0.04f)
+        val surfaceElevated = lerp(CharcoalSurface, primaryAccent, 0.06f)
         val backgroundGradient = listOf(
-            lerp(CharcoalDark, primaryAccent, 0.14f),
+            lerp(CharcoalDark, primaryAccent, 0.12f),
             surfaceCharcoal,
             Color(0xFF090A0C)
         )
@@ -210,25 +210,25 @@ object PlayerColorExtractor {
         val bestSwatch = swatches.maxByOrNull { calculateSwatchWeight(it) } ?: return DefaultPalette
         val rawColor = Color(bestSwatch.rgb)
 
-        // Ensure the primary accent has comfortable contrast against charcoal surfaces
-        val primaryAccent = ensureAccessibleContrast(rawColor, CharcoalDark, minRatio = 3.2f)
+        // Ensure the primary accent has comfortable contrast against charcoal surfaces (WCAG AA)
+        val primaryAccent = ensureAccessibleContrast(rawColor, CharcoalDark, minRatio = 4.5f)
 
         // Derive secondary accent from a complementary or light swatch
         val secondarySwatch = swatches.firstOrNull { it != bestSwatch }
         val secondaryAccent = if (secondarySwatch != null) {
             val secColor = Color(secondarySwatch.rgb)
-            ensureAccessibleContrast(secColor, CharcoalDark, minRatio = 3.0f)
+            ensureAccessibleContrast(secColor, CharcoalDark, minRatio = 3.5f)
         } else {
             lerp(primaryAccent, Color.White, 0.25f)
         }
 
-        // Generate a subtle 6% tint of the dominant hue blended into charcoal
-        val surfaceCharcoal = lerp(CharcoalDark, primaryAccent, 0.06f)
-        val surfaceElevated = lerp(CharcoalSurface, primaryAccent, 0.08f)
+        // Generate a subtle 4% tint of the dominant hue blended into charcoal
+        val surfaceCharcoal = lerp(CharcoalDark, primaryAccent, 0.04f)
+        val surfaceElevated = lerp(CharcoalSurface, primaryAccent, 0.06f)
 
         // Construct a smooth 3-point vertical gradient
         val backgroundGradient = listOf(
-            lerp(CharcoalDark, primaryAccent, 0.14f), // Top: soft ambient artwork glow
+            lerp(CharcoalDark, primaryAccent, 0.12f), // Top: soft ambient artwork glow
             surfaceCharcoal,                         // Middle: deep cohesive charcoal
             Color(0xFF090A0C)                        // Bottom: pitch black base
         )
@@ -246,7 +246,7 @@ object PlayerColorExtractor {
     }
 
     /**
-     * Calculates candidate weight balancing population and chromatic saturation.
+     * Calculates candidate weight balancing population, comfortable saturation, and luminance.
      */
     private fun calculateSwatchWeight(swatch: Palette.Swatch): Float {
         val color = Color(swatch.rgb)
@@ -255,8 +255,15 @@ object PlayerColorExtractor {
         val saturation = hsv[1]
         val brightness = hsv[2]
 
-        // Favor saturated, comfortably bright colors over pure black/white/gray
-        val vibrancyScore = saturation * 2.5f + brightness
+        // Heavily penalize muddy, dark, or desaturated swatches
+        if (saturation < 0.20f || brightness < 0.25f) {
+            return -100f
+        }
+
+        // Ideal vibrancy range: saturation around 0.50-0.75, brightness around 0.65-0.85
+        val satScore = 1.0f - kotlin.math.abs(saturation - 0.65f)
+        val briScore = 1.0f - kotlin.math.abs(brightness - 0.75f)
+        val vibrancyScore = satScore * 2.0f + briScore * 1.5f
         val populationScore = swatch.population.toFloat().coerceAtMost(5000f) / 1000f
         return vibrancyScore * 3.0f + populationScore
     }
@@ -288,7 +295,7 @@ object PlayerColorExtractor {
     fun ensureAccessibleContrast(
         color: Color,
         background: Color = CharcoalDark,
-        minRatio: Float = 3.2f
+        minRatio: Float = 4.5f
     ): Color {
         val initialContrast = calculateContrast(color, background)
         if (initialContrast >= minRatio) return color
@@ -299,8 +306,11 @@ object PlayerColorExtractor {
         // If the color is essentially grayscale, fall back to Warm Amber
         if (hsv[1] < 0.15f) return WarmAmber
 
+        // Clamp saturation to prevent overly muddy or blinding neon accents
+        hsv[1] = hsv[1].coerceIn(0.35f, 0.85f)
+
         // Incrementally lift brightness to reach accessible contrast
-        var testBrightness = max(hsv[2], 0.5f)
+        var testBrightness = max(hsv[2], 0.60f)
         var bestColor = color
         while (testBrightness <= 0.98f) {
             hsv[2] = testBrightness
@@ -309,11 +319,11 @@ object PlayerColorExtractor {
                 return adjusted
             }
             bestColor = adjusted
-            testBrightness += 0.08f
+            testBrightness += 0.05f
         }
 
         // If even full brightness fails (or contrast is weak), return warm amber fallback
-        return if (calculateContrast(bestColor, background) >= 2.8f) bestColor else WarmAmber
+        return if (calculateContrast(bestColor, background) >= 3.5f) bestColor else WarmAmber
     }
 
     /**

@@ -134,7 +134,7 @@ fun EditorialPlayer(
                 Text(
                     text = stringResource(R.string.playing_from),
                     style = MaterialTheme.typography.labelSmall,
-                    color = accent.copy(alpha = 0.6f)
+                    color = textBackgroundColor.copy(alpha = 0.65f)
                 )
                 Text(
                     text = subtitle,
@@ -143,7 +143,7 @@ fun EditorialPlayer(
                         fontStyle = FontStyle.Italic
                     ),
                     fontWeight = FontWeight.SemiBold,
-                    color = accent,
+                    color = textBackgroundColor.copy(alpha = 0.85f),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
@@ -251,7 +251,7 @@ fun EditorialPlayer(
                         fontStyle = FontStyle.Italic,
                         fontWeight = FontWeight.Bold
                     ),
-                    color = accent,
+                    color = textBackgroundColor,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
@@ -264,7 +264,7 @@ fun EditorialPlayer(
                     artists = mediaMetadata.artists,
                     onArtistClick = titleActions.onArtistClick,
                     style = MaterialTheme.typography.labelLarge,
-                    color = accent.copy(alpha = 0.8f),
+                    color = textBackgroundColor.copy(alpha = 0.85f),
                     modifier = Modifier.fillMaxWidth().basicMarquee()
                 )
             }
@@ -276,7 +276,7 @@ fun EditorialPlayer(
                 Icon(
                     painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
                     contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
-                    tint = if (isLiked) MaterialTheme.colorScheme.primary else accent.copy(alpha = 0.8f),
+                    tint = if (isLiked) MaterialTheme.colorScheme.primary else textBackgroundColor.copy(alpha = 0.8f),
                     modifier = Modifier.size(26.dp)
                 )
             }
@@ -303,12 +303,12 @@ fun EditorialPlayer(
             Text(
                 text = makeTimeString(sliderPosition ?: position),
                 style = MaterialTheme.typography.labelMedium,
-                color = accent.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = makeTimeString(duration),
                 style = MaterialTheme.typography.labelMedium,
-                color = accent.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 

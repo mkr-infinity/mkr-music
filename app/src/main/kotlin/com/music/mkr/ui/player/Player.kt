@@ -1205,7 +1205,7 @@ fun BottomSheetPlayer(
                                 Icon(
                                     painter = painterResource(R.drawable.expand_more),
                                     contentDescription = stringResource(R.string.close),
-                                    tint = textButtonColor
+                                    tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                             Column(
@@ -1217,21 +1217,21 @@ fun BottomSheetPlayer(
                                     style = MaterialTheme.typography.titleMedium,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    color = textButtonColor
+                                    color = MaterialTheme.colorScheme.onSurface
                                 )
                                 Text(
                                     text = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
                                     style = MaterialTheme.typography.bodySmall,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    color = textButtonColor.copy(alpha = 0.7f)
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
                             IconButton(onClick = { queueSheetState.expandSoft() }) {
                                 Icon(
                                     painter = painterResource(R.drawable.queue_music),
                                     contentDescription = stringResource(R.string.queue),
-                                    tint = textButtonColor
+                                    tint = MaterialTheme.colorScheme.onSurface
                                 )
                             }
                         }
