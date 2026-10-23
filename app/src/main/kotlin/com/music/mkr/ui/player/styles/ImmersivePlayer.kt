@@ -61,7 +61,7 @@ import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
- * Immersive Player style (ArchiveTune V7 layout):
+ * Immersive Player style:
  * Full-bleed ambient backdrop, audio codec badge, and floating playback controls.
  */
 @Composable
@@ -188,7 +188,7 @@ fun ImmersivePlayer(
 
             Spacer(Modifier.height(16.dp))
 
-            // Codec / Quality Badge (ArchiveTune V7 signature feature)
+            // Codec / Quality Badge
             val codecLabel = currentFormat?.mimeType?.substringAfter("/")?.uppercase()?.let { codec ->
                 when {
                     codec.contains("FLAC") || codec.contains("ALAC") -> "Lossless"

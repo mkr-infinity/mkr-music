@@ -2256,7 +2256,7 @@ fun Lyrics(
                                 isPast = !isActiveLine && item.time < currentPlaybackPosition,
                                 effectivePlaybackPosition = effectivePlaybackPosition + 150L, // Visual tuning offset for land-on-beat feel
                                 expressiveAccent = expressiveAccent,
-                                inactiveAlpha = 0.35f, // Sync with ArchiveTune inactive alpha
+                                inactiveAlpha = 0.35f, // Optimal inactive alpha
                                 baseFontSize = lyricsTextSize,
                                 lineHeight = lyricsTextSize * lyricsLineSpacing.coerceAtMost(1.3f),
                                 showTranslated = hasActiveTranslations,

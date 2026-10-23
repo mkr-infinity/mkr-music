@@ -111,10 +111,10 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
         SearchableSettingItem(
             id = "player_style_architecture",
             title = "Player Style Architecture",
-            description = "Select from 9 player styles: Apple Player or 8 ArchiveTune designs",
+            description = "Select from 9 native playback styles",
             category = "Player & Mini-Player",
             iconRes = R.drawable.lyrics,
-            route = "settings/appearance",
+            route = "settings/player",
             targetKey = "appearance_player_style",
             keywords = listOf("player style", "apple", "classic", "modern", "minimal", "cinematic", "immersive", "material extended", "editorial", "architectures", "now playing", "player design")
         ),

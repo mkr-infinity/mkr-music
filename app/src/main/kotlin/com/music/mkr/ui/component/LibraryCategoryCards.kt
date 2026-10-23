@@ -52,7 +52,7 @@ import com.music.mkr.R
 private val AmberAccent = Color(0xFFF59E0B)
 
 /**
- * ArchiveTune-style compact library shortcut cards connecting to real data routes:
+ * Compact library shortcut cards connecting to real data routes:
  * 1. Liked Songs -> auto_playlist/liked
  * 2. Offline -> auto_playlist/downloaded
  * 3. Cached -> cache_playlist/cached

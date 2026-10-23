@@ -60,7 +60,7 @@ import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
- * Editorial Player style (ArchiveTune V10 layout):
+ * Editorial Player style:
  * High-contrast two-tone layout, bold serif typography, die-cut artwork, and editorial action buttons.
  */
 @Composable

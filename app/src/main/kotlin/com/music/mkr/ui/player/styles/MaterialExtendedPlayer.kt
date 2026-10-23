@@ -67,7 +67,7 @@ import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
- * Material Extended Player style (ArchiveTune V9 layout):
+ * Material Extended Player style:
  * Material 3 expressive player with animated spring controls, header quick buttons, and wavy progress.
  */
 @Composable

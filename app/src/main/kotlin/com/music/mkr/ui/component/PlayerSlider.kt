@@ -6,13 +6,16 @@
 package com.music.mkr.ui.component
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.SliderColors
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.lerp
@@ -22,7 +25,14 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
+import com.music.mkr.constants.SliderStyle
+import com.music.mkr.constants.SliderStyleKey
+import com.music.mkr.constants.SquigglySliderKey
+import com.music.mkr.utils.rememberEnumPreference
+import com.music.mkr.utils.rememberPreference
+import com.ermohdamaan.justforpixel.justforpixelexpressivelab.core.components.sliders.ExpressiveWavySlider
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayerSliderTrack(
     value: Float,
@@ -31,16 +41,78 @@ fun PlayerSliderTrack(
     onValueChangeFinished: (() -> Unit)? = null,
     valueRange: ClosedFloatingPointRange<Float> = 0f..1f,
     sliderColors: SliderColors = SliderDefaults.colors(),
-    trackHeight: Dp = 10.dp
+    trackHeight: Dp = 10.dp,
+    isPlaying: Boolean = true,
 ) {
-    androidx.compose.material3.Slider(
-        value = value,
-        onValueChange = onValueChange,
-        onValueChangeFinished = onValueChangeFinished,
-        valueRange = valueRange,
-        colors = sliderColors,
-        modifier = modifier
-    )
+    val sliderStyle by rememberEnumPreference(SliderStyleKey, defaultValue = SliderStyle.SLIM)
+    val squigglySlider by rememberPreference(SquigglySliderKey, defaultValue = false)
+    val safeValue = if (value.isNaN()) valueRange.start else value.coerceIn(valueRange.start, valueRange.endInclusive)
+
+    when (sliderStyle) {
+        SliderStyle.WAVY -> {
+            if (squigglySlider) {
+                SquigglySlider(
+                    value = safeValue,
+                    valueRange = valueRange,
+                    onValueChange = onValueChange,
+                    onValueChangeFinished = onValueChangeFinished,
+                    colors = sliderColors,
+                    isPlaying = isPlaying,
+                    modifier = modifier
+                )
+            } else {
+                WavySlider(
+                    value = safeValue,
+                    valueRange = valueRange,
+                    onValueChange = onValueChange,
+                    onValueChangeFinished = onValueChangeFinished,
+                    colors = sliderColors,
+                    isPlaying = isPlaying,
+                    modifier = modifier
+                )
+            }
+        }
+        SliderStyle.EXPRESSIVE -> {
+            ExpressiveWavySlider(
+                value = { safeValue },
+                valueRange = valueRange,
+                onValueChange = onValueChange,
+                onValueChangeFinished = onValueChangeFinished,
+                activeTrackColor = sliderColors.activeTrackColor,
+                thumbColor = sliderColors.thumbColor,
+                isPlaying = isPlaying,
+                modifier = modifier
+            )
+        }
+        SliderStyle.SLIM -> {
+            androidx.compose.material3.Slider(
+                value = safeValue,
+                valueRange = valueRange,
+                onValueChange = onValueChange,
+                onValueChangeFinished = onValueChangeFinished,
+                colors = sliderColors,
+                thumb = { Spacer(modifier = Modifier.size(0.dp)) },
+                track = { sliderState ->
+                    PlayerSliderTrack(
+                        sliderState = sliderState,
+                        colors = sliderColors,
+                        trackHeight = trackHeight
+                    )
+                },
+                modifier = modifier
+            )
+        }
+        SliderStyle.DEFAULT -> {
+            androidx.compose.material3.Slider(
+                value = safeValue,
+                onValueChange = onValueChange,
+                onValueChangeFinished = onValueChangeFinished,
+                valueRange = valueRange,
+                colors = sliderColors,
+                modifier = modifier
+            )
+        }
+    }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

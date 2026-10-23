@@ -58,7 +58,7 @@ import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
- * Minimal Player style (ArchiveTune V3 layout):
+ * Minimal Player style:
  * Clean square geometry, understated surfaces, and balanced controls.
  */
 @Composable
@@ -208,7 +208,7 @@ fun MinimalPlayer(
 
         Spacer(Modifier.height(18.dp))
 
-        // Minimal Controls Row (ArchiveTune V3 layout)
+        // Minimal Controls Row
         Row(
             horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically,

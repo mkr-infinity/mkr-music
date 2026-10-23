@@ -358,7 +358,7 @@ fun PlayerSettings(
                     key = "appearance_player_style",
                     icon = painterResource(R.drawable.palette),
                     title = { Text(stringResource(R.string.player_style)) },
-                    description = { Text("Apple Player signature design alongside 8 ArchiveTune styles") },
+                    description = { Text("Choose from 9 signature and expressive player designs") },
                     trailingContent = {
                         Text(stringResource(playerStyle.titleRes))
                     },

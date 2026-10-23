@@ -65,7 +65,7 @@ import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
- * Classic Player style (ArchiveTune V1 layout):
+ * Classic Player style:
  * Timeless layout with circular controls, classic sizing, repeat, like, and queue shortcuts.
  */
 @Composable

@@ -91,6 +91,7 @@ import com.music.mkr.mkrmusic.isSpeaker
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.ui.component.BottomSheetState
+import com.music.mkr.ui.component.PlayerSliderTrack
 import com.music.mkr.ui.component.ResizableIconButton
 import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
@@ -322,16 +323,17 @@ fun ApplePlayer(
                 Spacer(Modifier.height(8.dp))
 
                 // Progress slider
-                Slider(
+                PlayerSliderTrack(
                     value = (sliderPosition ?: position).toFloat(),
                     valueRange = 0f..(if (duration == C.TIME_UNSET) 0f else duration.toFloat()),
                     onValueChange = { onSliderValueChange(it.toLong()) },
                     onValueChangeFinished = onSliderValueChangeFinished,
-                    colors = PlayerSliderColors.getSliderColors(
+                    sliderColors = PlayerSliderColors.getSliderColors(
                         activeColor = textButtonColor.copy(alpha = 0.7f),
                         playerBackground = playerBackground,
                         useDarkTheme = true
                     ),
+                    isPlaying = isPlaying,
                     modifier = Modifier.fillMaxWidth()
                 )
 
@@ -534,16 +536,17 @@ fun ApplePlayer(
             Spacer(Modifier.height(8.dp))
 
             // Progress Slider
-            Slider(
+            PlayerSliderTrack(
                 value = (sliderPosition ?: position).toFloat(),
                 valueRange = 0f..(if (duration == C.TIME_UNSET) 0f else duration.toFloat()),
                 onValueChange = { onSliderValueChange(it.toLong()) },
                 onValueChangeFinished = onSliderValueChangeFinished,
-                colors = PlayerSliderColors.getSliderColors(
+                sliderColors = PlayerSliderColors.getSliderColors(
                     activeColor = textButtonColor.copy(alpha = 0.7f),
                     playerBackground = playerBackground,
                     useDarkTheme = true
                 ),
+                isPlaying = isPlaying,
                 modifier = Modifier.padding(horizontal = PlayerHorizontalPadding)
             )
 

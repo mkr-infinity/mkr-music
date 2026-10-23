@@ -1905,7 +1905,7 @@ fun HomeScreen(
                                 }
 
                                 if (sectionData.title.equals("Quick picks", ignoreCase = true)) {
-                                    // ArchiveTune-style Hero Card Carousel for YouTube Quick picks
+                                    // Quick Picks Card Carousel for YouTube Quick picks
                                     item(key = "home_section_cards_${section.index}") {
                                         val distinctSongs = sectionSongs.distinctBy { it.id }
                                         BoxWithConstraints(

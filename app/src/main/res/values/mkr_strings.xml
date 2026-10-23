@@ -146,7 +146,7 @@
     <string name="apple_player">Apple Player</string>
     <string name="apple_player_desc">Original fluid layout with dynamic background and system volume</string>
     <string name="player_design">Player style</string>
-    <!-- Player Styles (8 Styles from ArchiveTune) -->
+    <!-- Player Styles (9 Native Styles) -->
     <string name="player_style">Player style</string>
     <string name="player_style_classic">Classic</string>
     <string name="player_style_classic_desc">Timeless playback layout with circular controls and quick action buttons</string>

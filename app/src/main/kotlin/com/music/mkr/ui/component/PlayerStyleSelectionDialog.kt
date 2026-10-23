@@ -96,7 +96,7 @@ fun PlayerStyleSelectionDialog(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "Apple Player & 8 ArchiveTune styles",
+                        text = "9 Native Playback Interfaces",
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -130,9 +130,9 @@ fun PlayerStyleSelectionDialog(
                             onClick = { onSelect(PlayerStyle.APPLE) }
                         )
                     }
-                    item(key = "header_archivetune") {
+                    item(key = "header_expressive") {
                         Text(
-                            text = "ArchiveTune Architectures (8 Styles)",
+                            text = "Expressive Architectures (8 Styles)",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.primary,

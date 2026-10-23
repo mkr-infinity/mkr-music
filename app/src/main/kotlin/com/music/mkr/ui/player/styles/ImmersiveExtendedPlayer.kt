@@ -63,7 +63,7 @@ import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
- * Immersive Extended Player style (ArchiveTune V8 layout):
+ * Immersive Extended Player style:
  * Ambient blurred backdrop, queue subtitle context, integrated volume bar, and rich metadata.
  */
 @Composable
@@ -276,7 +276,7 @@ fun ImmersiveExtendedPlayer(
 
             Spacer(Modifier.height(14.dp))
 
-            // Transport Controls Row (ArchiveTune V8 layout)
+            // Transport Controls Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -383,7 +383,7 @@ fun ImmersiveExtendedPlayer(
 
             Spacer(Modifier.height(14.dp))
 
-            // Volume Bar (ArchiveTune V8 specific feature)
+            // Integrated Volume Bar
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

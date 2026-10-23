@@ -60,7 +60,7 @@ import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
- * Cinematic Player style (ArchiveTune V4 layout):
+ * Cinematic Player style:
  * Asymmetric widescreen controls with scaled gaps and large animated play button.
  */
 @Composable
@@ -219,7 +219,7 @@ fun CinematicPlayer(
 
         Spacer(Modifier.height(16.dp))
 
-        // Cinematic Controls Row (ArchiveTune V4 layout)
+        // Cinematic Controls Row
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val baseLarge = 56.dp
             val baseSmall = 46.dp

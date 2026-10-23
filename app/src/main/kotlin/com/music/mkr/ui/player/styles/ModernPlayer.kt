@@ -60,7 +60,7 @@ import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
- * Modern Player style (ArchiveTune V2 layout):
+ * Modern Player style:
  * Pill-shaped tonal playback controls with proportional geometry.
  */
 @Composable
@@ -210,7 +210,7 @@ fun ModernPlayer(
 
         Spacer(Modifier.height(16.dp))
 
-        // Modern Pill Playback Controls (ArchiveTune V2 specification)
+        // Modern Pill Playback Controls
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
             val maxW = maxWidth
             val playButtonHeight = (maxW / 5.5f).coerceIn(60.dp, 76.dp)

@@ -10,7 +10,7 @@ import com.music.mkr.R
 
 /**
  * Supported playback architectures in MKR Music:
- * Apple Player (signature fluid design) alongside eight ArchiveTune visual architectures.
+ * Apple Player alongside eight native expressive visual architectures.
  */
 enum class PlayerStyle(
     @StringRes val titleRes: Int,
