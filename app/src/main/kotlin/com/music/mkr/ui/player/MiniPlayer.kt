@@ -614,6 +614,7 @@ private fun NewMiniPlayerPlayButton(
     val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
     val isListenTogetherGuest = listenTogetherManager?.let { it.isInRoom && !it.isHost } ?: false
     val isMuted by playerConnection.isMuted.collectAsState()
+    val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
 
     
     val trackColor = outlineColor.copy(alpha = 0.2f)
@@ -1080,6 +1081,7 @@ private fun LegacyPlayPauseButton(
     val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
     val isListenTogetherGuest = listenTogetherManager?.let { it.isInRoom && !it.isHost } ?: false
     val isMuted by playerConnection.isMuted.collectAsState()
+    val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
 
     IconButton(
         onClick = {

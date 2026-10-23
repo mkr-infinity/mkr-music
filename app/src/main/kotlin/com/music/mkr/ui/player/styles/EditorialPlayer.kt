@@ -51,7 +51,6 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
-import com.music.mkr.R
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.ui.component.BottomSheetState
