@@ -5,7 +5,7 @@
 
 package com.music.mkr.ui.component
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -16,6 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 
@@ -37,12 +38,13 @@ fun <T> EnumDialog(
             val isSelected = value == current
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier =
-                Modifier
+                modifier = Modifier
                     .fillMaxWidth()
-                    .clickable {
-                        onSelect(value)
-                    }
+                    .selectable(
+                        selected = isSelected,
+                        role = Role.RadioButton,
+                        onClick = { onSelect(value) }
+                    )
                     .padding(horizontal = 20.dp, vertical = 12.dp),
             ) {
                 AnimatedRadioButton(
@@ -51,7 +53,9 @@ fun <T> EnumDialog(
                 )
 
                 Column(
-                    modifier = Modifier.padding(start = 16.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(start = 16.dp),
                 ) {
                     Text(
                         text = valueText(value),
