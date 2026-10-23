@@ -114,6 +114,8 @@ mkr-music-web/
 TODO.md
 TODO*
 todo*
+development_guide.md
+phase-*.md
 
 # Local release assets and downloaded APK directories
 release_apk/
