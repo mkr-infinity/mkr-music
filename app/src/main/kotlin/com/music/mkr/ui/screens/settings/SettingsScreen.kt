@@ -541,33 +541,34 @@ private fun SettingsCategoryCarousel(
 
     LazyRow(
         state = listState,
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
         modifier = modifier.fillMaxWidth()
     ) {
         itemsIndexed(categories, key = { _, cat -> cat.key }) { index, category ->
             val colorScheme = when (index % 4) {
                 0 -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.primaryContainer,
+                    container = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
                     content = MaterialTheme.colorScheme.onPrimaryContainer,
                     iconBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
                     iconTint = MaterialTheme.colorScheme.primary
                 )
                 1 -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.secondaryContainer,
+                    container = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f),
                     content = MaterialTheme.colorScheme.onSecondaryContainer,
                     iconBg = MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f),
                     iconTint = MaterialTheme.colorScheme.secondary
                 )
                 2 -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.tertiaryContainer,
+                    container = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.85f),
                     content = MaterialTheme.colorScheme.onTertiaryContainer,
                     iconBg = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f),
                     iconTint = MaterialTheme.colorScheme.tertiary
                 )
                 else -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    container = MaterialTheme.colorScheme.surfaceContainerHigh,
                     content = MaterialTheme.colorScheme.onSurface,
-                    iconBg = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.10f),
+                    iconBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                     iconTint = MaterialTheme.colorScheme.primary
                 )
             }
@@ -576,8 +577,8 @@ private fun SettingsCategoryCarousel(
                 category = category,
                 colors = colorScheme,
                 modifier = Modifier
-                    .width(235.dp)
-                    .heightIn(min = 94.dp),
+                    .width(180.dp)
+                    .heightIn(min = 140.dp),
                 onClick = {
                     lastInteractionTime = System.currentTimeMillis()
                     onCategoryClick(category)
@@ -596,29 +597,28 @@ private fun SettingsCarouselCard(
 ) {
     Surface(
         modifier = modifier
-            .settingsHighlight(category.key, RoundedCornerShape(18.dp))
-            .clip(RoundedCornerShape(18.dp))
+            .settingsHighlight(category.key, RoundedCornerShape(22.dp))
+            .clip(RoundedCornerShape(22.dp))
             .clickable(
                 role = Role.Button,
                 onClickLabel = category.title,
                 onClick = onClick
             ),
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(22.dp),
         color = colors.container,
-        tonalElevation = 0.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.22f))
+        tonalElevation = 2.dp,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 14.dp, vertical = 12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
                 modifier = Modifier
                     .size(42.dp)
-                    .clip(RoundedCornerShape(12.dp))
+                    .clip(RoundedCornerShape(14.dp))
                     .background(colors.iconBg),
                 contentAlignment = Alignment.Center
             ) {
@@ -629,24 +629,30 @@ private fun SettingsCarouselCard(
                     modifier = Modifier.size(22.dp)
                 )
             }
+
             Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = category.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
                     color = colors.content,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(2.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = category.subtitle,
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.5.sp, lineHeight = 15.sp),
-                    color = colors.content.copy(alpha = 0.78f),
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontSize = 12.sp,
+                        lineHeight = 16.sp
+                    ),
+                    color = colors.content.copy(alpha = 0.80f),
                     maxLines = 2,
+                    softWrap = true,
                     overflow = TextOverflow.Ellipsis
                 )
             }
