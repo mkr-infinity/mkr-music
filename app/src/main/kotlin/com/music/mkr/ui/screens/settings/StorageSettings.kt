@@ -533,7 +533,8 @@ fun StorageSettings(
                     trailingContent = if (customDownloadFolderUri.isNotBlank()) {
                         {
                             IconButton(
-                                onClick = { showResetFolderDialog = true }
+                                onClick = { showResetFolderDialog = true },
+                                onLongClick = {}
                             ) {
                                 Icon(
                                     painter = painterResource(R.drawable.close),

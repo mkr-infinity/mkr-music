@@ -83,6 +83,7 @@ import com.music.mkr.constants.LyricsAnimationStyleKey
 import com.music.mkr.constants.LyricsStandardBlurKey
 import com.music.mkr.constants.LyricsTextPositionKey
 import com.music.mkr.constants.LyricsTextSizeKey
+import com.music.mkr.constants.PlayerBackgroundStyle
 import com.music.mkr.constants.PlayerButtonsStyle
 import com.music.mkr.constants.PlayerButtonsStyleKey
 import com.music.mkr.constants.RotatingThumbnailKey
