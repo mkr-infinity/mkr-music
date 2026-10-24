@@ -85,10 +85,10 @@ fun LocalSearchScreen(
     val context = LocalContext.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val menuState = LocalMenuState.current
-    val playerConnection = LocalPlayerConnection.current ?: return
+    val playerConnection = LocalPlayerConnection.current
 
-    val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
-    val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
+    val isPlaying by (playerConnection?.isEffectivelyPlaying ?: kotlinx.coroutines.flow.flowOf(false)).collectAsState(initial = false)
+    val mediaMetadata by (playerConnection?.mediaMetadata ?: kotlinx.coroutines.flow.flowOf(null)).collectAsState(initial = null)
 
     val searchFilter by viewModel.filter.collectAsState()
     val result by viewModel.result.collectAsState()
@@ -225,13 +225,13 @@ fun LocalSearchScreen(
                             .combinedClickable(
                                 onClick = {
                                     if (item.id == mediaMetadata?.id) {
-                                        playerConnection.togglePlayPause()
+                                        playerConnection?.togglePlayPause()
                                     } else {
                                         val songs = result.map
                                             .getOrDefault(LocalFilter.SONG, emptyList())
                                             .filterIsInstance<Song>()
                                             .map { it.toMediaItem() }
-                                        playerConnection.playQueue(
+                                        playerConnection?.playQueue(
                                             ListQueue(
                                                 title = context.getString(R.string.queue_searched_songs),
                                                 items = songs,

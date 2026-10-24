@@ -118,10 +118,10 @@ fun OnlineSearchResult(
 ) {
     val database = LocalDatabase.current
     val menuState = LocalMenuState.current
-    val playerConnection = LocalPlayerConnection.current ?: return
+    val playerConnection = LocalPlayerConnection.current
     val haptic = LocalHapticFeedback.current
-    val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
-    val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
+    val isPlaying by (playerConnection?.isEffectivelyPlaying ?: kotlinx.coroutines.flow.flowOf(false)).collectAsState(initial = false)
+    val mediaMetadata by (playerConnection?.mediaMetadata ?: kotlinx.coroutines.flow.flowOf(null)).collectAsState(initial = null)
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -269,9 +269,9 @@ fun OnlineSearchResult(
                         when (item) {
                             is SongItem -> {
                                 if (item.id == mediaMetadata?.id) {
-                                    playerConnection.togglePlayPause()
+                                    playerConnection?.togglePlayPause()
                                 } else {
-                                    playerConnection.playQueue(
+                                    playerConnection?.playQueue(
                                         YouTubeQueue(
                                             WatchEndpoint(videoId = item.id),
                                             item.toMediaMetadata()

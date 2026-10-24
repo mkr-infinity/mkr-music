@@ -233,9 +233,7 @@ private fun AmberDockItem(
             .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true),
-                onClick = {
-                    if (!isSearchItem) onClick()
-                }
+                onClick = onClick
             )
             .padding(vertical = 5.dp),
         contentAlignment = Alignment.Center
@@ -432,9 +430,7 @@ private fun FloatingGlassItem(
             .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true),
-                onClick = {
-                    if (!isSearchItem) onClick()
-                }
+                onClick = onClick
             )
             .padding(vertical = 5.dp),
         contentAlignment = Alignment.Center
@@ -588,9 +584,7 @@ private fun ExpressivePillItem(
             .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true),
-                onClick = {
-                    if (!isSearchItem) onClick()
-                }
+                onClick = onClick
             )
             .padding(horizontal = if (isSelected && !slimNav) 14.dp else 12.dp, vertical = 8.dp),
         contentAlignment = Alignment.Center
@@ -702,9 +696,7 @@ fun CleanMaterialNavigationBar(
                 NavigationBarItem(
                     selected = isSelected,
                     onClick = {
-                        if (!isSearchItem) {
-                            onItemClick(screen, isSelected)
-                        }
+                        onItemClick(screen, isSelected)
                     },
                     interactionSource = interactionSource,
                     colors = NavigationBarItemDefaults.colors(

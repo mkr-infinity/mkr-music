@@ -113,10 +113,7 @@ fun AppNavigationRail(
                 railExpanded = false,
                 selected = isSelected,
                 onClick = { 
-                    if (!isSearchItem) {
-                        onItemClick(screen, isSelected)
-                    }
-                    // For search item, click is handled via InteractionSource
+                    onItemClick(screen, isSelected)
                 },
                 interactionSource = interactionSource,
                 icon = {

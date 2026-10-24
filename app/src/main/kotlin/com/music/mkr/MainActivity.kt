@@ -833,7 +833,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val inSearchScreen by remember {
-                    derivedStateOf { currentRoute?.startsWith("search/") == true || currentRoute == Screens.Search.route }
+                    derivedStateOf { currentRoute?.startsWith("search/") == true || currentRoute == Screens.Search.route || currentRoute == "search" }
                 }
                 val navigationItemRoutes = remember(navigationItems) {
                     navigationItems.map { it.route }.toSet()
@@ -1663,8 +1663,11 @@ class MainActivity : ComponentActivity() {
             }
 
             "search" -> {
-                uri.getQueryParameter("q")?.let {
-                    navController.navigate("search/${URLEncoder.encode(it, "UTF-8")}")
+                val q = uri.getQueryParameter("q")
+                if (!q.isNullOrEmpty()) {
+                    navController.navigate("search/${URLEncoder.encode(q, "UTF-8")}")
+                } else {
+                    navController.navigate(Screens.Search.route)
                 }
             }
 

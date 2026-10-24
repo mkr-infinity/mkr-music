@@ -111,14 +111,14 @@ fun OnlineSearchScreen(
     val database = LocalDatabase.current
     val keyboardController = LocalSoftwareKeyboardController.current
     val menuState = LocalMenuState.current
-    val playerConnection = LocalPlayerConnection.current ?: return
+    val playerConnection = LocalPlayerConnection.current
 
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
     val haptic = LocalHapticFeedback.current
-    val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
-    val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
+    val isPlaying by (playerConnection?.isEffectivelyPlaying ?: kotlinx.coroutines.flow.flowOf(false)).collectAsState(initial = false)
+    val mediaMetadata by (playerConnection?.mediaMetadata ?: kotlinx.coroutines.flow.flowOf(null)).collectAsState(initial = null)
 
     val coroutineScope = rememberCoroutineScope()
     val viewState by viewModel.viewState.collectAsState()
@@ -176,7 +176,7 @@ fun OnlineSearchScreen(
                             modifier = Modifier.combinedClickable(
                                 onClick = {
                                     if (event.song.song.id == mediaMetadata?.id) {
-                                        playerConnection.togglePlayPause()
+                                        playerConnection?.togglePlayPause()
                                     } else {
                                         scope.launch(Dispatchers.IO) {
                                             val metadata = event.song.toMediaMetadata()
@@ -189,7 +189,7 @@ fun OnlineSearchScreen(
                                                 prefs[SearchListenHistoryKey] = newList.joinToString(",")
                                             }
                                         }
-                                        playerConnection.playQueue(
+                                        playerConnection?.playQueue(
                                             YouTubeQueue.radio(event.song.toMediaMetadata())
                                         )
                                         onDismiss()
@@ -376,7 +376,7 @@ fun OnlineSearchScreen(
                             when (item) {
                                 is SongItem -> {
                                     if (item.id == mediaMetadata?.id) {
-                                        playerConnection.togglePlayPause()
+                                        playerConnection?.togglePlayPause()
                                     } else {
                                         scope.launch(Dispatchers.IO) {
                                             val metadata = item.toMediaMetadata()
@@ -389,7 +389,7 @@ fun OnlineSearchScreen(
                                                 prefs[SearchListenHistoryKey] = newList.joinToString(",")
                                             }
                                         }
-                                        playerConnection.playQueue(
+                                        playerConnection?.playQueue(
                                             YouTubeQueue.radio(item.toMediaMetadata())
                                         )
                                         onDismiss()

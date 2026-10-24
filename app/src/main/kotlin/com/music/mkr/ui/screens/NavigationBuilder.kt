@@ -109,6 +109,22 @@ fun NavGraphBuilder.navigationBuilder(
         )
     }
 
+    composable("search") {
+        val pureBlackEnabled by rememberPreference(PureBlackKey, defaultValue = false)
+        val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
+        val isSystemInDarkTheme = isSystemInDarkTheme()
+        val useDarkTheme = remember(darkTheme, isSystemInDarkTheme) {
+            if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
+        }
+        val pureBlack = remember(pureBlackEnabled, useDarkTheme) {
+            pureBlackEnabled && useDarkTheme
+        }
+        SearchScreen(
+            navController = navController,
+            pureBlack = pureBlack
+        )
+    }
+
     composable(Screens.Library.route) {
         LibraryScreen(navController)
     }
