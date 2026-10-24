@@ -5,8 +5,16 @@
 
 package com.music.mkr.ui.screens.settings
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
@@ -327,9 +335,9 @@ fun PlayerSettings(
             values = MiniPlayerDesignOption.values().toList(),
             valueText = {
                 when (it) {
-                    MiniPlayerDesignOption.CLASSIC -> stringResource(R.string.classic_mini_player)
-                    MiniPlayerDesignOption.NEW -> stringResource(R.string.new_mini_player_design)
-                    MiniPlayerDesignOption.APPLE -> stringResource(R.string.apple_mini_player_design)
+                    MiniPlayerDesignOption.CLASSIC -> "Classic mini player"
+                    MiniPlayerDesignOption.NEW -> "Expressive mini player"
+                    MiniPlayerDesignOption.APPLE -> "Apple-style capsule"
                 }
             }
         )
@@ -486,15 +494,42 @@ fun PlayerSettings(
                     key = "appearance_apple_player",
                     icon = painterResource(R.drawable.nav_bar),
                     title = { Text(stringResource(R.string.mini_player)) },
-                    description = { Text("Choose between Classic bar, Expressive pill, or Apple capsule") },
-                    trailingContent = {
+                    description = { 
                         Text(
-                            when (currentMiniPlayerOption) {
-                                MiniPlayerDesignOption.CLASSIC -> stringResource(R.string.classic_mini_player)
-                                MiniPlayerDesignOption.NEW -> stringResource(R.string.new_mini_player_design)
-                                MiniPlayerDesignOption.APPLE -> stringResource(R.string.apple_mini_player_design)
-                            }
+                            text = "Classic bar, Expressive pill, or Apple capsule",
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
+                    },
+                    trailingContent = {
+                        Surface(
+                            shape = RoundedCornerShape(12.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                        ) {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                            ) {
+                                Text(
+                                    text = when (currentMiniPlayerOption) {
+                                        MiniPlayerDesignOption.CLASSIC -> "Classic"
+                                        MiniPlayerDesignOption.NEW -> "Expressive"
+                                        MiniPlayerDesignOption.APPLE -> "Apple"
+                                    },
+                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Icon(
+                                    painter = painterResource(R.drawable.navigate_next),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
                     },
                     onClick = { showMiniPlayerDesignDialog = true }
                 ),

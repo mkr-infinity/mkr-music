@@ -47,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -310,6 +311,7 @@ fun SettingsScreen(
 
             SettingsCategoryCarousel(
                 categories = primaryCards,
+                pureBlack = pureBlack,
                 onCategoryClick = { category ->
                     navController.navigate(category.route)
                 }
@@ -506,12 +508,14 @@ private data class CardColorScheme(
     val container: Color,
     val content: Color,
     val iconBg: Color,
-    val iconTint: Color
+    val iconTint: Color,
+    val border: Color
 )
 
 @Composable
 private fun SettingsCategoryCarousel(
     categories: List<SettingsHubCategory>,
+    pureBlack: Boolean = false,
     onCategoryClick: (SettingsHubCategory) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -575,37 +579,43 @@ private fun SettingsCategoryCarousel(
         }
     }
 
+    val baseSurface = if (pureBlack) Color(0xFF141518) else MaterialTheme.colorScheme.surfaceContainerLow
+
     LazyRow(
         state = listState,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
         contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
         modifier = modifier.fillMaxWidth()
     ) {
-        itemsIndexed(categories, key = { _, cat -> cat.key }) { index, category ->
-            val colorScheme = when (index % 4) {
-                0 -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.85f),
-                    content = MaterialTheme.colorScheme.onPrimaryContainer,
-                    iconBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
-                    iconTint = MaterialTheme.colorScheme.primary
+        itemsIndexed(categories, key = { _, cat -> cat.key }) { _, category ->
+            val colorScheme = when (category.key) {
+                "appearance_theme_palette" -> CardColorScheme(
+                    container = MaterialTheme.colorScheme.primary.copy(alpha = if (pureBlack) 0.12f else 0.08f).compositeOver(baseSurface),
+                    content = MaterialTheme.colorScheme.onSurface,
+                    iconBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                    iconTint = MaterialTheme.colorScheme.primary,
+                    border = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
                 )
-                1 -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f),
-                    content = MaterialTheme.colorScheme.onSecondaryContainer,
-                    iconBg = MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f),
-                    iconTint = MaterialTheme.colorScheme.secondary
+                "player_audio_quality" -> CardColorScheme(
+                    container = MaterialTheme.colorScheme.secondary.copy(alpha = if (pureBlack) 0.12f else 0.08f).compositeOver(baseSurface),
+                    content = MaterialTheme.colorScheme.onSurface,
+                    iconBg = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f),
+                    iconTint = MaterialTheme.colorScheme.secondary,
+                    border = MaterialTheme.colorScheme.secondary.copy(alpha = 0.22f)
                 )
-                2 -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.85f),
-                    content = MaterialTheme.colorScheme.onTertiaryContainer,
-                    iconBg = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f),
-                    iconTint = MaterialTheme.colorScheme.tertiary
+                "account_login" -> CardColorScheme(
+                    container = MaterialTheme.colorScheme.tertiary.copy(alpha = if (pureBlack) 0.12f else 0.08f).compositeOver(baseSurface),
+                    content = MaterialTheme.colorScheme.onSurface,
+                    iconBg = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
+                    iconTint = MaterialTheme.colorScheme.tertiary,
+                    border = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.22f)
                 )
                 else -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    container = MaterialTheme.colorScheme.surfaceTint.copy(alpha = if (pureBlack) 0.10f else 0.06f).compositeOver(baseSurface),
                     content = MaterialTheme.colorScheme.onSurface,
-                    iconBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                    iconTint = MaterialTheme.colorScheme.primary
+                    iconBg = MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.14f),
+                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    border = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
                 )
             }
 
@@ -642,8 +652,8 @@ private fun SettingsCarouselCard(
             ),
         shape = RoundedCornerShape(22.dp),
         color = colors.container,
-        tonalElevation = 2.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+        tonalElevation = 1.dp,
+        border = BorderStroke(1.dp, colors.border)
     ) {
         Column(
             modifier = Modifier
@@ -686,7 +696,7 @@ private fun SettingsCarouselCard(
                         fontSize = 12.sp,
                         lineHeight = 16.sp
                     ),
-                    color = colors.content.copy(alpha = 0.80f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 2,
                     softWrap = true,
                     overflow = TextOverflow.Ellipsis
