@@ -51,6 +51,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularWavyProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -602,9 +604,9 @@ private fun NewMiniPlayer(
 }
 
 /**
- * Play button with circular progress indicator
- * Uses drawWithContent to update progress without recomposition
+ * Play button with circular wavy progress indicator surrounding artwork thumbnail
  */
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun NewMiniPlayerPlayButton(
     progressState: ProgressState,
@@ -624,9 +626,7 @@ private fun NewMiniPlayerPlayButton(
     val isMuted by playerConnection.isMuted.collectAsState()
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
 
-    
     val trackColor = outlineColor.copy(alpha = 0.2f)
-    val strokeWidth = 3.dp
 
     val rawProgress = progressState.progress
     val animatedProgress by animateFloatAsState(
@@ -638,47 +638,32 @@ private fun NewMiniPlayerPlayButton(
         },
         label = "miniPlayerCircularProgress"
     )
+    val displayProgress = { if (interfaceAnimations) animatedProgress else rawProgress }
 
     Box(
         contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(48.dp)
-            .drawWithContent {
-                drawContent()
-                val progress = if (interfaceAnimations) animatedProgress else rawProgress
-                val stroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
-                val startAngle = -90f
-                val sweepAngle = 360f * progress
-                val diameter = size.minDimension
-                val topLeft = Offset((size.width - diameter) / 2, (size.height - diameter) / 2)
-                
-                // Draw track
-                drawArc(
-                    color = trackColor,
-                    startAngle = 0f,
-                    sweepAngle = 360f,
-                    useCenter = false,
-                    topLeft = topLeft,
-                    size = Size(diameter, diameter),
-                    style = stroke
-                )
-                // Draw progress
-                drawArc(
-                    color = primaryColor,
-                    startAngle = startAngle,
-                    sweepAngle = sweepAngle,
-                    useCenter = false,
-                    topLeft = topLeft,
-                    size = Size(diameter, diameter),
-                    style = stroke
-                )
-            }
+        modifier = Modifier.size(48.dp)
     ) {
+        if (playbackState == Player.STATE_BUFFERING) {
+            CircularWavyProgressIndicator(
+                modifier = Modifier.fillMaxSize(),
+                color = primaryColor,
+                trackColor = trackColor
+            )
+        } else {
+            CircularWavyProgressIndicator(
+                progress = displayProgress,
+                modifier = Modifier.fillMaxSize(),
+                color = primaryColor,
+                trackColor = trackColor
+            )
+        }
+
         // Thumbnail with play/pause overlay
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
-                .size(40.dp)
+                .size(38.dp)
                 .clip(CircleShape)
                 .border(1.dp, outlineColor.copy(alpha = 0.3f), CircleShape)
                 .clickable {
@@ -754,8 +739,18 @@ private fun NewMiniPlayerSongInfo(
         verticalArrangement = Arrangement.Center
     ) {
         mediaMetadata?.let { metadata ->
+            val cleanTitle = remember(metadata.title) {
+                metadata.title.replace(Regex("[\\r\\n]+"), " ").trim()
+            }
+            val cleanArtists = remember(metadata.artists) {
+                metadata.artists
+                    .map { it.name.replace(Regex("[\\r\\n]+"), " ").trim() }
+                    .filter { it.isNotBlank() }
+                    .joinToString(", ")
+            }
+
             Text(
-                text = metadata.title,
+                text = cleanTitle,
                 color = onSurfaceColor,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
@@ -764,6 +759,7 @@ private fun NewMiniPlayerSongInfo(
                 softWrap = false,
                 modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
             )
+            Spacer(modifier = Modifier.height(2.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -772,9 +768,9 @@ private fun NewMiniPlayerSongInfo(
                     MIcon.Explicit()
                     Spacer(modifier = Modifier.width(4.dp))
                 }
-                if (metadata.artists.any { it.name.isNotBlank() }) {
+                if (cleanArtists.isNotBlank()) {
                     Text(
-                        text = metadata.artists.joinToString { it.name },
+                        text = cleanArtists,
                         color = onSurfaceColor.copy(alpha = 0.7f),
                         fontSize = 12.sp,
                         maxLines = 1,

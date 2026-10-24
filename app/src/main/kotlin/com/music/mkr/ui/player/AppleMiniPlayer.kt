@@ -372,8 +372,18 @@ fun AppleMiniPlayer(
                     val error by LocalPlayerConnection.current?.error?.collectAsState() ?: remember { mutableStateOf(null) }
                     
                     mediaMetadata?.let { metadata ->
+                        val cleanTitle = remember(metadata.title) {
+                            metadata.title.replace(Regex("[\\r\\n]+"), " ").trim()
+                        }
+                        val cleanArtists = remember(metadata.artists) {
+                            metadata.artists
+                                .map { it.name.replace(Regex("[\\r\\n]+"), " ").trim() }
+                                .filter { it.isNotBlank() }
+                                .joinToString(", ")
+                        }
+
                         Text(
-                            text = metadata.title,
+                            text = cleanTitle,
                             color = onSurfaceColor,
                             fontSize = 14.sp,
                             fontWeight = FontWeight.Medium,
@@ -382,6 +392,7 @@ fun AppleMiniPlayer(
                             softWrap = false,
                             modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
                         )
+                        Spacer(modifier = Modifier.height(2.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             verticalAlignment = Alignment.CenterVertically,
@@ -390,9 +401,9 @@ fun AppleMiniPlayer(
                                 MIcon.Explicit()
                                 Spacer(modifier = Modifier.width(4.dp))
                             }
-                            if (metadata.artists.any { it.name.isNotBlank() }) {
+                            if (cleanArtists.isNotBlank()) {
                                 Text(
-                                    text = metadata.artists.joinToString { it.name },
+                                    text = cleanArtists,
                                     color = onSurfaceColor.copy(alpha = 0.7f),
                                     fontSize = 12.sp,
                                     maxLines = 1,
