@@ -120,3 +120,4 @@ phase-*.md
 # Local release assets and downloaded APK directories
 release_apk/
 release_assets/
+scratch/
