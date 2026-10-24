@@ -211,7 +211,7 @@ fun PlayerSettings(
     )
     val (sponsorBlockEnabled, _) = rememberPreference(
         EnableSponsorBlockKey,
-        defaultValue = false
+        defaultValue = true
     )
 
     var showAudioQualityDialog by remember {
