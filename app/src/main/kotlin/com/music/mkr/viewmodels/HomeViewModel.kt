@@ -884,7 +884,7 @@ class HomeViewModel @Inject constructor(
             val artistCandidates = if (mostPlayedArtistsList.isNotEmpty()) {
                 mostPlayedArtistsList
             } else {
-                database.artists().first().filter { it.artist.isYouTubeArtist }
+                database.artistsByCreateDateAsc().first().filter { it.artist.isYouTubeArtist }
             }
             val artistDeferreds = artistCandidates
                 .shuffled().take(4)
@@ -915,7 +915,7 @@ class HomeViewModel @Inject constructor(
             val songSeeds = if (initialSongSeeds.isNotEmpty()) {
                 initialSongSeeds
             } else {
-                val dbFallback = database.songs().first().take(3)
+                val dbFallback = database.songsByCreateDateAsc().first().take(3)
                 if (dbFallback.isNotEmpty()) dbFallback else quickPicks.value.orEmpty().take(3)
             }
 
