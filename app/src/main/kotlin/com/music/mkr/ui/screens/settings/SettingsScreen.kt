@@ -211,11 +211,15 @@ fun SettingsScreen(
                             title = {
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
                                         text = item.title,
-                                        fontWeight = FontWeight.SemiBold
+                                        fontWeight = FontWeight.SemiBold,
+                                        modifier = Modifier.weight(1f, fill = false),
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
                                     )
                                     Surface(
                                         shape = RoundedCornerShape(6.dp),
@@ -233,7 +237,13 @@ fun SettingsScreen(
                                     }
                                 }
                             },
-                            description = { Text(item.description) },
+                            description = {
+                                Text(
+                                    text = item.description,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                            },
                             onClick = {
                                 SettingsHighlightManager.requestHighlight(item.targetKey, item.categoryKey)
                                 if (item.route == "settings") {
@@ -292,6 +302,7 @@ fun SettingsScreen(
             ExpressiveSettingGroup(
                 title = "Content & AI",
                 itemMinHeight = 64.dp,
+                useCapsules = true,
                 items = listOf(
                     Material3SettingsItem(
                         key = "content_language",
@@ -314,6 +325,7 @@ fun SettingsScreen(
             ExpressiveSettingGroup(
                 title = "Features & Community",
                 itemMinHeight = 64.dp,
+                useCapsules = true,
                 items = listOf(
                     Material3SettingsItem(
                         key = "screen_listen_together",
@@ -350,6 +362,7 @@ fun SettingsScreen(
             ExpressiveSettingGroup(
                 title = "Security & Data",
                 itemMinHeight = 64.dp,
+                useCapsules = true,
                 items = listOf(
                     Material3SettingsItem(
                         key = "privacy_history",
@@ -372,6 +385,7 @@ fun SettingsScreen(
             ExpressiveSettingGroup(
                 title = "Updates & Feedback",
                 itemMinHeight = 64.dp,
+                useCapsules = true,
                 items = listOf(
                     Material3SettingsItem(
                         key = "update_check",
