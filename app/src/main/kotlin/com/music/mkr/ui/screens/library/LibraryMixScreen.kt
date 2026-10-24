@@ -58,6 +58,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
@@ -290,6 +293,23 @@ fun LibraryMixScreen(
         },
         modifier = Modifier.fillMaxSize(),
     ) {
+        val tonalStart = MaterialTheme.colorScheme.primaryContainer
+        val tonalMiddle = MaterialTheme.colorScheme.secondaryContainer
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(430.dp)
+                .align(Alignment.TopCenter)
+                .drawWithCache {
+                    val brush = Brush.verticalGradient(
+                        0f to tonalStart.copy(alpha = 0.28f),
+                        0.45f to tonalMiddle.copy(alpha = 0.12f),
+                        1f to Color.Transparent,
+                    )
+                    onDrawBehind { drawRect(brush) }
+                }
+        )
+
                 LazyVerticalGrid(
                     state = lazyGridState,
                     columns = if (isGridView) {

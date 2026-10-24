@@ -1039,9 +1039,10 @@ class MainActivity : ComponentActivity() {
                                 var currentToast by remember { mutableStateOf<Toast?>(null) }
 
                                 val isHome = navBackStackEntry?.destination?.route == Screens.Home.route
+                                val isTopBarImmersive = isHome || navBackStackEntry?.destination?.route == Screens.Library.route
 
                                 Box(modifier = Modifier.fillMaxWidth()) {
-                                    if (isHome) {
+                                    if (isTopBarImmersive) {
                                         val statusBarHeight = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
                                         Box(
                                             modifier = Modifier
@@ -1062,78 +1063,80 @@ class MainActivity : ComponentActivity() {
 
                                     TopAppBar(
                                         navigationIcon = {
-                                            Box(
-                                                modifier = Modifier
-                                                    .padding(start = 12.dp)
-                                                    .clip(CircleShape)
-                                                    .clickable {
-                                                        val currentTime = System.currentTimeMillis()
-                                                        // Debounce rapid bursts (< 180ms)
-                                                        if (currentTime - lastClickTime < 180L) {
-                                                            return@clickable
-                                                        }
-                                                        if (currentTime - lastClickTime > 2500L) {
-                                                            logoClickCount = 1
-                                                        } else {
-                                                            logoClickCount++
-                                                        }
-                                                        lastClickTime = currentTime
+                                            if (isHome) {
+                                                Box(
+                                                    modifier = Modifier
+                                                        .padding(start = 12.dp)
+                                                        .clip(CircleShape)
+                                                        .clickable {
+                                                            val currentTime = System.currentTimeMillis()
+                                                            // Debounce rapid bursts (< 180ms)
+                                                            if (currentTime - lastClickTime < 180L) {
+                                                                return@clickable
+                                                            }
+                                                            if (currentTime - lastClickTime > 2500L) {
+                                                                logoClickCount = 1
+                                                            } else {
+                                                                logoClickCount++
+                                                            }
+                                                            lastClickTime = currentTime
 
-                                                        // Cancel previous inactivity timer
-                                                        resetJob?.cancel()
+                                                            // Cancel previous inactivity timer
+                                                            resetJob?.cancel()
 
-                                                        // Easter egg triggers at 5 or more deliberate clicks
-                                                        if (logoClickCount >= 5) {
-                                                            currentToast?.cancel()
-                                                            val toastMessage = when (logoClickCount) {
-                                                                5 -> "Hey, what are you doing?"
-                                                                6 -> "Stop poking the MKR logo bro!"
-                                                                7 -> "One more click and something wild might happen..."
-                                                                8 -> "Bro please don't do it bro! What are you looking for?! There's no secret menu here!"
-                                                                9 -> "Bro really has too much free time today!"
-                                                                10 -> "MKR Music — MKR stands for Mohammad Kaif Raja"
-                                                                else -> {
-                                                                    val funnyQuotes = listOf(
-                                                                        "Go listen to some bangers instead bro!",
-                                                                        "MKR Music loves you, but please spare the logo!",
-                                                                        "Still clicking?! You must really love this note!",
-                                                                        "Achievement unlocked: Professional Logo Tapper"
-                                                                    )
-                                                                    funnyQuotes[(logoClickCount - 11) % funnyQuotes.size]
+                                                            // Easter egg triggers at 5 or more deliberate clicks
+                                                            if (logoClickCount >= 5) {
+                                                                currentToast?.cancel()
+                                                                val toastMessage = when (logoClickCount) {
+                                                                    5 -> "Hey, what are you doing?"
+                                                                    6 -> "Stop poking the MKR logo bro!"
+                                                                    7 -> "One more click and something wild might happen..."
+                                                                    8 -> "Bro please don't do it bro! What are you looking for?! There's no secret menu here!"
+                                                                    9 -> "Bro really has too much free time today!"
+                                                                    10 -> "MKR Music — MKR stands for Mohammad Kaif Raja"
+                                                                    else -> {
+                                                                        val funnyQuotes = listOf(
+                                                                            "Go listen to some bangers instead bro!",
+                                                                            "MKR Music loves you, but please spare the logo!",
+                                                                            "Still clicking?! You must really love this note!",
+                                                                            "Achievement unlocked: Professional Logo Tapper"
+                                                                        )
+                                                                        funnyQuotes[(logoClickCount - 11) % funnyQuotes.size]
+                                                                    }
                                                                 }
+
+                                                                currentToast = Toast.makeText(this@MainActivity, toastMessage, Toast.LENGTH_SHORT)
+                                                                currentToast?.show()
                                                             }
 
-                                                            currentToast = Toast.makeText(this@MainActivity, toastMessage, Toast.LENGTH_SHORT)
-                                                            currentToast?.show()
+                                                            // Stop toast and reset clicks if user is not clicking for 2.5 seconds
+                                                            resetJob = logoScope.launch {
+                                                                delay(2500L)
+                                                                currentToast?.cancel()
+                                                                currentToast = null
+                                                                logoClickCount = 0
+                                                            }
                                                         }
-
-                                                        // Stop toast and reset clicks if user is not clicking for 2.5 seconds
-                                                        resetJob = logoScope.launch {
-                                                            delay(2500L)
-                                                            currentToast?.cancel()
-                                                            currentToast = null
-                                                            logoClickCount = 0
-                                                        }
-                                                    }
-                                            ) {
-                                                Surface(
-                                                    shape = CircleShape,
-                                                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.48f),
-                                                    border = BorderStroke(
-                                                        1.dp,
-                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
-                                                    ),
-                                                    modifier = Modifier.size(40.dp)
                                                 ) {
-                                                    Image(
-                                                        painter = painterResource(R.drawable.icon),
-                                                        contentDescription = stringResource(R.string.app_name),
-                                                        modifier = Modifier
-                                                            .fillMaxSize()
-                                                            .padding(4.dp)
-                                                            .clip(CircleShape),
-                                                        contentScale = ContentScale.Crop
-                                                    )
+                                                    Surface(
+                                                        shape = CircleShape,
+                                                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.48f),
+                                                        border = BorderStroke(
+                                                            1.dp,
+                                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                                                        ),
+                                                        modifier = Modifier.size(40.dp)
+                                                    ) {
+                                                        Image(
+                                                            painter = painterResource(R.drawable.icon),
+                                                            contentDescription = stringResource(R.string.app_name),
+                                                            modifier = Modifier
+                                                                .fillMaxSize()
+                                                                .padding(4.dp)
+                                                                .clip(CircleShape),
+                                                            contentScale = ContentScale.Crop
+                                                        )
+                                                    }
                                                 }
                                             }
                                         },
@@ -1244,8 +1247,8 @@ class MainActivity : ComponentActivity() {
                                         },
                                         scrollBehavior = topAppBarScrollBehavior,
                                         colors = TopAppBarDefaults.topAppBarColors(
-                                            containerColor = if (isHome) Color.Transparent else if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
-                                            scrolledContainerColor = if (isHome) Color.Transparent else if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer,
+                                            containerColor = if (isTopBarImmersive) Color.Transparent else if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
+                                            scrolledContainerColor = if (isTopBarImmersive) Color.Transparent else if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer,
                                             titleContentColor = MaterialTheme.colorScheme.onSurface,
                                             actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                             navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
