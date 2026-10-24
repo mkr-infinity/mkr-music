@@ -107,6 +107,7 @@ import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -202,6 +203,7 @@ import com.music.mkr.constants.UseAppleMiniPlayerKey
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.SearchHistory
 import com.music.mkr.extensions.toEnum
+import com.music.mkr.models.MediaMetadata
 import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.playback.DownloadUtil
 import com.music.mkr.playback.MusicService
@@ -542,8 +544,10 @@ class MainActivity : ComponentActivity() {
         val (selectedThemeColorInt) = rememberPreference(SelectedThemeColorKey, defaultValue = DefaultThemeColor.toArgb())
         val selectedThemeColor = Color(selectedThemeColorInt)
 
-        val currentSongMetadata by playerConnection?.service?.currentMediaMetadata?.collectAsState(initial = null)
-            ?: remember { mutableStateOf(null) }
+        val currentSongMetadata by produceState<MediaMetadata?>(initialValue = null, playerConnection) {
+            val connection = playerConnection ?: return@produceState
+            connection.mediaMetadata.collect { value = it }
+        }
 
         val globalArtworkPalette = rememberGlobalArtworkPalette(
             mediaMetadata = currentSongMetadata,
