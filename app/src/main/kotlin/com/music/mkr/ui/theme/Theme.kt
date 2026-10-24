@@ -87,29 +87,39 @@ fun mkrMusicTheme(
 
     val colorScheme = remember(effectivePalette, darkTheme, pureBlack) {
         if (darkTheme) {
+            val onPrimary = if (PlayerColorExtractor.calculateLuminance(effectivePalette.primaryAccent) > 0.45f) {
+                Color(0xFF0F172A)
+            } else {
+                Color.White
+            }
+            val onSecondary = if (PlayerColorExtractor.calculateLuminance(effectivePalette.secondaryAccent) > 0.45f) {
+                Color(0xFF0F172A)
+            } else {
+                Color.White
+            }
             ColorScheme(
                 primary = effectivePalette.primaryAccent,
-                onPrimary = PlayerColorExtractor.CharcoalDark,
-                primaryContainer = lerp(effectivePalette.surfaceCharcoal, effectivePalette.primaryAccent, 0.22f),
-                onPrimaryContainer = effectivePalette.textPrimary,
+                onPrimary = onPrimary,
+                primaryContainer = lerp(Color(0xFF181A20), effectivePalette.primaryAccent, 0.16f),
+                onPrimaryContainer = Color(0xFFF8FAFC),
                 inversePrimary = effectivePalette.primaryAccent,
                 secondary = effectivePalette.secondaryAccent,
-                onSecondary = PlayerColorExtractor.CharcoalDark,
-                secondaryContainer = lerp(effectivePalette.surfaceCharcoal, effectivePalette.secondaryAccent, 0.18f),
-                onSecondaryContainer = effectivePalette.textPrimary,
+                onSecondary = onSecondary,
+                secondaryContainer = lerp(Color(0xFF181A20), effectivePalette.secondaryAccent, 0.12f),
+                onSecondaryContainer = Color(0xFFF8FAFC),
                 tertiary = effectivePalette.secondaryAccent,
-                onTertiary = PlayerColorExtractor.CharcoalDark,
-                tertiaryContainer = lerp(effectivePalette.surfaceCharcoal, effectivePalette.secondaryAccent, 0.14f),
-                onTertiaryContainer = effectivePalette.textPrimary,
-                background = if (pureBlack) Color.Black else effectivePalette.surfaceCharcoal,
-                onBackground = effectivePalette.textPrimary,
-                surface = if (pureBlack) Color.Black else effectivePalette.surfaceCharcoal,
-                onSurface = effectivePalette.textPrimary,
-                surfaceVariant = if (pureBlack) Color(0xFF101012) else effectivePalette.surfaceElevated,
-                onSurfaceVariant = effectivePalette.textSecondary,
+                onTertiary = onSecondary,
+                tertiaryContainer = lerp(Color(0xFF181A20), effectivePalette.secondaryAccent, 0.10f),
+                onTertiaryContainer = Color(0xFFF8FAFC),
+                background = if (pureBlack) Color.Black else Color(0xFF121316),
+                onBackground = Color(0xFFF8FAFC),
+                surface = if (pureBlack) Color.Black else Color(0xFF121316),
+                onSurface = Color(0xFFF8FAFC),
+                surfaceVariant = if (pureBlack) Color(0xFF101012) else Color(0xFF1E2026),
+                onSurfaceVariant = Color(0xFF94A3B8),
                 surfaceTint = effectivePalette.primaryAccent,
-                inverseSurface = effectivePalette.textPrimary,
-                inverseOnSurface = effectivePalette.surfaceCharcoal,
+                inverseSurface = Color(0xFFF8FAFC),
+                inverseOnSurface = Color(0xFF121316),
                 error = Color(0xFFEF4444),
                 onError = Color.White,
                 errorContainer = Color(0xFF7F1D1D).copy(alpha = 0.5f),
@@ -118,27 +128,37 @@ fun mkrMusicTheme(
                 outlineVariant = Color.White.copy(alpha = 0.08f),
                 scrim = Color.Black,
                 surfaceBright = if (pureBlack) Color(0xFF141418) else Color(0xFF22242B),
-                surfaceDim = if (pureBlack) Color.Black else effectivePalette.surfaceCharcoal,
-                surfaceContainer = if (pureBlack) Color(0xFF121214) else effectivePalette.surfaceElevated,
+                surfaceDim = if (pureBlack) Color.Black else Color(0xFF121316),
+                surfaceContainer = if (pureBlack) Color(0xFF121214) else Color(0xFF181A20),
                 surfaceContainerHigh = if (pureBlack) Color(0xFF18181C) else Color(0xFF1F2026),
                 surfaceContainerHighest = if (pureBlack) Color(0xFF202024) else Color(0xFF262830),
-                surfaceContainerLow = if (pureBlack) Color.Black else effectivePalette.surfaceCharcoal,
+                surfaceContainerLow = if (pureBlack) Color.Black else Color(0xFF121316),
                 surfaceContainerLowest = if (pureBlack) Color.Black else Color(0xFF0C0D0F),
             )
         } else {
+            val onPrimary = if (PlayerColorExtractor.calculateLuminance(effectivePalette.primaryAccent) > 0.45f) {
+                Color(0xFF0F172A)
+            } else {
+                Color.White
+            }
+            val onSecondary = if (PlayerColorExtractor.calculateLuminance(effectivePalette.secondaryAccent) > 0.45f) {
+                Color(0xFF0F172A)
+            } else {
+                Color.White
+            }
             ColorScheme(
                 primary = effectivePalette.primaryAccent,
-                onPrimary = Color.White,
-                primaryContainer = lerp(Color.White, effectivePalette.primaryAccent, 0.18f),
+                onPrimary = onPrimary,
+                primaryContainer = lerp(Color.White, effectivePalette.primaryAccent, 0.14f),
                 onPrimaryContainer = Color(0xFF0F172A),
                 inversePrimary = effectivePalette.secondaryAccent,
                 secondary = effectivePalette.secondaryAccent,
-                onSecondary = Color.White,
-                secondaryContainer = lerp(Color.White, effectivePalette.secondaryAccent, 0.15f),
+                onSecondary = onSecondary,
+                secondaryContainer = lerp(Color.White, effectivePalette.secondaryAccent, 0.12f),
                 onSecondaryContainer = Color(0xFF1E293B),
                 tertiary = effectivePalette.secondaryAccent,
-                onTertiary = Color.White,
-                tertiaryContainer = lerp(Color.White, effectivePalette.secondaryAccent, 0.12f),
+                onTertiary = onSecondary,
+                tertiaryContainer = lerp(Color.White, effectivePalette.secondaryAccent, 0.10f),
                 onTertiaryContainer = Color(0xFF1E293B),
                 background = Color(0xFFF8FAFC),
                 onBackground = Color(0xFF0F172A),

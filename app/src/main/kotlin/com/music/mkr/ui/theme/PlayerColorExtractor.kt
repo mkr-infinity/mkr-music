@@ -9,7 +9,10 @@ import android.content.Context
 import android.graphics.Bitmap
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.tween
+import com.music.mkr.constants.InterfaceAnimationsKey
+import com.music.mkr.utils.rememberPreference
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
@@ -99,9 +102,9 @@ object PlayerColorExtractor {
      */
     fun createPaletteFromSeed(seedColor: Color): PlayerArtworkPalette {
         val primaryAccent = ensureAccessibleContrast(seedColor, CharcoalDark, minRatio = 4.5f)
-        val secondaryAccent = lerp(primaryAccent, Color.White, 0.25f)
-        val surfaceCharcoal = lerp(CharcoalDark, primaryAccent, 0.04f)
-        val surfaceElevated = lerp(CharcoalSurface, primaryAccent, 0.06f)
+        val secondaryAccent = lerp(primaryAccent, Color.White, 0.20f)
+        val surfaceCharcoal = CharcoalDark
+        val surfaceElevated = CharcoalSurface
         val backgroundGradient = listOf(
             lerp(CharcoalDark, primaryAccent, 0.12f),
             surfaceCharcoal,
@@ -211,22 +214,27 @@ object PlayerColorExtractor {
         val rawColor = Color(bestSwatch.rgb)
 
         // Ensure the primary accent has comfortable contrast against charcoal surfaces (WCAG AA)
+        // and is clamped to a refined, non-garish saturation/brightness
         val primaryAccent = ensureAccessibleContrast(rawColor, CharcoalDark, minRatio = 4.5f)
 
-        // Derive secondary accent from a complementary or light swatch
+        // Derive secondary accent from a complementary or light swatch with restrained saturation
         val secondarySwatch = swatches.firstOrNull { it != bestSwatch }
         val secondaryAccent = if (secondarySwatch != null) {
             val secColor = Color(secondarySwatch.rgb)
-            ensureAccessibleContrast(secColor, CharcoalDark, minRatio = 3.5f)
+            val secHsv = FloatArray(3)
+            android.graphics.Color.colorToHSV(secColor.toArgb(), secHsv)
+            secHsv[1] = secHsv[1].coerceIn(0.25f, 0.48f)
+            secHsv[2] = secHsv[2].coerceIn(0.65f, 0.82f)
+            Color(android.graphics.Color.HSVToColor(secHsv))
         } else {
-            lerp(primaryAccent, Color.White, 0.25f)
+            lerp(primaryAccent, Color.White, 0.20f)
         }
 
-        // Generate a subtle 4% tint of the dominant hue blended into charcoal
-        val surfaceCharcoal = lerp(CharcoalDark, primaryAccent, 0.04f)
-        val surfaceElevated = lerp(CharcoalSurface, primaryAccent, 0.06f)
+        // Structural charcoal surfaces remain stable and neutral
+        val surfaceCharcoal = CharcoalDark
+        val surfaceElevated = CharcoalSurface
 
-        // Construct a smooth 3-point vertical gradient
+        // Construct a smooth 3-point vertical gradient with restrained ambient glow at top
         val backgroundGradient = listOf(
             lerp(CharcoalDark, primaryAccent, 0.12f), // Top: soft ambient artwork glow
             surfaceCharcoal,                         // Middle: deep cohesive charcoal
@@ -255,17 +263,17 @@ object PlayerColorExtractor {
         val saturation = hsv[1]
         val brightness = hsv[2]
 
-        // Heavily penalize muddy, dark, or desaturated swatches
-        if (saturation < 0.20f || brightness < 0.25f) {
+        // Reject muddy, ultra-dark, or pure grayscale swatches
+        if (saturation < 0.15f || brightness < 0.20f) {
             return -100f
         }
 
-        // Ideal vibrancy range: saturation around 0.50-0.75, brightness around 0.65-0.85
-        val satScore = 1.0f - kotlin.math.abs(saturation - 0.65f)
-        val briScore = 1.0f - kotlin.math.abs(brightness - 0.75f)
-        val vibrancyScore = satScore * 2.0f + briScore * 1.5f
+        // Ideal refined range: saturation around 0.35-0.55, brightness around 0.65-0.80
+        val satScore = 1.0f - kotlin.math.abs(saturation - 0.45f)
+        val briScore = 1.0f - kotlin.math.abs(brightness - 0.72f)
+        val tonalBalanceScore = satScore * 2.0f + briScore * 1.5f
         val populationScore = swatch.population.toFloat().coerceAtMost(5000f) / 1000f
-        return vibrancyScore * 3.0f + populationScore
+        return tonalBalanceScore * 3.0f + populationScore * 2.0f
     }
 
     /**
@@ -297,32 +305,35 @@ object PlayerColorExtractor {
         background: Color = CharcoalDark,
         minRatio: Float = 4.5f
     ): Color {
-        val initialContrast = calculateContrast(color, background)
-        if (initialContrast >= minRatio) return color
-
         val hsv = FloatArray(3)
         android.graphics.Color.colorToHSV(color.toArgb(), hsv)
 
         // If the color is essentially grayscale, fall back to Warm Amber
-        if (hsv[1] < 0.15f) return WarmAmber
+        if (hsv[1] < 0.12f) return WarmAmber
 
-        // Clamp saturation to prevent overly muddy or blinding neon accents
-        hsv[1] = hsv[1].coerceIn(0.35f, 0.85f)
+        // Clamp saturation to an elegant, harmonious range (0.28f to 0.55f)
+        // This eliminates screaming neon accents, harsh clashing, and eye-strain
+        hsv[1] = hsv[1].coerceIn(0.28f, 0.55f)
 
-        // Incrementally lift brightness to reach accessible contrast
-        var testBrightness = max(hsv[2], 0.60f)
-        var bestColor = color
-        while (testBrightness <= 0.98f) {
+        // Ensure comfortable, accessible brightness against dark charcoal surfaces
+        var testBrightness = hsv[2].coerceIn(0.68f, 0.84f)
+        hsv[2] = testBrightness
+        var bestColor = Color(android.graphics.Color.HSVToColor(hsv))
+
+        if (calculateContrast(bestColor, background) >= minRatio) {
+            return bestColor
+        }
+
+        while (testBrightness <= 0.92f) {
             hsv[2] = testBrightness
             val adjusted = Color(android.graphics.Color.HSVToColor(hsv))
             if (calculateContrast(adjusted, background) >= minRatio) {
                 return adjusted
             }
             bestColor = adjusted
-            testBrightness += 0.05f
+            testBrightness += 0.04f
         }
 
-        // If even full brightness fails (or contrast is weak), return warm amber fallback
         return if (calculateContrast(bestColor, background) >= 3.5f) bestColor else WarmAmber
     }
 
@@ -360,6 +371,8 @@ fun rememberGlobalArtworkPalette(
     staticThemeColor: Color = PlayerColorExtractor.WarmAmber
 ): PlayerArtworkPalette {
     val context = LocalContext.current
+    val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
+
     var currentPalette by remember {
         mutableStateOf<PlayerArtworkPalette>(
             if (!enableDynamicTheme) {
@@ -387,8 +400,17 @@ fun rememberGlobalArtworkPalette(
 
         val mediaId = mediaMetadata?.id
         val thumbnailUrl = mediaMetadata?.thumbnailUrl
-        if (mediaId == null || thumbnailUrl == null) {
+        if (mediaId == null) {
             currentPalette = PlayerColorExtractor.DefaultPalette
+            return@LaunchedEffect
+        }
+
+        // If metadata is present but thumbnail is temporarily empty or loading,
+        // do not instantly bounce to fallback amber if we already have a valid palette
+        if (thumbnailUrl.isNullOrBlank()) {
+            if (currentPalette.isFallback) {
+                currentPalette = PlayerColorExtractor.DefaultPalette
+            }
             return@LaunchedEffect
         }
 
@@ -402,41 +424,47 @@ fun rememberGlobalArtworkPalette(
         currentPalette = extracted
     }
 
+    val colorAnimSpec = if (interfaceAnimations) {
+        tween<Color>(durationMillis = 500, easing = FastOutSlowInEasing)
+    } else {
+        snap<Color>()
+    }
+
     // Smoothly animate individual palette tokens across track changes
     val animatedPrimary by animateColorAsState(
         targetValue = currentPalette.primaryAccent,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = colorAnimSpec,
         label = "GlobalPrimaryAccent"
     )
     val animatedSecondary by animateColorAsState(
         targetValue = currentPalette.secondaryAccent,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = colorAnimSpec,
         label = "GlobalSecondaryAccent"
     )
     val animatedSurface by animateColorAsState(
         targetValue = currentPalette.surfaceCharcoal,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = colorAnimSpec,
         label = "GlobalSurfaceCharcoal"
     )
     val animatedElevated by animateColorAsState(
         targetValue = currentPalette.surfaceElevated,
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = colorAnimSpec,
         label = "GlobalSurfaceElevated"
     )
 
     val gradTop by animateColorAsState(
         targetValue = currentPalette.backgroundGradient.getOrElse(0) { PlayerColorExtractor.CharcoalDark },
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = colorAnimSpec,
         label = "GlobalGradTop"
     )
     val gradMid by animateColorAsState(
         targetValue = currentPalette.backgroundGradient.getOrElse(1) { PlayerColorExtractor.CharcoalDark },
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = colorAnimSpec,
         label = "GlobalGradMid"
     )
     val gradBot by animateColorAsState(
         targetValue = currentPalette.backgroundGradient.getOrElse(2) { Color(0xFF090A0C) },
-        animationSpec = tween(durationMillis = 600, easing = FastOutSlowInEasing),
+        animationSpec = colorAnimSpec,
         label = "GlobalGradBot"
     )
 
