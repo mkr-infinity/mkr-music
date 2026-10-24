@@ -985,6 +985,7 @@ fun HomeScreen(
                 )
             }
 
+            val context = LocalContext.current
             val isAutoUpdateCheckEnabled = remember(context) { getAutoUpdateCheckSetting(context) }
 
             LazyColumn(
