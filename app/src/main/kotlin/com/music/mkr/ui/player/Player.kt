@@ -577,30 +577,17 @@ fun BottomSheetPlayer(
         }
     }
 
-    // Separate colors for Previous/Next buttons in PRIMARY/TERTIARY modes
+    // Separate colors for Previous/Next buttons in PRIMARY/TERTIARY/DEFAULT modes
     val (sideButtonContainerColor, sideButtonContentColor) = when {
         playerBackground == PlayerBackgroundStyle.BLUR || 
-        playerBackground == PlayerBackgroundStyle.GRADIENT -> {
+        playerBackground == PlayerBackgroundStyle.GRADIENT ||
+        playerBackground == PlayerBackgroundStyle.GLOW_ANIMATED ||
+        playerBackground == PlayerBackgroundStyle.APPLE_MUSIC ||
+        playerBackground == PlayerBackgroundStyle.LIVE_MESH -> {
             when (playerButtonsStyle) {
                 PlayerButtonsStyle.DEFAULT -> Pair(
-                    Color.White.copy(alpha = 0.2f), 
-                    Color.White
-                )
-                PlayerButtonsStyle.PRIMARY -> Pair(
-                    MaterialTheme.colorScheme.primaryContainer,
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                PlayerButtonsStyle.TERTIARY -> Pair(
-                    MaterialTheme.colorScheme.tertiaryContainer,
-                    MaterialTheme.colorScheme.onTertiaryContainer
-                )
-            }
-        }
-        playerBackground == PlayerBackgroundStyle.GLOW_ANIMATED -> {
-            when (playerButtonsStyle) {
-                PlayerButtonsStyle.DEFAULT -> Pair(
-                    Color.White.copy(alpha = 0.2f), 
-                    Color.White
+                    artworkPalette.primaryAccent.copy(alpha = 0.22f), 
+                    artworkPalette.primaryAccent
                 )
                 PlayerButtonsStyle.PRIMARY -> Pair(
                     MaterialTheme.colorScheme.primaryContainer,
@@ -615,8 +602,8 @@ fun BottomSheetPlayer(
         else -> {
             when (playerButtonsStyle) {
                 PlayerButtonsStyle.DEFAULT -> Pair(
-                    MaterialTheme.colorScheme.surfaceContainerHighest,
-                    MaterialTheme.colorScheme.onSurface
+                    MaterialTheme.colorScheme.secondaryContainer,
+                    MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 PlayerButtonsStyle.PRIMARY -> Pair(
                     MaterialTheme.colorScheme.primaryContainer,
@@ -1444,6 +1431,10 @@ fun BottomSheetPlayer(
                             playerConnection = playerConnection,
                             navController = navController,
                             state = state,
+                            textButtonColor = textButtonColor,
+                            iconButtonColor = iconButtonColor,
+                            sideButtonContainerColor = sideButtonContainerColor,
+                            sideButtonContentColor = sideButtonContentColor,
                             onSliderValueChange = { sliderPosition = it },
                             onSliderValueChangeFinished = {
                                 sliderPosition?.let { playerConnection.player.seekTo(it) }
@@ -1473,6 +1464,8 @@ fun BottomSheetPlayer(
                             state = state,
                             textButtonColor = textButtonColor,
                             iconButtonColor = iconButtonColor,
+                            sideButtonContainerColor = sideButtonContainerColor,
+                            sideButtonContentColor = sideButtonContentColor,
                             textBackgroundColor = TextBackgroundColor,
                             onSliderValueChange = { sliderPosition = it },
                             onSliderValueChangeFinished = {
