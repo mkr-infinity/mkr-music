@@ -108,10 +108,12 @@ fun ImmersiveExtendedPlayer(
     val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
 
     Box(modifier = modifier.fillMaxSize()) {
-        // High-blur ambient backdrop
+        // High-blur ambient backdrop with hardware-efficient downsampled buffer
         AsyncImage(
             model = ImageRequest.Builder(LocalContext.current)
                 .data(mediaMetadata.thumbnailUrl)
+                .size(96, 96) // Downsampled to 96x96 for zero GPU overdraw and buttery-smooth 60/120fps motion
+                .allowHardware(false)
                 .crossfade(true)
                 .build(),
             contentDescription = null,

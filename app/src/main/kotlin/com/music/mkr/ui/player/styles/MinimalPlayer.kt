@@ -52,6 +52,8 @@ import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.ui.component.BottomSheetState
 import com.music.mkr.ui.component.PlayerSliderTrack
+import com.music.mkr.ui.component.PlayerTransportRow
+import com.music.mkr.ui.component.TransportVariant
 import com.music.mkr.ui.player.AudioQualityBadge
 import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
@@ -223,140 +225,77 @@ fun MinimalPlayer(
 
         Spacer(Modifier.height(18.dp))
 
-        // Minimal Controls Row
-        Row(
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            // Shuffle (40dp size, 10dp rounded corner)
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .clickable(role = Role.Button) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.shuffle),
-                    contentDescription = stringResource(R.string.shuffle),
-                    tint = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 1f else 0.4f),
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            // Skip Previous (52dp size, 14dp rounded box, 0.08 alpha bg)
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(textBackgroundColor.copy(alpha = 0.08f))
-                    .clickable(
-                        role = Role.Button,
-                        enabled = canSkipPrevious
-                    ) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.seekToPrevious()
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.skip_previous),
-                    contentDescription = stringResource(R.string.widget_previous),
-                    tint = textBackgroundColor.copy(alpha = if (canSkipPrevious) 0.9f else 0.4f),
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-
-            // Play / Pause (64dp size, 18dp rounded box, solid container)
-            Box(
-                modifier = Modifier
-                    .size(64.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(textButtonColor)
-                    .clickable(role = Role.Button) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        if (playbackState == Player.STATE_ENDED) {
-                            playerConnection.player.seekTo(0, 0)
-                            playerConnection.player.playWhenReady = true
-                        } else {
-                            playerConnection.player.togglePlayPause()
-                        }
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(28.dp),
-                        color = iconButtonColor,
-                        strokeWidth = 2.5.dp
-                    )
+        // Minimal Controls Row with Tactile Spring Motion
+        PlayerTransportRow(
+            isPlaying = isPlaying,
+            isLoading = isLoading,
+            playbackState = playbackState,
+            canSkipPrevious = canSkipPrevious,
+            canSkipNext = canSkipNext,
+            onPlayPause = {
+                if (playbackState == Player.STATE_ENDED) {
+                    playerConnection.player.seekTo(0, 0)
+                    playerConnection.player.playWhenReady = true
                 } else {
+                    playerConnection.player.togglePlayPause()
+                }
+            },
+            onSkipPrevious = { playerConnection.seekToPrevious() },
+            onSkipNext = { playerConnection.seekToNext() },
+            variant = TransportVariant.EXPRESSIVE,
+            primaryContainerColor = textButtonColor,
+            primaryContentColor = iconButtonColor,
+            secondaryContainerColor = textBackgroundColor.copy(alpha = 0.08f),
+            secondaryContentColor = textBackgroundColor,
+            playButtonSize = 64.dp,
+            sideButtonSize = 52.dp,
+            playIconSize = 32.dp,
+            sideIconSize = 26.dp,
+            haptic = haptic,
+            leadingControl = {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable(role = Role.Button) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.shuffle),
+                        contentDescription = stringResource(R.string.shuffle),
+                        tint = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 1f else 0.4f),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            },
+            trailingControl = {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .clickable(role = Role.Button) {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            playerConnection.player.toggleRepeatMode()
+                        },
+                    contentAlignment = Alignment.Center
+                ) {
                     Icon(
                         painter = painterResource(
                             when {
-                                playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                isPlaying -> R.drawable.pause
-                                else -> R.drawable.play
+                                repeatMode == Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
+                                else -> R.drawable.repeat
                             }
                         ),
-                        contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                        tint = iconButtonColor,
-                        modifier = Modifier.size(32.dp)
+                        contentDescription = stringResource(R.string.repeat),
+                        tint = textBackgroundColor.copy(alpha = if (repeatMode == Player.REPEAT_MODE_OFF) 0.4f else 1f),
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
-
-            // Skip Next (52dp size, 14dp rounded box, 0.08 alpha bg)
-            Box(
-                modifier = Modifier
-                    .size(52.dp)
-                    .clip(RoundedCornerShape(14.dp))
-                    .background(textBackgroundColor.copy(alpha = 0.08f))
-                    .clickable(
-                        role = Role.Button,
-                        enabled = canSkipNext
-                    ) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.seekToNext()
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.skip_next),
-                    contentDescription = stringResource(R.string.next),
-                    tint = textBackgroundColor.copy(alpha = if (canSkipNext) 0.9f else 0.4f),
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-
-            // Repeat (40dp size, 10dp rounded box)
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .clickable(role = Role.Button) {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.player.toggleRepeatMode()
-                    },
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(
-                        when {
-                            repeatMode == Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                            else -> R.drawable.repeat
-                        }
-                    ),
-                    contentDescription = stringResource(R.string.repeat),
-                    tint = textBackgroundColor.copy(alpha = if (repeatMode == Player.REPEAT_MODE_OFF) 0.4f else 1f),
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-        }
+        )
 
         Spacer(Modifier.height(16.dp))
     }

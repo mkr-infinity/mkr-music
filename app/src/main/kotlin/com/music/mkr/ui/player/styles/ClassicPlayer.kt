@@ -59,7 +59,9 @@ import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.ui.player.AudioQualityBadge
 import com.music.mkr.ui.component.BottomSheetState
 import com.music.mkr.ui.component.PlayerSliderTrack
+import com.music.mkr.ui.component.PlayerTransportRow
 import com.music.mkr.ui.component.ResizableIconButton
+import com.music.mkr.ui.component.TransportVariant
 import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
 import com.music.mkr.ui.theme.PlayerSliderColors
@@ -226,130 +228,63 @@ fun ClassicPlayer(
         Spacer(Modifier.height(20.dp))
 
         // Classic Playback Controls: Repeat, Skip Previous, Play/Pause, Skip Next, Favorite
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            // Repeat button
-            Box(contentAlignment = Alignment.Center) {
-                ResizableIconButton(
-                    icon = when (repeatMode) {
-                        Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                        Player.REPEAT_MODE_ALL -> R.drawable.repeat
-                        else -> R.drawable.repeat
-                    },
-                    contentDescription = stringResource(R.string.repeat),
-                    color = textBackgroundColor,
-                    modifier = Modifier
-                        .size(36.dp)
-                        .alpha(if (repeatMode == Player.REPEAT_MODE_OFF) 0.45f else 1f),
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.player.toggleRepeatMode()
-                    }
-                )
-            }
-
-            // Skip Previous
-            Surface(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    playerConnection.seekToPrevious()
-                },
-                enabled = canSkipPrevious,
-                shape = CircleShape,
-                color = textBackgroundColor.copy(alpha = if (canSkipPrevious) 0.12f else 0.05f),
-                modifier = Modifier.size(52.dp)
-            ) {
+        PlayerTransportRow(
+            isPlaying = isPlaying,
+            isLoading = isLoading,
+            playbackState = playbackState,
+            canSkipPrevious = canSkipPrevious,
+            canSkipNext = canSkipNext,
+            onPlayPause = {
+                if (playbackState == Player.STATE_ENDED) {
+                    playerConnection.player.seekTo(0, 0)
+                    playerConnection.player.playWhenReady = true
+                } else {
+                    playerConnection.player.togglePlayPause()
+                }
+            },
+            onSkipPrevious = { playerConnection.seekToPrevious() },
+            onSkipNext = { playerConnection.seekToNext() },
+            variant = TransportVariant.CIRCLE,
+            primaryContainerColor = textButtonColor,
+            primaryContentColor = iconButtonColor,
+            secondaryContainerColor = textBackgroundColor.copy(alpha = 0.12f),
+            secondaryContentColor = textBackgroundColor,
+            haptic = haptic,
+            leadingControl = {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(R.drawable.skip_previous),
-                        contentDescription = stringResource(R.string.widget_previous),
-                        tint = textBackgroundColor.copy(alpha = if (canSkipPrevious) 1f else 0.38f),
-                        modifier = Modifier.size(28.dp)
+                    ResizableIconButton(
+                        icon = when (repeatMode) {
+                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
+                            Player.REPEAT_MODE_ALL -> R.drawable.repeat
+                            else -> R.drawable.repeat
+                        },
+                        contentDescription = stringResource(R.string.repeat),
+                        color = textBackgroundColor,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .alpha(if (repeatMode == Player.REPEAT_MODE_OFF) 0.45f else 1f),
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            playerConnection.player.toggleRepeatMode()
+                        }
+                    )
+                }
+            },
+            trailingControl = {
+                Box(contentAlignment = Alignment.Center) {
+                    ResizableIconButton(
+                        icon = if (isLiked) R.drawable.favorite else R.drawable.favorite_border,
+                        contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
+                        color = if (isLiked) MaterialTheme.colorScheme.error else textBackgroundColor,
+                        modifier = Modifier.size(36.dp),
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            playerConnection.toggleLike()
+                        }
                     )
                 }
             }
-
-            // Play / Pause Circle
-            Surface(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    if (playbackState == Player.STATE_ENDED) {
-                        playerConnection.player.seekTo(0, 0)
-                        playerConnection.player.playWhenReady = true
-                    } else {
-                        playerConnection.player.togglePlayPause()
-                    }
-                },
-                shape = RoundedCornerShape(playPauseRoundness),
-                color = textButtonColor,
-                shadowElevation = 8.dp,
-                modifier = Modifier.size(72.dp)
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = iconButtonColor,
-                            modifier = Modifier.size(32.dp),
-                            strokeWidth = 3.dp
-                        )
-                    } else {
-                        Image(
-                            painter = painterResource(
-                                when {
-                                    playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                    isPlaying -> R.drawable.pause
-                                    else -> R.drawable.play
-                                }
-                            ),
-                            contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                            colorFilter = ColorFilter.tint(iconButtonColor),
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
-                }
-            }
-
-            // Skip Next
-            Surface(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    playerConnection.seekToNext()
-                },
-                enabled = canSkipNext,
-                shape = CircleShape,
-                color = textBackgroundColor.copy(alpha = if (canSkipNext) 0.12f else 0.05f),
-                modifier = Modifier.size(52.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(R.drawable.skip_next),
-                        contentDescription = stringResource(R.string.next),
-                        tint = textBackgroundColor.copy(alpha = if (canSkipNext) 1f else 0.38f),
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
-
-            // Like / Favorite
-            Box(contentAlignment = Alignment.Center) {
-                ResizableIconButton(
-                    icon = if (isLiked) R.drawable.favorite else R.drawable.favorite_border,
-                    contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
-                    color = if (isLiked) MaterialTheme.colorScheme.error else textBackgroundColor,
-                    modifier = Modifier.size(36.dp),
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.toggleLike()
-                    }
-                )
-            }
-        }
+        )
 
         Spacer(Modifier.height(16.dp))
     }

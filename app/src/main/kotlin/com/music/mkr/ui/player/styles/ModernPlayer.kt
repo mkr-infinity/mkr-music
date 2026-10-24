@@ -54,6 +54,8 @@ import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.ui.component.BottomSheetState
 import com.music.mkr.ui.component.PlayerSliderTrack
+import com.music.mkr.ui.component.PlayerTransportRow
+import com.music.mkr.ui.component.TransportVariant
 import com.music.mkr.ui.player.AudioQualityBadge
 import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
@@ -233,96 +235,33 @@ fun ModernPlayer(
             val sideButtonHeight = playButtonHeight * 0.82f
             val sideButtonWidth = sideButtonHeight * 1.3f
 
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                FilledTonalIconButton(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.seekToPrevious()
-                    },
-                    enabled = canSkipPrevious,
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = textButtonColor.copy(alpha = 0.18f),
-                        contentColor = textBackgroundColor
-                    ),
-                    modifier = Modifier
-                        .size(width = sideButtonWidth, height = sideButtonHeight)
-                        .clip(RoundedCornerShape(32.dp))
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.skip_previous),
-                        contentDescription = stringResource(R.string.widget_previous),
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                FilledIconButton(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        if (playbackState == Player.STATE_ENDED) {
-                            playerConnection.player.seekTo(0, 0)
-                            playerConnection.player.playWhenReady = true
-                        } else {
-                            playerConnection.player.togglePlayPause()
-                        }
-                    },
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = textButtonColor,
-                        contentColor = iconButtonColor
-                    ),
-                    modifier = Modifier
-                        .size(width = playButtonWidth, height = playButtonHeight)
-                        .clip(RoundedCornerShape(32.dp))
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = iconButtonColor,
-                            modifier = Modifier.size(32.dp),
-                            strokeWidth = 3.dp
-                        )
+            PlayerTransportRow(
+                isPlaying = isPlaying,
+                isLoading = isLoading,
+                playbackState = playbackState,
+                canSkipPrevious = canSkipPrevious,
+                canSkipNext = canSkipNext,
+                onPlayPause = {
+                    if (playbackState == Player.STATE_ENDED) {
+                        playerConnection.player.seekTo(0, 0)
+                        playerConnection.player.playWhenReady = true
                     } else {
-                        Icon(
-                            painter = painterResource(
-                                when {
-                                    playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                    isPlaying -> R.drawable.pause
-                                    else -> R.drawable.play
-                                }
-                            ),
-                            contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                            modifier = Modifier.size(36.dp)
-                        )
+                        playerConnection.player.togglePlayPause()
                     }
-                }
-
-                Spacer(modifier = Modifier.width(16.dp))
-
-                FilledTonalIconButton(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.seekToNext()
-                    },
-                    enabled = canSkipNext,
-                    colors = IconButtonDefaults.filledTonalIconButtonColors(
-                        containerColor = textButtonColor.copy(alpha = 0.18f),
-                        contentColor = textBackgroundColor
-                    ),
-                    modifier = Modifier
-                        .size(width = sideButtonWidth, height = sideButtonHeight)
-                        .clip(RoundedCornerShape(32.dp))
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.skip_next),
-                        contentDescription = stringResource(R.string.next),
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
+                },
+                onSkipPrevious = { playerConnection.seekToPrevious() },
+                onSkipNext = { playerConnection.seekToNext() },
+                variant = TransportVariant.PILL,
+                primaryContainerColor = textButtonColor,
+                primaryContentColor = iconButtonColor,
+                secondaryContainerColor = textButtonColor.copy(alpha = 0.18f),
+                secondaryContentColor = textBackgroundColor,
+                playButtonWidth = playButtonWidth,
+                playButtonHeight = playButtonHeight,
+                sideButtonWidth = sideButtonWidth,
+                sideButtonHeight = sideButtonHeight,
+                haptic = haptic
+            )
         }
 
         Spacer(Modifier.height(16.dp))
