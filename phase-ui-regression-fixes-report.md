@@ -188,6 +188,26 @@ Following the initial parity pass, a second comprehensive inspection was perform
 | `4c46b41` | fix(home): restore Mood, Similar, and Covers sections with fallback seeds and responsive remember keys | `HomeScreen.kt`, `HomeViewModel.kt` |
 | `4d65ec9` | fix(search): align Search navigation, route registration, and rendering with reference implementation | `NavigationBuilder.kt`, `MainActivity.kt`, `OnlineSearchScreen.kt`, `LocalSearchScreen.kt`, `OnlineSearchResult.kt`, `TabNewsSuggestion.kt`, `FloatingNav.kt`, `AppNavigation.kt` |
 | `8e21660` | fix(search): prevent NPE on search route arguments, add BackHandler and align active navigation tab | `MainActivity.kt`, `SearchScreen.kt`, `OnlineSearchViewModel.kt`, `FloatingNav.kt`, `AppNavigation.kt`, `OnlineSearchScreen.kt` |
+| `072820d` | fix(home): call artistsByCreateDateAsc and songsByCreateDateAsc without missing sortType parameters | `HomeViewModel.kt` |
+| `10b0bf7` | fix(nav): use safe call on delegated currentRoute property in MainActivity | `MainActivity.kt` |
+| `b6d30be` | fix(service): restore reference onTaskRemoved logic and process termination on clear task | `MusicService.kt` |
+
+---
+
+## 9. Clear Task Lag Root Cause & Fix
+
+### Root Cause
+When "Stop music on task clear" (`StopMusicOnTaskClearKey`) was enabled, swiping the app away from recent tasks invoked `MusicService.onTaskRemoved`.
+In the modified implementation:
+1. `super.onTaskRemoved(rootIntent)` was omitted when `stopOnTaskClear` was true, preventing Android Media3 `MediaLibraryService` from executing internal session teardown and unbinding.
+2. `android.os.Process.killProcess(android.os.Process.myPid())` was omitted, and `stopSelf()` returned early without terminating the process.
+Because the service had returned `START_STICKY` from `super.onStartCommand`, Android's `ActivityManagerService` (AMS) attempted to reschedule or manage a headless foreground service whose media session was already released. Audio threads, native FFTW buffers, and background coroutines remained alive in a zombie process, continuously firing binder IPCs and causing extreme device lag across the operating system.
+
+### Solution
+Restored the exact character-for-character implementation from the reference repository (`/home/kaif/Downloads/source-code/mkr-music/app/src/main/kotlin/com/music/mkr/playback/MusicService.kt`):
+- `super.onTaskRemoved(rootIntent)` is called first.
+- Audio focus is abandoned, player paused/stopped/cleared, notification canceled, and mediaSession released.
+- `stopSelf()` is followed immediately by `android.os.Process.killProcess(android.os.Process.myPid())`, cleanly terminating the Linux process, freeing all system resources instantly, and completely eliminating device lag.
 
 ---
 
