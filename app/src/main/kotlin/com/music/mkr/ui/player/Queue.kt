@@ -9,6 +9,7 @@ import android.annotation.SuppressLint
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -1227,9 +1228,51 @@ fun Queue(
                             if (locked) {
                                 content()
                             } else {
+                                val dismissDirection = dismissBoxState.dismissDirection
+                                val isDismissing = dismissDirection != null
+                                val dismissBgColor by animateColorAsState(
+                                    targetValue = when (dismissBoxState.targetValue) {
+                                        SwipeToDismissBoxValue.StartToEnd,
+                                        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.90f)
+                                        else -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.50f)
+                                    },
+                                    label = "queueDismissBg"
+                                )
+                                val dismissIconTint by animateColorAsState(
+                                    targetValue = when (dismissBoxState.targetValue) {
+                                        SwipeToDismissBoxValue.StartToEnd,
+                                        SwipeToDismissBoxValue.EndToStart -> MaterialTheme.colorScheme.onErrorContainer
+                                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                                    },
+                                    label = "queueDismissIconTint"
+                                )
+
                                 SwipeToDismissBox(
                                     state = dismissBoxState,
-                                    backgroundContent = {},
+                                    backgroundContent = {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .clip(listItemShape(index, mutableQueueWindows.size))
+                                                .background(dismissBgColor)
+                                                .padding(horizontal = 24.dp),
+                                            contentAlignment = if (dismissDirection == SwipeToDismissBoxValue.StartToEnd) {
+                                                Alignment.CenterStart
+                                            } else {
+                                                Alignment.CenterEnd
+                                            }
+                                        ) {
+                                            if (isDismissing) {
+                                                Icon(
+                                                    painter = painterResource(R.drawable.delete),
+                                                    contentDescription = stringResource(R.string.delete),
+                                                    tint = dismissIconTint,
+                                                    modifier = Modifier.size(24.dp)
+                                                )
+                                            }
+                                        }
+                                    },
+                                    modifier = Modifier.animateItem()
                                 ) {
                                     content()
                                 }
