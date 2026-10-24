@@ -848,7 +848,7 @@ class MainActivity : ComponentActivity() {
                     currentRoute == null ||
                         navigationItemRoutes.contains(currentRoute) ||
                         currentRoute == "search" ||
-                        currentRoute.startsWith("search/")
+                        currentRoute?.startsWith("search/") == true
                 }
 
                 val isLandscape = configuration.containerDpSize.width > configuration.containerDpSize.height
