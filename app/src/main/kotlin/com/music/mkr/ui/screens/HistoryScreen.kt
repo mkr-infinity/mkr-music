@@ -75,6 +75,7 @@ import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.playback.queues.ListQueue
 import com.music.mkr.playback.queues.YouTubeQueue
 import com.music.mkr.ui.component.ChipsRow
+import com.music.mkr.ui.component.ExpressiveIconButton
 import com.music.mkr.ui.component.HideOnScrollFAB
 import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.LocalMenuState
@@ -456,7 +457,7 @@ fun HistoryScreen(
                         .height(52.dp)
                         .focusRequester(focusRequester),
                     leadingIcon = {
-                        IconButton(
+                        ExpressiveIconButton(
                             onClick = {
                                 if (isSearching) {
                                     isSearching = false
@@ -469,38 +470,53 @@ fun HistoryScreen(
                                 if (!isSearching) {
                                     navController.backToMain()
                                 }
-                            }
+                            },
+                            size = 36.dp
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.arrow_back),
-                                contentDescription = stringResource(R.string.back)
+                                contentDescription = stringResource(R.string.back),
+                                tint = MaterialTheme.colorScheme.onSurface,
+                                modifier = Modifier.size(18.dp)
                             )
                         }
                     },
                     trailingIcon = {
                         androidx.compose.foundation.layout.Row(
-                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                            verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
+                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(4.dp),
+                            modifier = Modifier.padding(end = 6.dp)
                         ) {
                             if (query.text.isNotEmpty()) {
-                                IconButton(onClick = { query = TextFieldValue("") }) {
+                                ExpressiveIconButton(
+                                    onClick = { query = TextFieldValue("") },
+                                    size = 36.dp
+                                ) {
                                     Icon(
                                         painter = painterResource(R.drawable.close),
-                                        contentDescription = stringResource(R.string.close)
+                                        contentDescription = stringResource(R.string.close),
+                                        tint = MaterialTheme.colorScheme.onSurface,
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                             }
-                            IconButton(onClick = {
-                                val newSource = if (historySource == HistorySource.LOCAL) HistorySource.REMOTE else HistorySource.LOCAL
-                                viewModel.historySource.value = newSource
-                                if (newSource == HistorySource.REMOTE) {
-                                    viewModel.fetchRemoteHistory()
-                                }
-                            }) {
+                            ExpressiveIconButton(
+                                onClick = {
+                                    val newSource = if (historySource == HistorySource.LOCAL) HistorySource.REMOTE else HistorySource.LOCAL
+                                    viewModel.historySource.value = newSource
+                                    if (newSource == HistorySource.REMOTE) {
+                                        viewModel.fetchRemoteHistory()
+                                    }
+                                },
+                                size = 36.dp
+                            ) {
                                 Icon(
                                     painter = painterResource(
                                         if (historySource == HistorySource.LOCAL) R.drawable.cloud_off_listentogether else R.drawable.globe_search
                                     ),
-                                    contentDescription = null
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurface,
+                                    modifier = Modifier.size(18.dp)
                                 )
                             }
                         }
@@ -510,11 +526,15 @@ fun HistoryScreen(
         },
         navigationIcon = {
             if (inSelectMode) {
-                IconButton(onClick = onExitSelectionMode) {
-                    Icon(
-                        painter = painterResource(R.drawable.close),
-                        contentDescription = stringResource(R.string.close),
-                    )
+                Box(modifier = Modifier.padding(start = 12.dp)) {
+                    ExpressiveIconButton(onClick = onExitSelectionMode) {
+                        Icon(
+                            painter = painterResource(R.drawable.close),
+                            contentDescription = stringResource(R.string.close),
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    }
                 }
             }
         },

@@ -208,6 +208,7 @@ import com.music.mkr.ui.component.AppNavigationBar
 import com.music.mkr.ui.component.AppNavigationRail
 import com.music.mkr.ui.component.BottomSheetMenu
 import com.music.mkr.ui.component.BottomSheetPage
+import com.music.mkr.ui.component.ExpressiveIconButton
 import com.music.mkr.ui.component.LocalBottomSheetPageState
 import com.music.mkr.ui.component.LocalMenuState
 import com.music.mkr.ui.component.rememberBottomSheetState
@@ -1065,14 +1066,14 @@ class MainActivity : ComponentActivity() {
                                         navigationIcon = {
                                             if (isHome) {
                                                 Box(
-                                                    modifier = Modifier
-                                                        .padding(start = 12.dp)
-                                                        .clip(CircleShape)
-                                                        .clickable {
+                                                    modifier = Modifier.padding(start = 12.dp)
+                                                ) {
+                                                    ExpressiveIconButton(
+                                                        onClick = {
                                                             val currentTime = System.currentTimeMillis()
                                                             // Debounce rapid bursts (< 180ms)
                                                             if (currentTime - lastClickTime < 180L) {
-                                                                return@clickable
+                                                                return@ExpressiveIconButton
                                                             }
                                                             if (currentTime - lastClickTime > 2500L) {
                                                                 logoClickCount = 1
@@ -1116,24 +1117,16 @@ class MainActivity : ComponentActivity() {
                                                                 currentToast = null
                                                                 logoClickCount = 0
                                                             }
-                                                        }
-                                                ) {
-                                                    Surface(
-                                                        shape = CircleShape,
-                                                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.48f),
-                                                        border = BorderStroke(
-                                                            1.dp,
-                                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
-                                                        ),
-                                                        modifier = Modifier.size(40.dp)
+                                                        },
+                                                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
                                                     ) {
                                                         Image(
                                                             painter = painterResource(R.drawable.icon),
                                                             contentDescription = stringResource(R.string.app_name),
                                                             modifier = Modifier
                                                                 .fillMaxSize()
-                                                                .padding(4.dp)
-                                                                .clip(CircleShape),
+                                                                .padding(5.dp)
+                                                                .clip(RoundedCornerShape(8.dp)),
                                                             contentScale = ContentScale.Crop
                                                         )
                                                     }
@@ -1164,18 +1157,11 @@ class MainActivity : ComponentActivity() {
                                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                                 modifier = Modifier.padding(end = 12.dp)
                                             ) {
-                                                // Listening History navigation action (clean history vector icon)
+                                                // Listening History navigation action (expressive squircle capsule)
                                                 if (showHistoryButton) {
                                                     val historyDesc = stringResource(R.string.listening_history)
-                                                    IconButton(
-                                                        onClick = { navController.navigate("history") },
-                                                        modifier = Modifier.size(40.dp),
-                                                        colors = IconButtonDefaults.iconButtonColors(
-                                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
-                                                                alpha = 0.48f
-                                                            ),
-                                                            contentColor = MaterialTheme.colorScheme.onSurface
-                                                        )
+                                                    ExpressiveIconButton(
+                                                        onClick = { navController.navigate("history") }
                                                     ) {
                                                         Icon(
                                                             painter = painterResource(R.drawable.history),
@@ -1189,15 +1175,8 @@ class MainActivity : ComponentActivity() {
                                                 // Account-aware button reactive to auth state (hidden when not authenticated)
                                                 if (isLoggedIn) {
                                                     val accountDesc = stringResource(R.string.account)
-                                                    IconButton(
-                                                        onClick = { navController.navigate("settings/account") },
-                                                        modifier = Modifier.size(40.dp),
-                                                        colors = IconButtonDefaults.iconButtonColors(
-                                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
-                                                                alpha = 0.48f
-                                                            ),
-                                                            contentColor = MaterialTheme.colorScheme.onSurface
-                                                        )
+                                                    ExpressiveIconButton(
+                                                        onClick = { navController.navigate("settings/account") }
                                                     ) {
                                                         if (accountImageUrl != null) {
                                                             AsyncImage(
@@ -1206,11 +1185,11 @@ class MainActivity : ComponentActivity() {
                                                                 contentScale = ContentScale.Crop,
                                                                 modifier = Modifier
                                                                     .size(26.dp)
-                                                                    .clip(CircleShape)
+                                                                    .clip(RoundedCornerShape(8.dp))
                                                                     .border(
                                                                         width = 1.dp,
                                                                         color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                                                                        shape = CircleShape
+                                                                        shape = RoundedCornerShape(8.dp)
                                                                     )
                                                             )
                                                         } else {
@@ -1224,17 +1203,10 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 }
 
-                                                // Settings navigation action (clean gear vector icon)
+                                                // Settings navigation action (expressive squircle capsule)
                                                 val settingsDesc = stringResource(R.string.settings)
-                                                IconButton(
-                                                    onClick = { navController.navigate("settings") },
-                                                    modifier = Modifier.size(40.dp),
-                                                    colors = IconButtonDefaults.iconButtonColors(
-                                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
-                                                            alpha = 0.48f
-                                                        ),
-                                                        contentColor = MaterialTheme.colorScheme.onSurface
-                                                    )
+                                                ExpressiveIconButton(
+                                                    onClick = { navController.navigate("settings") }
                                                 ) {
                                                     Icon(
                                                         painter = painterResource(R.drawable.settings),

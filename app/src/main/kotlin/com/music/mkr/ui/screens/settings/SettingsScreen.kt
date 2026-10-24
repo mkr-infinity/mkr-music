@@ -65,6 +65,7 @@ import com.music.mkr.mkrmusic.updater.getAutoUpdateCheckSetting
 import com.music.mkr.mkrmusic.updater.getUpdateAvailableState
 import com.music.mkr.mkrmusic.updater.saveUpdateAvailableState
 import com.music.mkr.ui.component.EmptyPlaceholder
+import com.music.mkr.ui.component.ExpressiveIconButton
 import com.music.mkr.ui.component.ExpressiveSettingGroup
 import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.Material3SettingsItem
@@ -460,14 +461,18 @@ fun SettingsScreen(
             )
         },
         navigationIcon = {
-            IconButton(
-                onClick = navController::navigateUp,
-                onLongClick = navController::backToMain
-            ) {
-                Icon(
-                    painterResource(R.drawable.arrow_back),
-                    contentDescription = "Back"
-                )
+            Box(modifier = Modifier.padding(start = 12.dp)) {
+                ExpressiveIconButton(
+                    onClick = navController::navigateUp,
+                    onLongClick = navController::backToMain
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.arrow_back),
+                        contentDescription = stringResource(R.string.back),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     )
