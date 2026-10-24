@@ -54,7 +54,8 @@ class GitHubUpdateManager @Inject constructor(
      */
     fun checkForUpdates(scope: CoroutineScope, force: Boolean = false) {
         if (!force && !getAutoUpdateCheckSetting(context)) {
-            Timber.tag(TAG).d("Auto update checks disabled in preferences; skipping.")
+            Timber.tag(TAG).d("Auto update checks disabled in preferences; skipping and clearing state.")
+            _updateState.value = ReleasePreviewState.Idle
             return
         }
 
@@ -111,6 +112,11 @@ class GitHubUpdateManager @Inject constructor(
                 )
             }
         }
+    }
+
+    fun clearState() {
+        lastCheckedEpoch = 0L
+        _updateState.value = ReleasePreviewState.Idle
     }
 
     private suspend fun parseReleaseMetadata(dto: GitHubReleaseDto): ReleaseMetadata {

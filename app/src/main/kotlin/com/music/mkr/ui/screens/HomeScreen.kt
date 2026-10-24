@@ -176,6 +176,7 @@ import com.music.mkr.utils.rememberPreference
 import com.music.mkr.mkrmusic.component.UpdateAvailableHomeCard
 import com.music.mkr.mkrmusic.component.UpdatePreviewDialog
 import com.music.mkr.mkrmusic.updater.ReleasePreviewState
+import com.music.mkr.mkrmusic.updater.getAutoUpdateCheckSetting
 import com.music.mkr.viewmodels.CommunityPlaylistItem
 import com.music.mkr.viewmodels.HomeViewModel
 import kotlin.math.min
@@ -973,7 +974,8 @@ fun HomeScreen(
                     IntOffset(0, (animatedFraction * maxOffsetPx).toInt())
                 }
             ) {
-                if (updateState is ReleasePreviewState.UpdateAvailable && !updateDismissed) {
+                val isAutoUpdateCheckEnabled = remember(context) { getAutoUpdateCheckSetting(context) }
+                if (isAutoUpdateCheckEnabled && updateState is ReleasePreviewState.UpdateAvailable && !updateDismissed) {
                     item(key = "update_available_banner") {
                         val release = (updateState as ReleasePreviewState.UpdateAvailable).release
                         UpdateAvailableHomeCard(
