@@ -1280,7 +1280,7 @@ private fun JoinCreateRoomSection(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    repeat(8) { index ->
+                    repeat(6) { index ->
                         val isRevealed = index < revealedCount
                         val char = if (isRevealed) activeRoomCode.getOrNull(index)?.toString() ?: "" else ""
                         val charScale by animateFloatAsState(
@@ -1340,7 +1340,7 @@ private fun JoinCreateRoomSection(
                 ) {
                     BasicTextField(
                         value = roomCodeInput,
-                        onValueChange = { if (it.length <= 8) onRoomCodeChange(it.uppercase()) },
+                        onValueChange = { if (it.length <= 6) onRoomCodeChange(it.uppercase()) },
                         keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
                         singleLine = true,
                         modifier = Modifier
@@ -1353,7 +1353,7 @@ private fun JoinCreateRoomSection(
                                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    repeat(8) { index ->
+                                    repeat(6) { index ->
                                         val char = roomCodeInput.getOrNull(index)?.toString() ?: ""
                                         val isFocused = roomCodeInput.length == index
                                         val hasChar = char.isNotEmpty()
@@ -1515,7 +1515,7 @@ private fun JoinCreateRoomSection(
                 }
             } else {
                 val hasUsername = usernameInput.trim().isNotBlank() || savedUsername.isNotBlank()
-                val hasRoomCode = roomCodeInput.trim().length in 4..8
+                val hasRoomCode = roomCodeInput.trim().length in 4..6
 
                 // Morphing Create/Join Button
                 AnimatedVisibility(visible = hasUsername) {
