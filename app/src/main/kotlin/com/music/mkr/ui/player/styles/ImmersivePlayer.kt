@@ -13,13 +13,16 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -128,11 +131,28 @@ fun ImmersivePlayer(
                 )
         )
 
+        // Top-down gradient scrim specifically for status bar & header integration
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(140.dp)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.Black.copy(alpha = 0.55f),
+                            Color.Black.copy(alpha = 0.2f),
+                            Color.Transparent
+                        )
+                    )
+                )
+        )
+
         // Player Content
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.statusBars)
                 .padding(horizontal = 24.dp, vertical = 12.dp)
                 .padding(bottom = 68.dp)
         ) {
@@ -140,16 +160,24 @@ fun ImmersivePlayer(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(top = 8.dp),
+                    .padding(top = 4.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                IconButton(onClick = { state.collapseSoft() }) {
-                    Icon(
-                        painter = painterResource(R.drawable.expand_more),
-                        contentDescription = "Collapse",
-                        tint = contentColor
-                    )
+                Surface(
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.14f),
+                    onClick = { state.collapseSoft() },
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.expand_more),
+                            contentDescription = "Collapse",
+                            tint = contentColor,
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
 
                 val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
@@ -157,7 +185,7 @@ fun ImmersivePlayer(
                     Text(
                         text = stringResource(R.string.playing_from),
                         style = MaterialTheme.typography.labelSmall,
-                        color = secondaryColor.copy(alpha = 0.6f)
+                        color = secondaryColor.copy(alpha = 0.7f)
                     )
                     Text(
                         text = subtitle,
@@ -169,12 +197,20 @@ fun ImmersivePlayer(
                     )
                 }
 
-                IconButton(onClick = onShowMenu) {
-                    Icon(
-                        painter = painterResource(R.drawable.more_vert),
-                        contentDescription = stringResource(R.string.more_label),
-                        tint = contentColor
-                    )
+                Surface(
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = 0.14f),
+                    onClick = onShowMenu,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.more_vert),
+                            contentDescription = stringResource(R.string.more_label),
+                            tint = contentColor,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
                 }
             }
 
