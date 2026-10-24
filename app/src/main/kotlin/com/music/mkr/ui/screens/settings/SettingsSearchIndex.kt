@@ -134,7 +134,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "High Refresh Rate Display",
             description = "Force 90Hz / 120Hz smooth scrolling for ultra-fluid animations and responsive gestures",
             category = "Appearance & Themes",
-            iconRes = R.drawable.high_refresh_rate,
+            iconRes = R.drawable.speed,
             route = "settings/appearance",
             targetKey = "appearance_high_refresh_rate",
             keywords = listOf("refresh rate", "120hz", "90hz", "fps", "smooth", "fluid", "performance", "display")
@@ -244,7 +244,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Default Startup Tab",
             description = "Choose which screen opens when launching MKR Music: Home, Library, or Explore",
             category = "Appearance & Themes",
-            iconRes = R.drawable.home,
+            iconRes = R.drawable.home_outlined,
             route = "settings/appearance",
             targetKey = "appearance_default_tab",
             keywords = listOf("default tab", "startup", "launch", "open tab", "start screen", "home", "library")
@@ -308,7 +308,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Stop Music on Clear Task",
             description = "Stop music playback and terminate background audio service when swiping app away from recent apps (prevents device lag)",
             category = "Player and Audio",
-            iconRes = R.drawable.power_settings_new,
+            iconRes = R.drawable.clear_all,
             route = "settings/player",
             targetKey = "player_stop_on_task_clear",
             keywords = listOf("task clear", "clear task", "kill", "lag", "stop music", "swiped away", "recent apps", "terminate", "background service", "process kill", "freeze")
@@ -472,7 +472,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "SponsorBlock Integration",
             description = "Automatically skip non-music intros, sponsors, merch shoutouts, and silence segments",
             category = "SponsorBlock",
-            iconRes = R.drawable.block,
+            iconRes = R.drawable.fast_forward,
             route = "settings/player/sponsorblock",
             targetKey = "sponsorblock_master",
             keywords = listOf("sponsor", "sponsorblock", "ads", "skip", "promo", "intro", "outro", "intermission", "silence")
@@ -482,7 +482,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Skip Non-Music Audio Segments",
             description = "Skip background story scenes, comedy skits, and dialogue in official music videos",
             category = "SponsorBlock",
-            iconRes = R.drawable.block,
+            iconRes = R.drawable.fast_forward,
             route = "settings/player/sponsorblock",
             targetKey = "sponsorblock_skip_non_music",
             keywords = listOf("non-music", "skit", "dialogue", "scene", "music video", "story", "acting")
@@ -492,7 +492,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Skip Sponsor Segments",
             description = "Skip paid promotions and sponsored endorsements embedded in audio",
             category = "SponsorBlock",
-            iconRes = R.drawable.block,
+            iconRes = R.drawable.fast_forward,
             route = "settings/player/sponsorblock",
             targetKey = "sponsorblock_skip_sponsor",
             keywords = listOf("sponsor", "paid promotion", "advertisement", "endorsement", "ad")
@@ -502,7 +502,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Skip Self-Promo & Merch",
             description = "Skip artist merch plugs, tour announcements, Patreon, and donation requests",
             category = "SponsorBlock",
-            iconRes = R.drawable.block,
+            iconRes = R.drawable.fast_forward,
             route = "settings/player/sponsorblock",
             targetKey = "sponsorblock_skip_selfpromo",
             keywords = listOf("selfpromo", "merch", "tour", "patreon", "merchandise", "donation", "promo")
@@ -512,7 +512,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Skip Interaction Reminders",
             description = "Skip 'subscribe to channel', 'leave a like', and notification bell reminder prompts",
             category = "SponsorBlock",
-            iconRes = R.drawable.block,
+            iconRes = R.drawable.fast_forward,
             route = "settings/player/sponsorblock",
             targetKey = "sponsorblock_skip_interaction",
             keywords = listOf("interaction", "subscribe", "like reminder", "bell", "comment", "channel")
@@ -522,7 +522,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Skip Music Video Intros & Outros",
             description = "Skip opening title cards, credits roll, and silence at end of video",
             category = "SponsorBlock",
-            iconRes = R.drawable.block,
+            iconRes = R.drawable.fast_forward,
             route = "settings/player/sponsorblock",
             targetKey = "sponsorblock_skip_intro_outro",
             keywords = listOf("intro", "outro", "credits", "title card", "end screen", "opening")
@@ -532,7 +532,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Skip Preview & Filler Segments",
             description = "Skip recap clips, preview snippets, and dead filler time",
             category = "SponsorBlock",
-            iconRes = R.drawable.block,
+            iconRes = R.drawable.fast_forward,
             route = "settings/player/sponsorblock",
             targetKey = "sponsorblock_skip_preview",
             keywords = listOf("preview", "filler", "recap", "teaser", "snippet")
@@ -586,7 +586,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Hide Video Songs",
             description = "Filter out video-only tracks to guarantee pure studio audio quality",
             category = "Content & Language",
-            iconRes = R.drawable.video,
+            iconRes = R.drawable.slow_motion_video,
             route = "settings/content",
             targetKey = "content_hide_videos",
             keywords = listOf("video", "hide videos", "music video", "studio audio", "audio only")
@@ -596,7 +596,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Hide YouTube Shorts",
             description = "Hide short-form video clips and YouTube Shorts from search results and feeds",
             category = "Content & Language",
-            iconRes = R.drawable.video,
+            iconRes = R.drawable.slow_motion_video,
             route = "settings/content",
             targetKey = "content_hide_shorts",
             keywords = listOf("shorts", "youtube shorts", "reels", "hide shorts", "clips")
@@ -626,7 +626,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "HTTP Proxy & Network Configuration",
             description = "Configure custom HTTP / SOCKS proxy server, host port, and authentication credentials",
             category = "Content & Language",
-            iconRes = R.drawable.network_check,
+            iconRes = R.drawable.network_node,
             route = "settings/content",
             targetKey = "content_proxy_vpn",
             keywords = listOf("proxy", "vpn", "network", "port", "host", "socks", "http proxy", "bypass", "geo-block")
@@ -666,7 +666,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Quick Picks & Speed Dial Engine",
             description = "Customize Home screen recommendation source: Quick Picks or Speed Dial",
             category = "Content & Language",
-            iconRes = R.drawable.home,
+            iconRes = R.drawable.home_outlined,
             route = "settings/content",
             targetKey = "content_quick_picks",
             keywords = listOf("quick picks", "speed dial", "home recommendations", "discover", "suggestions")
@@ -764,7 +764,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "AI Provider & OpenRouter Setup",
             description = "Configure AI intelligence backend using OpenRouter, Google Gemini, or custom LLM endpoints",
             category = "AI & Smart Features",
-            iconRes = R.drawable.sparkles,
+            iconRes = R.drawable.sparks,
             route = "settings/ai",
             targetKey = "ai_provider",
             keywords = listOf("ai", "openrouter", "gemini", "intelligence", "llm", "smart", "ai provider")
@@ -774,7 +774,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Gemini AI Model Selection",
             description = "Choose Google Gemini 2.5 Flash, Flash-Lite, or custom model identifier",
             category = "AI & Smart Features",
-            iconRes = R.drawable.sparkles,
+            iconRes = R.drawable.sparks,
             route = "settings/ai",
             targetKey = "ai_model",
             keywords = listOf("gemini", "gemini 2.5", "flash", "flash-lite", "google ai", "model")
@@ -794,7 +794,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "AI Lyrics Translation & Meaning",
             description = "Instant contextual song meaning explanations and multi-language lyrics translation",
             category = "AI & Smart Features",
-            iconRes = R.drawable.sparkles,
+            iconRes = R.drawable.sparks,
             route = "settings/ai",
             targetKey = "ai_lyrics_translation",
             keywords = listOf("ai lyrics", "meaning", "song meaning", "translate lyrics", "lyrics explanation", "story")
@@ -946,7 +946,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Last.fm Scrobbler",
             description = "Automatically scrobble played songs, sync loved tracks, and track personal music charts",
             category = "Integrations",
-            iconRes = R.drawable.lastfm,
+            iconRes = R.drawable.music_note,
             route = "settings/integrations/lastfm",
             targetKey = "integrations_lastfm",
             keywords = listOf("lastfm", "scrobbler", "scrobble", "loved tracks", "music charts", "stats", "charts")
@@ -1040,7 +1040,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             title = "Update Notification Permissions",
             description = "Allow notifications for newly available MKR Music version releases and security patches",
             category = "Updates & About",
-            iconRes = R.drawable.notifications,
+            iconRes = R.drawable.notification,
             route = "settings/update/notification_permission",
             targetKey = "update_notifications",
             keywords = listOf("notification", "permission", "update alert", "patch", "new release notification")
