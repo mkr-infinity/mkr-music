@@ -812,6 +812,7 @@ fun HomeScreen(
         forgottenFavorites,
         communityPlaylists,
         similarRecommendations,
+        coversAndRemixes,
         homePage?.sections,
         explorePage?.moodAndGenres
     ) {
@@ -837,7 +838,7 @@ fun HomeScreen(
             list.add(HomeSection.HomePageSection(i))
         }
 
-        if (explorePage?.moodAndGenres != null) list.add(HomeSection.MoodAndGenres)
+        if (explorePage?.moodAndGenres?.isNotEmpty() == true) list.add(HomeSection.MoodAndGenres)
 
         val sortedList = if (randomizeHomeOrder) {
             list.sortedByDescending { section ->

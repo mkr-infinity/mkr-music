@@ -879,8 +879,14 @@ class HomeViewModel @Inject constructor(
         val fromTimeStamp = System.currentTimeMillis() - 86400000L * 7 * 2
 
         coroutineScope {
-            val artistDeferreds = database.mostPlayedArtists(fromTimeStamp, limit = 15).first()
+            val mostPlayedArtistsList = database.mostPlayedArtists(fromTimeStamp, limit = 15).first()
                 .filter { it.artist.isYouTubeArtist }
+            val artistCandidates = if (mostPlayedArtistsList.isNotEmpty()) {
+                mostPlayedArtistsList
+            } else {
+                database.artists().first().filter { it.artist.isYouTubeArtist }
+            }
+            val artistDeferreds = artistCandidates
                 .shuffled().take(4)
                 .map { artist ->
                     async(Dispatchers.IO) {
@@ -905,7 +911,13 @@ class HomeViewModel @Inject constructor(
             val mostPlayedSeeds = database.mostPlayedSongs(fromTimeStamp, limit = 15).first()
                 .filter { it.album != null }
                 .shuffled()
-            val songSeeds = (recentSongSeeds + mostPlayedSeeds).distinctBy { it.id }.take(3)
+            val initialSongSeeds = (recentSongSeeds + mostPlayedSeeds).distinctBy { it.id }.take(3)
+            val songSeeds = if (initialSongSeeds.isNotEmpty()) {
+                initialSongSeeds
+            } else {
+                val dbFallback = database.songs().first().take(3)
+                if (dbFallback.isNotEmpty()) dbFallback else quickPicks.value.orEmpty().take(3)
+            }
 
             val songDeferreds = songSeeds.map { song ->
                     async(Dispatchers.IO) {
@@ -1004,11 +1016,21 @@ class HomeViewModel @Inject constructor(
                 }.onFailure { reportException(it) }
             }
             launch(Dispatchers.IO) {
-                YouTube.explore().onSuccess { page ->
-                    explorePage.value = page.copy(
-                        newReleaseAlbums = page.newReleaseAlbums.filterExplicit(hideExplicit)
+                val exploreResult = YouTube.explore()
+                val page = exploreResult.getOrNull()
+                val moods = if (page != null && page.moodAndGenres.isNotEmpty()) {
+                    page.moodAndGenres
+                } else {
+                    YouTube.moodAndGenres().getOrNull()?.flatMap { it.items }.orEmpty()
+                }
+                val newReleases = (page?.newReleaseAlbums ?: YouTube.newReleaseAlbums().getOrNull().orEmpty())
+                    .filterExplicit(hideExplicit)
+                if (moods.isNotEmpty() || newReleases.isNotEmpty()) {
+                    explorePage.value = com.music.innertube.pages.ExplorePage(
+                        newReleaseAlbums = newReleases,
+                        moodAndGenres = moods
                     )
-                }.onFailure { reportException(it) }
+                }
             }
             if (YouTube.cookie != null) {
                 launch(Dispatchers.IO) { loadAccountPlaylists() }
