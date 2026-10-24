@@ -447,11 +447,13 @@ fun LyricsV2(
 
                 // If plain text (not synced), just render a static list with MKR styling
                 if (lines.isNotEmpty() && lines.all { it.time == 0L }) {
+                    val staticDismissedBound = QueuePeekHeight + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+                    val staticBottomClearance = maxOf(contentPadding.calculateBottomPadding(), staticDismissedBound) + 24.dp
                     LazyColumn(
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
                             top = 32.dp,
-                            bottom = 120.dp,
+                            bottom = staticBottomClearance,
                             start = 20.dp,
                             end = 20.dp
                         )
@@ -606,9 +608,11 @@ fun LyricsV2(
                     contentAlignment = Alignment.TopCenter,
                     modifier = Modifier.fillMaxSize()
                 ) {
+                    val dismissedBottomBound = QueuePeekHeight + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+                    val effectiveBottomClearance = maxOf(contentPadding.calculateBottomPadding(), dismissedBottomBound)
                     val targetTopRatio = 0.32f
                     val topPadding = (estimatedLyricsAreaHeight * targetTopRatio) + contentPadding.calculateTopPadding()
-                    val bottomPadding = (estimatedLyricsAreaHeight * (1f - targetTopRatio)) + contentPadding.calculateBottomPadding()
+                    val bottomPadding = (estimatedLyricsAreaHeight * (1f - targetTopRatio)) + effectiveBottomClearance
 
                     // Smooth Spring Scroll Physics (Anchored comfortably at ~32% Top Viewport Position)
                     LaunchedEffect(currentLineIndex, isAutoScrollEnabled, mergedLyricsList) {
@@ -850,10 +854,17 @@ fun LyricsV2(
                         }
                     }
 
+                    val resumeContentColor = if (PlayerColorExtractor.calculateLuminance(artworkPalette.primaryAccent) > 0.45f) {
+                        PlayerColorExtractor.CharcoalDark
+                    } else {
+                        Color.White
+                    }
+
                     Box(
                         modifier = Modifier
                             .align(Alignment.BottomCenter)
-                            .padding(bottom = 20.dp)
+                            .imePadding()
+                            .padding(bottom = effectiveBottomClearance + 16.dp)
                     ) {
                         AnimatedVisibility(
                             visible = !isAutoScrollEnabled,
@@ -878,7 +889,7 @@ fun LyricsV2(
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     containerColor = artworkPalette.primaryAccent,
-                                    contentColor = PlayerColorExtractor.CharcoalDark
+                                    contentColor = resumeContentColor
                                 ),
                                 shape = RoundedCornerShape(24.dp),
                                 elevation = ButtonDefaults.buttonElevation(defaultElevation = 6.dp)

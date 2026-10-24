@@ -1234,19 +1234,14 @@ fun BottomSheetPlayer(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            IconButton(onClick = { queueSheetState.expandSoft() }) {
-                                Icon(
-                                    painter = painterResource(R.drawable.queue_music),
-                                    contentDescription = stringResource(R.string.queue),
-                                    tint = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
+                            Spacer(modifier = Modifier.size(48.dp))
                         }
 
                         InlineLyricsView(
                             mediaMetadata = mediaMetadata,
                             showLyrics = true,
-                            positionProvider = { effectivePosition }
+                            positionProvider = { effectivePosition },
+                            contentPadding = PaddingValues(bottom = dismissedBound)
                         )
                     }
                 }
@@ -1557,13 +1552,15 @@ fun BottomSheetPlayer(
 fun InlineLyricsView(
     mediaMetadata: MediaMetadata?,
     showLyrics: Boolean,
-    positionProvider: () -> Long
+    positionProvider: () -> Long,
+    contentPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     LyricsV2(
         mediaMetadata = mediaMetadata,
         showLyrics = showLyrics,
         positionProvider = positionProvider,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = contentPadding
     )
 }
 
