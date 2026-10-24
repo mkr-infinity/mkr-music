@@ -800,6 +800,7 @@ class MainActivity : ComponentActivity() {
                     listOf(
                         Screens.Home.route,
                         Screens.Search.route,
+                        "search",
                         Screens.Library.route,
                         Screens.Account.route,
                         Screens.ListenTogether.route,
@@ -832,6 +833,10 @@ class MainActivity : ComponentActivity() {
                     derivedStateOf { navBackStackEntry?.destination?.route }
                 }
 
+                val inSearchResultScreen by remember {
+                    derivedStateOf { currentRoute?.startsWith("search/") == true }
+                }
+
                 val inSearchScreen by remember {
                     derivedStateOf { currentRoute?.startsWith("search/") == true || currentRoute == Screens.Search.route || currentRoute == "search" }
                 }
@@ -842,12 +847,13 @@ class MainActivity : ComponentActivity() {
                 val shouldShowNavigationBar = remember(currentRoute, navigationItemRoutes) {
                     currentRoute == null ||
                         navigationItemRoutes.contains(currentRoute) ||
-                        currentRoute!!.startsWith("search/")
+                        currentRoute == "search" ||
+                        currentRoute.startsWith("search/")
                 }
 
                 val isLandscape = configuration.containerDpSize.width > configuration.containerDpSize.height
 
-                val showRail = isLandscape && !inSearchScreen
+                val showRail = isLandscape && !inSearchResultScreen
 
                 val navPadding = if (shouldShowNavigationBar && !showRail) {
                     if (slimNav) SlimNavBarHeight else NavigationBarHeight
@@ -912,12 +918,12 @@ class MainActivity : ComponentActivity() {
 
                 // Navigation tracking
                 LaunchedEffect(navBackStackEntry) {
-                    if (inSearchScreen) {
+                    if (inSearchResultScreen) {
                         val searchQuery = withContext(Dispatchers.IO) {
-                            val rawQuery = navBackStackEntry?.arguments?.getString("query")!!
+                            val rawQuery = navBackStackEntry?.arguments?.getString("query").orEmpty()
                             try {
                                 URLDecoder.decode(rawQuery, "UTF-8")
-                            } catch (e: IllegalArgumentException) {
+                            } catch (e: Exception) {
                                 rawQuery
                             }
                         }
@@ -927,7 +933,7 @@ class MainActivity : ComponentActivity() {
                                 TextRange(searchQuery.length)
                             )
                         )
-                    } else if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
+                    } else if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } || navBackStackEntry?.destination?.route == "search") {
                         onQueryChange(TextFieldValue())
                     }
 
@@ -989,6 +995,7 @@ class MainActivity : ComponentActivity() {
                     shouldShowTopBar = currentRoute in topLevelScreens &&
                         currentRoute != "settings" &&
                         currentRoute != Screens.Search.route &&
+                        currentRoute != "search" &&
                         !(isListenTogetherScreen && listenTogetherInTopBar)
                 }
 
@@ -1038,7 +1045,7 @@ class MainActivity : ComponentActivity() {
                 val currentTitleRes = remember(navBackStackEntry) {
                     when (navBackStackEntry?.destination?.route) {
                         Screens.Home.route -> R.string.app_name
-                        Screens.Search.route -> R.string.search
+                        Screens.Search.route, "search" -> R.string.search
                         Screens.Library.route -> R.string.filter_library
                         Screens.ListenTogether.route -> R.string.together
                         else -> null

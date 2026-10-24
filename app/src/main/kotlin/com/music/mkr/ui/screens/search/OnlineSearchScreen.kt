@@ -236,7 +236,7 @@ fun OnlineSearchScreen(
             }
         }
 
-        itemsIndexed(viewState.history, key = { _, it -> "history_${it.query}" }) { index, history ->
+        itemsIndexed(viewState.history, key = { index, it -> "history_${it.id}_$index" }) { index, history ->
             SuggestionItem(
                 query = history.query,
                 online = false,
@@ -276,7 +276,7 @@ fun OnlineSearchScreen(
             }
         }
 
-        itemsIndexed(viewState.suggestions, key = { _, it -> "suggestion_$it" }) { index, query ->
+        itemsIndexed(viewState.suggestions, key = { index, it -> "suggestion_${index}_$it" }) { index, query ->
             SuggestionItem(
                 query = query,
                 online = true,
@@ -314,7 +314,7 @@ fun OnlineSearchScreen(
             }
         }
 
-        itemsIndexed(viewState.items, key = { _, it -> "item_${it.id}" }) { index, item ->
+        itemsIndexed(viewState.items, key = { index, it -> "item_${it.id}_$index" }) { index, item ->
             YouTubeListItem(
                 item = item,
                 isActive = when (item) {

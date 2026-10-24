@@ -48,6 +48,9 @@ private data class NavItemState(
 private fun isRouteSelected(currentRoute: String?, screenRoute: String, navigationItems: List<Screens>): Boolean {
     if (currentRoute == null) return false
     if (currentRoute == screenRoute) return true
+    if (screenRoute == Screens.Search.route && (currentRoute == "search" || currentRoute.startsWith("search/"))) {
+        return true
+    }
     return navigationItems.any { it.route == screenRoute } && 
            currentRoute.startsWith("$screenRoute/")
 }
