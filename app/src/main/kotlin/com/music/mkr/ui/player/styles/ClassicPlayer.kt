@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -251,20 +252,24 @@ fun ClassicPlayer(
             }
 
             // Skip Previous
-            Box(contentAlignment = Alignment.Center) {
-                ResizableIconButton(
-                    icon = R.drawable.skip_previous,
-                    contentDescription = stringResource(R.string.widget_previous),
-                    enabled = canSkipPrevious,
-                    color = textBackgroundColor,
-                    modifier = Modifier
-                        .size(42.dp)
-                        .alpha(if (canSkipPrevious) 1f else 0.4f),
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.seekToPrevious()
-                    }
-                )
+            Surface(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    playerConnection.seekToPrevious()
+                },
+                enabled = canSkipPrevious,
+                shape = CircleShape,
+                color = textBackgroundColor.copy(alpha = if (canSkipPrevious) 0.12f else 0.05f),
+                modifier = Modifier.size(52.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = painterResource(R.drawable.skip_previous),
+                        contentDescription = stringResource(R.string.widget_previous),
+                        tint = textBackgroundColor.copy(alpha = if (canSkipPrevious) 1f else 0.38f),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
 
             // Play / Pause Circle
@@ -280,6 +285,7 @@ fun ClassicPlayer(
                 },
                 shape = RoundedCornerShape(playPauseRoundness),
                 color = textButtonColor,
+                shadowElevation = 8.dp,
                 modifier = Modifier.size(72.dp)
             ) {
                 Box(
@@ -303,27 +309,31 @@ fun ClassicPlayer(
                             ),
                             contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
                             colorFilter = ColorFilter.tint(iconButtonColor),
-                            modifier = Modifier.size(34.dp)
+                            modifier = Modifier.size(36.dp)
                         )
                     }
                 }
             }
 
             // Skip Next
-            Box(contentAlignment = Alignment.Center) {
-                ResizableIconButton(
-                    icon = R.drawable.skip_next,
-                    contentDescription = stringResource(R.string.next),
-                    enabled = canSkipNext,
-                    color = textBackgroundColor,
-                    modifier = Modifier
-                        .size(42.dp)
-                        .alpha(if (canSkipNext) 1f else 0.4f),
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.seekToNext()
-                    }
-                )
+            Surface(
+                onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    playerConnection.seekToNext()
+                },
+                enabled = canSkipNext,
+                shape = CircleShape,
+                color = textBackgroundColor.copy(alpha = if (canSkipNext) 0.12f else 0.05f),
+                modifier = Modifier.size(52.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = painterResource(R.drawable.skip_next),
+                        contentDescription = stringResource(R.string.next),
+                        tint = textBackgroundColor.copy(alpha = if (canSkipNext) 1f else 0.38f),
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
             }
 
             // Like / Favorite

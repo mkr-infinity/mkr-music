@@ -321,19 +321,24 @@ fun ImmersivePlayer(
                     )
                 }
 
-                IconButton(
+                Surface(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         playerConnection.seekToPrevious()
                     },
-                    enabled = canSkipPrevious
+                    enabled = canSkipPrevious,
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = if (canSkipPrevious) 0.14f else 0.06f),
+                    modifier = Modifier.size(52.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.skip_previous),
-                        contentDescription = stringResource(R.string.widget_previous),
-                        tint = contentColor.copy(alpha = if (canSkipPrevious) 1f else 0.4f),
-                        modifier = Modifier.size(34.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.skip_previous),
+                            contentDescription = stringResource(R.string.widget_previous),
+                            tint = contentColor.copy(alpha = if (canSkipPrevious) 1f else 0.38f),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
 
                 // Play / Pause Circle
@@ -349,7 +354,8 @@ fun ImmersivePlayer(
                     },
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(70.dp)
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.size(72.dp)
                 ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         if (isLoading) {
@@ -375,19 +381,24 @@ fun ImmersivePlayer(
                     }
                 }
 
-                IconButton(
+                Surface(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         playerConnection.seekToNext()
                     },
-                    enabled = canSkipNext
+                    enabled = canSkipNext,
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = if (canSkipNext) 0.14f else 0.06f),
+                    modifier = Modifier.size(52.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.skip_next),
-                        contentDescription = stringResource(R.string.next),
-                        tint = contentColor.copy(alpha = if (canSkipNext) 1f else 0.4f),
-                        modifier = Modifier.size(34.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.skip_next),
+                            contentDescription = stringResource(R.string.next),
+                            tint = contentColor.copy(alpha = if (canSkipNext) 1f else 0.38f),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
 
                 IconButton(onClick = {

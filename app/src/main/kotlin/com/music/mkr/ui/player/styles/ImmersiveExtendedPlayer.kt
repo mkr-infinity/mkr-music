@@ -324,19 +324,24 @@ fun ImmersiveExtendedPlayer(
                     )
                 }
 
-                IconButton(
+                Surface(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         playerConnection.seekToPrevious()
                     },
-                    enabled = canSkipPrevious
+                    enabled = canSkipPrevious,
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = if (canSkipPrevious) 0.14f else 0.06f),
+                    modifier = Modifier.size(52.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.skip_previous),
-                        contentDescription = stringResource(R.string.widget_previous),
-                        tint = foreground.copy(alpha = if (canSkipPrevious) 1f else 0.4f),
-                        modifier = Modifier.size(34.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.skip_previous),
+                            contentDescription = stringResource(R.string.widget_previous),
+                            tint = foreground.copy(alpha = if (canSkipPrevious) 1f else 0.38f),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
 
                 // Play / Pause Circle
@@ -352,12 +357,13 @@ fun ImmersiveExtendedPlayer(
                     },
                     shape = CircleShape,
                     color = foreground,
-                    modifier = Modifier.size(68.dp)
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.size(72.dp)
                 ) {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                         if (isLoading) {
                             CircularProgressIndicator(
-                                modifier = Modifier.size(30.dp),
+                                modifier = Modifier.size(32.dp),
                                 color = Color.Black,
                                 strokeWidth = 3.dp
                             )
@@ -372,25 +378,30 @@ fun ImmersiveExtendedPlayer(
                                 ),
                                 contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
                                 tint = Color.Black,
-                                modifier = Modifier.size(34.dp)
+                                modifier = Modifier.size(36.dp)
                             )
                         }
                     }
                 }
 
-                IconButton(
+                Surface(
                     onClick = {
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         playerConnection.seekToNext()
                     },
-                    enabled = canSkipNext
+                    enabled = canSkipNext,
+                    shape = CircleShape,
+                    color = Color.White.copy(alpha = if (canSkipNext) 0.14f else 0.06f),
+                    modifier = Modifier.size(52.dp)
                 ) {
-                    Icon(
-                        painter = painterResource(R.drawable.skip_next),
-                        contentDescription = stringResource(R.string.next),
-                        tint = foreground.copy(alpha = if (canSkipNext) 1f else 0.4f),
-                        modifier = Modifier.size(34.dp)
-                    )
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.skip_next),
+                            contentDescription = stringResource(R.string.next),
+                            tint = foreground.copy(alpha = if (canSkipNext) 1f else 0.38f),
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
                 }
 
                 IconButton(onClick = {
