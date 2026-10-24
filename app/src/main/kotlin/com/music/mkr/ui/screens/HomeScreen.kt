@@ -52,6 +52,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material3.ContainedLoadingIndicator
@@ -1313,7 +1314,7 @@ fun HomeScreen(
                                             .coerceAtLeast(232.dp)
                                             .coerceAtMost(440.dp)
 
-                                        HorizontalMultiBrowseCarousel(
+                                        HorizontalCenteredHeroCarousel(
                                             state = rememberCarouselState { distinctQuickPicks.size },
                                             preferredItemWidth = heroMaxWidth,
                                             itemSpacing = 10.dp,
@@ -1927,7 +1928,7 @@ fun HomeScreen(
                                                 .coerceAtLeast(232.dp)
                                                 .coerceAtMost(440.dp)
 
-                                            HorizontalMultiBrowseCarousel(
+                                            HorizontalCenteredHeroCarousel(
                                                 state = rememberCarouselState { distinctSongs.size },
                                                 preferredItemWidth = heroMaxWidth,
                                                 itemSpacing = 10.dp,
