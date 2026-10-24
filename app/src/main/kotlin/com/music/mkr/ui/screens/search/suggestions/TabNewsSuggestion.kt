@@ -70,7 +70,7 @@ import com.music.mkr.ui.screens.NetworkReload
 @Composable
 fun SuggestionsTabContent(
     navController: NavController,
-    viewModel: SuggestionsViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
+    viewModel: SuggestionsViewModel = hiltViewModel(),
     contentPadding: PaddingValues = PaddingValues(0.dp)
 ) {
     val suggestionTracks by viewModel.suggestionTracks.collectAsState()

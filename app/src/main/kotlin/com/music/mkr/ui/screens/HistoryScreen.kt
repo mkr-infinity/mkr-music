@@ -99,7 +99,7 @@ import timber.log.Timber
 @Composable
 fun HistoryScreen(
     navController: NavController,
-    viewModel: HistoryViewModel = hiltViewModel(LocalActivity.current as ViewModelStoreOwner),
+    viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val database = LocalDatabase.current

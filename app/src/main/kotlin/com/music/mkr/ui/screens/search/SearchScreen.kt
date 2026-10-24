@@ -107,7 +107,6 @@ fun SearchScreen(
     val database = LocalDatabase.current
     val coroutineScope = rememberCoroutineScope()
     val focusManager = LocalFocusManager.current
-    val focusRequester = remember { FocusRequester() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val isPlayerExpanded = LocalIsPlayerExpanded.current
     val playerConnection = LocalPlayerConnection.current
@@ -118,7 +117,6 @@ fun SearchScreen(
         mutableStateOf(TextFieldValue())
     }
     val pauseSearchHistory by rememberPreference(PauseSearchHistoryKey, defaultValue = false)
-    var isFirstLaunch by rememberSaveable { mutableStateOf(true) }
     
     var searchActive by rememberSaveable { mutableStateOf(false) }
 
@@ -349,14 +347,6 @@ fun SearchScreen(
                     if (isPlayerExpanded) {
                         keyboardController?.hide()
                         focusManager.clearFocus()
-                    } else if (isFirstLaunch) {
-                        // Only request focus on first launch when player is not expanded
-                        try {
-                            focusRequester.requestFocus()
-                        } catch (e: Exception) {
-                            // Ignore focus request failures
-                        }
-                        isFirstLaunch = false
                     }
                 }
                 Lifecycle.Event.ON_PAUSE -> {
