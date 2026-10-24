@@ -190,6 +190,7 @@ fun PlayerTransportRow(
             enabled = canSkipPrevious,
             shape = sideShape,
             color = secondaryContainerColor.copy(alpha = if (canSkipPrevious) 1f else 0.40f),
+            interactionSource = prevInteractionSource,
             modifier = Modifier
                 .scale(prevScale)
                 .size(width = effectiveSideWidth, height = effectiveSideHeight)
@@ -218,6 +219,7 @@ fun PlayerTransportRow(
             shape = playShape,
             color = primaryContainerColor,
             shadowElevation = if (variant == TransportVariant.PILL) 4.dp else 6.dp,
+            interactionSource = playInteractionSource,
             modifier = Modifier
                 .scale(playScale)
                 .size(width = effectivePlayWidth, height = effectivePlayHeight)
@@ -273,6 +275,7 @@ fun PlayerTransportRow(
             enabled = canSkipNext,
             shape = sideShape,
             color = secondaryContainerColor.copy(alpha = if (canSkipNext) 1f else 0.40f),
+            interactionSource = nextInteractionSource,
             modifier = Modifier
                 .scale(nextScale)
                 .size(width = effectiveSideWidth, height = effectiveSideHeight)

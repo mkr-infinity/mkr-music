@@ -2036,7 +2036,7 @@ class MusicService :
         }
 
         // Remove duplicates if enabled
-        if (dataStore.get(PreventDuplicateTracksInQueueKey, false)) {
+        if (dataStore.get(PreventDuplicateTracksInQueueKey, true)) {
             val itemIds = items.map { it.mediaId }.toSet()
             val indicesToRemove = mutableListOf<Int>()
             val currentIndex = player.currentMediaItemIndex
@@ -2145,7 +2145,7 @@ class MusicService :
 
     fun addToQueue(items: List<MediaItem>) {
         // Remove duplicates if enabled
-        if (dataStore.get(PreventDuplicateTracksInQueueKey, false)) {
+        if (dataStore.get(PreventDuplicateTracksInQueueKey, true)) {
             val itemIds = items.map { it.mediaId }.toSet()
             val indicesToRemove = mutableListOf<Int>()
             val currentIndex = player.currentMediaItemIndex

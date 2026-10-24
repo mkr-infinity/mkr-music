@@ -418,7 +418,7 @@ class PlayerConnection(
             // enabled "Crossfade on manual skip"); fall back to an instant
             // seek otherwise.
             if (!service.manualSkipToNextWithCrossfade()) {
-                player.seekToNext()
+                player.seekToNextMediaItem()
                 if (player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED) {
                     player.prepare()
                 }
@@ -529,16 +529,23 @@ class PlayerConnection(
         error.value = playbackError
     }
 
+    override fun onAvailableCommandsChanged(availableCommands: Player.Commands) {
+        updateCanSkipPreviousAndNext()
+    }
+
     private fun updateCanSkipPreviousAndNext() {
         if (!player.currentTimeline.isEmpty) {
             val window =
                 player.currentTimeline.getWindow(player.currentMediaItemIndex, Timeline.Window())
             canSkipPrevious.value = player.isCommandAvailable(COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM) ||
                     !window.isLive ||
-                    player.isCommandAvailable(COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
-            canSkipNext.value = window.isLive &&
-                    window.isDynamic ||
-                    player.isCommandAvailable(COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
+                    player.isCommandAvailable(COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM) ||
+                    player.hasPreviousMediaItem() ||
+                    player.currentPosition > 0
+            canSkipNext.value = (window.isLive && window.isDynamic) ||
+                    player.isCommandAvailable(COMMAND_SEEK_TO_NEXT_MEDIA_ITEM) ||
+                    player.hasNextMediaItem() ||
+                    player.repeatMode != REPEAT_MODE_OFF
         } else {
             canSkipPrevious.value = false
             canSkipNext.value = false
