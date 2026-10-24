@@ -755,6 +755,7 @@ fun StorageSettings(
                     }
                 ),
                 Material3SettingsItem(
+                    key = "storage_clear_song_cache",
                     icon = painterResource(R.drawable.clear_all),
                     title = { Text(stringResource(R.string.clear_song_cache)) },
                     description = if (disableSongCache) { { Text("Cache is currently disabled") } } else null,
@@ -769,6 +770,7 @@ fun StorageSettings(
             title = stringResource(R.string.image_cache),
             items = listOf(
                 Material3SettingsItem(
+                    key = "storage_max_image_cache",
                     icon = painterResource(R.drawable.manage_search),
                     title = { Text(stringResource(R.string.max_image_cache_size)) },
                     description = {
@@ -822,7 +824,7 @@ fun StorageSettings(
                     }
                 ),
                 Material3SettingsItem(
-                    key = "storage_clear_cache",
+                    key = "storage_clear_image_cache",
                     icon = painterResource(R.drawable.clear_all),
                     title = { Text(stringResource(R.string.clear_image_cache)) },
                     onClick = {

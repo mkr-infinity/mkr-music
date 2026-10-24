@@ -592,6 +592,7 @@ fun PlayerSettings(
                     onClick = { navController.navigate("settings/equalizer") }
                 ))
                 add(Material3SettingsItem(
+                    key = "player_audio_normalization",
                     icon = painterResource(R.drawable.volume_up),
                     title = { Text(stringResource(R.string.audio_normalization)) },
                     trailingContent = {
@@ -612,6 +613,7 @@ fun PlayerSettings(
                     onClick = { onAudioNormalizationChange(!audioNormalization) }
                 ))
                 add(Material3SettingsItem(
+                    key = "player_audio_offload",
                     icon = painterResource(R.drawable.graphic_eq),
                     title = { Text(stringResource(R.string.audio_offload)) },
                     description = {
@@ -1109,6 +1111,7 @@ fun PlayerSettings(
                     onClick = { navController.navigate("settings/player/sponsorblock") }
                 ),
                 Material3SettingsItem(
+                    key = "player_stop_on_task_clear",
                     icon = painterResource(R.drawable.clear_all),
                     title = { Text(stringResource(R.string.stop_music_on_task_clear)) },
                     trailingContent = {

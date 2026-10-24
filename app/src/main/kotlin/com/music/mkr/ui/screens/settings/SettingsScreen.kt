@@ -176,12 +176,15 @@ fun SettingsScreen(
             val searchResults = remember(searchQuery, searchCatalog) {
                 searchSettingsCatalog(searchQuery, searchCatalog)
             }
+            val displayedResults = remember(searchResults) {
+                searchResults.take(35)
+            }
 
             if (searchResults.isEmpty()) {
                 EmptyPlaceholder(
                     icon = R.drawable.search,
                     text = "No matching settings found",
-                    description = "Try searching with different keywords like 'liquid', 'gesture', 'eq', 'theme', or 'audio'",
+                    description = "Try searching with different keywords like 'silence', 'bluetooth', 'sponsor', 'eq', 'theme', 'cache', or 'clear task'",
                     modifier = Modifier.padding(vertical = 32.dp)
                 )
             } else {
@@ -193,7 +196,7 @@ fun SettingsScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Results (${searchResults.size})",
+                        text = if (searchResults.size > displayedResults.size) "Results (top ${displayedResults.size} of ${searchResults.size})" else "Results (${searchResults.size})",
                         style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary,
                         fontWeight = FontWeight.Bold
@@ -206,7 +209,7 @@ fun SettingsScreen(
                 }
 
                 ExpressiveSettingGroup(
-                    items = searchResults.map { item ->
+                    items = displayedResults.map { item ->
                         Material3SettingsItem(
                             icon = painterResource(item.iconRes),
                             title = {
@@ -241,7 +244,9 @@ fun SettingsScreen(
                             description = {
                                 Text(
                                     text = item.description,
-                                    maxLines = 2,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 3,
                                     overflow = TextOverflow.Ellipsis
                                 )
                             },
@@ -256,6 +261,17 @@ fun SettingsScreen(
                         )
                     }
                 )
+
+                if (searchResults.size > displayedResults.size) {
+                    Text(
+                        text = "Type more letters to narrow down among ${searchResults.size} matches",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp, horizontal = 12.dp)
+                    )
+                }
             }
         } else {
             // Section 1 — Four Primary Categories in Card-Style UI
