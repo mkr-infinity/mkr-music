@@ -1071,10 +1071,11 @@ class MainActivity : ComponentActivity() {
                                     }
 
                                     TopAppBar(
-                                        navigationIcon = {
+                                        title = {
                                             if (isHome) {
-                                                Box(
-                                                    modifier = Modifier.padding(start = 12.dp)
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
                                                 ) {
                                                     ExpressiveIconButton(
                                                         onClick = {
@@ -1126,6 +1127,7 @@ class MainActivity : ComponentActivity() {
                                                                 logoClickCount = 0
                                                             }
                                                         },
+                                                        size = 38.dp,
                                                         borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
                                                     ) {
                                                         Image(
@@ -1138,11 +1140,20 @@ class MainActivity : ComponentActivity() {
                                                             contentScale = ContentScale.Crop
                                                         )
                                                     }
+
+                                                    Text(
+                                                        text = stringResource(R.string.app_name),
+                                                        style = MaterialTheme.typography.titleLarge.copy(
+                                                            fontWeight = FontWeight.ExtraBold,
+                                                            fontSize = 20.sp,
+                                                            letterSpacing = (-0.5).sp
+                                                        ),
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
                                                 }
-                                            }
-                                        },
-                                        title = {
-                                            if (!isHome) {
+                                            } else {
                                                 val titleText = currentTitleRes?.let { stringResource(it) } ?: ""
                                                 if (titleText.isNotEmpty()) {
                                                     Text(
