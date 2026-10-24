@@ -11,6 +11,7 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandHorizontally
@@ -22,6 +23,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -50,6 +52,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -178,6 +181,24 @@ private fun AmberDockItem(
         }
     }
 
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "amberPressScale"
+    )
+    val iconScale by animateFloatAsState(
+        targetValue = if (isSelected) 1.08f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "amberIconScale"
+    )
+
     val iconRes = if (isSelected) screen.iconIdActive else screen.iconIdInactive
     val contentColor = if (isSelected) {
         MaterialTheme.colorScheme.primary
@@ -196,13 +217,17 @@ private fun AmberDockItem(
     )
 
     val indicatorWidth by animateDpAsState(
-        targetValue = if (isSelected) 24.dp else 0.dp,
-        animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+        targetValue = if (isSelected) 28.dp else 0.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
         label = "amberIndicatorWidth"
     )
 
     Box(
         modifier = modifier
+            .scale(pressScale)
             .clip(RoundedCornerShape(16.dp))
             .background(slotBgColor)
             .clickable(
@@ -223,7 +248,9 @@ private fun AmberDockItem(
                 painter = painterResource(id = iconRes),
                 contentDescription = stringResource(screen.titleId),
                 tint = contentColor,
-                modifier = Modifier.size(23.dp)
+                modifier = Modifier
+                    .size(23.dp)
+                    .scale(iconScale)
             )
 
             if (!slimNav) {
@@ -355,6 +382,24 @@ private fun FloatingGlassItem(
         }
     }
 
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "glassPressScale"
+    )
+    val iconScale by animateFloatAsState(
+        targetValue = if (isSelected) 1.08f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "glassIconScale"
+    )
+
     val iconRes = if (isSelected) screen.iconIdActive else screen.iconIdInactive
     val contentColor by animateColorAsState(
         targetValue = if (isSelected) {
@@ -380,6 +425,7 @@ private fun FloatingGlassItem(
 
     Box(
         modifier = modifier
+            .scale(pressScale)
             .clip(RoundedCornerShape(22.dp))
             .background(capsuleBg, shape = RoundedCornerShape(22.dp))
             .border(width = 1.dp, color = capsuleBorder, shape = RoundedCornerShape(22.dp))
@@ -401,7 +447,9 @@ private fun FloatingGlassItem(
                 painter = painterResource(id = iconRes),
                 contentDescription = stringResource(screen.titleId),
                 tint = contentColor,
-                modifier = Modifier.size(22.dp)
+                modifier = Modifier
+                    .size(22.dp)
+                    .scale(iconScale)
             )
 
             if (!slimNav) {
@@ -509,6 +557,16 @@ private fun ExpressivePillItem(
         }
     }
 
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val pressScale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "expressivePressScale"
+    )
+
     val iconRes = if (isSelected) screen.iconIdActive else screen.iconIdInactive
     val contentColor = if (isSelected) {
         MaterialTheme.colorScheme.primary
@@ -524,6 +582,7 @@ private fun ExpressivePillItem(
 
     Box(
         modifier = modifier
+            .scale(pressScale)
             .clip(CircleShape)
             .background(backgroundColor)
             .clickable(

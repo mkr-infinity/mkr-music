@@ -22,7 +22,10 @@ import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -1431,7 +1434,7 @@ class MainActivity : ComponentActivity() {
                                         NavigationTab.SEARCH -> Screens.Search
                                         else -> Screens.Home
                                     }.route,
-                                    // Enter Transition - smoother with smaller offset and longer duration
+                                    // Enter Transition - Material 3 Expressive spring motion with subtle parallax
                                     enterTransition = {
                                         val currentRouteIndex = navigationItems.indexOfFirst {
                                             it.route == targetState.destination.route
@@ -1440,12 +1443,17 @@ class MainActivity : ComponentActivity() {
                                             it.route == initialState.destination.route
                                         }
 
+                                        val navSpring = spring<IntOffset>(
+                                            dampingRatio = Spring.DampingRatioNoBouncy,
+                                            stiffness = Spring.StiffnessMediumLow
+                                        )
+
                                         if (currentRouteIndex == -1 || currentRouteIndex > previousRouteIndex)
-                                            slideInHorizontally { it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(animationSpec = navSpring) { it / 8 } + fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
                                         else
-                                            slideInHorizontally { -it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(animationSpec = navSpring) { -it / 8 } + fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
                                     },
-                                    // Exit Transition - smoother with smaller offset and longer duration
+                                    // Exit Transition - Material 3 Expressive spring motion with subtle parallax
                                     exitTransition = {
                                         val currentRouteIndex = navigationItems.indexOfFirst {
                                             it.route == initialState.destination.route
@@ -1454,12 +1462,17 @@ class MainActivity : ComponentActivity() {
                                             it.route == targetState.destination.route
                                         }
 
+                                        val navSpring = spring<IntOffset>(
+                                            dampingRatio = Spring.DampingRatioNoBouncy,
+                                            stiffness = Spring.StiffnessMediumLow
+                                        )
+
                                         if (targetRouteIndex == -1 || targetRouteIndex > currentRouteIndex)
-                                            slideOutHorizontally { -it / 8 } + fadeOut(tween(200))
+                                            slideOutHorizontally(animationSpec = navSpring) { -it / 8 } + fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing))
                                         else
-                                            slideOutHorizontally { it / 8 } + fadeOut(tween(200))
+                                            slideOutHorizontally(animationSpec = navSpring) { it / 8 } + fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing))
                                     },
-                                    // Pop Enter Transition - smoother with smaller offset and longer duration
+                                    // Pop Enter Transition
                                     popEnterTransition = {
                                         val currentRouteIndex = navigationItems.indexOfFirst {
                                             it.route == targetState.destination.route
@@ -1468,12 +1481,17 @@ class MainActivity : ComponentActivity() {
                                             it.route == initialState.destination.route
                                         }
 
+                                        val navSpring = spring<IntOffset>(
+                                            dampingRatio = Spring.DampingRatioNoBouncy,
+                                            stiffness = Spring.StiffnessMediumLow
+                                        )
+
                                         if (previousRouteIndex != -1 && previousRouteIndex < currentRouteIndex)
-                                            slideInHorizontally { it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(animationSpec = navSpring) { it / 8 } + fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
                                         else
-                                            slideInHorizontally { -it / 8 } + fadeIn(tween(200))
+                                            slideInHorizontally(animationSpec = navSpring) { -it / 8 } + fadeIn(animationSpec = tween(220, easing = FastOutSlowInEasing))
                                     },
-                                    // Pop Exit Transition - smoother with smaller offset and longer duration
+                                    // Pop Exit Transition
                                     popExitTransition = {
                                         val currentRouteIndex = navigationItems.indexOfFirst {
                                             it.route == initialState.destination.route
@@ -1482,10 +1500,15 @@ class MainActivity : ComponentActivity() {
                                             it.route == targetState.destination.route
                                         }
 
+                                        val navSpring = spring<IntOffset>(
+                                            dampingRatio = Spring.DampingRatioNoBouncy,
+                                            stiffness = Spring.StiffnessMediumLow
+                                        )
+
                                         if (currentRouteIndex != -1 && currentRouteIndex < targetRouteIndex)
-                                            slideOutHorizontally { -it / 8 } + fadeOut(tween(200))
+                                            slideOutHorizontally(animationSpec = navSpring) { -it / 8 } + fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing))
                                         else
-                                            slideOutHorizontally { it / 8 } + fadeOut(tween(200))
+                                            slideOutHorizontally(animationSpec = navSpring) { it / 8 } + fadeOut(animationSpec = tween(180, easing = FastOutSlowInEasing))
                                     },
                                     modifier = Modifier.nestedScroll(topAppBarScrollBehavior.nestedScrollConnection)
                                 ) {
