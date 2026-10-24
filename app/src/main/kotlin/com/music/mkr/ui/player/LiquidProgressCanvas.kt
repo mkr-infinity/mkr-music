@@ -74,91 +74,90 @@ fun LiquidProgressCanvas(
         if (width <= 0f || height <= 0f) return@Canvas
 
         val clampedProgress = rawProgress.coerceIn(0f, 1f)
-        val waterHeight = height * clampedProgress
-        val baseWaterY = height - waterHeight
+        val baseWaterX = width * clampedProgress
 
         val animatedPhase = if (interfaceAnimations && isPlaying) phaseAnimatable.value else 0f
 
         // Amplitude dampens near extremes (0% or 100%) to smoothly meet container edges
         val edgeFactor = (clampedProgress * 15f).coerceAtMost(1f) * ((1f - clampedProgress) * 15f).coerceAtMost(1f)
-        val amplitude = if (interfaceAnimations && isPlaying) (3.2.dp.toPx() * edgeFactor) else 0f
+        val amplitude = if (interfaceAnimations && isPlaying) (2.5.dp.toPx() * edgeFactor) else 0f
 
-        // Natural frequency scaled to canvas width
-        val waveLength1 = (width * 0.75f).coerceIn(180f, 550f)
+        // Natural frequency scaled to canvas height for vertical wave crest along horizontal progress
+        val waveLength1 = (height * 1.5f).coerceIn(40f, 200f)
         val freq1 = (2f * Math.PI.toFloat()) / waveLength1
 
-        val waveLength2 = (width * 1.05f).coerceIn(240f, 700f)
+        val waveLength2 = (height * 2.2f).coerceIn(60f, 300f)
         val freq2 = (2f * Math.PI.toFloat()) / waveLength2
 
-        val step = 8f
+        val step = 4f
 
         // 1. Secondary Back Wave (depth layer with subtle phase offset)
         backWavePath.reset()
-        backWavePath.moveTo(0f, height)
-        var x = 0f
-        val startY2 = (baseWaterY + amplitude * 0.65f * sin(0f + animatedPhase + 1.4f)).coerceIn(0f, height)
-        backWavePath.lineTo(0f, startY2)
-        while (x <= width) {
-            val waveY = (baseWaterY + amplitude * 0.65f * sin(x * freq2 + animatedPhase + 1.4f)).coerceIn(0f, height)
-            backWavePath.lineTo(x, waveY)
-            x += step
+        backWavePath.moveTo(0f, 0f)
+        var y = 0f
+        val startX2 = (baseWaterX + amplitude * 0.65f * sin(0f + animatedPhase + 1.4f)).coerceIn(0f, width)
+        backWavePath.lineTo(startX2, 0f)
+        while (y <= height) {
+            val waveX = (baseWaterX + amplitude * 0.65f * sin(y * freq2 + animatedPhase + 1.4f)).coerceIn(0f, width)
+            backWavePath.lineTo(waveX, y)
+            y += step
         }
-        val endY2 = (baseWaterY + amplitude * 0.65f * sin(width * freq2 + animatedPhase + 1.4f)).coerceIn(0f, height)
-        backWavePath.lineTo(width, endY2)
-        backWavePath.lineTo(width, height)
+        val endX2 = (baseWaterX + amplitude * 0.65f * sin(height * freq2 + animatedPhase + 1.4f)).coerceIn(0f, width)
+        backWavePath.lineTo(endX2, height)
+        backWavePath.lineTo(0f, height)
         backWavePath.close()
 
         drawPath(
             path = backWavePath,
-            brush = Brush.verticalGradient(
+            brush = Brush.horizontalGradient(
                 colors = listOf(
                     primaryColor.copy(alpha = 0.07f),
                     primaryColor.copy(alpha = 0.15f)
                 ),
-                startY = (baseWaterY - amplitude).coerceAtLeast(0f),
-                endY = height
+                startX = 0f,
+                endX = (baseWaterX + amplitude).coerceAtMost(width)
             )
         )
 
-        // 2. Primary Front Wave (main liquid body)
+        // 2. Primary Front Wave (main liquid body flowing left-to-right)
         frontWavePath.reset()
-        frontWavePath.moveTo(0f, height)
-        x = 0f
-        val startY1 = (baseWaterY + amplitude * sin(0f + animatedPhase)).coerceIn(0f, height)
-        frontWavePath.lineTo(0f, startY1)
-        while (x <= width) {
-            val waveY = (baseWaterY + amplitude * sin(x * freq1 + animatedPhase)).coerceIn(0f, height)
-            frontWavePath.lineTo(x, waveY)
-            x += step
+        frontWavePath.moveTo(0f, 0f)
+        y = 0f
+        val startX1 = (baseWaterX + amplitude * sin(0f + animatedPhase)).coerceIn(0f, width)
+        frontWavePath.lineTo(startX1, 0f)
+        while (y <= height) {
+            val waveX = (baseWaterX + amplitude * sin(y * freq1 + animatedPhase)).coerceIn(0f, width)
+            frontWavePath.lineTo(waveX, y)
+            y += step
         }
-        val endY1 = (baseWaterY + amplitude * sin(width * freq1 + animatedPhase)).coerceIn(0f, height)
-        frontWavePath.lineTo(width, endY1)
-        frontWavePath.lineTo(width, height)
+        val endX1 = (baseWaterX + amplitude * sin(height * freq1 + animatedPhase)).coerceIn(0f, width)
+        frontWavePath.lineTo(endX1, height)
+        frontWavePath.lineTo(0f, height)
         frontWavePath.close()
 
         drawPath(
             path = frontWavePath,
-            brush = Brush.verticalGradient(
+            brush = Brush.horizontalGradient(
                 colors = listOf(
                     primaryColor.copy(alpha = 0.13f),
                     primaryColor.copy(alpha = 0.24f)
                 ),
-                startY = (baseWaterY - amplitude).coerceAtLeast(0f),
-                endY = height
+                startX = 0f,
+                endX = (baseWaterX + amplitude).coerceAtMost(width)
             )
         )
 
-        // 3. Highlight Crest Line along top surface
+        // 3. Highlight Crest Line along leading wave front surface
         if (amplitude > 0.5f) {
             crestPath.reset()
-            x = 0f
-            crestPath.moveTo(0f, startY1)
-            while (x <= width) {
-                val waveY = (baseWaterY + amplitude * sin(x * freq1 + animatedPhase)).coerceIn(0f, height)
-                crestPath.lineTo(x, waveY)
-                x += step
+            y = 0f
+            crestPath.moveTo(startX1, 0f)
+            while (y <= height) {
+                val waveX = (baseWaterX + amplitude * sin(y * freq1 + animatedPhase)).coerceIn(0f, width)
+                crestPath.lineTo(waveX, y)
+                y += step
             }
-            crestPath.lineTo(width, endY1)
+            crestPath.lineTo(endX1, height)
 
             drawPath(
                 path = crestPath,
