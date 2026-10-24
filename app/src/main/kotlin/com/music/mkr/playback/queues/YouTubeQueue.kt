@@ -47,6 +47,14 @@ class YouTubeQueue(
                 try {
                     var nextResult = YouTube.next(endpoint, continuation).getOrThrow()
                     
+                    // If RDAMVM returns an empty item list, fall back to pure videoId watch endpoint
+                    if (nextResult.items.isEmpty() && endpoint.videoId != null && endpoint.playlistId?.startsWith("RDAMVM") == true) {
+                        val fallback = YouTube.next(WatchEndpoint(videoId = endpoint.videoId), continuation).getOrNull()
+                        if (fallback != null && fallback.items.isNotEmpty()) {
+                            nextResult = fallback
+                        }
+                    }
+
                     if (nextResult.radioChips.isEmpty() && endpoint.videoId != null) {
                         try {
                             val fallbackResult = YouTube.next(WatchEndpoint(videoId = endpoint.videoId)).getOrNull()
@@ -70,6 +78,10 @@ class YouTubeQueue(
                     )
                 } catch (e: Exception) {
                     lastException = e
+                    if (attempt == 0 && endpoint.videoId != null && endpoint.playlistId?.startsWith("RDAMVM") == true) {
+                        // Switch from RDAMVM to clean videoId watch endpoint on first failure
+                        endpoint = WatchEndpoint(videoId = endpoint.videoId)
+                    }
                 }
             }
             throw lastException ?: Exception("Failed to get initial status")

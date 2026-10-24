@@ -751,27 +751,31 @@ class MusicService :
             updateWidgetUI(player.isPlaying)
         }
 
-        combine(
-            currentMediaMetadata.distinctUntilChangedBy { it?.id },
-            dataStore.data.map { it[ShowLyricsKey] ?: false }.distinctUntilChanged(),
-        ) { mediaMetadata, showLyrics ->
-            mediaMetadata to showLyrics
-        }.collectLatest(scope) { (mediaMetadata, showLyrics) ->
-            if (showLyrics && mediaMetadata != null && database.lyrics(mediaMetadata.id)
-                    .first() == null
-            ) {
-                val lyricsWithProvider = lyricsHelper.getLyrics(mediaMetadata)
-                database.query {
-                    upsert(
-                        LyricsEntity(
-                            id = mediaMetadata.id,
-                            lyrics = lyricsWithProvider.lyrics,
-                            provider = lyricsWithProvider.provider,
-                        ),
-                    )
+        currentMediaMetadata
+            .distinctUntilChangedBy { it?.id }
+            .collectLatest(scope) { mediaMetadata ->
+                if (mediaMetadata != null) {
+                    val existing = database.lyrics(mediaMetadata.id).firstOrNull()
+                    if (existing == null || existing.lyrics.isBlank() || existing.lyrics == LyricsEntity.LYRICS_NOT_FOUND) {
+                        try {
+                            val lyricsWithProvider = lyricsHelper.getLyrics(mediaMetadata)
+                            if (lyricsWithProvider.lyrics.isNotBlank() && lyricsWithProvider.lyrics != LyricsEntity.LYRICS_NOT_FOUND) {
+                                database.query {
+                                    upsert(
+                                        LyricsEntity(
+                                            id = mediaMetadata.id,
+                                            lyrics = lyricsWithProvider.lyrics,
+                                            provider = lyricsWithProvider.provider,
+                                        ),
+                                    )
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // Non-fatal background lyrics pre-cache
+                        }
+                    }
                 }
             }
-        }
 
         dataStore.data
             .map { (it[SkipSilenceKey] ?: false) to (it[SkipSilenceInstantKey] ?: false) }
@@ -872,7 +876,8 @@ class MusicService :
                                 }
                             }
                         }
-                        delay(250)
+                        val loopDelay = if (player.isPlaying) 250L else 1000L
+                        delay(loopDelay)
                     }
                 }
             }
@@ -1101,21 +1106,11 @@ class MusicService :
             }
         }
 
-        // Save queue periodically to prevent queue loss from crash or force kill
+        // Save queue periodically (30s) to preserve state without causing constant flash I/O churn
         scope.launch {
             while (isActive) {
                 delay(30.seconds)
-                if (dataStore.get(PersistentQueueKey, true)) {
-                    saveQueueToDisk()
-                }
-            }
-        }
-
-        // Save queue more frequently when playing to ensure state is preserved
-        scope.launch {
-            while (isActive) {
-                delay(10.seconds)
-                if (dataStore.get(PersistentQueueKey, true) && player.isPlaying) {
+                if (dataStore.get(PersistentQueueKey, true) && (player.isPlaying || player.mediaItemCount > 0)) {
                     saveQueueToDisk()
                 }
             }
@@ -3899,7 +3894,7 @@ class MusicService :
                 if (player.isPlaying) {
                     updateWidgetUI(true)
                 }
-                delay(200)
+                delay(1000)
             }
         }
     }

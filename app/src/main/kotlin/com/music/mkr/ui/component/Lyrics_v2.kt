@@ -162,7 +162,12 @@ fun LyricsV2(
 
     val currentTrackId = mediaMetadata?.id
     LaunchedEffect(currentTrackId) {
-        if (currentTrackId != null && (currentLyrics == null || currentLyrics?.id != currentTrackId)) {
+        if (currentTrackId != null) {
+            val existing = currentLyrics
+            if (existing != null && existing.id == currentTrackId && existing.lyrics.isNotBlank() && existing.lyrics != LYRICS_NOT_FOUND) {
+                // Room database already loaded valid lyrics, avoid duplicate fetching
+                return@LaunchedEffect
+            }
             delay(300)
             try {
                 val entryPoint = EntryPointAccessors.fromApplication(
@@ -173,7 +178,10 @@ fun LyricsV2(
                 val fetchedLyricsWithProvider = withContext(Dispatchers.IO) {
                     lyricsHelper.getLyrics(mediaMetadata)
                 }
-                if (mediaMetadata?.id == currentTrackId) {
+                if (mediaMetadata?.id == currentTrackId &&
+                    fetchedLyricsWithProvider.lyrics.isNotBlank() &&
+                    fetchedLyricsWithProvider.lyrics != LYRICS_NOT_FOUND
+                ) {
                     database.query {
                         upsert(
                             LyricsEntity(

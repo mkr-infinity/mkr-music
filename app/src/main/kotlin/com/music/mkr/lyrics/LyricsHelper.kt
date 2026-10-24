@@ -12,6 +12,8 @@ import com.music.mkr.constants.LyricsPrioritizeSyncAccuracyKey
 import com.music.mkr.constants.LyricsProviderOrderKey
 import com.music.mkr.constants.PreferredLyricsProvider
 import com.music.mkr.constants.PreferredLyricsProviderKey
+import com.music.mkr.db.MusicDatabase
+import com.music.mkr.db.entities.LyricsEntity
 import com.music.mkr.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
 import com.music.mkr.extensions.toEnum
 import com.music.mkr.models.MediaMetadata
@@ -27,6 +29,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -39,6 +42,7 @@ class LyricsHelper
 constructor(
     @ApplicationContext private val context: Context,
     private val networkConnectivity: NetworkConnectivityObserver,
+    private val database: MusicDatabase,
 ) {
     /**
      * Resolves the ordered list of lyrics providers from the user's saved priority order.
@@ -75,8 +79,20 @@ constructor(
         currentLyricsJob?.cancel()
 
         val cached = cache.get(mediaMetadata.id)?.firstOrNull()
-        if (cached != null) {
+        if (cached != null && cached.lyrics.isNotBlank() && cached.lyrics != LYRICS_NOT_FOUND) {
             return LyricsWithProvider(cached.lyrics, cached.providerName)
+        }
+
+        // Room database cache lookup: always check local database first
+        val dbLyrics = try {
+            database.lyrics(mediaMetadata.id).firstOrNull()
+        } catch (e: Exception) {
+            null
+        }
+
+        if (dbLyrics != null && dbLyrics.lyrics.isNotBlank() && dbLyrics.lyrics != LYRICS_NOT_FOUND) {
+            cache.put(mediaMetadata.id, listOf(LyricsResult(dbLyrics.provider, dbLyrics.lyrics)))
+            return LyricsWithProvider(dbLyrics.lyrics, dbLyrics.provider)
         }
 
         // Check network connectivity before making network requests
@@ -89,7 +105,10 @@ constructor(
         }
         
         if (!isNetworkAvailable) {
-            // Still proceed but return not found to avoid hanging
+            // Offline: reuse existing DB record (even instrumental/empty) without overwriting with NOT_FOUND
+            if (dbLyrics != null && dbLyrics.lyrics.isNotBlank()) {
+                return LyricsWithProvider(dbLyrics.lyrics, dbLyrics.provider)
+            }
             return LyricsWithProvider(LYRICS_NOT_FOUND, "Unknown")
         }
 
@@ -184,6 +203,23 @@ constructor(
                     } finally {
                         jobs.forEach { it.cancel() }
                         channel.close()
+                    }
+                    
+                    if (bestLyrics.isNotBlank() && bestLyrics != LYRICS_NOT_FOUND) {
+                        cache.put(mediaMetadata.id, listOf(LyricsResult(bestProvider, bestLyrics)))
+                        try {
+                            database.query {
+                                upsert(
+                                    LyricsEntity(
+                                        id = mediaMetadata.id,
+                                        lyrics = bestLyrics,
+                                        provider = bestProvider,
+                                    )
+                                )
+                            }
+                        } catch (e: Exception) {
+                            // Non-fatal database save
+                        }
                     }
                     
                     LyricsWithProvider(bestLyrics, bestProvider)

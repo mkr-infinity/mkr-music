@@ -33,12 +33,16 @@ import java.net.Inet4Address
 import java.net.Inet6Address
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.FormatEntity
+import com.music.mkr.db.entities.LyricsEntity
 import com.music.mkr.db.entities.SongEntity
 import com.music.mkr.di.DownloadCache
+import com.music.mkr.di.LyricsHelperEntryPoint
 import com.music.mkr.di.PlayerCache
+import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.YTPlayerUtils
 import com.music.mkr.utils.enumPreference
+import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -48,6 +52,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -276,6 +281,23 @@ constructor(
                                     } else {
                                         database.updateDownloadedInfo(download.request.id, false, null)
                                         Timber.tag("DownloadDiagnostics").e("Download destination write failed for %s", download.request.id)
+                                    }
+
+                                    // Pre-cache lyrics for completed download so offline playback has instant lyrics
+                                    try {
+                                        val song = database.song(download.request.id).firstOrNull()
+                                        if (song != null) {
+                                            val existingLyrics = database.lyrics(download.request.id).firstOrNull()
+                                            if (existingLyrics == null || existingLyrics.lyrics.isBlank() || existingLyrics.lyrics == LyricsEntity.LYRICS_NOT_FOUND) {
+                                                val lyricsHelper = EntryPointAccessors.fromApplication(
+                                                    context.applicationContext,
+                                                    LyricsHelperEntryPoint::class.java
+                                                ).lyricsHelper()
+                                                lyricsHelper.getLyrics(song.toMediaMetadata())
+                                            }
+                                        }
+                                    } catch (e: Exception) {
+                                        Timber.tag("DownloadDiagnostics").w(e, "Could not pre-cache lyrics for download %s", download.request.id)
                                     }
                                 }
                                 Download.STATE_FAILED,

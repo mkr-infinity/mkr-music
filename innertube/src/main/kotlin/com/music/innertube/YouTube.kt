@@ -1269,20 +1269,47 @@ object YouTube {
     }
 
     suspend fun next(endpoint: WatchEndpoint, continuation: String? = null): Result<NextResult> = runCatching {
-        val response = innerTube.next(
-            WEB_REMIX,
-            endpoint.videoId,
-            endpoint.playlistId,
-            endpoint.playlistSetVideoId,
-            endpoint.index,
-            endpoint.params,
-            continuation).body<NextResponse>()
+        val response = try {
+            innerTube.next(
+                WEB_REMIX,
+                endpoint.videoId,
+                endpoint.playlistId,
+                endpoint.playlistSetVideoId,
+                endpoint.index,
+                endpoint.params,
+                continuation
+            ).body<NextResponse>()
+        } catch (e: Exception) {
+            if (cookie != null) {
+                // If authenticated next fails (e.g., 401/403 or session invalidation), retry as guest to preserve recommendations
+                val savedCookie = cookie
+                try {
+                    cookie = null
+                    innerTube.next(
+                        WEB_REMIX,
+                        endpoint.videoId,
+                        endpoint.playlistId,
+                        endpoint.playlistSetVideoId,
+                        endpoint.index,
+                        endpoint.params,
+                        continuation
+                    ).body<NextResponse>()
+                } finally {
+                    cookie = savedCookie
+                }
+            } else {
+                throw e
+            }
+        }
         val playlistPanelRenderer = response.continuationContents?.playlistPanelContinuation
             ?: response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer
-                ?.watchNextTabbedResultsRenderer?.tabs?.get(0)?.tabRenderer?.content?.musicQueueRenderer
-                ?.content?.playlistPanelRenderer!!
+                ?.watchNextTabbedResultsRenderer?.tabs?.firstOrNull { it.tabRenderer?.content?.musicQueueRenderer?.content?.playlistPanelRenderer != null }
+                ?.tabRenderer?.content?.musicQueueRenderer?.content?.playlistPanelRenderer
+            ?: response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer
+                ?.watchNextTabbedResultsRenderer?.tabs?.getOrNull(0)?.tabRenderer?.content?.musicQueueRenderer
+                ?.content?.playlistPanelRenderer
         val title = response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer
-            ?.watchNextTabbedResultsRenderer?.tabs?.get(0)?.tabRenderer?.content?.musicQueueRenderer
+            ?.watchNextTabbedResultsRenderer?.tabs?.getOrNull(0)?.tabRenderer?.content?.musicQueueRenderer
             ?.header?.musicQueueHeaderRenderer?.subtitle?.runs?.firstOrNull()?.text
 
         val chipsData = response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer
@@ -1303,6 +1330,18 @@ object YouTube {
             )
         } ?: emptyList()
 
+        if (playlistPanelRenderer == null) {
+            return@runCatching NextResult(
+                title = title,
+                items = emptyList(),
+                currentIndex = null,
+                lyricsEndpoint = response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs?.getOrNull(1)?.tabRenderer?.endpoint?.browseEndpoint,
+                relatedEndpoint = response.contents.singleColumnMusicWatchNextResultsRenderer?.tabbedRenderer?.watchNextTabbedResultsRenderer?.tabs?.getOrNull(2)?.tabRenderer?.endpoint?.browseEndpoint,
+                continuation = null,
+                endpoint = endpoint,
+                radioChips = radioChips
+            )
+        }
 
         val items = playlistPanelRenderer.contents.mapNotNull { content ->
             content.playlistPanelVideoRenderer

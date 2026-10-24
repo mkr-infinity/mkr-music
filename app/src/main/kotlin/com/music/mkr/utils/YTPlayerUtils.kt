@@ -127,21 +127,39 @@ object YTPlayerUtils {
     ): Result<InnerTubeXPlayer.PlaybackData> {
         val firstAttempt = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager, contentHints)
         
-        if (firstAttempt.isFailure && YouTube.cookie == null) {
-            Timber.tag(TAG).w("Playback failed for guest. Rotating session and retrying...")
-            PlaybackLogManager.log(PlaybackLogLevel.BOT, "Playback failed for guest", "Triggering bot detection mitigation (rotating guest session)")
+        if (firstAttempt.isFailure) {
+            Timber.tag(TAG).w("Playback failed for initial attempt. Rotating session and retrying...")
+            PlaybackLogManager.log(PlaybackLogLevel.BOT, "Playback failed", "Triggering bot detection mitigation (rotating guest session)")
             BotDetectionMitigator.rotateGuestSession()
             val retryResult = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager, contentHints)
-            retryResult.onSuccess { BotDetectionMitigator.notifyPlaybackSuccess() }
-            if (retryResult.isFailure) {
-                val err = retryResult.exceptionOrNull()
-                Timber.tag(TAG).e(err, "Stream resolution exhausted for $videoId after session rotation")
-                PlaybackLogManager.log(
-                    PlaybackLogLevel.ERROR,
-                    "No playable stream",
-                    "All clients failed for $videoId: ${err?.message ?: "unknown"}"
-                )
+            if (retryResult.isSuccess) {
+                retryResult.onSuccess { BotDetectionMitigator.notifyPlaybackSuccess() }
+                return retryResult
             }
+
+            // If user is logged in, auth cookies or account restrictions might be blocking the stream. Fall back to guest session.
+            if (YouTube.cookie != null) {
+                Timber.tag(TAG).w("Stream extraction failed with auth cookies. Attempting guest session fallback...")
+                val savedCookie = YouTube.cookie
+                try {
+                    YouTube.cookie = null
+                    val guestResult = resolvePlaybackData(videoId, playlistId, audioQuality, connectivityManager, contentHints)
+                    if (guestResult.isSuccess) {
+                        guestResult.onSuccess { BotDetectionMitigator.notifyPlaybackSuccess() }
+                        return guestResult
+                    }
+                } finally {
+                    YouTube.cookie = savedCookie
+                }
+            }
+
+            val err = retryResult.exceptionOrNull() ?: firstAttempt.exceptionOrNull()
+            Timber.tag(TAG).e(err, "Stream resolution exhausted for $videoId after session rotation")
+            PlaybackLogManager.log(
+                PlaybackLogLevel.ERROR,
+                "No playable stream",
+                "All clients failed for $videoId: ${err?.message ?: "unknown"}"
+            )
             return retryResult
         }
         

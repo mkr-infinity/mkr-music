@@ -661,10 +661,11 @@ fun BottomSheetPlayer(
     // Position update - only for local playback
     // When casting, we use castPosition directly to avoid sync issues
     // Use isPlaying instead of playbackState to ensure continuous updates during playback
-    LaunchedEffect(isPlaying, isCasting) {
+    LaunchedEffect(isPlaying, isCasting, state.isExpanded) {
         if (!isCasting && isPlaying) {
+            val updateInterval = if (state.isExpanded) 100L else 500L
             while (isActive) {
-                delay(100) // Update more frequently for smoother progress bar
+                delay(updateInterval) // 100ms for smooth expanded slider, 500ms when collapsed to save battery
                 if (sliderPosition == null) { // Only update if user isn't dragging
                     position = playerConnection.player.currentPosition
                     duration = playerConnection.player.duration
@@ -724,7 +725,8 @@ fun BottomSheetPlayer(
                     .fillMaxSize()
                     .background(bottomSheetBackgroundColor)
             ) {
-                when (playerBackground) {
+                if (backgroundAlpha > 0.01f) {
+                    when (playerBackground) {
                     PlayerBackgroundStyle.BLUR -> {
                         AnimatedContent(
                             targetState = mediaMetadata?.thumbnailUrl,
@@ -1135,6 +1137,7 @@ fun BottomSheetPlayer(
                     }
                 }
             }
+        }
         },
         onDismiss = {
             playerConnection.service.clearAutomix()

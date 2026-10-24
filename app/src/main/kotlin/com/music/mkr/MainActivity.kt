@@ -1207,6 +1207,36 @@ class MainActivity : ComponentActivity() {
                                                         overflow = TextOverflow.Ellipsis
                                                     )
                                                 }
+                                            } else if (isLibrary) {
+                                                Row(
+                                                    verticalAlignment = Alignment.CenterVertically,
+                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                ) {
+                                                    ExpressiveIconButton(
+                                                        onClick = { },
+                                                        size = 38.dp,
+                                                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
+                                                    ) {
+                                                        Icon(
+                                                            painter = painterResource(R.drawable.library_music),
+                                                            contentDescription = stringResource(R.string.filter_library),
+                                                            tint = MaterialTheme.colorScheme.primary,
+                                                            modifier = Modifier.size(20.dp)
+                                                        )
+                                                    }
+
+                                                    Text(
+                                                        text = stringResource(R.string.filter_library),
+                                                        style = MaterialTheme.typography.titleLarge.copy(
+                                                            fontWeight = FontWeight.ExtraBold,
+                                                            fontSize = 20.sp,
+                                                            letterSpacing = (-0.5).sp
+                                                        ),
+                                                        color = MaterialTheme.colorScheme.onSurface,
+                                                        maxLines = 1,
+                                                        overflow = TextOverflow.Ellipsis
+                                                    )
+                                                }
                                             } else {
                                                 val titleText = currentTitleRes?.let { stringResource(it) } ?: ""
                                                 if (titleText.isNotEmpty()) {
