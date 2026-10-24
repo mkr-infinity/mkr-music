@@ -3810,26 +3810,31 @@ class MusicService :
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
         if (dataStore.get(StopMusicOnTaskClearKey, false)) {
-            Timber.d("Task cleared with stopMusicOnTaskClear enabled - stopping music and terminating process")
+            Timber.d("Task cleared with stopMusicOnTaskClear enabled - stopping music and tearing down service cleanly")
             try {
                 abandonAudioFocus()
                 player.pause()
                 player.stop()
                 player.clearMediaItems()
+                releaseLoudnessEnhancer()
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 getSystemService(NotificationManager::class.java)?.cancelAll()
-                mediaSession.release()
             } catch (e: Exception) {
                 Timber.e(e, "Error stopping player on task clear")
             }
             stopSelf()
-            android.os.Process.killProcess(android.os.Process.myPid())
         }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Guard against headless zombie restarts: if restarted by AMS with null intent and inactive playback, stop immediately
+        if (intent == null && (!player.isPlaying || player.mediaItemCount == 0)) {
+            Timber.d("MusicService started with null intent and no active playback - stopping immediately to prevent zombie process")
+            stopSelf()
+            return START_NOT_STICKY
+        }
         when (intent?.action) {
             MusicWidgetReceiver.ACTION_PLAY_PAUSE -> {
                 if (player.isPlaying) player.pause() else player.play()
