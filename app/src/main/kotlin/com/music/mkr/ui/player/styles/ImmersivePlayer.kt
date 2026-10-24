@@ -181,7 +181,12 @@ fun ImmersivePlayer(
                 }
 
                 val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
-                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Text(
                         text = stringResource(R.string.playing_from),
                         style = MaterialTheme.typography.labelSmall,
