@@ -5,6 +5,9 @@
 
 package com.music.mkr.ui.player.styles
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
@@ -28,9 +31,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -97,6 +102,15 @@ fun MinimalPlayer(
     val haptic = LocalHapticFeedback.current
     val titleActions = rememberPlayerTitleActions(mediaMetadata, navController, state)
 
+    val artworkScale by animateFloatAsState(
+        targetValue = if (isPlaying) 1.0f else 0.94f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "minimalArtworkScale"
+    )
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
@@ -115,10 +129,11 @@ fun MinimalPlayer(
         ) {
             Surface(
                 shape = RoundedCornerShape(18.dp),
-                shadowElevation = 6.dp,
+                shadowElevation = if (isPlaying) 10.dp else 4.dp,
                 modifier = Modifier
                     .fillMaxWidth(0.85f)
                     .aspectRatio(1f)
+                    .scale(artworkScale)
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)

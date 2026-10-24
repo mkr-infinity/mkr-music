@@ -6,7 +6,10 @@
 package com.music.mkr.ui.player.styles
 
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.basicMarquee
@@ -37,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
@@ -105,10 +109,13 @@ fun ClassicPlayer(
     val haptic = LocalHapticFeedback.current
     val titleActions = rememberPlayerTitleActions(mediaMetadata, navController, state)
 
-    val playPauseRoundness by animateDpAsState(
-        targetValue = if (isPlaying) 24.dp else 36.dp,
-        animationSpec = tween(durationMillis = 90, easing = LinearEasing),
-        label = "classicPlayPauseRoundness"
+    val artworkScale by animateFloatAsState(
+        targetValue = if (isPlaying) 1.0f else 0.94f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "classicArtworkScale"
     )
 
     Column(
@@ -130,10 +137,11 @@ fun ClassicPlayer(
         ) {
             Surface(
                 shape = RoundedCornerShape(ThumbnailCornerRadius),
-                shadowElevation = 8.dp,
+                shadowElevation = if (isPlaying) 12.dp else 6.dp,
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .aspectRatio(1f)
+                    .scale(artworkScale)
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)

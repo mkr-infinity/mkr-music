@@ -304,7 +304,7 @@ private fun NewMiniPlayer(
     val onSurfaceColor = artworkPalette.textPrimary
     val errorColor = MaterialTheme.colorScheme.error
 
-    val previousTrackLabel = stringResource(R.string.widget_previous)
+    val previousTrackLabel = stringResource(R.string.previous_track)
     val nextTrackLabel = stringResource(R.string.next_track)
     val customActionsList = remember(canSkipPrevious, canSkipNext, isListenTogetherGuest, previousTrackLabel, nextTrackLabel) {
         val actions = mutableListOf<CustomAccessibilityAction>()
@@ -512,7 +512,7 @@ private fun NewMiniPlayer(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.skip_previous),
-                        contentDescription = stringResource(R.string.widget_previous),
+                        contentDescription = stringResource(R.string.previous_track),
                         tint = if (canSkipPrevious && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
                         modifier = Modifier.size(20.dp)
                     )
@@ -854,7 +854,7 @@ private fun LegacyMiniPlayer(
     val primaryColor = MaterialTheme.colorScheme.primary
     val trackColor = MaterialTheme.colorScheme.surfaceVariant
 
-    val previousTrackLabel = stringResource(R.string.widget_previous)
+    val previousTrackLabel = stringResource(R.string.previous_track)
     val nextTrackLabel = stringResource(R.string.next_track)
     val customActionsList = remember(canSkipPrevious, canSkipNext, isListenTogetherGuest, previousTrackLabel, nextTrackLabel) {
         val actions = mutableListOf<CustomAccessibilityAction>()
@@ -1039,7 +1039,7 @@ private fun LegacyMiniPlayer(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.skip_previous),
-                    contentDescription = stringResource(R.string.widget_previous),
+                    contentDescription = stringResource(R.string.previous_track),
                     tint = if (canSkipPrevious && !isListenTogetherGuest) primaryColor else primaryColor.copy(alpha = 0.3f),
                     modifier = Modifier.size(22.dp)
                 )

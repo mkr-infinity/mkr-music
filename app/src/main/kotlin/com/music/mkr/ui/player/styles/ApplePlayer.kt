@@ -13,8 +13,10 @@ import android.content.res.Configuration
 import android.media.AudioManager
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -53,9 +55,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.layout.ContentScale
+import com.music.mkr.ui.component.PlayerTransportRow
+import com.music.mkr.ui.component.TransportVariant
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -185,6 +190,15 @@ fun ApplePlayer(
         targetValue = if (isPlaying) 24.dp else 36.dp,
         animationSpec = tween(durationMillis = 90, easing = LinearEasing),
         label = "applePlayPauseRoundness"
+    )
+
+    val artworkScale by animateFloatAsState(
+        targetValue = if (isPlaying) 1.0f else 0.88f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "appleArtworkScale"
     )
 
     val bluetoothDeviceName = remember(context) { getConnectedBluetoothDeviceName(context) }
@@ -338,66 +352,34 @@ fun ApplePlayer(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                // Controls: Previous, Play/Pause, Next
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    ResizableIconButton(
-                        icon = R.drawable.skip_previous,
-                        contentDescription = stringResource(R.string.widget_previous),
-                        enabled = canSkipPrevious,
-                        color = textBackgroundColor,
-                        modifier = Modifier.size(44.dp).alpha(if (canSkipPrevious) 1f else 0.4f),
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.seekToPrevious()
+                // Controls: Previous, Play/Pause, Next (Expressive tactile spring feedback)
+                PlayerTransportRow(
+                    isPlaying = isPlaying,
+                    isLoading = isLoading,
+                    playbackState = playbackState,
+                    canSkipPrevious = canSkipPrevious,
+                    canSkipNext = canSkipNext,
+                    onPlayPause = {
+                        if (playbackState == Player.STATE_ENDED) {
+                            playerConnection.player.seekTo(0, 0)
+                            playerConnection.player.playWhenReady = true
+                        } else {
+                            playerConnection.player.togglePlayPause()
                         }
-                    )
-
-                    Box(
-                        modifier = Modifier
-                            .size(72.dp)
-                            .clip(RoundedCornerShape(playPauseRoundness))
-                            .background(textButtonColor)
-                            .clickable(role = Role.Button) {
-                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                if (playbackState == Player.STATE_ENDED) {
-                                    playerConnection.player.seekTo(0, 0)
-                                    playerConnection.player.playWhenReady = true
-                                } else {
-                                    playerConnection.player.togglePlayPause()
-                                }
-                            },
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Image(
-                            painter = painterResource(
-                                when {
-                                    playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                    isPlaying -> R.drawable.pause
-                                    else -> R.drawable.play
-                                }
-                            ),
-                            contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                            colorFilter = ColorFilter.tint(iconButtonColor),
-                            modifier = Modifier.size(36.dp)
-                        )
-                    }
-
-                    ResizableIconButton(
-                        icon = R.drawable.skip_next,
-                        contentDescription = stringResource(R.string.next),
-                        enabled = canSkipNext,
-                        color = textBackgroundColor,
-                        modifier = Modifier.size(44.dp).alpha(if (canSkipNext) 1f else 0.4f),
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.seekToNext()
-                        }
-                    )
-                }
+                    },
+                    onSkipPrevious = { playerConnection.seekToPrevious() },
+                    onSkipNext = { playerConnection.seekToNext() },
+                    variant = TransportVariant.EXPRESSIVE,
+                    primaryContainerColor = textButtonColor,
+                    primaryContentColor = iconButtonColor,
+                    secondaryContainerColor = textBackgroundColor.copy(alpha = 0.12f),
+                    secondaryContentColor = textBackgroundColor,
+                    playButtonSize = 72.dp,
+                    sideButtonSize = 48.dp,
+                    playIconSize = 36.dp,
+                    sideIconSize = 26.dp,
+                    haptic = haptic
+                )
             }
         }
     } else {
@@ -419,10 +401,11 @@ fun ApplePlayer(
             ) {
                 Surface(
                     shape = RoundedCornerShape(ThumbnailCornerRadius),
-                    shadowElevation = if (showPlayerThumbnailShadow) playerThumbnailShadowElevation.dp else 0.dp,
+                    shadowElevation = if (showPlayerThumbnailShadow) (if (isPlaying) playerThumbnailShadowElevation.dp else (playerThumbnailShadowElevation * 0.6f).dp) else 0.dp,
                     modifier = Modifier
                         .fillMaxWidth(0.88f)
                         .aspectRatio(1f)
+                        .scale(artworkScale)
                         .clip(RoundedCornerShape(ThumbnailCornerRadius))
                         .SwipeGesture(
                             enabled = true,
@@ -580,87 +563,35 @@ fun ApplePlayer(
 
             Spacer(Modifier.height(8.dp))
 
-            // Playback controls row: 48dp Prev, 100dp Play/Pause, 48dp Next
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = PlayerHorizontalPadding)
-            ) {
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    ResizableIconButton(
-                        icon = R.drawable.skip_previous,
-                        contentDescription = stringResource(R.string.widget_previous),
-                        enabled = canSkipPrevious,
-                        color = textBackgroundColor,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .alpha(if (canSkipPrevious) 1f else 0.4f),
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.seekToPrevious()
-                        }
-                    )
-                }
-
-                Spacer(Modifier.width(8.dp))
-
-                Box(
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(RoundedCornerShape(playPauseRoundness))
-                        .clickable(role = Role.Button) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            if (playbackState == Player.STATE_ENDED) {
-                                playerConnection.player.seekTo(0, 0)
-                                playerConnection.player.playWhenReady = true
-                            } else {
-                                playerConnection.player.togglePlayPause()
-                            }
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            color = textButtonColor,
-                            modifier = Modifier.size(48.dp),
-                            strokeWidth = 3.dp
-                        )
+            // Playback controls row: Tactile zero-bounce spring feedback
+            PlayerTransportRow(
+                isPlaying = isPlaying,
+                isLoading = isLoading,
+                playbackState = playbackState,
+                canSkipPrevious = canSkipPrevious,
+                canSkipNext = canSkipNext,
+                onPlayPause = {
+                    if (playbackState == Player.STATE_ENDED) {
+                        playerConnection.player.seekTo(0, 0)
+                        playerConnection.player.playWhenReady = true
                     } else {
-                        Image(
-                            painter = painterResource(
-                                when {
-                                    playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                    isPlaying -> R.drawable.pause
-                                    else -> R.drawable.play
-                                }
-                            ),
-                            contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                            colorFilter = ColorFilter.tint(textBackgroundColor),
-                            modifier = Modifier.size(72.dp)
-                        )
+                        playerConnection.player.togglePlayPause()
                     }
-                }
-
-                Spacer(Modifier.width(8.dp))
-
-                Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                    ResizableIconButton(
-                        icon = R.drawable.skip_next,
-                        contentDescription = stringResource(R.string.next),
-                        enabled = canSkipNext,
-                        color = textBackgroundColor,
-                        modifier = Modifier
-                            .size(48.dp)
-                            .alpha(if (canSkipNext) 1f else 0.4f),
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.seekToNext()
-                        }
-                    )
-                }
-            }
+                },
+                onSkipPrevious = { playerConnection.seekToPrevious() },
+                onSkipNext = { playerConnection.seekToNext() },
+                variant = TransportVariant.EXPRESSIVE,
+                primaryContainerColor = textButtonColor,
+                primaryContentColor = iconButtonColor,
+                secondaryContainerColor = textBackgroundColor.copy(alpha = 0.12f),
+                secondaryContentColor = textBackgroundColor,
+                playButtonSize = 88.dp,
+                sideButtonSize = 56.dp,
+                playIconSize = 44.dp,
+                sideIconSize = 30.dp,
+                haptic = haptic,
+                modifier = Modifier.padding(horizontal = PlayerHorizontalPadding)
+            )
 
             Spacer(Modifier.height(8.dp))
 

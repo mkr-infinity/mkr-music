@@ -5,6 +5,9 @@
 
 package com.music.mkr.ui.player.styles
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
@@ -29,9 +32,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -45,6 +50,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.music.mkr.R
+import com.music.mkr.ui.component.PlayerTransportRow
+import com.music.mkr.ui.component.TransportVariant
 import com.music.mkr.ui.player.AudioQualityBadge
 import androidx.media3.common.Player
 import androidx.navigation.NavController
@@ -99,6 +106,15 @@ fun EditorialPlayer(
 
     val accent = textBackgroundColor
     val field = textButtonColor
+
+    val artworkScale by animateFloatAsState(
+        targetValue = if (isPlaying) 1.0f else 0.94f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "editorialArtworkScale"
+    )
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -213,11 +229,12 @@ fun EditorialPlayer(
         ) {
             Surface(
                 shape = RoundedCornerShape(20.dp),
-                shadowElevation = 14.dp,
+                shadowElevation = if (isPlaying) 16.dp else 8.dp,
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth(0.88f)
                     .aspectRatio(1f)
+                    .scale(artworkScale)
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -320,120 +337,65 @@ fun EditorialPlayer(
 
         Spacer(Modifier.height(16.dp))
 
-        // Editorial Playback Controls (Two-tone high-contrast styling)
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            IconButton(onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
-            }) {
-                Icon(
-                    painter = painterResource(R.drawable.shuffle),
-                    contentDescription = stringResource(R.string.shuffle),
-                    tint = if (shuffleModeEnabled) MaterialTheme.colorScheme.primary else accent.copy(alpha = 0.5f),
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-
-            Surface(
-                shape = CircleShape,
-                color = accent.copy(alpha = 0.12f),
-                onClick = {
+        // Editorial Playback Controls (Two-tone high-contrast styling with tactile spring feedback)
+        PlayerTransportRow(
+            isPlaying = isPlaying,
+            isLoading = isLoading,
+            playbackState = playbackState,
+            canSkipPrevious = canSkipPrevious,
+            canSkipNext = canSkipNext,
+            onPlayPause = {
+                if (playbackState == Player.STATE_ENDED) {
+                    playerConnection.player.seekTo(0, 0)
+                    playerConnection.player.playWhenReady = true
+                } else {
+                    playerConnection.player.togglePlayPause()
+                }
+            },
+            onSkipPrevious = { playerConnection.seekToPrevious() },
+            onSkipNext = { playerConnection.seekToNext() },
+            variant = TransportVariant.CIRCLE,
+            primaryContainerColor = accent,
+            primaryContentColor = if (accent == Color.White) Color.Black else Color.White,
+            secondaryContainerColor = accent.copy(alpha = 0.12f),
+            secondaryContentColor = accent,
+            playButtonSize = 76.dp,
+            sideButtonSize = 54.dp,
+            playIconSize = 38.dp,
+            sideIconSize = 28.dp,
+            haptic = haptic,
+            leadingControl = {
+                IconButton(onClick = {
                     haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    playerConnection.seekToPrevious()
-                },
-                enabled = canSkipPrevious,
-                modifier = Modifier.size(54.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
+                    playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
+                }) {
                     Icon(
-                        painter = painterResource(R.drawable.skip_previous),
-                        contentDescription = stringResource(R.string.widget_previous),
-                        tint = accent.copy(alpha = if (canSkipPrevious) 1f else 0.4f),
-                        modifier = Modifier.size(28.dp)
+                        painter = painterResource(R.drawable.shuffle),
+                        contentDescription = stringResource(R.string.shuffle),
+                        tint = if (shuffleModeEnabled) MaterialTheme.colorScheme.primary else accent.copy(alpha = 0.5f),
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
+            },
+            trailingControl = {
+                IconButton(onClick = {
+                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                    playerConnection.player.toggleRepeatMode()
+                }) {
+                    Icon(
+                        painter = painterResource(
+                            when (repeatMode) {
+                                Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
+                                else -> R.drawable.repeat
+                            }
+                        ),
+                        contentDescription = stringResource(R.string.repeat),
+                        tint = if (repeatMode != Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else accent.copy(alpha = 0.5f),
+                        modifier = Modifier.size(22.dp)
                     )
                 }
             }
-
-            // Center Two-Tone Play Button
-            Surface(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    if (playbackState == Player.STATE_ENDED) {
-                        playerConnection.player.seekTo(0, 0)
-                        playerConnection.player.playWhenReady = true
-                    } else {
-                        playerConnection.player.togglePlayPause()
-                    }
-                },
-                shape = CircleShape,
-                color = accent,
-                modifier = Modifier.size(76.dp)
-            ) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    if (isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(32.dp),
-                            color = field,
-                            strokeWidth = 3.dp
-                        )
-                    } else {
-                        Icon(
-                            painter = painterResource(
-                                when {
-                                    playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                    isPlaying -> R.drawable.pause
-                                    else -> R.drawable.play
-                                }
-                            ),
-                            contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                            tint = if (accent == Color.White) Color.Black else Color.White,
-                            modifier = Modifier.size(38.dp)
-                        )
-                    }
-                }
-            }
-
-            Surface(
-                shape = CircleShape,
-                color = accent.copy(alpha = 0.12f),
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    playerConnection.seekToNext()
-                },
-                enabled = canSkipNext,
-                modifier = Modifier.size(54.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(
-                        painter = painterResource(R.drawable.skip_next),
-                        contentDescription = stringResource(R.string.next),
-                        tint = accent.copy(alpha = if (canSkipNext) 1f else 0.4f),
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
-
-            IconButton(onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                playerConnection.player.toggleRepeatMode()
-            }) {
-                Icon(
-                    painter = painterResource(
-                        when (repeatMode) {
-                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                            else -> R.drawable.repeat
-                        }
-                    ),
-                    contentDescription = stringResource(R.string.repeat),
-                    tint = if (repeatMode != Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else accent.copy(alpha = 0.5f),
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-        }
+        )
 
         Spacer(Modifier.height(16.dp))
     }

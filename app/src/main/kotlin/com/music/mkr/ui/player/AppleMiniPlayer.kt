@@ -158,7 +158,7 @@ fun AppleMiniPlayer(
     val onSurfaceColor = artworkPalette.textPrimary
     val errorColor = MaterialTheme.colorScheme.error
 
-    val previousTrackLabel = stringResource(R.string.widget_previous)
+    val previousTrackLabel = stringResource(R.string.previous_track)
     val nextTrackLabel = stringResource(R.string.next_track)
     val customActionsList = remember(canSkipPrevious, canSkipNext, isListenTogetherGuest, previousTrackLabel, nextTrackLabel) {
         val actions = mutableListOf<CustomAccessibilityAction>()
@@ -440,7 +440,7 @@ fun AppleMiniPlayer(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.skip_previous),
-                        contentDescription = stringResource(R.string.widget_previous),
+                        contentDescription = stringResource(R.string.previous_track),
                         tint = if (canSkipPrevious && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
                         modifier = Modifier.size(28.dp)
                     )

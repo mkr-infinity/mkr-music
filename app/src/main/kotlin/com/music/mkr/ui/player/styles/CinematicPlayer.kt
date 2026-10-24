@@ -7,6 +7,7 @@ package com.music.mkr.ui.player.styles
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
@@ -34,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -44,6 +46,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.music.mkr.ui.component.PlayerTransportRow
+import com.music.mkr.ui.component.TransportVariant
 import androidx.media3.common.Player
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
@@ -97,13 +101,13 @@ fun CinematicPlayer(
     val haptic = LocalHapticFeedback.current
     val titleActions = rememberPlayerTitleActions(mediaMetadata, navController, state)
 
-    val cinematicPlayPauseCorner by animateDpAsState(
-        targetValue = if (isPlaying) 28.dp else 44.dp,
+    val artworkScale by animateFloatAsState(
+        targetValue = if (isPlaying) 1.0f else 0.94f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
         ),
-        label = "cinematicPlayPauseCorner"
+        label = "cinematicArtworkScale"
     )
 
     Column(
@@ -124,10 +128,11 @@ fun CinematicPlayer(
         ) {
             Surface(
                 shape = RoundedCornerShape(26.dp),
-                shadowElevation = 12.dp,
+                shadowElevation = if (isPlaying) 16.dp else 8.dp,
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
                     .aspectRatio(1f)
+                    .scale(artworkScale)
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -234,178 +239,79 @@ fun CinematicPlayer(
 
         Spacer(Modifier.height(16.dp))
 
-        // Cinematic Controls Row
-        BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val baseLarge = 56.dp
-            val baseSmall = 46.dp
-            val baseGap = 12.dp
-            val baseLargeIcon = 28.dp
-            val baseSmallIcon = 22.dp
-            val baseLargeRadius = 18.dp
-            val baseSmallRadius = 16.dp
-            val centerSize = 88.dp
-            val centerPadding = 36.dp
-            val sideTotal = (maxWidth - centerSize - centerPadding) / 2f
-            val scale = ((sideTotal - baseGap) / (baseLarge + baseSmall)).coerceIn(0.65f, 1f)
-
-            val large = baseLarge * scale
-            val small = baseSmall * scale
-            val gap = baseGap * scale
-            val largeIcon = baseLargeIcon * scale
-            val smallIcon = baseSmallIcon * scale
-            val largeRadius = baseLargeRadius * scale
-            val smallRadius = baseSmallRadius * scale
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Left wing: Shuffle + Skip Previous
-                Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+        // Cinematic Playback Controls (Tactile zero-bounce spring feedback)
+        PlayerTransportRow(
+            isPlaying = isPlaying,
+            isLoading = isLoading,
+            playbackState = playbackState,
+            canSkipPrevious = canSkipPrevious,
+            canSkipNext = canSkipNext,
+            onPlayPause = {
+                if (playbackState == Player.STATE_ENDED) {
+                    playerConnection.player.seekTo(0, 0)
+                    playerConnection.player.playWhenReady = true
+                } else {
+                    playerConnection.player.togglePlayPause()
+                }
+            },
+            onSkipPrevious = { playerConnection.seekToPrevious() },
+            onSkipNext = { playerConnection.seekToNext() },
+            variant = TransportVariant.EXPRESSIVE,
+            primaryContainerColor = textButtonColor,
+            primaryContentColor = iconButtonColor,
+            secondaryContainerColor = textBackgroundColor.copy(alpha = 0.14f),
+            secondaryContentColor = textBackgroundColor,
+            playButtonSize = 84.dp,
+            sideButtonSize = 56.dp,
+            playIconSize = 40.dp,
+            sideIconSize = 28.dp,
+            haptic = haptic,
+            leadingControl = {
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    color = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 0.22f else 0.08f),
+                    modifier = Modifier.size(46.dp)
                 ) {
-                    Surface(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
-                        },
-                        shape = RoundedCornerShape(smallRadius),
-                        color = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 0.22f else 0.08f),
-                        modifier = Modifier.size(small)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(R.drawable.shuffle),
-                                contentDescription = stringResource(R.string.shuffle),
-                                tint = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 1f else 0.6f),
-                                modifier = Modifier.size(smallIcon)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(gap))
-
-                    Surface(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.seekToPrevious()
-                        },
-                        enabled = canSkipPrevious,
-                        shape = RoundedCornerShape(largeRadius),
-                        color = textBackgroundColor.copy(alpha = 0.14f),
-                        modifier = Modifier.size(large)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(R.drawable.skip_previous),
-                                contentDescription = stringResource(R.string.widget_previous),
-                                tint = textBackgroundColor.copy(alpha = if (canSkipPrevious) 1f else 0.4f),
-                                modifier = Modifier.size(largeIcon)
-                            )
-                        }
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.shuffle),
+                            contentDescription = stringResource(R.string.shuffle),
+                            tint = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 1f else 0.6f),
+                            modifier = Modifier.size(22.dp)
+                        )
                     }
                 }
-
-                // Center: Big Play / Pause Button
-                Box(
-                    modifier = Modifier.padding(horizontal = (gap * 1.5f)),
-                    contentAlignment = Alignment.Center
+            },
+            trailingControl = {
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        playerConnection.player.toggleRepeatMode()
+                    },
+                    shape = RoundedCornerShape(16.dp),
+                    color = textBackgroundColor.copy(alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.22f else 0.08f),
+                    modifier = Modifier.size(46.dp)
                 ) {
-                    Surface(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            if (playbackState == Player.STATE_ENDED) {
-                                playerConnection.player.seekTo(0, 0)
-                                playerConnection.player.playWhenReady = true
-                            } else {
-                                playerConnection.player.togglePlayPause()
-                            }
-                        },
-                        shape = RoundedCornerShape(cinematicPlayPauseCorner),
-                        color = textButtonColor,
-                        modifier = Modifier.size(centerSize)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.size(38.dp),
-                                    color = iconButtonColor,
-                                    strokeWidth = 3.dp
-                                )
-                            } else {
-                                Icon(
-                                    painter = painterResource(
-                                        when {
-                                            playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                            isPlaying -> R.drawable.pause
-                                            else -> R.drawable.play
-                                        }
-                                    ),
-                                    contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                                    tint = iconButtonColor,
-                                    modifier = Modifier.size(42.dp)
-                                )
-                            }
-                        }
-                    }
-                }
-
-                // Right wing: Skip Next + Repeat
-                Row(
-                    modifier = Modifier.weight(1f),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Surface(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.seekToNext()
-                        },
-                        enabled = canSkipNext,
-                        shape = RoundedCornerShape(largeRadius),
-                        color = textBackgroundColor.copy(alpha = 0.14f),
-                        modifier = Modifier.size(large)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(R.drawable.skip_next),
-                                contentDescription = stringResource(R.string.next),
-                                tint = textBackgroundColor.copy(alpha = if (canSkipNext) 1f else 0.4f),
-                                modifier = Modifier.size(largeIcon)
-                            )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.width(gap))
-
-                    Surface(
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.player.toggleRepeatMode()
-                        },
-                        shape = RoundedCornerShape(smallRadius),
-                        color = textBackgroundColor.copy(alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.22f else 0.08f),
-                        modifier = Modifier.size(small)
-                    ) {
-                        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(
-                                    when (repeatMode) {
-                                        Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                                        else -> R.drawable.repeat
-                                    }
-                                ),
-                                contentDescription = stringResource(R.string.repeat),
-                                tint = textBackgroundColor.copy(alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 1f else 0.6f),
-                                modifier = Modifier.size(smallIcon)
-                            )
-                        }
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(
+                                when (repeatMode) {
+                                    Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
+                                    else -> R.drawable.repeat
+                                }
+                            ),
+                            contentDescription = stringResource(R.string.repeat),
+                            tint = textBackgroundColor.copy(alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 1f else 0.6f),
+                            modifier = Modifier.size(22.dp)
+                        )
                     }
                 }
             }
-        }
+        )
 
         Spacer(Modifier.height(16.dp))
     }

@@ -41,8 +41,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import com.music.mkr.ui.component.PlayerTransportRow
+import com.music.mkr.ui.component.TransportVariant
 import com.music.mkr.ui.player.AudioQualityBadge
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -104,18 +107,13 @@ fun MaterialExtendedPlayer(
     val haptic = LocalHapticFeedback.current
     val titleActions = rememberPlayerTitleActions(mediaMetadata, navController, state)
 
-    val prevSource = remember { MutableInteractionSource() }
-    val playSource = remember { MutableInteractionSource() }
-    val nextSource = remember { MutableInteractionSource() }
-
-    val isPrevPressed by prevSource.collectIsPressedAsState()
-    val isPlayPressed by playSource.collectIsPressedAsState()
-    val isNextPressed by nextSource.collectIsPressedAsState()
-
-    val playWeight by animateFloatAsState(
-        targetValue = if (isPlayPressed) 1.8f else if (isPrevPressed || isNextPressed) 1.15f else 1.35f,
-        animationSpec = spring(dampingRatio = 0.65f, stiffness = Spring.StiffnessMediumLow),
-        label = "v9PlayWeight"
+    val artworkScale by animateFloatAsState(
+        targetValue = if (isPlaying) 1.0f else 0.94f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "materialArtworkScale"
     )
 
     Column(
@@ -180,11 +178,12 @@ fun MaterialExtendedPlayer(
         ) {
             Surface(
                 shape = RoundedCornerShape(32.dp),
-                shadowElevation = 14.dp,
+                shadowElevation = if (isPlaying) 16.dp else 8.dp,
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier
                     .fillMaxWidth(0.92f)
                     .aspectRatio(1f)
+                    .scale(artworkScale)
             ) {
                 AsyncImage(
                     model = ImageRequest.Builder(LocalContext.current)
@@ -285,99 +284,36 @@ fun MaterialExtendedPlayer(
 
         Spacer(Modifier.height(16.dp))
 
-        // V9 Animated Playback Controls Strip
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            FilledIconButton(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    playerConnection.seekToPrevious()
-                },
-                enabled = canSkipPrevious,
-                interactionSource = prevSource,
-                shape = RoundedCornerShape(28.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = textBackgroundColor.copy(alpha = 0.08f),
-                    contentColor = textBackgroundColor
-                ),
-                modifier = Modifier
-                    .weight(0.5f)
-                    .height(72.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.skip_previous),
-                    contentDescription = stringResource(R.string.widget_previous),
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-
-            FilledIconButton(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    if (playbackState == Player.STATE_ENDED) {
-                        playerConnection.player.seekTo(0, 0)
-                        playerConnection.player.playWhenReady = true
-                    } else {
-                        playerConnection.player.togglePlayPause()
-                    }
-                },
-                interactionSource = playSource,
-                shape = RoundedCornerShape(28.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = textButtonColor,
-                    contentColor = iconButtonColor
-                ),
-                modifier = Modifier
-                    .weight(playWeight)
-                    .height(72.dp)
-            ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(32.dp),
-                        color = iconButtonColor,
-                        strokeWidth = 3.dp
-                    )
+        // Material Expressive Playback Controls Strip (Tactile zero-bounce spring feedback)
+        PlayerTransportRow(
+            isPlaying = isPlaying,
+            isLoading = isLoading,
+            playbackState = playbackState,
+            canSkipPrevious = canSkipPrevious,
+            canSkipNext = canSkipNext,
+            onPlayPause = {
+                if (playbackState == Player.STATE_ENDED) {
+                    playerConnection.player.seekTo(0, 0)
+                    playerConnection.player.playWhenReady = true
                 } else {
-                    Icon(
-                        painter = painterResource(
-                            when {
-                                playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                isPlaying -> R.drawable.pause
-                                else -> R.drawable.play
-                            }
-                        ),
-                        contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                        modifier = Modifier.size(36.dp)
-                    )
+                    playerConnection.player.togglePlayPause()
                 }
-            }
-
-            FilledIconButton(
-                onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    playerConnection.seekToNext()
-                },
-                enabled = canSkipNext,
-                interactionSource = nextSource,
-                shape = RoundedCornerShape(28.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = textBackgroundColor.copy(alpha = 0.08f),
-                    contentColor = textBackgroundColor
-                ),
-                modifier = Modifier
-                    .weight(0.5f)
-                    .height(72.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.skip_next),
-                    contentDescription = stringResource(R.string.next),
-                    modifier = Modifier.size(30.dp)
-                )
-            }
-        }
+            },
+            onSkipPrevious = { playerConnection.seekToPrevious() },
+            onSkipNext = { playerConnection.seekToNext() },
+            variant = TransportVariant.PILL,
+            primaryContainerColor = textButtonColor,
+            primaryContentColor = iconButtonColor,
+            secondaryContainerColor = textBackgroundColor.copy(alpha = 0.08f),
+            secondaryContentColor = textBackgroundColor,
+            playButtonHeight = 72.dp,
+            sideButtonHeight = 72.dp,
+            playButtonWidth = 116.dp,
+            sideButtonWidth = 84.dp,
+            playIconSize = 36.dp,
+            sideIconSize = 30.dp,
+            haptic = haptic
+        )
 
         Spacer(Modifier.height(16.dp))
 
