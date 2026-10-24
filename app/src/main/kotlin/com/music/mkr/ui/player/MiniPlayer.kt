@@ -12,6 +12,7 @@ import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.RepeatMode
@@ -620,14 +621,24 @@ private fun NewMiniPlayerPlayButton(
     val trackColor = outlineColor.copy(alpha = 0.2f)
     val strokeWidth = 3.dp
 
+    val rawProgress = progressState.progress
+    val animatedProgress by animateFloatAsState(
+        targetValue = rawProgress,
+        animationSpec = if (interfaceAnimations && effectiveIsPlaying && playbackState == Player.STATE_READY) {
+            tween(durationMillis = 500, easing = LinearEasing)
+        } else {
+            snap()
+        },
+        label = "miniPlayerCircularProgress"
+    )
+
     Box(
         contentAlignment = Alignment.Center,
         modifier = Modifier
             .size(48.dp)
             .drawWithContent {
                 drawContent()
-                // Draw progress arc - this reads progressState.progress during draw phase only
-                val progress = progressState.progress
+                val progress = if (interfaceAnimations) animatedProgress else rawProgress
                 val stroke = Stroke(width = strokeWidth.toPx(), cap = StrokeCap.Round)
                 val startAngle = -90f
                 val sweepAngle = 360f * progress
