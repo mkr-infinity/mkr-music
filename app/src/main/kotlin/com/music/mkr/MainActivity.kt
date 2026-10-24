@@ -792,7 +792,7 @@ class MainActivity : ComponentActivity() {
                 }
 
                 val inSearchScreen by remember {
-                    derivedStateOf { currentRoute?.startsWith("search/") == true }
+                    derivedStateOf { currentRoute?.startsWith("search/") == true || currentRoute == Screens.Search.route }
                 }
                 val navigationItemRoutes = remember(navigationItems) {
                     navigationItems.map { it.route }.toSet()
@@ -947,6 +947,7 @@ class MainActivity : ComponentActivity() {
                         currentRoute == "listen_together_from_topbar"
                     shouldShowTopBar = currentRoute in topLevelScreens &&
                         currentRoute != "settings" &&
+                        currentRoute != Screens.Search.route &&
                         !(isListenTogetherScreen && listenTogetherInTopBar)
                 }
 
