@@ -166,39 +166,7 @@ fun MaterialExtendedPlayer(
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Surface(
-                    shape = CircleShape,
-                    color = textButtonColor.copy(alpha = 0.16f),
-                    onClick = onShowLyrics,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(R.drawable.lyrics),
-                            contentDescription = stringResource(R.string.lyrics),
-                            tint = textBackgroundColor,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-
-                Surface(
-                    shape = CircleShape,
-                    color = textButtonColor.copy(alpha = 0.16f),
-                    onClick = onShowQueue,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(R.drawable.queue_music),
-                            contentDescription = stringResource(R.string.queue),
-                            tint = textBackgroundColor,
-                            modifier = Modifier.size(20.dp)
-                        )
-                    }
-                }
-            }
+            Spacer(Modifier.size(40.dp))
         }
 
         Spacer(Modifier.height(14.dp))
