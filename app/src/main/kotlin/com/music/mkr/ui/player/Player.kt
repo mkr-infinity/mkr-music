@@ -209,7 +209,6 @@ import com.music.mkr.ui.component.BottomSheet
 import com.music.mkr.ui.component.BottomSheetState
 import com.music.mkr.ui.component.LocalBottomSheetPageState
 import com.music.mkr.ui.component.LocalMenuState
-import com.music.mkr.ui.component.Lyrics
 import com.music.mkr.ui.component.LyricsV2
 import com.music.mkr.ui.component.PlayerSliderTrack
 import com.music.mkr.ui.component.ResizableIconButton
