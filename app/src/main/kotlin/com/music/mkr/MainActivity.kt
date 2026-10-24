@@ -1086,7 +1086,8 @@ class MainActivity : ComponentActivity() {
                                 var currentToast by remember { mutableStateOf<Toast?>(null) }
 
                                 val isHome = navBackStackEntry?.destination?.route == Screens.Home.route
-                                val isTopBarImmersive = isHome || navBackStackEntry?.destination?.route == Screens.Library.route
+                                val isLibrary = navBackStackEntry?.destination?.route == Screens.Library.route
+                                val isTopBarImmersive = isHome || isLibrary
 
                                 Box(modifier = Modifier.fillMaxWidth()) {
                                     if (isTopBarImmersive) {
@@ -1110,7 +1111,7 @@ class MainActivity : ComponentActivity() {
 
                                     TopAppBar(
                                         title = {
-                                            if (isHome) {
+                                            if (isHome || isLibrary) {
                                                 Row(
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -1180,7 +1181,7 @@ class MainActivity : ComponentActivity() {
                                                     }
 
                                                     Text(
-                                                        text = stringResource(R.string.app_name),
+                                                        text = if (isLibrary) stringResource(R.string.filter_library) else stringResource(R.string.app_name),
                                                         style = MaterialTheme.typography.titleLarge.copy(
                                                             fontWeight = FontWeight.ExtraBold,
                                                             fontSize = 20.sp,
