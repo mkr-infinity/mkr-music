@@ -242,10 +242,10 @@ fun PlayerSettings(
 
     val (rawPlayerStyle, onPlayerStyleChange) = rememberEnumPreference(
         PlayerStyleKey,
-        defaultValue = PlayerStyle.IMMERSIVE_EXTENDED
+        defaultValue = PlayerStyle.IMMERSIVE
     )
     val playerStyle = remember(rawPlayerStyle) {
-        if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.IMMERSIVE_EXTENDED else rawPlayerStyle
+        if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.IMMERSIVE else rawPlayerStyle
     }
     val (useAppleMiniPlayer, onUseAppleMiniPlayerChange) = rememberPreference(
         UseAppleMiniPlayerKey,
