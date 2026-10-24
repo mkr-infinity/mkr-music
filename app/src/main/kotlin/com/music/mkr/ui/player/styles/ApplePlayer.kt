@@ -372,12 +372,12 @@ fun ApplePlayer(
                     variant = TransportVariant.EXPRESSIVE,
                     primaryContainerColor = textButtonColor,
                     primaryContentColor = iconButtonColor,
-                    secondaryContainerColor = textButtonColor.copy(alpha = 0.16f),
-                    secondaryContentColor = textButtonColor,
+                    secondaryContainerColor = Color.Transparent,
+                    secondaryContentColor = if (textButtonColor != Color.White && textButtonColor != Color.Transparent) textButtonColor else (if (textBackgroundColor != Color.White) textBackgroundColor else MaterialTheme.colorScheme.primary),
                     playButtonSize = 72.dp,
                     sideButtonSize = 48.dp,
                     playIconSize = 36.dp,
-                    sideIconSize = 26.dp,
+                    sideIconSize = 32.dp,
                     haptic = haptic
                 )
             }
@@ -583,12 +583,12 @@ fun ApplePlayer(
                 variant = TransportVariant.EXPRESSIVE,
                 primaryContainerColor = textButtonColor,
                 primaryContentColor = iconButtonColor,
-                secondaryContainerColor = textButtonColor.copy(alpha = 0.16f),
-                secondaryContentColor = textButtonColor,
+                secondaryContainerColor = Color.Transparent,
+                secondaryContentColor = if (textButtonColor != Color.White && textButtonColor != Color.Transparent) textButtonColor else (if (textBackgroundColor != Color.White) textBackgroundColor else MaterialTheme.colorScheme.primary),
                 playButtonSize = 88.dp,
                 sideButtonSize = 56.dp,
                 playIconSize = 44.dp,
-                sideIconSize = 30.dp,
+                sideIconSize = 32.dp,
                 haptic = haptic,
                 modifier = Modifier.padding(horizontal = PlayerHorizontalPadding)
             )

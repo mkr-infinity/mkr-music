@@ -260,12 +260,12 @@ fun MinimalPlayer(
             variant = TransportVariant.EXPRESSIVE,
             primaryContainerColor = textButtonColor,
             primaryContentColor = iconButtonColor,
-            secondaryContainerColor = textButtonColor.copy(alpha = 0.14f),
-            secondaryContentColor = textButtonColor,
+            secondaryContainerColor = Color.Transparent,
+            secondaryContentColor = if (textButtonColor != Color.White && textButtonColor != Color.Transparent) textButtonColor else (if (textBackgroundColor != Color.White) textBackgroundColor else MaterialTheme.colorScheme.primary),
             playButtonSize = 64.dp,
             sideButtonSize = 52.dp,
             playIconSize = 32.dp,
-            sideIconSize = 26.dp,
+            sideIconSize = 32.dp,
             haptic = haptic,
             leadingControl = {
                 Box(

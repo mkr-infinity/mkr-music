@@ -259,12 +259,12 @@ fun CinematicPlayer(
             variant = TransportVariant.EXPRESSIVE,
             primaryContainerColor = textButtonColor,
             primaryContentColor = iconButtonColor,
-            secondaryContainerColor = textButtonColor.copy(alpha = 0.16f),
-            secondaryContentColor = textButtonColor,
+            secondaryContainerColor = Color.Transparent,
+            secondaryContentColor = if (textButtonColor != Color.White && textButtonColor != Color.Transparent) textButtonColor else (if (textBackgroundColor != Color.White) textBackgroundColor else MaterialTheme.colorScheme.primary),
             playButtonSize = 84.dp,
             sideButtonSize = 56.dp,
             playIconSize = 40.dp,
-            sideIconSize = 28.dp,
+            sideIconSize = 32.dp,
             haptic = haptic,
             leadingControl = {
                 Surface(

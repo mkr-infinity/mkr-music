@@ -1126,7 +1126,7 @@ class MainActivity : ComponentActivity() {
 
                                     TopAppBar(
                                         title = {
-                                            if (isHome || isLibrary) {
+                                            if (isHome) {
                                                 Row(
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
@@ -1196,7 +1196,7 @@ class MainActivity : ComponentActivity() {
                                                     }
 
                                                     Text(
-                                                        text = if (isLibrary) stringResource(R.string.filter_library) else stringResource(R.string.app_name),
+                                                        text = stringResource(R.string.app_name),
                                                         style = MaterialTheme.typography.titleLarge.copy(
                                                             fontWeight = FontWeight.ExtraBold,
                                                             fontSize = 20.sp,

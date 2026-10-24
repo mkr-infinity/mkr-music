@@ -269,12 +269,13 @@ fun ModernPlayer(
                 variant = TransportVariant.PILL,
                 primaryContainerColor = textButtonColor,
                 primaryContentColor = iconButtonColor,
-                secondaryContainerColor = textButtonColor.copy(alpha = 0.18f),
-                secondaryContentColor = textButtonColor,
+                secondaryContainerColor = Color.Transparent,
+                secondaryContentColor = if (textButtonColor != Color.White && textButtonColor != Color.Transparent) textButtonColor else (if (textBackgroundColor != Color.White) textBackgroundColor else MaterialTheme.colorScheme.primary),
                 playButtonWidth = playButtonWidth,
                 playButtonHeight = playButtonHeight,
                 sideButtonWidth = sideButtonWidth,
                 sideButtonHeight = sideButtonHeight,
+                sideIconSize = 32.dp,
                 haptic = haptic
             )
         }

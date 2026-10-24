@@ -357,12 +357,12 @@ fun EditorialPlayer(
             variant = TransportVariant.CIRCLE,
             primaryContainerColor = accent,
             primaryContentColor = if (accent == Color.White) Color.Black else Color.White,
-            secondaryContainerColor = accent.copy(alpha = 0.12f),
-            secondaryContentColor = accent,
+            secondaryContainerColor = Color.Transparent,
+            secondaryContentColor = if (accent != Color.White && accent != Color.Transparent) accent else MaterialTheme.colorScheme.primary,
             playButtonSize = 76.dp,
             sideButtonSize = 54.dp,
             playIconSize = 38.dp,
-            sideIconSize = 28.dp,
+            sideIconSize = 32.dp,
             haptic = haptic,
             leadingControl = {
                 IconButton(onClick = {

@@ -97,8 +97,8 @@ fun MaterialExtendedPlayer(
     textButtonColor: Color,
     iconButtonColor: Color,
     textBackgroundColor: Color,
-    sideButtonContainerColor: Color = MaterialTheme.colorScheme.secondaryContainer,
-    sideButtonContentColor: Color = MaterialTheme.colorScheme.onSecondaryContainer,
+    sideButtonContainerColor: Color = Color.Transparent,
+    sideButtonContentColor: Color = MaterialTheme.colorScheme.primary,
     onSliderValueChange: (Long) -> Unit,
     onSliderValueChangeFinished: () -> Unit,
     onShowLyrics: () -> Unit,
@@ -306,14 +306,14 @@ fun MaterialExtendedPlayer(
             variant = TransportVariant.PILL,
             primaryContainerColor = textButtonColor,
             primaryContentColor = iconButtonColor,
-            secondaryContainerColor = sideButtonContainerColor,
-            secondaryContentColor = sideButtonContentColor,
+            secondaryContainerColor = Color.Transparent,
+            secondaryContentColor = if (sideButtonContentColor != Color.White && sideButtonContentColor != Color.Transparent) sideButtonContentColor else MaterialTheme.colorScheme.primary,
             playButtonHeight = 72.dp,
             sideButtonHeight = 72.dp,
             playButtonWidth = 116.dp,
             sideButtonWidth = 84.dp,
             playIconSize = 36.dp,
-            sideIconSize = 30.dp,
+            sideIconSize = 32.dp,
             haptic = haptic
         )
 

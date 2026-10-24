@@ -333,12 +333,12 @@ fun ImmersivePlayer(
                 variant = TransportVariant.CIRCLE,
                 primaryContainerColor = MaterialTheme.colorScheme.primary,
                 primaryContentColor = MaterialTheme.colorScheme.onPrimary,
-                secondaryContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+                secondaryContainerColor = Color.Transparent,
                 secondaryContentColor = MaterialTheme.colorScheme.primary,
                 playButtonSize = 72.dp,
                 sideButtonSize = 52.dp,
                 playIconSize = 36.dp,
-                sideIconSize = 28.dp,
+                sideIconSize = 32.dp,
                 haptic = haptic,
                 leadingControl = {
                     IconButton(onClick = {

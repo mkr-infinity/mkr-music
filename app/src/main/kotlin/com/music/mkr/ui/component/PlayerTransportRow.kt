@@ -95,8 +95,8 @@ fun PlayerTransportRow(
     variant: TransportVariant = TransportVariant.CIRCLE,
     primaryContainerColor: Color = MaterialTheme.colorScheme.primary,
     primaryContentColor: Color = MaterialTheme.colorScheme.onPrimary,
-    secondaryContainerColor: Color = primaryContainerColor.copy(alpha = 0.16f),
-    secondaryContentColor: Color = primaryContainerColor,
+    secondaryContainerColor: Color = Color.Transparent,
+    secondaryContentColor: Color = if (primaryContainerColor != Color.White && primaryContainerColor != Color.Transparent) primaryContainerColor else MaterialTheme.colorScheme.primary,
     playButtonSize: Dp = 72.dp,
     sideButtonSize: Dp = 52.dp,
     playButtonWidth: Dp? = null,
@@ -104,7 +104,7 @@ fun PlayerTransportRow(
     sideButtonWidth: Dp? = null,
     sideButtonHeight: Dp? = null,
     playIconSize: Dp = 36.dp,
-    sideIconSize: Dp = 28.dp,
+    sideIconSize: Dp = 32.dp,
     haptic: HapticFeedback = LocalHapticFeedback.current,
     leadingControl: (@Composable RowScope.() -> Unit)? = null,
     trailingControl: (@Composable RowScope.() -> Unit)? = null,
@@ -189,7 +189,7 @@ fun PlayerTransportRow(
             },
             enabled = canSkipPrevious,
             shape = sideShape,
-            color = secondaryContainerColor.copy(alpha = if (canSkipPrevious) 1f else 0.40f),
+            color = if (secondaryContainerColor == Color.Transparent) Color.Transparent else secondaryContainerColor.copy(alpha = if (canSkipPrevious) 1f else 0.40f),
             interactionSource = prevInteractionSource,
             modifier = Modifier
                 .scale(prevScale)
@@ -274,7 +274,7 @@ fun PlayerTransportRow(
             },
             enabled = canSkipNext,
             shape = sideShape,
-            color = secondaryContainerColor.copy(alpha = if (canSkipNext) 1f else 0.40f),
+            color = if (secondaryContainerColor == Color.Transparent) Color.Transparent else secondaryContainerColor.copy(alpha = if (canSkipNext) 1f else 0.40f),
             interactionSource = nextInteractionSource,
             modifier = Modifier
                 .scale(nextScale)
