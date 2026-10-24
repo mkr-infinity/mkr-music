@@ -122,15 +122,16 @@ fun mkrMusicTheme(
         )
     }
 
-    val effectivePalette = remember(animatedColorScheme, darkTheme, artworkPalette) {
+    val effectivePalette = remember(animatedColorScheme, artworkPalette) {
         artworkPalette ?: PlayerArtworkPalette(
             primaryAccent = animatedColorScheme.primary,
             secondaryAccent = animatedColorScheme.secondary,
-            dominantContainer = animatedColorScheme.surfaceContainer,
+            surfaceCharcoal = animatedColorScheme.surfaceContainer,
+            surfaceElevated = animatedColorScheme.surfaceContainerHigh,
             backgroundGradient = listOf(animatedColorScheme.surface, animatedColorScheme.surfaceContainer),
-            isDark = darkTheme,
-            onDominant = animatedColorScheme.onSurface,
-            onAccent = animatedColorScheme.onPrimary
+            textPrimary = animatedColorScheme.onSurface,
+            textSecondary = animatedColorScheme.onSurfaceVariant,
+            isFallback = false
         )
     }
 
