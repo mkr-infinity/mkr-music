@@ -30,6 +30,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.palette.graphics.Palette
+import com.materialkolor.PaletteStyle
+import com.materialkolor.dynamiccolor.ColorSpec
+import com.materialkolor.rememberDynamicColorScheme
 import com.materialkolor.score.Score
 
 import androidx.compose.runtime.getValue
@@ -42,7 +45,7 @@ import androidx.compose.ui.text.font.FontFamily
 import android.graphics.Typeface as AndroidTypeface
 import androidx.compose.ui.text.font.Typeface as ComposeTypeface
 
-val DefaultThemeColor = Color(0xFFF59E0B)
+val DefaultThemeColor = Color(0xFFED5564)
 
 @Composable
 fun mkrMusicTheme(
@@ -83,123 +86,51 @@ fun mkrMusicTheme(
         getTypography(brandFont = brandFont, plainFont = brandFont)
     }
 
-    val effectivePalette = remember(artworkPalette, themeColor) {
-        artworkPalette ?: if (themeColor != DefaultThemeColor && themeColor != Color(0xFFED5564)) {
-            PlayerColorExtractor.createPaletteFromSeed(themeColor)
-        } else {
-            PlayerColorExtractor.DefaultPalette
-        }
+    // Determine if system dynamic colors should be used (Android S+ and default theme color)
+    val useSystemDynamicColor = (themeColor == DefaultThemeColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
+
+    // Select the appropriate color scheme generation method
+    val baseColorScheme = if (useSystemDynamicColor) {
+        // Use standard Material 3 dynamic color functions for system wallpaper colors
+        if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
+    } else {
+        // Use materialKolor only when a specific seed color is provided
+        rememberDynamicColorScheme(
+            seedColor = themeColor, // themeColor is guaranteed non-default here
+            isDark = darkTheme,
+            specVersion = ColorSpec.SpecVersion.SPEC_2025,
+            style = if (themeColor.toArgb() == 0xFF000000.toInt()) PaletteStyle.Monochrome else PaletteStyle.TonalSpot
+        )
     }
 
-    val colorScheme = remember(effectivePalette, darkTheme, pureBlack) {
-        if (darkTheme) {
-            val onPrimary = if (PlayerColorExtractor.calculateLuminance(effectivePalette.primaryAccent) > 0.45f) {
-                Color(0xFF0F172A)
-            } else {
-                Color.White
-            }
-            val onSecondary = if (PlayerColorExtractor.calculateLuminance(effectivePalette.secondaryAccent) > 0.45f) {
-                Color(0xFF0F172A)
-            } else {
-                Color.White
-            }
-            ColorScheme(
-                primary = effectivePalette.primaryAccent,
-                onPrimary = onPrimary,
-                primaryContainer = lerp(Color(0xFF181A20), effectivePalette.primaryAccent, 0.16f),
-                onPrimaryContainer = Color(0xFFF8FAFC),
-                inversePrimary = effectivePalette.primaryAccent,
-                secondary = effectivePalette.secondaryAccent,
-                onSecondary = onSecondary,
-                secondaryContainer = lerp(Color(0xFF181A20), effectivePalette.secondaryAccent, 0.12f),
-                onSecondaryContainer = Color(0xFFF8FAFC),
-                tertiary = effectivePalette.secondaryAccent,
-                onTertiary = onSecondary,
-                tertiaryContainer = lerp(Color(0xFF181A20), effectivePalette.secondaryAccent, 0.10f),
-                onTertiaryContainer = Color(0xFFF8FAFC),
-                background = if (pureBlack) Color.Black else Color(0xFF121316),
-                onBackground = Color(0xFFF8FAFC),
-                surface = if (pureBlack) Color.Black else Color(0xFF121316),
-                onSurface = Color(0xFFF8FAFC),
-                surfaceVariant = if (pureBlack) Color(0xFF101012) else Color(0xFF1E2026),
-                onSurfaceVariant = Color(0xFF94A3B8),
-                surfaceTint = effectivePalette.primaryAccent,
-                inverseSurface = Color(0xFFF8FAFC),
-                inverseOnSurface = Color(0xFF121316),
-                error = Color(0xFFEF4444),
-                onError = Color.White,
-                errorContainer = Color(0xFF7F1D1D).copy(alpha = 0.5f),
-                onErrorContainer = Color(0xFFFCA5A5),
-                outline = Color.White.copy(alpha = 0.12f),
-                outlineVariant = Color.White.copy(alpha = 0.08f),
-                scrim = Color.Black,
-                surfaceBright = if (pureBlack) Color(0xFF141418) else Color(0xFF22242B),
-                surfaceDim = if (pureBlack) Color.Black else Color(0xFF121316),
-                surfaceContainer = if (pureBlack) Color(0xFF121214) else Color(0xFF181A20),
-                surfaceContainerHigh = if (pureBlack) Color(0xFF18181C) else Color(0xFF1F2026),
-                surfaceContainerHighest = if (pureBlack) Color(0xFF202024) else Color(0xFF262830),
-                surfaceContainerLow = if (pureBlack) Color.Black else Color(0xFF121316),
-                surfaceContainerLowest = if (pureBlack) Color.Black else Color(0xFF0C0D0F),
-            )
+    // Apply pureBlack modification if needed, similar to original logic
+    val rawColorScheme = remember(baseColorScheme, pureBlack, darkTheme) {
+        if (darkTheme && pureBlack) {
+            baseColorScheme.pureBlack(true)
         } else {
-            val onPrimary = if (PlayerColorExtractor.calculateLuminance(effectivePalette.primaryAccent) > 0.45f) {
-                Color(0xFF0F172A)
-            } else {
-                Color.White
-            }
-            val onSecondary = if (PlayerColorExtractor.calculateLuminance(effectivePalette.secondaryAccent) > 0.45f) {
-                Color(0xFF0F172A)
-            } else {
-                Color.White
-            }
-            ColorScheme(
-                primary = effectivePalette.primaryAccent,
-                onPrimary = onPrimary,
-                primaryContainer = lerp(Color.White, effectivePalette.primaryAccent, 0.14f),
-                onPrimaryContainer = Color(0xFF0F172A),
-                inversePrimary = effectivePalette.secondaryAccent,
-                secondary = effectivePalette.secondaryAccent,
-                onSecondary = onSecondary,
-                secondaryContainer = lerp(Color.White, effectivePalette.secondaryAccent, 0.12f),
-                onSecondaryContainer = Color(0xFF1E293B),
-                tertiary = effectivePalette.secondaryAccent,
-                onTertiary = onSecondary,
-                tertiaryContainer = lerp(Color.White, effectivePalette.secondaryAccent, 0.10f),
-                onTertiaryContainer = Color(0xFF1E293B),
-                background = Color(0xFFF8FAFC),
-                onBackground = Color(0xFF0F172A),
-                surface = Color(0xFFFFFFFF),
-                onSurface = Color(0xFF0F172A),
-                surfaceVariant = Color(0xFFF1F5F9),
-                onSurfaceVariant = Color(0xFF475569),
-                surfaceTint = effectivePalette.primaryAccent,
-                inverseSurface = Color(0xFF1E293B),
-                inverseOnSurface = Color(0xFFF8FAFC),
-                error = Color(0xFFDC2626),
-                onError = Color.White,
-                errorContainer = Color(0xFFFEE2E2),
-                onErrorContainer = Color(0xFF991B1B),
-                outline = Color(0xFFCBD5E1),
-                outlineVariant = Color(0xFFE2E8F0),
-                scrim = Color.Black,
-                surfaceBright = Color.White,
-                surfaceDim = Color(0xFFE2E8F0),
-                surfaceContainer = Color(0xFFF1F5F9),
-                surfaceContainerHigh = Color(0xFFE2E8F0),
-                surfaceContainerHighest = Color(0xFFCBD5E1),
-                surfaceContainerLow = Color(0xFFF8FAFC),
-                surfaceContainerLowest = Color.White,
-            )
+            baseColorScheme
         }
     }
 
     val interfaceAnimations by rememberPreference(InterfaceAnimationsKey, true)
     val animatedColorScheme = if (!interfaceAnimations) {
-        colorScheme
+        rawColorScheme
     } else {
         animateColorScheme(
-            targetColorScheme = colorScheme,
+            targetColorScheme = rawColorScheme,
             animationSpec = tween(durationMillis = 650, easing = FastOutSlowInEasing)
+        )
+    }
+
+    val effectivePalette = remember(animatedColorScheme, darkTheme, artworkPalette) {
+        artworkPalette ?: PlayerArtworkPalette(
+            primaryAccent = animatedColorScheme.primary,
+            secondaryAccent = animatedColorScheme.secondary,
+            dominantContainer = animatedColorScheme.surfaceContainer,
+            backgroundGradient = listOf(animatedColorScheme.surface, animatedColorScheme.surfaceContainer),
+            isDark = darkTheme,
+            onDominant = animatedColorScheme.onSurface,
+            onAccent = animatedColorScheme.onPrimary
         )
     }
 

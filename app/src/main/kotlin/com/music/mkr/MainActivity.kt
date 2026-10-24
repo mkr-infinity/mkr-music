@@ -229,7 +229,6 @@ import com.music.mkr.ui.theme.ColorSaver
 import com.music.mkr.ui.theme.DefaultThemeColor
 import com.music.mkr.ui.theme.mkrMusicTheme
 import com.music.mkr.ui.theme.extractThemeColor
-import com.music.mkr.ui.theme.rememberGlobalArtworkPalette
 import com.music.mkr.ui.utils.appBarScrollBehavior
 import com.music.mkr.ui.utils.resetHeightOffset
 import com.music.mkr.utils.SyncUtils
@@ -544,16 +543,48 @@ class MainActivity : ComponentActivity() {
         val (selectedThemeColorInt) = rememberPreference(SelectedThemeColorKey, defaultValue = DefaultThemeColor.toArgb())
         val selectedThemeColor = Color(selectedThemeColorInt)
 
-        val currentSongMetadata by produceState<MediaMetadata?>(initialValue = null, playerConnection) {
-            val connection = playerConnection ?: return@produceState
-            connection.mediaMetadata.collect { value = it }
+        var themeColor by rememberSaveable(stateSaver = ColorSaver) {
+            mutableStateOf(selectedThemeColor)
         }
 
-        val globalArtworkPalette = rememberGlobalArtworkPalette(
-            mediaMetadata = currentSongMetadata,
-            enableDynamicTheme = enableDynamicTheme,
-            staticThemeColor = selectedThemeColor
-        )
+        LaunchedEffect(selectedThemeColor) {
+            if (!enableDynamicTheme) {
+                themeColor = selectedThemeColor
+            }
+        }
+
+        LaunchedEffect(playerConnection, enableDynamicTheme, selectedThemeColor) {
+            val playerConnection = playerConnection
+            if (!enableDynamicTheme || playerConnection == null) {
+                themeColor = selectedThemeColor
+                return@LaunchedEffect
+            }
+
+            playerConnection.service.currentMediaMetadata.collectLatest { song ->
+                if (song?.thumbnailUrl != null) {
+                    withContext(Dispatchers.IO) {
+                        try {
+                            val result = imageLoader.execute(
+                                ImageRequest.Builder(this@MainActivity)
+                                    .data(song.thumbnailUrl)
+                                    .allowHardware(false)
+                                    .memoryCachePolicy(CachePolicy.ENABLED)
+                                    .diskCachePolicy(CachePolicy.ENABLED)
+                                    .networkCachePolicy(CachePolicy.ENABLED)
+                                    .crossfade(false)
+                                    .build()
+                            )
+                            themeColor = result.image?.toBitmap()?.extractThemeColor() ?: selectedThemeColor
+                        } catch (e: Exception) {
+                            // Fallback to default on error
+                            themeColor = selectedThemeColor
+                        }
+                    }
+                } else {
+                    themeColor = selectedThemeColor
+                }
+            }
+        }
 
         val gitHubViewModel: GitHubViewModel = hiltViewModel()
         val isStarred by gitHubViewModel.isStarred.collectAsState()
@@ -566,8 +597,7 @@ class MainActivity : ComponentActivity() {
         mkrMusicTheme(
             darkTheme = useDarkTheme,
             pureBlack = pureBlack,
-            themeColor = selectedThemeColor,
-            artworkPalette = globalArtworkPalette,
+            themeColor = themeColor,
         ) {
             if (!hasShownSupportPrompt && !hasStarredRepo && !isStarred && reachedSupportMilestone) {
                 ActionPromptDialog(
