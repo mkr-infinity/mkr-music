@@ -12,9 +12,11 @@ import com.music.mkr.utils.listItemShape
 import androidx.compose.ui.res.painterResource
 import com.music.mkr.R
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -78,19 +80,10 @@ fun Material3SettingsGroup(
         // Settings items
         Column(
             modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(4.dp)
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             items.forEachIndexed { index, item ->
-                val shape = if (item.isExpressive) {
-                    listItemShape(index, items.size)
-                } else {
-                    when {
-                        items.size == 1 -> RoundedCornerShape(24.dp)
-                        index == 0 -> RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp, bottomStart = 6.dp, bottomEnd = 6.dp)
-                        index == items.size - 1 -> RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp, bottomStart = 24.dp, bottomEnd = 24.dp)
-                        else -> RoundedCornerShape(6.dp)
-                    }
-                }
+                val shape = listItemShape(index, items.size)
 
                 Card(
                     modifier = Modifier
@@ -98,8 +91,13 @@ fun Material3SettingsGroup(
                         .animateContentSize(),
                     shape = shape,
                     colors = CardDefaults.cardColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                        containerColor = if (isSystemInDarkTheme()) {
+                            MaterialTheme.colorScheme.surfaceContainerHigh
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f)
+                        }
                     ),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f)),
                     elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
                 ) {
                     if (item.isExpressive) {
@@ -151,9 +149,13 @@ internal fun Material3SettingsItemRow(
                     .clip(item.iconShape ?: RoundedCornerShape(12.dp))
                     .background(
                         if (item.tintIcon) {
-                            MaterialTheme.colorScheme.primary.copy(
-                                alpha = if (item.isHighlighted) 0.15f else 0.1f
-                            )
+                            if (item.enabled) {
+                                MaterialTheme.colorScheme.primary.copy(
+                                    alpha = if (item.isHighlighted) 0.18f else 0.12f
+                                )
+                            } else {
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.05f)
+                            }
                         } else {
                             androidx.compose.ui.graphics.Color.Transparent
                         }
