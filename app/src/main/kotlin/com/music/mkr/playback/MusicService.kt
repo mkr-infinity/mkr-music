@@ -3788,23 +3788,26 @@ class MusicService :
     override fun onBind(intent: Intent?) = super.onBind(intent) ?: binder
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        super.onTaskRemoved(rootIntent)
-        if (dataStore.get(StopMusicOnTaskClearKey, false)) {
-            Timber.d("Task cleared with stopMusicOnTaskClear enabled - stopping music and terminating process")
+        val stopOnTaskClear = dataStore.get(StopMusicOnTaskClearKey, false)
+        if (stopOnTaskClear) {
+            Timber.tag(TAG).d("Task cleared with stopMusicOnTaskClear enabled - stopping playback and tearing down service")
             try {
                 abandonAudioFocus()
                 player.pause()
                 player.stop()
                 player.clearMediaItems()
                 stopForeground(STOP_FOREGROUND_REMOVE)
-                getSystemService(NotificationManager::class.java)?.cancelAll()
+                val nm = getSystemService(NotificationManager::class.java)
+                nm?.cancel(NOTIFICATION_ID)
+                nm?.cancelAll()
                 mediaSession.release()
             } catch (e: Exception) {
-                Timber.e(e, "Error stopping player on task clear")
+                Timber.tag(TAG).e(e, "Error stopping player on task clear")
             }
             stopSelf()
-            android.os.Process.killProcess(android.os.Process.myPid())
+            return
         }
+        super.onTaskRemoved(rootIntent)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
