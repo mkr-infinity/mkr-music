@@ -45,6 +45,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import com.music.mkr.constants.BottomSheetAnimationSpec
+import com.music.mkr.constants.BottomSheetSoftAnimationSpec
 import com.music.mkr.constants.NavigationBarAnimationSpec
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -192,31 +194,31 @@ class BottomSheetState(
     }
 
     private fun collapse() {
-        collapse(spring(stiffness = Spring.StiffnessMediumLow))
+        collapse(BottomSheetAnimationSpec)
     }
 
     private fun expand() {
-        expand(spring(stiffness = Spring.StiffnessMediumLow))
+        expand(BottomSheetAnimationSpec)
     }
 
     fun collapseSoft() {
-        collapse(spring(stiffness = Spring.StiffnessLow))
+        collapse(BottomSheetSoftAnimationSpec)
     }
 
     fun expandSoft() {
-        expand(spring(stiffness = Spring.StiffnessLow))
+        expand(BottomSheetSoftAnimationSpec)
     }
 
     fun dismiss() {
         onAnchorChanged(dismissedAnchor)
         coroutineScope.launch {
-            animatable.animateTo(animatable.lowerBound!!)
+            animatable.animateTo(animatable.lowerBound!!, BottomSheetAnimationSpec)
         }
     }
     
     suspend fun dismissAndWait() {
         onAnchorChanged(dismissedAnchor)
-        animatable.animateTo(animatable.lowerBound!!)
+        animatable.animateTo(animatable.lowerBound!!, BottomSheetAnimationSpec)
     }
 
     fun snapTo(value: Dp) {
