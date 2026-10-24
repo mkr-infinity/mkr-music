@@ -194,6 +194,20 @@ fun ClassicPlayer(
 
             Spacer(Modifier.width(12.dp))
 
+            IconButton(onClick = {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                playerConnection.toggleLike()
+            }) {
+                Icon(
+                    painter = painterResource(
+                        if (isLiked) R.drawable.favorite else R.drawable.favorite_border
+                    ),
+                    contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
+                    tint = if (isLiked) MaterialTheme.colorScheme.error else textBackgroundColor,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
             IconButton(onClick = onShowMenu) {
                 Icon(
                     painter = painterResource(R.drawable.more_vert),
@@ -235,7 +249,7 @@ fun ClassicPlayer(
 
         Spacer(Modifier.height(20.dp))
 
-        // Classic Playback Controls: Repeat, Skip Previous, Play/Pause, Skip Next, Favorite
+        // Classic Playback Controls: Shuffle, Skip Previous, Play/Pause, Skip Next, Repeat
         PlayerTransportRow(
             isPlaying = isPlaying,
             isLoading = isLoading,
@@ -261,19 +275,15 @@ fun ClassicPlayer(
             leadingControl = {
                 Box(contentAlignment = Alignment.Center) {
                     ResizableIconButton(
-                        icon = when (repeatMode) {
-                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                            Player.REPEAT_MODE_ALL -> R.drawable.repeat
-                            else -> R.drawable.repeat
-                        },
-                        contentDescription = stringResource(R.string.repeat),
-                        color = textBackgroundColor,
+                        icon = R.drawable.shuffle,
+                        contentDescription = stringResource(R.string.shuffle),
+                        color = if (shuffleModeEnabled) MaterialTheme.colorScheme.primary else textBackgroundColor,
                         modifier = Modifier
                             .size(36.dp)
-                            .alpha(if (repeatMode == Player.REPEAT_MODE_OFF) 0.45f else 1f),
+                            .alpha(if (shuffleModeEnabled) 1f else 0.5f),
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.player.toggleRepeatMode()
+                            playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
                         }
                     )
                 }
@@ -281,13 +291,18 @@ fun ClassicPlayer(
             trailingControl = {
                 Box(contentAlignment = Alignment.Center) {
                     ResizableIconButton(
-                        icon = if (isLiked) R.drawable.favorite else R.drawable.favorite_border,
-                        contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
-                        color = if (isLiked) MaterialTheme.colorScheme.error else textBackgroundColor,
-                        modifier = Modifier.size(36.dp),
+                        icon = when (repeatMode) {
+                            Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
+                            else -> R.drawable.repeat
+                        },
+                        contentDescription = stringResource(R.string.repeat),
+                        color = if (repeatMode != Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else textBackgroundColor,
+                        modifier = Modifier
+                            .size(36.dp)
+                            .alpha(if (repeatMode == Player.REPEAT_MODE_OFF) 0.5f else 1f),
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.toggleLike()
+                            playerConnection.player.toggleRepeatMode()
                         }
                     )
                 }
