@@ -5,9 +5,18 @@
 
 package com.music.mkr.ui.component
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -46,7 +55,9 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
 import com.music.mkr.R
+import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.playback.PlayerConnection
+import com.music.mkr.utils.rememberPreference
 
 /**
  * Shape styling variant for the player transport controls.
@@ -98,6 +109,8 @@ fun PlayerTransportRow(
     leadingControl: (@Composable RowScope.() -> Unit)? = null,
     trailingControl: (@Composable RowScope.() -> Unit)? = null,
 ) {
+    val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
+
     val effectivePlayWidth = playButtonWidth ?: if (variant == TransportVariant.PILL) playButtonSize * 1.55f else playButtonSize
     val effectivePlayHeight = playButtonHeight ?: playButtonSize
     val effectiveSideWidth = sideButtonWidth ?: if (variant == TransportVariant.PILL) sideButtonSize * 1.30f else sideButtonSize
@@ -105,33 +118,45 @@ fun PlayerTransportRow(
     val playInteractionSource = remember { MutableInteractionSource() }
     val isPlayPressed by playInteractionSource.collectIsPressedAsState()
     val playScale by animateFloatAsState(
-        targetValue = if (isPlayPressed) 0.92f else 1.0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        targetValue = if (isPlayPressed && interfaceAnimations) 0.92f else 1.0f,
+        animationSpec = if (interfaceAnimations) {
+            spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        } else {
+            snap()
+        },
         label = "playPressScale"
     )
 
     val prevInteractionSource = remember { MutableInteractionSource() }
     val isPrevPressed by prevInteractionSource.collectIsPressedAsState()
     val prevScale by animateFloatAsState(
-        targetValue = if (isPrevPressed && canSkipPrevious) 0.90f else 1.0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        targetValue = if (isPrevPressed && canSkipPrevious && interfaceAnimations) 0.90f else 1.0f,
+        animationSpec = if (interfaceAnimations) {
+            spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        } else {
+            snap()
+        },
         label = "prevPressScale"
     )
 
     val nextInteractionSource = remember { MutableInteractionSource() }
     val isNextPressed by nextInteractionSource.collectIsPressedAsState()
     val nextScale by animateFloatAsState(
-        targetValue = if (isNextPressed && canSkipNext) 0.90f else 1.0f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
+        targetValue = if (isNextPressed && canSkipNext && interfaceAnimations) 0.90f else 1.0f,
+        animationSpec = if (interfaceAnimations) {
+            spring(
+                dampingRatio = Spring.DampingRatioNoBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        } else {
+            snap()
+        },
         label = "nextPressScale"
     )
 
@@ -201,25 +226,38 @@ fun PlayerTransportRow(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxSize()
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        color = primaryContentColor,
-                        strokeWidth = 3.dp,
-                        modifier = Modifier.size(playIconSize * 0.85f)
-                    )
-                } else {
-                    Icon(
-                        painter = painterResource(
-                            when {
-                                playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                isPlaying -> R.drawable.pause
-                                else -> R.drawable.play
-                            }
-                        ),
-                        contentDescription = stringResource(if (isPlaying) R.string.pause else R.string.play),
-                        tint = primaryContentColor,
-                        modifier = Modifier.size(playIconSize)
-                    )
+                AnimatedContent(
+                    targetState = Triple(isLoading, playbackState == Player.STATE_ENDED, isPlaying),
+                    transitionSpec = {
+                        if (interfaceAnimations) {
+                            (fadeIn(animationSpec = tween(180, easing = LinearEasing)) + scaleIn(initialScale = 0.85f, animationSpec = tween(180)))
+                                .togetherWith(fadeOut(animationSpec = tween(140, easing = LinearEasing)) + scaleOut(targetScale = 0.85f, animationSpec = tween(140)))
+                        } else {
+                            fadeIn(animationSpec = snap()).togetherWith(fadeOut(animationSpec = snap()))
+                        }
+                    },
+                    label = "playPauseCrossfade"
+                ) { (loading, ended, playing) ->
+                    if (loading) {
+                        CircularProgressIndicator(
+                            color = primaryContentColor,
+                            strokeWidth = 3.dp,
+                            modifier = Modifier.size(playIconSize * 0.85f)
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(
+                                when {
+                                    ended -> R.drawable.replay
+                                    playing -> R.drawable.pause
+                                    else -> R.drawable.play
+                                }
+                            ),
+                            contentDescription = stringResource(if (playing) R.string.pause else R.string.play),
+                            tint = primaryContentColor,
+                            modifier = Modifier.size(playIconSize)
+                        )
+                    }
                 }
             }
         }
