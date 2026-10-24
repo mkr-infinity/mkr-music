@@ -61,6 +61,7 @@ import androidx.navigation.NavController
 import com.music.mkr.BuildConfig
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.R
+import com.music.mkr.constants.PureBlackKey
 import com.music.mkr.mkrmusic.updater.checkForUpdate
 import com.music.mkr.mkrmusic.updater.getAutoUpdateCheckSetting
 import com.music.mkr.mkrmusic.updater.getUpdateAvailableState
@@ -73,6 +74,7 @@ import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.ui.screens.Screens
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.safeOpenUri
+import com.music.mkr.utils.rememberPreference
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -88,6 +90,7 @@ fun SettingsScreen(
     val autoUpdateSetting = remember { getAutoUpdateCheckSetting(context) }
     var isUpdateAvailable by remember { mutableStateOf(getUpdateAvailableState(context)) }
     var searchQuery by remember { mutableStateOf("") }
+    val pureBlack by rememberPreference(PureBlackKey, defaultValue = false)
 
     val searchCatalog = remember(context) { buildSettingsSearchCatalog(context) }
 
