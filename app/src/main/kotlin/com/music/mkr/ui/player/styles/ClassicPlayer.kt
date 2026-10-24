@@ -269,8 +269,8 @@ fun ClassicPlayer(
             variant = TransportVariant.CIRCLE,
             primaryContainerColor = textButtonColor,
             primaryContentColor = iconButtonColor,
-            secondaryContainerColor = textBackgroundColor.copy(alpha = 0.12f),
-            secondaryContentColor = textBackgroundColor,
+            secondaryContainerColor = textButtonColor.copy(alpha = 0.16f),
+            secondaryContentColor = textButtonColor,
             haptic = haptic,
             leadingControl = {
                 Box(contentAlignment = Alignment.Center) {

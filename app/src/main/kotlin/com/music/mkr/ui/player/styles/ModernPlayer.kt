@@ -270,7 +270,7 @@ fun ModernPlayer(
                 primaryContainerColor = textButtonColor,
                 primaryContentColor = iconButtonColor,
                 secondaryContainerColor = textButtonColor.copy(alpha = 0.18f),
-                secondaryContentColor = textBackgroundColor,
+                secondaryContentColor = textButtonColor,
                 playButtonWidth = playButtonWidth,
                 playButtonHeight = playButtonHeight,
                 sideButtonWidth = sideButtonWidth,

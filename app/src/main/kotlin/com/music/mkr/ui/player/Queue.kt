@@ -17,6 +17,11 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.Spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
@@ -572,11 +577,16 @@ fun Queue(
             val safeFrom = (from.index - headerItems).coerceIn(0, mutableQueueWindows.lastIndex)
             val safeTo = (to.index - headerItems).coerceIn(0, mutableQueueWindows.lastIndex)
 
-            mutableQueueWindows.move(safeFrom, safeTo)
+            if (safeFrom != safeTo) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                mutableQueueWindows.move(safeFrom, safeTo)
+            }
         }
 
         LaunchedEffect(reorderableState.isAnyItemDragging) {
-            if (!reorderableState.isAnyItemDragging) {
+            if (reorderableState.isAnyItemDragging) {
+                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            } else {
                 dragInfo?.let { (from, to) ->
                     val safeFrom = (from - headerItems).coerceIn(0, queueWindows.lastIndex)
                     val safeTo = (to - headerItems).coerceIn(0, queueWindows.lastIndex)
@@ -1060,9 +1070,22 @@ fun Queue(
                         ReorderableItem(
                             state = reorderableState,
                             key = window.uid.hashCode(),
-                        ) {
+                        ) { isDragging ->
                             val currentItem by rememberUpdatedState(window)
                             val isActive = window.uid == currentPlayingUid
+                            val dragScale by animateFloatAsState(
+                                targetValue = if (isDragging) 1.02f else 1.0f,
+                                animationSpec = spring(
+                                    dampingRatio = Spring.DampingRatioNoBouncy,
+                                    stiffness = Spring.StiffnessMediumLow
+                                ),
+                                label = "queueDragScale"
+                            )
+                            val dragElevation by animateDpAsState(
+                                targetValue = if (isDragging) 6.dp else 0.dp,
+                                animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
+                                label = "queueDragElevation"
+                            )
                             val dismissBoxState =
                                 rememberSwipeToDismissBoxState(
                                     positionalThreshold = { totalDistance -> totalDistance }
@@ -1113,7 +1136,13 @@ fun Queue(
                             val content: @Composable () -> Unit = {
                                 Row(
                                     horizontalArrangement = Arrangement.Center,
-                                    modifier = Modifier.animateItem(),
+                                    modifier = Modifier
+                                    .animateItem()
+                                    .graphicsLayer {
+                                        scaleX = dragScale
+                                        scaleY = dragScale
+                                        shadowElevation = dragElevation.toPx()
+                                    },
                                 ) {
                                     MediaMetadataListItem(
                                         mediaMetadata = window.mediaItem.metadata!!,

@@ -139,6 +139,19 @@ fun LyricsV2(
     val lyricsOffset = (currentSong?.song?.lyricsOffset ?: 0).toLong()
     val showRomanized = currentSong?.song?.romanizeLyrics ?: true
 
+    val onToggleRomanize: () -> Unit = remember(currentSong?.song) {
+        {
+            val nextVal = !(currentSong?.song?.romanizeLyrics ?: true)
+            currentSong?.song?.let { song ->
+                coroutineScope.launch(Dispatchers.IO) {
+                    database.query {
+                        upsert(song.copy(romanizeLyrics = nextVal))
+                    }
+                }
+            }
+        }
+    }
+
     DisposableEffect(Unit) {
         LyricsTranslationHelper.setCompositionActive(true)
         onDispose {
@@ -469,7 +482,9 @@ fun LyricsV2(
                                 title = mediaMetadata?.title.orEmpty(),
                                 artist = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
                                 provider = currentLyrics?.provider,
-                                palette = artworkPalette
+                                palette = artworkPalette,
+                                isRomanized = showRomanized,
+                                onToggleRomanize = onToggleRomanize
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }
@@ -693,7 +708,9 @@ fun LyricsV2(
                                 title = mediaMetadata?.title.orEmpty(),
                                 artist = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
                                 provider = currentLyrics?.provider,
-                                palette = artworkPalette
+                                palette = artworkPalette,
+                                isRomanized = showRomanized,
+                                onToggleRomanize = onToggleRomanize
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -926,6 +943,8 @@ private fun LyricsHeader(
     artist: String,
     provider: String?,
     palette: PlayerArtworkPalette,
+    isRomanized: Boolean? = null,
+    onToggleRomanize: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -934,29 +953,65 @@ private fun LyricsHeader(
             .padding(horizontal = 24.dp, vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        if (!provider.isNullOrBlank() && provider != "Unknown") {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = palette.surfaceElevated.copy(alpha = 0.85f),
-                border = BorderStroke(1.dp, palette.primaryAccent.copy(alpha = 0.25f)),
-                modifier = Modifier.padding(bottom = 10.dp)
-            ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(bottom = 10.dp)
+        ) {
+            if (!provider.isNullOrBlank() && provider != "Unknown") {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = palette.surfaceElevated.copy(alpha = 0.85f),
+                    border = BorderStroke(1.dp, palette.primaryAccent.copy(alpha = 0.25f)),
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(6.dp)
-                            .background(palette.primaryAccent, CircleShape)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Lyrics via $provider",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = palette.textSecondary,
-                        fontWeight = FontWeight.Medium
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(6.dp)
+                                .background(palette.primaryAccent, CircleShape)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Lyrics via $provider",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = palette.textSecondary,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+            }
+
+            if (isRomanized != null && onToggleRomanize != null) {
+                if (!provider.isNullOrBlank() && provider != "Unknown") {
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = if (isRomanized) palette.primaryAccent.copy(alpha = 0.22f) else palette.surfaceElevated.copy(alpha = 0.85f),
+                    border = BorderStroke(1.dp, if (isRomanized) palette.primaryAccent else palette.primaryAccent.copy(alpha = 0.25f)),
+                    modifier = Modifier.clickable(onClick = onToggleRomanize)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 9.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.language_korean_latin),
+                            contentDescription = "Toggle Phonetic Romanization",
+                            tint = if (isRomanized) palette.primaryAccent else palette.textSecondary,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = if (isRomanized) "Phonetics ON" else "Phonetics OFF",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = if (isRomanized) palette.primaryAccent else palette.textSecondary,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
         }

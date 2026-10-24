@@ -96,7 +96,7 @@ fun PlayerTransportRow(
     primaryContainerColor: Color = MaterialTheme.colorScheme.primary,
     primaryContentColor: Color = MaterialTheme.colorScheme.onPrimary,
     secondaryContainerColor: Color = primaryContainerColor.copy(alpha = 0.16f),
-    secondaryContentColor: Color = MaterialTheme.colorScheme.onSurface,
+    secondaryContentColor: Color = primaryContainerColor,
     playButtonSize: Dp = 72.dp,
     sideButtonSize: Dp = 52.dp,
     playButtonWidth: Dp? = null,
