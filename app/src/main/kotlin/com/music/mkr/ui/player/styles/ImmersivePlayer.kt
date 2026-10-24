@@ -52,6 +52,7 @@ import androidx.media3.common.Player
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import coil3.request.allowHardware
 import coil3.request.crossfade
 import com.music.mkr.R
 import com.music.mkr.db.entities.FormatEntity

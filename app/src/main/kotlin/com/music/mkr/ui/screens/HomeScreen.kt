@@ -985,6 +985,8 @@ fun HomeScreen(
                 )
             }
 
+            val isAutoUpdateCheckEnabled = remember(context) { getAutoUpdateCheckSetting(context) }
+
             LazyColumn(
                 state = lazylistState,
                 contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
@@ -992,7 +994,6 @@ fun HomeScreen(
                     IntOffset(0, (animatedFraction * maxOffsetPx).toInt())
                 }
             ) {
-                val isAutoUpdateCheckEnabled = remember(context) { getAutoUpdateCheckSetting(context) }
                 if (isAutoUpdateCheckEnabled && updateState is ReleasePreviewState.UpdateAvailable && !updateDismissed) {
                     item(key = "update_available_banner") {
                         val release = (updateState as ReleasePreviewState.UpdateAvailable).release
@@ -1336,7 +1337,7 @@ fun HomeScreen(
 
                                         HorizontalCenteredHeroCarousel(
                                             state = rememberCarouselState { distinctQuickPicks.size },
-                                            preferredItemWidth = heroMaxWidth,
+                                            maxItemWidth = heroMaxWidth,
                                             itemSpacing = 10.dp,
                                             contentPadding = PaddingValues(horizontal = 16.dp),
                                             modifier = Modifier
@@ -1950,7 +1951,7 @@ fun HomeScreen(
 
                                             HorizontalCenteredHeroCarousel(
                                                 state = rememberCarouselState { distinctSongs.size },
-                                                preferredItemWidth = heroMaxWidth,
+                                                maxItemWidth = heroMaxWidth,
                                                 itemSpacing = 10.dp,
                                                 contentPadding = PaddingValues(horizontal = 16.dp),
                                                 modifier = Modifier

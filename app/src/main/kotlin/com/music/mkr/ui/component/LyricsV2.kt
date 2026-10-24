@@ -38,12 +38,13 @@ fun LyricsLineV2(
 ) {
     val fallbackPalette = PlayerArtworkPalette(
         primaryAccent = expressiveAccent,
+        secondaryAccent = expressiveAccent.copy(alpha = 0.8f),
         surfaceCharcoal = Color(0xFF121316),
+        surfaceElevated = Color(0xFF1E2024),
+        backgroundGradient = listOf(Color(0xFF121316), Color(0xFF0A0B0C)),
         textPrimary = Color.White,
         textSecondary = Color.White.copy(alpha = inactiveAlpha),
-        containerTonal = expressiveAccent.copy(alpha = 0.16f),
-        onPrimary = Color.White,
-        onSecondary = Color.White
+        isFallback = true
     )
 
     val lyricsPosition = when (agentTextAlign) {

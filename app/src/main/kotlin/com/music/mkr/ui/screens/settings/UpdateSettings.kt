@@ -40,7 +40,6 @@ import com.music.mkr.BuildConfig
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.R
 import com.music.mkr.constants.EnableNotificationsKey
-import com.music.mkr.mkrmusic.updater.GitHubUpdateManager
 import com.music.mkr.mkrmusic.updater.checkForUpdate
 import com.music.mkr.mkrmusic.updater.getAutoUpdateCheckSetting
 import com.music.mkr.mkrmusic.updater.getUpdateAvailableState
@@ -189,7 +188,6 @@ fun UpdateSettings(
                                 saveAutoUpdateCheckSetting(context, enabled)
                                 if (!enabled) {
                                     saveUpdateAvailableState(context, false)
-                                    GitHubUpdateManager.getInstance(context).clearState()
                                 }
                             },
                             thumbContent = {
@@ -208,7 +206,6 @@ fun UpdateSettings(
                         saveAutoUpdateCheckSetting(context, autoUpdateEnabled)
                         if (!autoUpdateEnabled) {
                             saveUpdateAvailableState(context, false)
-                            GitHubUpdateManager.getInstance(context).clearState()
                         }
                     }
                 ),

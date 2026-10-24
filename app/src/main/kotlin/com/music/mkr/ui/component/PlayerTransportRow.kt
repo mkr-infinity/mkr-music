@@ -175,7 +175,7 @@ fun PlayerTransportRow(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.skip_previous),
-                    contentDescription = stringResource(R.string.widget_previous),
+                    contentDescription = stringResource(R.string.previous_track),
                     tint = secondaryContentColor.copy(alpha = if (canSkipPrevious) 1f else 0.38f),
                     modifier = Modifier.size(sideIconSize)
                 )
@@ -245,7 +245,7 @@ fun PlayerTransportRow(
             ) {
                 Icon(
                     painter = painterResource(R.drawable.skip_next),
-                    contentDescription = stringResource(R.string.widget_next),
+                    contentDescription = stringResource(R.string.next_track),
                     tint = secondaryContentColor.copy(alpha = if (canSkipNext) 1f else 0.38f),
                     modifier = Modifier.size(sideIconSize)
                 )

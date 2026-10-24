@@ -47,12 +47,13 @@ fun MetroLyricsLine(
 ) {
     val fallbackPalette = PlayerArtworkPalette(
         primaryAccent = expressiveAccent,
+        secondaryAccent = expressiveAccent.copy(alpha = 0.8f),
         surfaceCharcoal = Color(0xFF121316),
+        surfaceElevated = Color(0xFF1E2024),
+        backgroundGradient = listOf(Color(0xFF121316), Color(0xFF0A0B0C)),
         textPrimary = textColor,
         textSecondary = textColor.copy(alpha = 0.65f),
-        containerTonal = expressiveAccent.copy(alpha = 0.16f),
-        onPrimary = Color.White,
-        onSecondary = Color.White
+        isFallback = true
     )
 
     MkrLyricsLine(
