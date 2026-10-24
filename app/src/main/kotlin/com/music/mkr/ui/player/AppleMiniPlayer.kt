@@ -133,7 +133,7 @@ fun AppleMiniPlayer(
     var totalDragDistance by remember { mutableFloatStateOf(0f) }
 
     val animationSpec = remember {
-        spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow)
+        spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
     }
 
     val autoSwipeThreshold = remember(swipeSensitivity) {
@@ -222,7 +222,13 @@ fun AppleMiniPlayer(
 
                                 if (allowLeft || allowRight || canReturnToCenter) {
                                     totalDragDistance += kotlin.math.abs(adjustedDragAmount)
-                                    val newOffset = offsetXAnimatable.value + adjustedDragAmount
+                                    val currentOffset = offsetXAnimatable.value
+                                    val effectiveDelta = if (kotlin.math.abs(currentOffset) > autoSwipeThreshold) {
+                                        adjustedDragAmount * 0.38f
+                                    } else {
+                                        adjustedDragAmount
+                                    }
+                                    val newOffset = currentOffset + effectiveDelta
                                     coroutineScope.launch {
                                         offsetXAnimatable.snapTo(newOffset)
                                     }
@@ -282,6 +288,7 @@ fun AppleMiniPlayer(
             threshold = autoSwipeThreshold,
             canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000,
             canSkipNext = playerConnection.player.nextMediaItemIndex != -1,
+            accentColor = primaryColor,
             modifier = if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth()
         )
 

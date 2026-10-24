@@ -279,7 +279,7 @@ private fun NewMiniPlayer(
     var lastNextClickTime by remember { mutableLongStateOf(0L) }
 
     val animationSpec = remember {
-        spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow)
+        spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
     }
 
     val autoSwipeThreshold = remember(swipeSensitivity) {
@@ -368,7 +368,13 @@ private fun NewMiniPlayer(
 
                                 if (allowLeft || allowRight || canReturnToCenter) {
                                     totalDragDistance += kotlin.math.abs(adjustedDragAmount)
-                                    val newOffset = offsetXAnimatable.value + adjustedDragAmount
+                                    val currentOffset = offsetXAnimatable.value
+                                    val effectiveDelta = if (kotlin.math.abs(currentOffset) > autoSwipeThreshold) {
+                                        adjustedDragAmount * 0.38f
+                                    } else {
+                                        adjustedDragAmount
+                                    }
+                                    val newOffset = currentOffset + effectiveDelta
                                     coroutineScope.launch {
                                         offsetXAnimatable.snapTo(newOffset)
                                     }
@@ -428,6 +434,7 @@ private fun NewMiniPlayer(
             threshold = autoSwipeThreshold,
             canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000,
             canSkipNext = playerConnection.player.nextMediaItemIndex != -1,
+            accentColor = primaryColor,
             modifier = if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth()
         )
 
@@ -844,7 +851,7 @@ private fun LegacyMiniPlayer(
     var lastLegacyNextClickTime by remember { mutableLongStateOf(0L) }
 
     val animationSpec = remember {
-        spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow)
+        spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
     }
 
     val autoSwipeThreshold = remember(swipeSensitivity) {
@@ -922,7 +929,13 @@ private fun LegacyMiniPlayer(
 
                                 if (allowLeft || allowRight || canReturnToCenter) {
                                     totalDragDistance += kotlin.math.abs(adjustedDragAmount)
-                                    val newOffset = offsetXAnimatable.value + adjustedDragAmount
+                                    val currentOffset = offsetXAnimatable.value
+                                    val effectiveDelta = if (kotlin.math.abs(currentOffset) > autoSwipeThreshold) {
+                                        adjustedDragAmount * 0.38f
+                                    } else {
+                                        adjustedDragAmount
+                                    }
+                                    val newOffset = currentOffset + effectiveDelta
                                     coroutineScope.launch {
                                         offsetXAnimatable.snapTo(newOffset)
                                     }
@@ -982,6 +995,7 @@ private fun LegacyMiniPlayer(
             threshold = autoSwipeThreshold,
             canSkipPrevious = playerConnection.player.previousMediaItemIndex != -1 || playerConnection.player.currentPosition > 3000,
             canSkipNext = playerConnection.player.nextMediaItemIndex != -1,
+            accentColor = primaryColor,
             modifier = if (isTabletLandscape) Modifier.width(500.dp) else Modifier.fillMaxWidth()
         )
 

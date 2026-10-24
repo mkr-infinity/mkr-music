@@ -25,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -52,7 +53,8 @@ fun DirectionalSwipeIndicator(
     threshold: Int,
     canSkipPrevious: Boolean,
     canSkipNext: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    accentColor: Color = MaterialTheme.colorScheme.primary,
 ) {
     if (offsetX == 0f) return
 
@@ -62,16 +64,14 @@ fun DirectionalSwipeIndicator(
     val isTriggered = absOffset >= threshold
 
     val alpha = (progress * 1.5f).coerceIn(0f, 1f)
-    val scale = 0.8f + (0.2f * progress)
+    val scale = 0.82f + (0.18f * progress)
 
     val isAllowed = if (isSwipingRight) canSkipPrevious else canSkipNext
 
-    val amberColor = Color(0xFFF59E0B)
-    val amberLight = Color(0xFFFBBF24)
-    val charcoalBg = Color(0xFF18191E)
-
-    val activeColor = if (isAllowed) amberColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
-    val borderColor = if (isTriggered && isAllowed) amberLight else activeColor.copy(alpha = 0.35f)
+    val activeColor = if (isAllowed) accentColor else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+    val activeLight = if (isAllowed) lerp(accentColor, Color.White, 0.35f) else activeColor
+    val capsuleBg = MaterialTheme.colorScheme.surfaceContainerHighest
+    val borderColor = if (isTriggered && isAllowed) activeLight else activeColor.copy(alpha = 0.35f)
 
     val layoutDirection = LocalLayoutDirection.current
     val contentAlignment = if (isSwipingRight) {
@@ -91,8 +91,9 @@ fun DirectionalSwipeIndicator(
                 .height(44.dp)
                 .scale(scale),
             shape = RoundedCornerShape(22.dp),
-            color = charcoalBg.copy(alpha = 0.92f * alpha),
-            border = BorderStroke(1.dp, borderColor.copy(alpha = alpha))
+            shadowElevation = if (isTriggered && isAllowed) 6.dp else 2.dp,
+            color = capsuleBg.copy(alpha = 0.94f * alpha),
+            border = BorderStroke(if (isTriggered && isAllowed) 1.5.dp else 1.dp, borderColor.copy(alpha = alpha))
         ) {
             Row(
                 modifier = Modifier
@@ -105,7 +106,7 @@ fun DirectionalSwipeIndicator(
                         modifier = Modifier
                             .size(28.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(activeColor.copy(alpha = 0.15f * alpha)),
+                            .background(activeColor.copy(alpha = 0.18f * alpha)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
@@ -121,7 +122,7 @@ fun DirectionalSwipeIndicator(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
                         ),
-                        color = (if (isTriggered && isAllowed) amberLight else Color(0xFFF8FAFC)).copy(alpha = alpha)
+                        color = (if (isTriggered && isAllowed) activeLight else MaterialTheme.colorScheme.onSurface).copy(alpha = alpha)
                     )
                 } else {
                     Text(
@@ -130,13 +131,13 @@ fun DirectionalSwipeIndicator(
                             fontWeight = FontWeight.Bold,
                             fontSize = 12.sp
                         ),
-                        color = (if (isTriggered && isAllowed) amberLight else Color(0xFFF8FAFC)).copy(alpha = alpha)
+                        color = (if (isTriggered && isAllowed) activeLight else MaterialTheme.colorScheme.onSurface).copy(alpha = alpha)
                     )
                     Box(
                         modifier = Modifier
                             .size(28.dp)
                             .clip(RoundedCornerShape(14.dp))
-                            .background(activeColor.copy(alpha = 0.15f * alpha)),
+                            .background(activeColor.copy(alpha = 0.18f * alpha)),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(
