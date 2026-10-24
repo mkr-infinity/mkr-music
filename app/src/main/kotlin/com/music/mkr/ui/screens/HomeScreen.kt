@@ -82,6 +82,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -956,6 +957,23 @@ fun HomeScreen(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.TopStart
         ) {
+            val tonalStart = MaterialTheme.colorScheme.primaryContainer
+            val tonalMiddle = MaterialTheme.colorScheme.secondaryContainer
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(430.dp)
+                    .align(Alignment.TopCenter)
+                    .drawWithCache {
+                        val brush = Brush.verticalGradient(
+                            0f to tonalStart.copy(alpha = 0.28f),
+                            0.45f to tonalMiddle.copy(alpha = 0.12f),
+                            1f to Color.Transparent,
+                        )
+                        onDrawBehind { drawRect(brush) }
+                    }
+            )
+
             val horizontalLazyGridItemWidthFactor = if (maxWidth * 0.475f >= 320.dp) 0.475f else 0.9f
             val horizontalLazyGridItemWidth = maxWidth * horizontalLazyGridItemWidthFactor
             val forgottenFavoritesSnapLayoutInfoProvider = remember(forgottenFavoritesLazyGridState) {

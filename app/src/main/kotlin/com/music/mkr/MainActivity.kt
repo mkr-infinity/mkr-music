@@ -58,6 +58,7 @@ import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
@@ -1037,7 +1038,28 @@ class MainActivity : ComponentActivity() {
                                 var resetJob by remember { mutableStateOf<Job?>(null) }
                                 var currentToast by remember { mutableStateOf<Toast?>(null) }
 
-                                Row {
+                                val isHome = navBackStackEntry?.destination?.route == Screens.Home.route
+
+                                Box(modifier = Modifier.fillMaxWidth()) {
+                                    if (isHome) {
+                                        val statusBarHeight = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(AppBarHeight + statusBarHeight + 12.dp)
+                                                .background(
+                                                    Brush.verticalGradient(
+                                                        colors = listOf(
+                                                            (if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface).copy(alpha = 0.88f),
+                                                            (if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface).copy(alpha = 0.65f),
+                                                            (if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface).copy(alpha = 0.30f),
+                                                            Color.Transparent,
+                                                        )
+                                                    )
+                                                )
+                                        )
+                                    }
+
                                     TopAppBar(
                                         navigationIcon = {
                                             Box(
@@ -1096,19 +1118,19 @@ class MainActivity : ComponentActivity() {
                                             ) {
                                                 Surface(
                                                     shape = CircleShape,
-                                                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.45f),
+                                                    color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.48f),
                                                     border = BorderStroke(
-                                                        1.5.dp,
-                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+                                                        1.dp,
+                                                        MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
                                                     ),
-                                                    modifier = Modifier.size(38.dp)
+                                                    modifier = Modifier.size(40.dp)
                                                 ) {
                                                     Image(
                                                         painter = painterResource(R.drawable.icon),
                                                         contentDescription = stringResource(R.string.app_name),
                                                         modifier = Modifier
                                                             .fillMaxSize()
-                                                            .padding(2.dp)
+                                                            .padding(4.dp)
                                                             .clip(CircleShape),
                                                         contentScale = ContentScale.Crop
                                                     )
@@ -1116,7 +1138,6 @@ class MainActivity : ComponentActivity() {
                                             }
                                         },
                                         title = {
-                                            val isHome = navBackStackEntry?.destination?.route == Screens.Home.route
                                             if (!isHome) {
                                                 val titleText = currentTitleRes?.let { stringResource(it) } ?: ""
                                                 if (titleText.isNotEmpty()) {
@@ -1137,21 +1158,27 @@ class MainActivity : ComponentActivity() {
                                         actions = {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                                modifier = Modifier.padding(end = 4.dp)
+                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                                modifier = Modifier.padding(end = 12.dp)
                                             ) {
                                                 // Listening History navigation action (clean history vector icon)
                                                 if (showHistoryButton) {
                                                     val historyDesc = stringResource(R.string.listening_history)
                                                     IconButton(
                                                         onClick = { navController.navigate("history") },
-                                                        modifier = Modifier.size(48.dp)
+                                                        modifier = Modifier.size(40.dp),
+                                                        colors = IconButtonDefaults.iconButtonColors(
+                                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
+                                                                alpha = 0.48f
+                                                            ),
+                                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                                        )
                                                     ) {
                                                         Icon(
                                                             painter = painterResource(R.drawable.history),
                                                             contentDescription = historyDesc,
                                                             tint = MaterialTheme.colorScheme.onSurface,
-                                                            modifier = Modifier.size(24.dp)
+                                                            modifier = Modifier.size(20.dp)
                                                         )
                                                     }
                                                 }
@@ -1161,7 +1188,13 @@ class MainActivity : ComponentActivity() {
                                                     val accountDesc = stringResource(R.string.account)
                                                     IconButton(
                                                         onClick = { navController.navigate("settings/account") },
-                                                        modifier = Modifier.size(48.dp)
+                                                        modifier = Modifier.size(40.dp),
+                                                        colors = IconButtonDefaults.iconButtonColors(
+                                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
+                                                                alpha = 0.48f
+                                                            ),
+                                                            contentColor = MaterialTheme.colorScheme.onSurface
+                                                        )
                                                     ) {
                                                         if (accountImageUrl != null) {
                                                             AsyncImage(
@@ -1169,7 +1202,7 @@ class MainActivity : ComponentActivity() {
                                                                 contentDescription = accountDesc,
                                                                 contentScale = ContentScale.Crop,
                                                                 modifier = Modifier
-                                                                    .size(28.dp)
+                                                                    .size(26.dp)
                                                                     .clip(CircleShape)
                                                                     .border(
                                                                         width = 1.dp,
@@ -1182,7 +1215,7 @@ class MainActivity : ComponentActivity() {
                                                                 painter = painterResource(R.drawable.account),
                                                                 contentDescription = accountDesc,
                                                                 tint = MaterialTheme.colorScheme.onSurface,
-                                                                modifier = Modifier.size(24.dp)
+                                                                modifier = Modifier.size(20.dp)
                                                             )
                                                         }
                                                     }
@@ -1192,21 +1225,27 @@ class MainActivity : ComponentActivity() {
                                                 val settingsDesc = stringResource(R.string.settings)
                                                 IconButton(
                                                     onClick = { navController.navigate("settings") },
-                                                    modifier = Modifier.size(48.dp)
+                                                    modifier = Modifier.size(40.dp),
+                                                    colors = IconButtonDefaults.iconButtonColors(
+                                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
+                                                            alpha = 0.48f
+                                                        ),
+                                                        contentColor = MaterialTheme.colorScheme.onSurface
+                                                    )
                                                 ) {
                                                     Icon(
                                                         painter = painterResource(R.drawable.settings),
                                                         contentDescription = settingsDesc,
                                                         tint = MaterialTheme.colorScheme.onSurface,
-                                                        modifier = Modifier.size(24.dp)
+                                                        modifier = Modifier.size(20.dp)
                                                     )
                                                 }
                                             }
                                         },
                                         scrollBehavior = topAppBarScrollBehavior,
                                         colors = TopAppBarDefaults.topAppBarColors(
-                                            containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
-                                            scrolledContainerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer,
+                                            containerColor = if (isHome) Color.Transparent else if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
+                                            scrolledContainerColor = if (isHome) Color.Transparent else if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer,
                                             titleContentColor = MaterialTheme.colorScheme.onSurface,
                                             actionIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
                                             navigationIconContentColor = MaterialTheme.colorScheme.onSurfaceVariant
