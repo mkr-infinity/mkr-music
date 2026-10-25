@@ -6,7 +6,7 @@
   <a href="https://mkr-infinity.github.io/mkr-music-web" target="_blank"><img src="https://img.shields.io/badge/🌐%20Official%20Website-Live%20Web%20Experience-6366F1?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website"/></a>
   <a href="https://github.com/mkr-infinity/mkr-music/releases/latest/download/mkr-music-universal.apk"><img src="https://img.shields.io/badge/⚡%20Download%20APK-Universal%20Latest-00E676?style=for-the-badge&logo=android&logoColor=white" alt="Download Universal APK"/></a>
   <a href="https://github.com/mkr-infinity"><img src="https://img.shields.io/badge/Developer-%40mkr--infinity-E74C3C?style=for-the-badge&logo=github&logoColor=white" alt="Developer @mkr-infinity"/></a>
-  <img src="https://img.shields.io/badge/Platform-Android%208.0%2B-F39C12?style=for-the-badge" alt="Platform Android 8.0+"/>
+  <img src="https://img.shields.io/badge/Platform-Android%207.0%2B-F39C12?style=for-the-badge" alt="Platform Android 7.0+"/>
 </p>
 
 <div align="center">
@@ -15,10 +15,9 @@
 
 ### *Not just a music player — an intelligent, private sonic sanctuary.*
 
-**MKR Music** (`com.kaif.music`) is a premier open-source music streaming and offline audio player for Android.
-Unifying **YouTube Music**, **JioSaavn**, and **Spotify playlist sync**, it delivers studio-grade lossless sound up to 320 kbps, synchronized lyrics, dynamic canvas visuals, and smart mood queues — completely ad-free and 100% private.
+**MKR Music**  is a premier open-source music streaming and offline audio player for Android.
+Unifying **YouTube Music** and **Spotify playlist sync**, it delivers studio-grade lossless sound up to 320 kbps, synchronized lyrics, dynamic canvas visuals, and smart mood queues — completely ad-free and 100% private forever.
 
-**Current Version:** `1.0.0` (first release under the new application identity)
 
 <br/>
 
@@ -49,62 +48,47 @@ Unifying **YouTube Music**, **JioSaavn**, and **Spotify playlist sync**, it deli
 
 <table align="center" width="100%">
   <tr>
-    <td align="center" width="33%" valign="top">
+    <td align="center" width="50%">
       <h4>🏠 Home</h4>
-      <img src="assets/ui/home.jpg" width="100%" alt="Home Screen" />
+      <img src="assets/ui/home.jpg" width="85%" alt="Home Screen" />
     </td>
-    <td align="center" width="33%" valign="top">
+    <td align="center" width="50%">
       <h4>🔍 Search</h4>
-      <img src="assets/ui/search.jpg" width="100%" alt="Search Screen" />
+      <img src="assets/ui/search.jpg" width="85%" alt="Search Screen" />
     </td>
-    <td align="center" width="33%" valign="top">
+  </tr>
+  <tr>
+    <td align="center" width="50%">
       <h4>🎵 Now Playing</h4>
-      <img src="assets/ui/player.jpg" width="100%" alt="Now Playing Screen" />
+      <img src="assets/ui/player.jpg" width="85%" alt="Now Playing Screen" />
     </td>
-  </tr>
-  <tr>
-    <td align="center" width="33%" valign="top">
+    <td align="center" width="50%">
       <h4>🌌 Immersive View</h4>
-      <img src="assets/ui/immersive_player.jpg" width="100%" alt="Immersive Player" />
+      <img src="assets/ui/immersive_player.jpg" width="85%" alt="Immersive Player" />
     </td>
-    <td align="center" width="33%" valign="top">
-      <h4>🎬 Dynamic Canvas</h4>
-      <img src="assets/ui/canvas_player.jpg" width="100%" alt="Dynamic Canvas Player" />
-    </td>
-    <td align="center" width="33%" valign="top">
+  </tr>
+  <tr>
+    <td align="center" width="50%">
       <h4>📜 Synced Lyrics</h4>
-      <img src="assets/ui/lyrics.jpg" width="100%" alt="Synchronized Lyrics" />
+      <img src="assets/ui/lyrics.jpg" width="85%" alt="Synchronized Lyrics" />
     </td>
-  </tr>
-  <tr>
-    <td align="center" width="33%" valign="top">
+    <td align="center" width="50%">
       <h4>👤 Artist Profile</h4>
-      <img src="assets/ui/artist.jpg" width="100%" alt="Artist Profile" />
-    </td>
-    <td align="center" width="33%" valign="top">
-      <h4>🔊 Audio Output</h4>
-      <img src="assets/ui/audio_output.jpg" width="100%" alt="Audio Output Switcher" />
-    </td>
-    <td align="center" width="33%" valign="top">
-      <h4>⚙️ Settings</h4>
-      <img src="assets/ui/settings.jpg" width="100%" alt="Settings Dashboard" />
+      <img src="assets/ui/artist.jpg" width="85%" alt="Artist Profile" />
     </td>
   </tr>
   <tr>
-    <td align="center" width="33%" valign="top">
-      <h4>🎭 Appearance</h4>
-      <img src="assets/ui/appearance.jpg" width="100%" alt="Appearance and Themes" />
+    <td align="center" width="50%">
+      <h4>🔊 Audio Output</h4>
+      <img src="assets/ui/audio_output.jpg" width="85%" alt="Audio Output Switcher" />
     </td>
-    <td align="center" width="33%" valign="top">
-      <h4>💾 Storage & Cache</h4>
-      <img src="assets/ui/storage_cache.jpg" width="100%" alt="Storage and Cache Settings" />
-    </td>
-    <td align="center" width="33%" valign="top">
-      <h4>🎚️ Studio Equalizer</h4>
-      <img src="assets/ui/equalizer.jpg" width="100%" alt="MKR Studio Equalizer" />
+    <td align="center" width="50%">
+      <h4>⚙️ Settings</h4>
+      <img src="assets/ui/settings.jpg" width="85%" alt="Settings Dashboard" />
     </td>
   </tr>
 </table>
+
 
 ---
 
@@ -142,7 +126,7 @@ Contributions make the open-source community an incredible place to learn, inspi
    ```
 3. **Commit your Changes**
    ```bash
-   git commit -m "feat: add amazing feature"
+   git commit -m "feat: add amazing feature/your feature added"
    ```
 4. **Push to the Branch**
    ```bash
@@ -192,11 +176,9 @@ Crafted with dedication by **Mohammad Kaif Raja**:
 
 **MKR Music** is built upon the foundation of amazing open-source projects, visionary developers, and the broader FLOSS community:
 
-### 💡 Special Thanks
-- **Mostafa Alagamy** – Creator of [Metrolist](https://github.com/mostafaalagamy/metrolist), the project that inspired the original foundation. Huge thanks for the foundation and open-source contributions! 🌟
-- **[@Zemer](https://github.com/Zemer)** – Huge congratulations and thanks for inventing the revolutionary playback method! 🎉
 
-### 🎖️ Foundational Projects
+- **[ViMusic](https://github.com/vfsfitvnm/ViMusic)** by vfsfitvnm – For pioneering the original Android client and playback concepts.
+- **[ViVi Music](https://github.com/vivizzz007/vivi-music)** by vivizzz007 – For inspiring features, UI refinements, and dedicated contributions.
 - **[InnerTune](https://github.com/z-huang/InnerTune)** by Zion Huang – For the groundbreaking YouTube Music client architecture and Innertube integration foundation.
 - **[AM-Lyrics](https://github.com/Binimum)** – For the powerful synced TTML lyrics integration from Binimum.
 - **[Better Lyrics](https://github.com/Better-Lyrics)** – For beautiful synchronized lyrics and YouTube Music integration.
@@ -210,21 +192,6 @@ Crafted with dedication by **Mohammad Kaif Raja**:
 > To the open-source community: Thank you for all the incredible tools, libraries, and APIs that make this project possible!
 >
 > *Thank you to all the amazing developers who made this project possible!*
-
----
-
-## Attribution and Reuse Policy
-
-MKR Music is open-source under GPL-3.0. If you reuse original MKR Music code, UI components, original design work, or assets in your own project:
-
-- **Provide visible credit** to MKR Music and its author (Mohammad Kaif Raja / @mkr-infinity) in your project's README, About screen, or equivalent documentation.
-- **Do not imply endorsement.** Credit must not suggest that MKR Music or its author endorses your derivative project.
-- **Preserve copyright notices and license terms** as required by GPL-3.0.
-- **Do not present MKR Music's name, branding, or original assets as your own work.**
-- Third-party dependencies and content remain subject to their respective licenses.
-- This project does not claim ownership of third-party code, music, or assets.
-
-The author reserves the right to investigate suspected unauthorized use of original work and may request attribution, removal, or other appropriate remedies where there is a legitimate basis. Where legal requirements are met, the author may submit a copyright or DMCA takedown notice. Not every similar UI is automatically infringing; this policy addresses substantive reuse of original work.
 
 ---
 
