@@ -63,8 +63,6 @@ import com.music.mkr.ui.screens.settings.integrations.DiscordSettings
 import com.music.mkr.ui.screens.settings.integrations.IntegrationScreen
 import com.music.mkr.ui.screens.settings.integrations.LastFMSettings
 import com.music.mkr.ui.screens.settings.integrations.ListenTogetherSettings
-import com.music.mkr.ui.screens.recognition.RecognitionScreen
-import com.music.mkr.ui.screens.recognition.RecognitionHistoryScreen
 import com.music.mkr.ui.screens.settings.UpdateSettings
 import com.music.mkr.ui.screens.settings.NotificationPermission
 import com.music.mkr.ui.screens.wrapped.WrappedScreen
@@ -467,13 +465,6 @@ fun NavGraphBuilder.navigationBuilder(
         WrappedScreen(navController)
     }
 
-    composable("recognition") {
-        RecognitionScreen(navController)
-    }
-
-    composable("recognition_history") {
-        RecognitionHistoryScreen(navController)
-    }
     composable("settings/changelog") {
         ChangelogScreen(navController,scrollBehavior)
     }

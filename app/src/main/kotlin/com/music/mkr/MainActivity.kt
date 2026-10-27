@@ -1364,13 +1364,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            val onSearchLongClick: () -> Unit = remember(navController) {
-                                {
-                                    navController.navigate("recognition") {
-                                        launchSingleTop = true
-                                    }
-                                }
-                            }
+                            val onSearchLongClick: (() -> Unit)? = null
 
                             // Pre-calculate values for graphicsLayer to avoid reading state during composition
                             val navBarTotalHeight = bottomInset + NavigationBarHeight
@@ -1506,13 +1500,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
 
-                            val onRailSearchLongClick: () -> Unit = remember(navController) {
-                                {
-                                    navController.navigate("recognition") {
-                                        launchSingleTop = true
-                                    }
-                                }
-                            }
+                            val onRailSearchLongClick: (() -> Unit)? = null
 
                             if (showRail && currentRoute != "wrapped" && currentRoute != "update") {
                                 AppNavigationRail(
