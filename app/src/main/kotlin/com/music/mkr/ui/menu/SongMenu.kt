@@ -308,11 +308,11 @@ fun SongMenu(
         trailingContent = {
             IconButton(
                 onClick = {
-                    val s = song.song.toggleLike()
-                    database.query {
-                        update(s)
+                    coroutineScope.launch(Dispatchers.IO) {
+                        val s = song.song.toggleLike()
+                        database.update(s)
+                        syncUtils.likeSong(s)
                     }
-                    syncUtils.likeSong(s)
                 },
             ) {
                 Icon(

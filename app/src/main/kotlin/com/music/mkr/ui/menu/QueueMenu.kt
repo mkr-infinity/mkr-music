@@ -188,17 +188,14 @@ fun QueueMenu(
             IconButton(
                 onClick = {
                     coroutineScope.launch(Dispatchers.IO) {
-                        database.transaction {
-                            if (librarySong == null) {
-                                insert(mediaMetadata)
-                            }
+                        var songToUpdate = database.getSongByIdBlocking(mediaMetadata.id)
+                        if (songToUpdate == null) {
+                            database.insert(mediaMetadata)
+                            songToUpdate = database.getSongByIdBlocking(mediaMetadata.id)
                         }
-                        val song = database.song(mediaMetadata.id).firstOrNull()
-                        song?.let {
+                        songToUpdate?.let {
                             val s = it.song.toggleLike()
-                            database.query {
-                                update(s)
-                            }
+                            database.update(s)
                             syncUtils.likeSong(s)
                         }
                     }

@@ -2188,32 +2188,45 @@ class MusicService :
     }
 
     fun toggleLike() {
-        scope.launch {
-            val songToToggle = currentSong.first()
-            songToToggle?.let {
-                val song = it.song.toggleLike()
-                database.query {
-                    update(song)
-                    syncUtils.likeSong(song)
-
-                    // Check if auto-download on like is enabled and the song is now liked
-                    if (dataStore.get(AutoDownloadOnLikeKey, false) && song.liked) {
-                        // Trigger download for the liked song
-                        val downloadRequest =
-                            androidx.media3.exoplayer.offline.DownloadRequest
-                                .Builder(song.id, song.id.toUri())
-                                .setCustomCacheKey(song.id)
-                                .setData(song.title.toByteArray())
-                                .build()
-                        androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
-                            this@MusicService,
-                            ExoDownloadService::class.java,
-                            downloadRequest,
-                            false
-                        )
+        val mediaMetadata = currentMediaMetadata.value ?: player.currentMetadata ?: return
+        scope.launch(Dispatchers.IO) {
+            try {
+                val requestedSong = synchronized(database) {
+                    var currentSongEntity = database.getSongByIdBlocking(mediaMetadata.id)
+                    if (currentSongEntity == null) {
+                        database.insert(mediaMetadata)
+                        currentSongEntity = database.getSongByIdBlocking(mediaMetadata.id)
                     }
+                    currentSongEntity?.let {
+                        val toggled = it.song.toggleLike()
+                        database.update(toggled)
+                        toggled
+                    }
+                } ?: return@launch
+
+                syncUtils.likeSong(requestedSong)
+
+                // Check if auto-download on like is enabled and the song is now liked
+                if (!requestedSong.isLocal && dataStore.get(AutoDownloadOnLikeKey, false) && requestedSong.liked) {
+                    // Trigger download for the liked song
+                    val downloadRequest =
+                        androidx.media3.exoplayer.offline.DownloadRequest
+                            .Builder(requestedSong.id, requestedSong.id.toUri())
+                            .setCustomCacheKey(requestedSong.id)
+                            .setData(requestedSong.title.toByteArray())
+                            .build()
+                    androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
+                        this@MusicService,
+                        ExoDownloadService::class.java,
+                        downloadRequest,
+                        false
+                    )
                 }
-                currentMediaMetadata.value = player.currentMetadata
+                withContext(Dispatchers.Main) {
+                    currentMediaMetadata.value = player.currentMetadata
+                }
+            } catch (e: Exception) {
+                Timber.tag(TAG).e(e, "Error in toggleLike for ${mediaMetadata.id}")
             }
         }
     }

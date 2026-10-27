@@ -218,19 +218,18 @@ fun YouTubeSongMenu(
         trailingContent = {  
             IconButton(  
                 onClick = {  
-                    database.transaction {  
-                        librarySong.let { librarySong ->  
-                            val s: SongEntity  
-                            if (librarySong == null) {  
-                                insert(song.toMediaMetadata(), SongEntity::toggleLike)  
-                                s = song.toMediaMetadata().toSongEntity().let(SongEntity::toggleLike)  
-                            } else {  
-                                s = librarySong.song.toggleLike()  
-                                update(s)  
-                            }  
-                            syncUtils.likeSong(s)  
-                        }  
-                    }  
+                    coroutineScope.launch(Dispatchers.IO) {
+                        var songToUpdate = database.getSongByIdBlocking(song.id)
+                        if (songToUpdate == null) {
+                            database.insert(song.toMediaMetadata())
+                            songToUpdate = database.getSongByIdBlocking(song.id)
+                        }
+                        songToUpdate?.let {
+                            val s = it.song.toggleLike()
+                            database.update(s)
+                            syncUtils.likeSong(s)
+                        }
+                    }
                 },  
             ) {  
                 Icon(  
