@@ -1007,7 +1007,7 @@ fun AppearanceSettings(
                         description = {
                             Text(
                                 if (!isUsingCustomColor) {
-                                    if (dynamicTheme) "Dynamic Artwork Theme" else "Default Amber"
+                                    if (dynamicTheme) "Dynamic Artwork Theme" else "Default Grey"
                                 } else {
                                     "Custom Static Palette"
                                 }

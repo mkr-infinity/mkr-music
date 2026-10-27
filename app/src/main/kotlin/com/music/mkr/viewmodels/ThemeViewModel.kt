@@ -12,6 +12,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+import androidx.compose.ui.graphics.toArgb
+
 class ThemeViewModel : ViewModel() {
     // Theme state flows
     private val _darkMode = MutableStateFlow(DarkMode.AUTO)
@@ -20,7 +22,7 @@ class ThemeViewModel : ViewModel() {
     private val _pureBlack = MutableStateFlow(false)
     val pureBlack: StateFlow<Boolean> = _pureBlack.asStateFlow()
 
-    private val _selectedThemeColorInt = MutableStateFlow(DefaultThemeColor.hashCode())
+    private val _selectedThemeColorInt = MutableStateFlow(DefaultThemeColor.toArgb())
     val selectedThemeColorInt: StateFlow<Int> = _selectedThemeColorInt.asStateFlow()
 
     fun updateDarkMode(mode: DarkMode) {

@@ -93,8 +93,9 @@ data class ThemePalette(
 )
 
 val PaletteColors = listOf(
+    ThemePalette(R.string.palette_grey, DefaultThemeColor),
     ThemePalette(R.string.palette_dynamic, Color.Transparent), // Sentinel for System/Dynamic colors
-    ThemePalette(R.string.palette_crimson, Color(0xFFEC5464)), // Slightly shifted from DefaultThemeColor (0xFFED5564) to avoid conflict
+    ThemePalette(R.string.palette_crimson, Color(0xFFED5564)),
     ThemePalette(R.string.palette_rose, Color(0xFFD81B60)),
     ThemePalette(R.string.palette_purple, Color(0xFF8E24AA)),
     ThemePalette(R.string.palette_monochrome, Color(0xFF000000)),
@@ -112,7 +113,6 @@ val PaletteColors = listOf(
     ThemePalette(R.string.palette_orange, Color(0xFFFB8C00)),
     ThemePalette(R.string.palette_deep_orange, Color(0xFFF4511E)),
     ThemePalette(R.string.palette_brown, Color(0xFF6D4C41)),
-    ThemePalette(R.string.palette_grey, Color(0xFF757575)),
     ThemePalette(R.string.palette_blue_grey, Color(0xFF546E7A)),
 )
 
@@ -145,9 +145,8 @@ fun ThemeScreen(
     // Helper function to handle color selection with dynamic theme toggle
     val handleColorSelection: (Color) -> Unit = { color ->
         onSelectedThemeColorChange(color.toArgb())
-        // Enable dynamic theme only when selecting the default/dynamic color
-        // Disable it when selecting any other color
-        val isDynamicColor = color == DefaultThemeColor
+        // Enable dynamic artwork theme when selecting default Grey or Dynamic system color
+        val isDynamicColor = color == DefaultThemeColor || color == Color.Transparent
         onDynamicThemeChange(isDynamicColor)
     }
 
@@ -395,19 +394,13 @@ fun ThemeControls(
                 contentPadding = PaddingValues(horizontal = 4.dp)
             ) {
                 items(PaletteColors) { palette ->
-                    val isDynamicPalette = palette.seedColor == Color.Transparent
-                    val isSelected = if (isDynamicPalette) {
-                        selectedThemeColor == DefaultThemeColor
-                    } else {
-                        selectedThemeColor == palette.seedColor
-                    }
+                    val isSelected = selectedThemeColor == palette.seedColor
                     
                     PaletteItem(
                         palette = palette,
                         isSelected = isSelected,
                         onClick = { 
-                            val colorToSave = if (isDynamicPalette) DefaultThemeColor else palette.seedColor
-                            onSelectedThemeColorChange(colorToSave) 
+                            handleColorSelection(palette.seedColor)
                         }
                     )
                 }
@@ -434,10 +427,10 @@ fun ThemeControls(
                     )
                     Spacer(modifier = Modifier.width(12.dp))
                     Text(
-                        text = if (selectedThemeColor == DefaultThemeColor) {
-                            "Dynamic Artwork Theme active: app accents adapt smoothly to currently playing album art."
+                        text = if (selectedThemeColor == DefaultThemeColor || selectedThemeColor == Color.Transparent) {
+                            "Dynamic Artwork Theme active: app accents adapt smoothly to currently playing album art (fallback: Grey)."
                         } else {
-                            "Static palette active. Select 'Dynamic' above to restore artwork-adaptive theming."
+                            "Static palette active. Select 'Grey' or 'Dynamic' above to restore artwork-adaptive theming."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -468,16 +461,11 @@ fun ModeCircle(
         DarkMode.OFF -> false
     }
     
-    // Use actual system colors for AUTO mode on Android 12+
-    val modeColorScheme = if (targetMode == DarkMode.AUTO && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        if (effectiveDark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-    } else {
-        rememberDynamicColorScheme(
-            seedColor = DefaultThemeColor,
-            isDark = effectiveDark,
-            style = PaletteStyle.TonalSpot
-        )
-    }
+    val modeColorScheme = rememberDynamicColorScheme(
+        seedColor = DefaultThemeColor,
+        isDark = effectiveDark,
+        style = PaletteStyle.TonalSpot
+    )
     
     val fillColor = when {
         targetPureBlack -> Color.Black
