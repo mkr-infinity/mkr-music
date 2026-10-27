@@ -44,8 +44,10 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import androidx.compose.ui.platform.LocalContext
 import com.music.mkr.BuildConfig
 import com.music.mkr.LocalPlayerAwareWindowInsets
+import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.AudioNormalizationKey
 import com.music.mkr.constants.AudioOffload
@@ -106,6 +108,8 @@ fun PlayerSettings(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
 ) {
+    val context = LocalContext.current
+    val playerConnection = LocalPlayerConnection.current
     val (audioQuality, onAudioQualityChange) = rememberEnumPreference(
         AudioQualityKey,
         defaultValue = AudioQuality.AUTO
@@ -622,10 +626,10 @@ fun PlayerSettings(
                 ))
                 add(Material3SettingsItem(
                     key = "player_equalizer",
-                    icon = painterResource(R.drawable.mkrequlizer),
-                    title = { Text(stringResource(R.string.mkr_equalizer)) },
-                    description = { Text(stringResource(R.string.mkr_equalizer_desc)) },
-                    onClick = { navController.navigate("settings/equalizer") }
+                    icon = painterResource(R.drawable.equalizer),
+                    title = { Text(stringResource(R.string.equalizer)) },
+                    description = { Text(stringResource(R.string.system_equalizer)) },
+                    onClick = { com.music.mkr.utils.openSystemEqualizer(context, playerConnection?.player?.audioSessionId ?: 0) }
                 ))
                 add(Material3SettingsItem(
                     key = "player_audio_normalization",

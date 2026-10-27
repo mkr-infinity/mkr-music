@@ -405,13 +405,13 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
         ),
         SearchableSettingItem(
             id = "player_equalizer",
-            title = "Equalizer & Sound Effects",
-            description = "Custom 5-band / 10-band graphic equalizer, Bass Boost, Virtualizer, and audio presets",
+            title = "Equalizer",
+            description = "Open device system audio equalizer",
             category = "Player and Audio",
             iconRes = R.drawable.equalizer,
-            route = "settings/equalizer",
+            route = "settings/player",
             targetKey = "player_equalizer",
-            keywords = listOf("equalizer", "eq", "bass", "bass boost", "treble", "virtualizer", "sound effects", "frequencies", "audio fx")
+            keywords = listOf("equalizer", "eq", "bass", "system equalizer", "sound effects", "frequencies", "audio fx")
         ),
         SearchableSettingItem(
             id = "player_pitch_speed",

@@ -675,9 +675,9 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                             iconTint = Color(0xFF00522c)
                         ),
                         OnboardingFeatureItem(
-                            title = "Axion DSP Equalizer",
-                            description = "Full parametric equalizer, bass boost and hardware loudness enhancement engine.",
-                            tag = "DSP SOUND",
+                            title = "System Audio Equalizer",
+                            description = "Seamless hardware equalizer and audio effect integration for your device.",
+                            tag = "AUDIO FX",
                             iconRes = R.drawable.equalizer,
                             iconColor = Color(0xFFcabeff),
                             iconTint = Color(0xFF1c0062)

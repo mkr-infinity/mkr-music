@@ -29,7 +29,6 @@ import com.music.mkr.ui.screens.artist.ArtistAlbumsScreen
 import com.music.mkr.ui.screens.artist.ArtistItemsScreen
 import com.music.mkr.ui.screens.artist.ArtistScreen
 import com.music.mkr.ui.screens.artist.ArtistSongsScreen
-import com.music.mkr.ui.screens.equalizer.EqScreen
 import com.music.mkr.ui.screens.library.LibraryScreen
 import com.music.mkr.ui.screens.playlist.AutoPlaylistScreen
 import com.music.mkr.ui.screens.playlist.CachePlaylistScreen
@@ -74,7 +73,6 @@ import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.mkrmusic.changelog.ChangelogScreen
 import com.music.mkr.mkrmusic.commitscreen.CommitScreen
-import com.music.mkr.ui.screens.equalizer.axion.AxionEqScreen
 import com.music.mkr.viewmodels.HomeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -415,10 +413,6 @@ fun NavGraphBuilder.navigationBuilder(
         StorageSettings(navController, scrollBehavior)
     }
 
-    composable("settings/equalizer") {
-        AxionEqScreen(onBackClick = { navController.navigateUp() })
-    }
-
     composable("settings/privacy") {
         PrivacySettings(navController, scrollBehavior)
     }
@@ -471,10 +465,6 @@ fun NavGraphBuilder.navigationBuilder(
 
     composable("wrapped") {
         WrappedScreen(navController)
-    }
-
-    dialog("equalizer") {
-        EqScreen(navController = navController)
     }
 
     composable("recognition") {

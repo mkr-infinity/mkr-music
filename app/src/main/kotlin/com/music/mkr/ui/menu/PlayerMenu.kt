@@ -643,7 +643,7 @@ fun PlayerMenu(
                                     )
                                 },
                                 onClick = {
-                                    navController.navigate("equalizer")
+                                    com.music.mkr.utils.openSystemEqualizer(context, playerConnection.player.audioSessionId)
                                     onDismiss()
                                 }
                             )

@@ -5,8 +5,13 @@
 
 package com.music.mkr.utils
 
+import android.app.Activity
 import android.content.Context
+import android.content.Intent
 import android.content.res.Configuration
+import android.media.audiofx.AudioEffect
+import android.widget.Toast
+import com.music.mkr.R
 import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -46,5 +51,27 @@ fun listItemShape(index: Int, count: Int, radius: Dp = 16.dp): Shape {
             cornerRadiusBR = radius, smoothnessAsPercentBR = smoothness
         )
         else -> RectangleShape
+    }
+}
+
+fun openSystemEqualizer(context: Context, audioSessionId: Int = 0) {
+    val intent = Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL).apply {
+        if (audioSessionId != 0) {
+            putExtra(AudioEffect.EXTRA_AUDIO_SESSION, audioSessionId)
+        }
+        putExtra(AudioEffect.EXTRA_PACKAGE_NAME, context.packageName)
+        putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC)
+        if (context !is Activity) {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        }
+    }
+    if (intent.resolveActivity(context.packageManager) != null) {
+        context.startActivity(intent)
+    } else {
+        Toast.makeText(
+            context,
+            context.getString(R.string.no_system_equalizer),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 }
