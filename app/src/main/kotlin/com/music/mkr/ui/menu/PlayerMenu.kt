@@ -78,6 +78,7 @@ import com.music.innertube.YouTube
 import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalDownloadUtil
 import com.music.mkr.LocalListenTogetherManager
+import com.music.mkr.utils.oem.SystemMediaControlResolver
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.ListItemHeight
@@ -126,6 +127,7 @@ fun PlayerMenu(
     val isCasting by castHandler?.isCasting?.collectAsState() ?: remember { mutableStateOf(false) }
     val castVolume by castHandler?.castVolume?.collectAsState() ?: remember { mutableFloatStateOf(1f) }
     val castDeviceName by castHandler?.castDeviceName?.collectAsState() ?: remember { mutableStateOf<String?>(null) }
+    val audioDevice by playerConnection.activeAudioDevice.collectAsState()
     
     val librarySong by database.song(mediaMetadata.id).collectAsState(initial = null)
     val coroutineScope = rememberCoroutineScope()
@@ -644,6 +646,23 @@ fun PlayerMenu(
                                 },
                                 onClick = {
                                     com.music.mkr.utils.openSystemEqualizer(context, playerConnection.player.audioSessionId)
+                                    onDismiss()
+                                }
+                            )
+                        )
+                        add(
+                            Material3MenuItemData(
+                                title = { Text(text = "Audio Output") },
+                                description = { Text(text = audioDevice.name) },
+                                icon = {
+                                    Icon(
+                                        imageVector = audioDevice.type.imageVector,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(24.dp)
+                                    )
+                                },
+                                onClick = {
+                                    SystemMediaControlResolver.openMediaOutputSwitcher(context)
                                     onDismiss()
                                 }
                             )

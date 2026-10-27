@@ -279,8 +279,11 @@ class MusicService :
     private var reentrantFocusGain = false
     private var wasPlayingBeforeVolumeMute = false
     private var isPausedByVolumeMute = false
-    var preferredDeviceId: Int? = null //added for audio device switching
-        private set//improvement
+    var preferredDeviceId: Int? = null
+        private set
+    lateinit var audioOutputResolver: AudioOutputResolver
+    val activeAudioDevice get() = audioOutputResolver.activeAudioDevice
+    fun refreshActiveDevice() = audioOutputResolver.refresh()
 
     private var crossfadeEnabled = false
     private var crossfadeDuration = 5000f
@@ -483,6 +486,9 @@ class MusicService :
     private val audioDeviceCallback = object : AudioDeviceCallback() {
         override fun onAudioDevicesAdded(addedDevices: Array<out AudioDeviceInfo>?) {
             super.onAudioDevicesAdded(addedDevices)
+            if (::audioOutputResolver.isInitialized) {
+                audioOutputResolver.refresh()
+            }
             val hasBluetooth = addedDevices?.any {
                 it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP ||
                 it.type == AudioDeviceInfo.TYPE_BLUETOOTH_SCO
@@ -494,6 +500,13 @@ class MusicService :
                         player.play()
                     }
                 }
+            }
+        }
+
+        override fun onAudioDevicesRemoved(removedDevices: Array<out AudioDeviceInfo>?) {
+            super.onAudioDevicesRemoved(removedDevices)
+            if (::audioOutputResolver.isInitialized) {
+                audioOutputResolver.refresh()
             }
         }
     }
@@ -558,6 +571,8 @@ class MusicService :
         Timber.tag(TAG).d("Player successfully initialized")
 
         audioManager = getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        audioOutputResolver = AudioOutputResolver(audioManager)
+        audioOutputResolver.refresh()
         setupAudioFocusRequest()
 
         mediaLibrarySessionCallback.apply {

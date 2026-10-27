@@ -302,6 +302,9 @@ class PlayerConnection(
         service.setMuted(muted)
     }
 
+    val activeAudioDevice get() = service.activeAudioDevice
+    fun refreshActiveDevice() = service.refreshActiveDevice()
+
     fun toggleLibrary() {
         try {
             service.toggleLibrary()

@@ -135,6 +135,12 @@ import com.music.mkr.extensions.metadata
 import com.music.mkr.extensions.move
 import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.listentogether.RoomRole
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalView
+import android.view.ViewTreeObserver
+import com.music.mkr.models.ActiveOutputDevice
+import com.music.mkr.models.PlayerOutputDevice
+import com.music.mkr.utils.oem.SystemMediaControlResolver
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.ui.component.ActionPromptDialog
 import com.music.mkr.ui.component.BottomSheet
@@ -201,55 +207,22 @@ fun Queue(
     val bottomSheetPageState = LocalBottomSheetPageState.current
     val coroutineScope = rememberCoroutineScope()
     val lazyListState = rememberLazyListState()
-    var showAudioDeviceBottomSheet by remember { mutableStateOf(false) }
+    val playerConnection = LocalPlayerConnection.current ?: return
+    val audioDevice by playerConnection.activeAudioDevice.collectAsState()
 
-    val isBluetoothConnected by produceState(initialValue = isBluetoothHeadphoneConnected(context)) {
-        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                value = isBluetoothHeadphoneConnected(context)
-            }
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val listener = ViewTreeObserver.OnWindowFocusChangeListener { hasFocus ->
+            if (hasFocus) playerConnection.refreshActiveDevice()
         }
-
-        val callback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            object : android.media.AudioDeviceCallback() {
-                override fun onAudioDevicesAdded(addedDevices: Array<out android.media.AudioDeviceInfo>?) {
-                    value = isBluetoothHeadphoneConnected(context)
-                }
-                override fun onAudioDevicesRemoved(removedDevices: Array<out android.media.AudioDeviceInfo>?) {
-                    value = isBluetoothHeadphoneConnected(context)
-                }
-            }
-        } else null
-
-        val filter = IntentFilter().apply {
-            addAction(AudioManager.ACTION_HEADSET_PLUG)
-            addAction("android.bluetooth.adapter.action.STATE_CHANGED")
-            addAction("android.bluetooth.device.action.ACL_CONNECTED")
-            addAction("android.bluetooth.device.action.ACL_DISCONNECTED")
-            addAction("android.media.AUDIO_BECOMING_NOISY")
-        }
-        
-        context.registerReceiver(receiver, filter)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && callback != null) {
-            audioManager.registerAudioDeviceCallback(callback, Handler(Looper.getMainLooper()))
-        }
-
-        awaitDispose {
-            context.unregisterReceiver(receiver)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && callback != null) {
-                audioManager.unregisterAudioDeviceCallback(callback)
-            }
-        }
+        view.viewTreeObserver.addOnWindowFocusChangeListener(listener)
+        onDispose { view.viewTreeObserver.removeOnWindowFocusChangeListener(listener) }
     }
 
     // Listen Together state (reactive)
     val listenTogetherManager = LocalListenTogetherManager.current
     val listenTogetherRoleState = listenTogetherManager?.role?.collectAsState(initial = com.music.mkr.listentogether.RoomRole.NONE)
     val isListenTogetherGuest = listenTogetherRoleState?.value == RoomRole.GUEST
-
-    val playerConnection = LocalPlayerConnection.current ?: return
     val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val repeatMode by playerConnection.repeatMode.collectAsState()
 
@@ -711,7 +684,7 @@ fun Queue(
                     }
                 }
 
-                // Action pill bar: Lock, Menu, Clear queue, and song count • duration
+                // Action pill bar: Lock, Menu, Clear queue, Audio Output device, and song count
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -724,11 +697,11 @@ fun Queue(
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(0.dp),
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
                     ) {
                         IconButton(
                             onClick = { locked = !locked },
-                            modifier = Modifier.size(40.dp),
+                            modifier = Modifier.size(38.dp),
                         ) {
                             Icon(
                                 painter = painterResource(if (locked) R.drawable.lock else R.drawable.lock_open),
@@ -754,7 +727,7 @@ fun Queue(
                                     )
                                 }
                             },
-                            modifier = Modifier.size(40.dp),
+                            modifier = Modifier.size(38.dp),
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.more_vert),
@@ -777,13 +750,44 @@ fun Queue(
                                     inSelectMode = false
                                 }
                             },
-                            modifier = Modifier.size(40.dp),
+                            modifier = Modifier.size(38.dp),
                         ) {
                             Icon(
                                 painter = painterResource(R.drawable.delete),
                                 contentDescription = stringResource(R.string.clear),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+
+                    // Audio Output Switcher (ArchiveTune Parity)
+                    Surface(
+                        onClick = {
+                            SystemMediaControlResolver.openMediaOutputSwitcher(context)
+                        },
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
+                        modifier = Modifier.height(34.dp),
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        ) {
+                            Icon(
+                                imageVector = audioDevice.type.imageVector,
+                                contentDescription = audioDevice.name,
+                                modifier = Modifier.size(16.dp),
+                                tint = MaterialTheme.colorScheme.primary,
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = audioDevice.name,
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
                             )
                         }
                     }
