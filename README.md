@@ -73,16 +73,6 @@ Unifying **YouTube Music** and **Spotify playlist sync**, it delivers studio-gra
       <img src="assets/ui/lyrics.jpg" width="85%" alt="Synchronized Lyrics" />
     </td>
     <td align="center" width="50%">
-      <h4>👤 Artist Profile</h4>
-      <img src="assets/ui/artist.jpg" width="85%" alt="Artist Profile" />
-    </td>
-  </tr>
-  <tr>
-    <td align="center" width="50%">
-      <h4>🔊 Audio Output</h4>
-      <img src="assets/ui/audio_output.jpg" width="85%" alt="Audio Output Switcher" />
-    </td>
-    <td align="center" width="50%">
       <h4>⚙️ Settings</h4>
       <img src="assets/ui/settings.jpg" width="85%" alt="Settings Dashboard" />
     </td>
