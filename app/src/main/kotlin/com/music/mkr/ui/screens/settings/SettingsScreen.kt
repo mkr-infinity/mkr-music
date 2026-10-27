@@ -477,7 +477,7 @@ fun SettingsScreen(
                         key = "about_app",
                         icon = painterResource(R.drawable.info),
                         title = { Text("About MKR Music") },
-                        description = { Text("Version v${BuildConfig.VERSION_NAME} • Licenses & Credits") },
+                        description = { Text("Version v${BuildConfig.VERSION_NAME} • Credits & Info") },
                         onClick = { navController.navigate("settings/about") }
                     )
                 )

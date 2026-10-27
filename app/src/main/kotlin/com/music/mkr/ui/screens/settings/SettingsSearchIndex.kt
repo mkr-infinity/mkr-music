@@ -1046,16 +1046,6 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             keywords = listOf("notification", "permission", "update alert", "patch", "new release notification")
         ),
         SearchableSettingItem(
-            id = "update_changelog",
-            title = "Changelog & Release Notes",
-            description = "Read full release notes, new features, UI improvements, and bug fixes in current version",
-            category = "Updates & About",
-            iconRes = R.drawable.info,
-            route = "settings/changelog",
-            targetKey = "update_changelog",
-            keywords = listOf("changelog", "release notes", "what's new", "features", "improvements", "fixes")
-        ),
-        SearchableSettingItem(
             id = "update_commits",
             title = "Git Commits & Development History",
             description = "Inspect real-time commit history and active development progress from GitHub repository",
@@ -1068,12 +1058,12 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
         SearchableSettingItem(
             id = "about_app",
             title = "About MKR Music",
-            description = "Version v${BuildConfig.VERSION_NAME}, developer credits, GPL-3.0 license & GitHub repository",
+            description = "Version v${BuildConfig.VERSION_NAME}, developer credits & GitHub repository",
             category = "Updates & About",
             iconRes = R.drawable.info,
             route = "settings/about",
             targetKey = "about_app",
-            keywords = listOf("about", "version", "developer", "mkr", "github", "source code", "credits", "license", "copyright")
+            keywords = listOf("about", "version", "developer", "mkr", "github", "source code", "credits", "copyright")
         )
     )
 }

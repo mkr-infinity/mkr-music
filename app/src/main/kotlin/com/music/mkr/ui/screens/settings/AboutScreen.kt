@@ -143,13 +143,6 @@ fun AboutScreen(
                     icon = painterResource(R.drawable.deployed_app_update),
                     title = { Text(stringResource(R.string.installed_date_title)) },
                     trailingContent = { Text(installedDate) }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.license_mkr),
-                    title = { Text("Open Source License") },
-                    description = { Text("GNU General Public License v3.0 (GPL-3.0)") },
-                    onClick = { uriHandler.safeOpenUri(context, "${GitHubConfig.REPO_URL}/blob/main/LICENSE") },
-                    isExternalLink = true
                 )
             )
         )
