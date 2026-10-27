@@ -71,10 +71,21 @@ import com.music.mkr.ui.component.ExpressiveIconButton
 import com.music.mkr.ui.component.ExpressiveSettingGroup
 import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.Material3SettingsItem
+import com.music.mkr.ui.component.DefaultDialog
 import com.music.mkr.ui.screens.Screens
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.safeOpenUri
+import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.rememberPreference
+import com.music.mkr.constants.*
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import android.widget.Toast
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import timber.log.Timber
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
@@ -86,6 +97,8 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
+    val coroutineScope = rememberCoroutineScope()
+    var showResetSettingsDialog by remember { mutableStateOf(false) }
 
     val autoUpdateSetting = remember { getAutoUpdateCheckSetting(context) }
     var isUpdateAvailable by remember { mutableStateOf(getUpdateAvailableState(context)) }
@@ -495,8 +508,106 @@ fun SettingsScreen(
                     )
                 }
             }
+        },
+        actions = {
+            Box(modifier = Modifier.padding(end = 12.dp)) {
+                ExpressiveIconButton(
+                    onClick = { showResetSettingsDialog = true }
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.replay),
+                        contentDescription = stringResource(R.string.reset_settings),
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
     )
+
+    if (showResetSettingsDialog) {
+        DefaultDialog(
+            onDismiss = { showResetSettingsDialog = false },
+            icon = {
+                Icon(
+                    painter = painterResource(R.drawable.replay),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.size(28.dp)
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.reset_settings_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            buttons = {
+                TextButton(
+                    onClick = { showResetSettingsDialog = false }
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+                Spacer(modifier = Modifier.width(8.dp))
+                Button(
+                    onClick = {
+                        showResetSettingsDialog = false
+                        coroutineScope.launch(Dispatchers.IO) {
+                            try {
+                                context.dataStore.edit { prefs ->
+                                    val preservedAuth = mutableMapOf<Preferences.Key<*>, Any>()
+                                    listOf(
+                                        InnerTubeCookieKey,
+                                        VisitorDataKey,
+                                        DataSyncIdKey,
+                                        AccountNameKey,
+                                        AccountEmailKey,
+                                        AccountChannelHandleKey,
+                                        GitHubAccessTokenKey,
+                                    ).forEach { key ->
+                                        prefs[key]?.let { preservedAuth[key] = it }
+                                    }
+
+                                    prefs.clear()
+
+                                    preservedAuth.forEach { (key, value) ->
+                                        @Suppress("UNCHECKED_CAST")
+                                        prefs[key as Preferences.Key<Any>] = value
+                                    }
+                                }
+
+                                val sharedPrefs = context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
+                                sharedPrefs.edit().clear().apply()
+
+                                withContext(Dispatchers.Main) {
+                                    Toast.makeText(
+                                        context,
+                                        context.getString(R.string.reset_settings_done),
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                }
+                            } catch (e: Exception) {
+                                Timber.tag("SettingsScreen").e(e, "Error resetting settings")
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                        contentColor = MaterialTheme.colorScheme.onError
+                    )
+                ) {
+                    Text(stringResource(R.string.reset_settings_action))
+                }
+            }
+        ) {
+            Text(
+                text = stringResource(R.string.reset_settings_confirm_desc),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    }
 }
 
 private data class SettingsHubCategory(

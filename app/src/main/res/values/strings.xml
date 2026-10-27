@@ -342,6 +342,11 @@
     <string name="stop_music_on_task_clear">Stop music on task clear</string>
     <string name="equalizer">Equalizer</string>
     <string name="no_system_equalizer">No system equalizer found on this device</string>
+    <string name="reset_settings">Reset all settings</string>
+    <string name="reset_settings_title">Reset all settings?</string>
+    <string name="reset_settings_confirm_desc">All app settings and preferences will return to their default values. Your library, liked songs, downloaded music, and playlists will be safely preserved.</string>
+    <string name="reset_settings_action">Reset</string>
+    <string name="reset_settings_done">Settings have been reset to defaults</string>
 
     <string name="storage">Storage</string>
     <string name="cache">Cache</string>
