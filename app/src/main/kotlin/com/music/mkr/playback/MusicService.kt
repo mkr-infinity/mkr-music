@@ -1585,41 +1585,51 @@ class MusicService :
                 }
             }
 
+            val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
+            val queueItems = if (preventDuplicates) {
+                initialStatus.items.distinctBy { it.mediaId }
+            } else {
+                initialStatus.items
+            }
+
             if (queue.preloadItem != null) {
-                val actualIndex = initialStatus.items.indexOfFirst { it.mediaId == queue.preloadItem!!.id }
+                val actualIndex = queueItems.indexOfFirst { it.mediaId == queue.preloadItem!!.id }
                 val targetIndex = if (actualIndex != -1) {
                     actualIndex
                 } else {
-                    initialStatus.mediaItemIndex.coerceIn(0, initialStatus.items.size)
+                    initialStatus.mediaItemIndex.coerceIn(0, queueItems.size)
                 }
 
-                if (targetIndex < initialStatus.items.size) {
+                if (targetIndex < queueItems.size) {
                     player.addMediaItems(
                         0,
-                        initialStatus.items.subList(0, targetIndex)
+                        queueItems.subList(0, targetIndex)
                     )
                     player.addMediaItems(
-                        initialStatus.items.subList(
+                        queueItems.subList(
                             targetIndex + 1,
-                            initialStatus.items.size
+                            queueItems.size
                         )
                     )
                     if (actualIndex != -1) {
                         player.replaceMediaItem(
                             targetIndex,
-                            initialStatus.items[targetIndex]
+                            queueItems[targetIndex]
                         )
                     }
                 } else {
-                    player.addMediaItems(0, initialStatus.items)
+                    val remaining = if (preventDuplicates) {
+                        queueItems.filter { it.mediaId != queue.preloadItem!!.id }
+                    } else {
+                        queueItems
+                    }
+                    player.addMediaItems(0, remaining)
                 }
             } else {
                 player.setMediaItems(
-                    initialStatus.items,
-                    if (initialStatus.mediaItemIndex >
-                        0
-                    ) {
-                        initialStatus.mediaItemIndex
+                    queueItems,
+                    if (initialStatus.mediaItemIndex > 0) {
+                        initialStatus.mediaItemIndex.coerceAtMost(queueItems.lastIndex.coerceAtLeast(0))
                     } else {
                         0
                     },
@@ -1678,10 +1688,17 @@ class MusicService :
                     }
                 }
 
-                // Filter radio items to exclude current media item
-                val radioItems = initialStatus.items.filter { item ->
-                    item.mediaId != currentMediaId
+                val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
+                val existingQueueIds = if (preventDuplicates) {
+                    (0..currentIndex).map { player.getMediaItemAt(it).mediaId }.toSet() + currentMediaId
+                } else {
+                    setOf(currentMediaId)
                 }
+
+                // Filter radio items to exclude current media item and duplicates
+                val radioItems = initialStatus.items
+                    .filter { item -> item.mediaId !in existingQueueIds }
+                    .let { if (preventDuplicates) it.distinctBy { item -> item.mediaId } else it }
 
                 if (radioItems.isNotEmpty()) {
                     val itemCount = player.mediaItemCount
@@ -1709,11 +1726,19 @@ class MusicService :
                             YouTube.related(relatedEndpoint).getOrNull()
                         }
                         relatedPage?.songs?.let { songs ->
+                            val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
+                            val existingQueueIds = if (preventDuplicates) {
+                                (0..currentIndex).map { player.getMediaItemAt(it).mediaId }.toSet() + currentMediaId
+                            } else {
+                                setOf(currentMediaId)
+                            }
+
                             val radioItems = songs
-                                .filter { it.id != currentMediaId }
+                                .filter { it.id !in existingQueueIds }
                                 .map { it.toMediaItem() }
                                 .filterExplicit(dataStore.get(HideExplicitKey, false))
                                 .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
+                                .let { if (preventDuplicates) it.distinctBy { item -> item.mediaId } else it }
 
                             if (radioItems.isNotEmpty()) {
                                 val itemCount = player.mediaItemCount
@@ -1774,10 +1799,17 @@ class MusicService :
                     }
                 }
 
-                // Filter radio items to exclude current media item
-                val radioItems = initialStatus.items.filter { item ->
-                    item.mediaId != currentMediaId
+                val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
+                val existingQueueIds = if (preventDuplicates) {
+                    (0..currentIndex).map { player.getMediaItemAt(it).mediaId }.toSet() + currentMediaId
+                } else {
+                    setOf(currentMediaId)
                 }
+
+                // Filter radio items to exclude current media item and duplicates
+                val radioItems = initialStatus.items
+                    .filter { item -> item.mediaId !in existingQueueIds }
+                    .let { if (preventDuplicates) it.distinctBy { item -> item.mediaId } else it }
 
                 if (radioItems.isNotEmpty()) {
                     val itemCount = player.mediaItemCount
@@ -1997,9 +2029,17 @@ class MusicService :
                     combined
                 }
 
-                if (resultList.isNotEmpty()) {
+                val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
+                val finalRecommendations = if (preventDuplicates) {
+                    val currentQueueIds = (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId }.toSet()
+                    resultList.filter { it.mediaId !in currentQueueIds }.distinctBy { it.mediaId }
+                } else {
+                    resultList
+                }
+
+                if (finalRecommendations.isNotEmpty()) {
                     withContext(Dispatchers.Main) {
-                        automixItems.value = resultList
+                        automixItems.value = finalRecommendations
                     }
                 }
             } catch (e: Exception) {
@@ -2035,9 +2075,19 @@ class MusicService :
     }
 
     fun playNext(items: List<MediaItem>) {
+        val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
+        val distinctItems = if (preventDuplicates) {
+            val currentMediaId = player.currentMetadata?.id
+            items.filter { it.mediaId != currentMediaId }.distinctBy { it.mediaId }
+        } else {
+            items
+        }
+
+        if (distinctItems.isEmpty()) return
+
         // If queue is empty or player is idle, play immediately instead
         if (player.mediaItemCount == 0 || player.playbackState == STATE_IDLE) {
-            player.setMediaItems(items)
+            player.setMediaItems(distinctItems)
             player.prepare()
             // Don't start local playback if casting
             if (castConnectionHandler?.isCasting?.value != true) {
@@ -2047,8 +2097,8 @@ class MusicService :
         }
 
         // Remove duplicates if enabled
-        if (dataStore.get(PreventDuplicateTracksInQueueKey, true)) {
-            val itemIds = items.map { it.mediaId }.toSet()
+        if (preventDuplicates) {
+            val itemIds = distinctItems.map { it.mediaId }.toSet()
             val indicesToRemove = mutableListOf<Int>()
             val currentIndex = player.currentMediaItemIndex
 
@@ -2068,7 +2118,7 @@ class MusicService :
         val shuffleEnabled = player.shuffleModeEnabled
 
         // Insert items immediately after the current item in the window/index space
-        player.addMediaItems(insertIndex, items)
+        player.addMediaItems(insertIndex, distinctItems)
         player.prepare()
 
         if (shuffleEnabled) {
@@ -2078,8 +2128,8 @@ class MusicService :
                 val size = timeline.windowCount
                 val currentIndex = player.currentMediaItemIndex
 
-                // Newly inserted indices are a contiguous range [insertIndex, insertIndex + items.size)
-                val newIndices = (insertIndex until (insertIndex + items.size)).toSet()
+                // Newly inserted indices are a contiguous range [insertIndex, insertIndex + distinctItems.size)
+                val newIndices = (insertIndex until (insertIndex + distinctItems.size)).toSet()
 
                 // Collect existing shuffle traversal order excluding current index
                 val orderAfter = mutableListOf<Int>()
@@ -2102,7 +2152,7 @@ class MusicService :
                 val existingOrder = (prevList + orderAfter).filter { it != currentIndex && it !in newIndices }
 
                 // Build new shuffle order: current -> newly inserted (in insertion order) -> rest
-                val nextBlock = (insertIndex until (insertIndex + items.size)).toList()
+                val nextBlock = (insertIndex until (insertIndex + distinctItems.size)).toList()
                 val finalOrder = IntArray(size)
                 var pos = 0
                 finalOrder[pos++] = currentIndex
@@ -2155,25 +2205,22 @@ class MusicService :
     }
 
     fun addToQueue(items: List<MediaItem>) {
-        // Remove duplicates if enabled
-        if (dataStore.get(PreventDuplicateTracksInQueueKey, true)) {
-            val itemIds = items.map { it.mediaId }.toSet()
-            val indicesToRemove = mutableListOf<Int>()
-            val currentIndex = player.currentMediaItemIndex
-
-            for (i in 0 until player.mediaItemCount) {
-                if (i != currentIndex && player.getMediaItemAt(i).mediaId in itemIds) {
-                    indicesToRemove.add(i)
-                }
-            }
-
-            // Remove from highest index to lowest to maintain index stability
-            indicesToRemove.sortedDescending().forEach { index ->
-                player.removeMediaItem(index)
-            }
+        if (player.mediaItemCount == 0 || player.playbackState == STATE_IDLE) {
+            playNext(items)
+            return
         }
 
-        player.addMediaItems(items)
+        val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
+        val itemsToAdd = if (preventDuplicates) {
+            val existingIds = (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId }.toSet()
+            items.filter { it.mediaId !in existingIds }.distinctBy { it.mediaId }
+        } else {
+            items
+        }
+
+        if (itemsToAdd.isEmpty()) return
+
+        player.addMediaItems(itemsToAdd)
         if (player.shuffleModeEnabled) {
             val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
             applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
@@ -2449,10 +2496,19 @@ class MusicService :
                         .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
                 }
                 if (player.playbackState != STATE_IDLE && mediaItems.isNotEmpty()) {
-                    player.addMediaItems(mediaItems)
-                    if (player.shuffleModeEnabled) {
-                        val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
-                        applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
+                    val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
+                    val itemsToAdd = if (preventDuplicates) {
+                        val existingIds = (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId }.toSet()
+                        mediaItems.filter { it.mediaId !in existingIds }.distinctBy { it.mediaId }
+                    } else {
+                        mediaItems
+                    }
+                    if (itemsToAdd.isNotEmpty()) {
+                        player.addMediaItems(itemsToAdd)
+                        if (player.shuffleModeEnabled) {
+                            val shufflePlaylistFirst = dataStore.get(ShufflePlaylistFirstKey, false)
+                            applyShuffleOrder(player.currentMediaItemIndex, player.mediaItemCount, shufflePlaylistFirst)
+                        }
                     }
                 }
             }
