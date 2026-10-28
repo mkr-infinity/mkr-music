@@ -244,10 +244,7 @@ fun StorageSettings(
                     playerCache.keys.forEach { key ->
                         playerCache.removeResource(key)
                     }
-                    val nonDownloaded = database.downloadedSongsByNameAsc().first().filter { !it.song.isDownloaded }
-                    nonDownloaded.forEach { song ->
-                        database.query { update(song.song.copy(dateDownload = null)) }
-                    }
+                    database.clearCachedSongsDateDownload()
                 } catch (_: Exception) {}
             }
         }
@@ -349,6 +346,8 @@ fun StorageSettings(
                     playerCache.keys.forEach { key ->
                         playerCache.removeResource(key)
                     }
+                    database.clearCachedSongsDateDownload()
+                    playerCacheSize = tryOrNull { playerCache.cacheSpace } ?: 0
                 }
                 clearCacheDialog = false
             },
@@ -584,10 +583,7 @@ fun StorageSettings(
                                             playerCache.removeResource(key)
                                         }
                                         try {
-                                            val nonDownloaded = database.downloadedSongsByNameAsc().first().filter { !it.song.isDownloaded }
-                                            nonDownloaded.forEach { song ->
-                                                database.query { update(song.song.copy(dateDownload = null)) }
-                                            }
+                                            database.clearCachedSongsDateDownload()
                                         } catch (_: Exception) {}
                                     }
                                 }
@@ -612,10 +608,7 @@ fun StorageSettings(
                                     playerCache.removeResource(key)
                                 }
                                 try {
-                                    val nonDownloaded = database.downloadedSongsByNameAsc().first().filter { !it.song.isDownloaded }
-                                    nonDownloaded.forEach { song ->
-                                        database.query { update(song.song.copy(dateDownload = null)) }
-                                    }
+                                    database.clearCachedSongsDateDownload()
                                 } catch (_: Exception) {}
                             }
                         }

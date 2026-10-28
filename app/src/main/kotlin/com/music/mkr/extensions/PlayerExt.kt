@@ -100,6 +100,17 @@ val Player.mediaItems: List<MediaItem>
             override fun get(index: Int): MediaItem = getMediaItemAt(index)
         }
 
+fun Player.findMediaItemById(mediaId: String): MediaItem? {
+    if (currentMediaItem?.mediaId == mediaId) return currentMediaItem
+    for (i in 0 until mediaItemCount) {
+        val item = getMediaItemAt(i)
+        if (item.mediaId == mediaId) {
+            return item
+        }
+    }
+    return null
+}
+
 fun Player.findNextMediaItemById(mediaId: String): MediaItem? {
     for (i in currentMediaItemIndex until mediaItemCount) {
         if (getMediaItemAt(i).mediaId == mediaId) {

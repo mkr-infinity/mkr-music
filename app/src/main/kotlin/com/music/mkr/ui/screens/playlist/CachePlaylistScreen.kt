@@ -308,9 +308,9 @@ fun CachePlaylistScreen(
                                     } else {
                                         playerConnection.playQueue(
                                             ListQueue(
-                                                title = "Cache Songs",
-                                                items = cachedSongs.map { it.toMediaItem() },
-                                                startIndex = cachedSongs.indexOfFirst { it.id == song.id }
+                                                title = context.getString(R.string.cached_playlist),
+                                                items = filteredSongs.map { it.toMediaItem() },
+                                                startIndex = filteredSongs.indexOfFirst { it.id == song.id }
                                             )
                                         )
                                     }
