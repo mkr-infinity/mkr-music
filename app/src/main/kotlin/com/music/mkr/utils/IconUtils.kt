@@ -194,36 +194,57 @@ object IconUtils {
 
     /**
      * Toggles launcher activity-aliases to enable targetIcon and disable all others.
-     * Uses PackageManager.DONT_KILL_APP so application continues running smoothly.
+     * Enables target component first to avoid brief zero-launcher-component states,
+     * and uses PackageManager.DONT_KILL_APP so application continues running smoothly.
      */
     fun applyIcon(context: Context, targetIcon: AppIcon): Boolean {
         return try {
             val pm = context.packageManager
             val pkg = context.packageName
-            for (icon in AppIcon.entries) {
-                val desiredState = if (icon == targetIcon) {
-                    PackageManager.COMPONENT_ENABLED_STATE_ENABLED
-                } else {
-                    PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+
+            // Step 1: Enable target component first so launcher never sees 0 enabled aliases
+            val targetShort = targetIcon.aliasName.substringAfterLast(".")
+            val targetClasses = listOf(
+                targetIcon.aliasName,
+                "$pkg.icon.$targetShort"
+            ).distinct()
+
+            for (className in targetClasses) {
+                val component = ComponentName(pkg, className)
+                try {
+                    if (pm.getComponentEnabledSetting(component) != PackageManager.COMPONENT_ENABLED_STATE_ENABLED) {
+                        pm.setComponentEnabledSetting(
+                            component,
+                            PackageManager.COMPONENT_ENABLED_STATE_ENABLED,
+                            PackageManager.DONT_KILL_APP
+                        )
+                    }
+                } catch (e: Exception) {
+                    Timber.w(e, "Error enabling component for $className")
                 }
+            }
+
+            // Step 2: Disable all other components
+            for (icon in AppIcon.entries) {
+                if (icon == targetIcon) continue
                 val aliasShort = icon.aliasName.substringAfterLast(".")
-                val targetClasses = listOf(
+                val otherClasses = listOf(
                     icon.aliasName,
                     "$pkg.icon.$aliasShort"
                 ).distinct()
 
-                for (className in targetClasses) {
+                for (className in otherClasses) {
                     val component = ComponentName(pkg, className)
                     try {
-                        if (pm.getComponentEnabledSetting(component) != desiredState) {
+                        if (pm.getComponentEnabledSetting(component) != PackageManager.COMPONENT_ENABLED_STATE_DISABLED) {
                             pm.setComponentEnabledSetting(
                                 component,
-                                desiredState,
+                                PackageManager.COMPONENT_ENABLED_STATE_DISABLED,
                                 PackageManager.DONT_KILL_APP
                             )
                         }
                     } catch (e: Exception) {
-                        Timber.w(e, "Error toggling component state for $className")
+                        Timber.w(e, "Error disabling component for $className")
                     }
                 }
             }
@@ -257,7 +278,7 @@ object IconUtils {
         try {
             val pm = activity.packageManager
             val intent = pm.getLaunchIntentForPackage(activity.packageName)
-            val componentName = intent?.component
+            val componentName = intent?.component ?: ComponentName(activity.packageName, "com.music.mkr.WelcomeActivity")
             val restartIntent = Intent.makeRestartActivityTask(componentName)
             activity.startActivity(restartIntent)
             activity.finish()
