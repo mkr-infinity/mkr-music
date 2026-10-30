@@ -44,7 +44,7 @@ fun HeaderDownloadProgressIndicator(
         )
         Icon(
             painter = painterResource(icon),
-            contentDescription = stringResource(R.string.download),
+            contentDescription = stringResource(R.string.action_download),
             modifier = Modifier.size(18.dp),
         )
     }
