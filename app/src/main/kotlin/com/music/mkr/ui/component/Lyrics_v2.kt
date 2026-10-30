@@ -125,6 +125,8 @@ fun LyricsV2(
     val lyricsTextSize by rememberPreference(LyricsTextSizeKey, 24f)
     val lyricsLineSpacing by rememberPreference(LyricsLineSpacingKey, 1.35f)
     val lyricsTextPosition by rememberEnumPreference(LyricsTextPositionKey, LyricsPosition.LEFT)
+    val lyricsAnimationStyle by rememberEnumPreference(LyricsAnimationStyleKey, defaultValue = LyricsAnimationStyle.APPLE_V2)
+    val lyricsGlowEffect by rememberPreference(LyricsGlowEffectKey, defaultValue = true)
 
     val menuState = LocalMenuState.current
     val bottomSheetPageState = LocalBottomSheetPageState.current
@@ -472,11 +474,59 @@ fun LyricsV2(
                     }
                 }
 
-                // If plain text (not synced), just render a static list with MKR styling
+                var currentPosition by remember { mutableLongStateOf(positionProvider()) }
+
+                LaunchedEffect(Unit) {
+                    var lastPlayerPos = playerConnection.player.currentPosition
+                    var lastUpdateTime = System.currentTimeMillis()
+
+                    while (true) {
+                        withFrameMillis {
+                            val now = System.currentTimeMillis()
+                            val playerPos = playerConnection.player.currentPosition
+                            val isPlaying = playerConnection.player.isPlaying
+                            val providerPos = positionProvider()
+
+                            if (kotlin.math.abs(providerPos - playerPos) > 1000L) {
+                                currentPosition = providerPos
+                                lastPlayerPos = playerPos
+                                lastUpdateTime = now
+                            } else {
+                                if (playerPos != lastPlayerPos || !isPlaying) {
+                                    lastPlayerPos = playerPos
+                                    lastUpdateTime = now
+                                }
+                                val elapsed = now - lastUpdateTime
+                                currentPosition = lastPlayerPos + (if (isPlaying) elapsed else 0L)
+                            }
+                        }
+                    }
+                }
+
+                // If plain text (not synced), render with gentle active indicator fallback
                 if (lines.isNotEmpty() && lines.all { it.time == 0L }) {
+                    val totalDurationMs = (mediaMetadata?.duration ?: 0) * 1000L
+                    val activeUnsyncedIndex = if (totalDurationMs > 0L) {
+                        ((currentPosition.toFloat() / totalDurationMs) * lines.size).toInt().coerceIn(0, lines.lastIndex)
+                    } else {
+                        -1
+                    }
+
                     val staticDismissedBound = QueuePeekHeight + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
                     val staticBottomClearance = maxOf(contentPadding.calculateBottomPadding(), staticDismissedBound) + 24.dp
+                    val unsyncedListState = rememberLazyListState()
+
+                    LaunchedEffect(activeUnsyncedIndex, scrollLyrics) {
+                        if (scrollLyrics && activeUnsyncedIndex >= 0 && !isGuest) {
+                            try {
+                                unsyncedListState.animateScrollToItem(maxOf(0, activeUnsyncedIndex))
+                            } catch (e: Exception) {
+                            }
+                        }
+                    }
+
                     LazyColumn(
+                        state = unsyncedListState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(
                             top = 32.dp,
@@ -497,20 +547,36 @@ fun LyricsV2(
                             Spacer(modifier = Modifier.height(16.dp))
                         }
                         items(lines.size) { index ->
+                            val isCurrent = index == activeUnsyncedIndex
+                            val nextTime = if (totalDurationMs > 0L) {
+                                ((index + 1).toFloat() / lines.size * totalDurationMs).toLong()
+                            } else null
+                            val lineTime = if (totalDurationMs > 0L) {
+                                (index.toFloat() / lines.size * totalDurationMs).toLong()
+                            } else 0L
+
                             MkrLyricsLine(
-                                entry = lines[index],
-                                nextEntryTime = null,
-                                effectivePlaybackPosition = 0L,
+                                entry = lines[index].copy(time = lineTime),
+                                nextEntryTime = nextTime,
+                                effectivePlaybackPosition = currentPosition,
+                                lyricsOffset = lyricsOffset,
                                 isSynced = false,
-                                isActive = false,
-                                distanceFromCurrent = 0,
+                                isActive = isCurrent,
+                                distanceFromCurrent = if (activeUnsyncedIndex >= 0) kotlin.math.abs(index - activeUnsyncedIndex) else 0,
                                 lyricsTextPosition = lyricsTextPosition,
                                 palette = artworkPalette,
                                 showRomanized = showRomanized,
                                 showTranslated = hasActiveTranslations,
                                 textSize = lyricsTextSize,
                                 lineSpacing = lyricsLineSpacing,
-                                onClick = {},
+                                lyricsAnimationStyle = lyricsAnimationStyle,
+                                glowEffectEnabled = lyricsGlowEffect,
+                                onClick = {
+                                    if (!isGuest && totalDurationMs > 0L) {
+                                        val targetSeek = (index.toFloat() / lines.size * totalDurationMs).toLong()
+                                        playerConnection.player.seekTo(targetSeek)
+                                    }
+                                },
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(vertical = 4.dp)
@@ -518,37 +584,6 @@ fun LyricsV2(
                         }
                     }
                     return
-                }
-
-                // lazy list state moved below to allow initializing with playback line index
-
-                var currentPosition by remember { mutableLongStateOf(positionProvider()) }
-                
-                LaunchedEffect(Unit) {
-                    var lastPlayerPos = playerConnection.player.currentPosition
-                    var lastUpdateTime = System.currentTimeMillis()
-                    
-                    while (true) {
-                       withFrameMillis {
-                            val now = System.currentTimeMillis()
-                            val playerPos = playerConnection.player.currentPosition
-                            val isPlaying = playerConnection.player.isPlaying
-                            val providerPos = positionProvider()
-                            
-                            if (kotlin.math.abs(providerPos - playerPos) > 1000L) {
-                                currentPosition = providerPos
-                                lastPlayerPos = playerPos
-                                lastUpdateTime = now
-                            } else {
-                                if (playerPos != lastPlayerPos || !isPlaying) {
-                                    lastPlayerPos = playerPos
-                                    lastUpdateTime = now
-                                }
-                                val elapsed = now - lastUpdateTime
-                                currentPosition = lastPlayerPos + (if (isPlaying) elapsed else 0L)
-                            }
-                        }
-                    }
                 }
 
                 // Scroll anchor: single line index used to keep the list auto-scrolling
@@ -732,8 +767,9 @@ fun LyricsV2(
                                     val distanceFromActive =
                                         kotlin.math.abs(index - currentLineIndex)
 
-                                    val nextStart =
-                                        (mergedLyricsList.getOrNull(listIndex + 1) as? LyricsListItemV2.Line)?.entry?.time
+                                    val nextStart = (listIndex + 1 until mergedLyricsList.size)
+                                        .firstNotNullOfOrNull { (mergedLyricsList[it] as? LyricsListItemV2.Line)?.entry?.time }
+                                        ?: lines.getOrNull(index + 1)?.time
 
                                     MkrLyricsLine(
                                         entry = line,
@@ -749,6 +785,8 @@ fun LyricsV2(
                                         showTranslated = hasActiveTranslations,
                                         textSize = lyricsTextSize,
                                         lineSpacing = lyricsLineSpacing,
+                                        lyricsAnimationStyle = lyricsAnimationStyle,
+                                        glowEffectEnabled = lyricsGlowEffect,
                                         onClick = {
                                             if (!isGuest) {
                                                 playerConnection.player.seekTo(line.time - lyricsOffset)

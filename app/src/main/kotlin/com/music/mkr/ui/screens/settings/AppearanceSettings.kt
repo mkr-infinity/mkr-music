@@ -287,7 +287,7 @@ fun AppearanceSettings(
     )
     val (lyricsAnimationStyle, onLyricsAnimationStyleChange) = rememberEnumPreference(
         LyricsAnimationStyleKey,
-        defaultValue = LyricsAnimationStyle.MKRMUSIC_1
+        defaultValue = LyricsAnimationStyle.APPLE_V2
     )
     val (lyricsTextSize, onLyricsTextSizeChange) = rememberPreference(LyricsTextSizeKey, defaultValue = 24f)
     val (lyricsLineSpacing, onLyricsLineSpacingChange) = rememberPreference(LyricsLineSpacingKey, defaultValue = 1.3f)
@@ -1576,7 +1576,7 @@ fun AppearanceSettings(
                     },
                     onClick = { onLyricsGlowEffectChange(!lyricsGlowEffect) }
                 ),
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && lyricsAnimationStyle == LyricsAnimationStyle.MKRMUSIC_1) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && (lyricsAnimationStyle == LyricsAnimationStyle.MKRMUSIC_1 || lyricsAnimationStyle == LyricsAnimationStyle.APPLE_V2)) {
                     Material3SettingsItem(
                         icon = painterResource(R.drawable.lyrics),
                         title = { Text(stringResource(R.string.apple_music_lyrics_blur)) },
