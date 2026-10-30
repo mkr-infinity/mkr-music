@@ -6,6 +6,75 @@
 
 ---
 
+## [v1.1.0] - 2026-10-30
+
+Milestone release featuring complete UI redesigns for Album, Artist, and Playlist views, universal letter-by-letter lyrics animation, an overhauled App Icon Selector with deferred switching, and architectural consolidation into a single unified application.
+
+---
+
+### 1. Album, Artist & Online Playlist UI Redesigns
+- **Distinctive Visual Hierarchy**: Each screen features its own tailored visual layout and button aesthetics while sharing a unified, modern, and polished design language.
+- **Album Screen**:
+  - Elevated album artwork hero presentation with dynamic color extraction.
+  - Redesigned header layout displaying release year, track count, total runtime, and record label details.
+  - Prominent primary action capsule (Play All, Shuffle) with secondary quick-action buttons (Download, Favorite, Share).
+  - Clean tracklist layout with clear track numbers, duration timestamps, explicit badges, and contextual track menus.
+- **Artist Screen**:
+  - Full-width artist banner and avatar header with follower stats and artist metadata.
+  - Top songs spotlight section with quick play controls.
+  - Categorized discography carousels separating studio albums, singles, EPs, and appearances.
+  - Dedicated "Similar Artists" recommendations strip.
+- **Online Playlist Screen**:
+  - Expressive playlist header card with creator attribution, track count, and duration summary.
+  - Floating action capsule with tactile spring physics for Play All, Shuffle, and Download.
+  - Responsive layout optimized for seamless interaction across both compact and large screen form factors.
+
+---
+
+### 2. Universal Letter-by-Letter Lyrics Animation
+- **Progressive Character Reveal**: Smooth letter-by-letter text animation reveals lyrics in real time according to song tempo and vocal timing.
+- **Enabled by Default**: Character-level animation is active by default across all songs and all supported lyrics providers.
+- **Resilient Playback Synchronization**:
+  - Recalculates character progress instantaneously during seeking without flickering or desync.
+  - Automatically pauses and resumes animation cleanly when playback pauses or resumes.
+  - Prevents stale character carryover when skipping tracks or switching queues.
+- **Configurable Lyrics Settings**: Dedicated toggle under Lyrics Settings to switch between letter-by-letter reveal, line-by-line sync, or standard text display.
+
+---
+
+### 3. App Icon Selector & Deferred Switching
+- **Overhauled Icon Selector**:
+  - Redesigned gallery grid showcasing high-resolution launcher icon artwork.
+  - Displays icon titles, creator handles (`@username`), and platform badges with clean description-style layouts.
+  - Adaptive grid columns that dynamically adjust between portrait, landscape, and large displays.
+- **Deferred Icon Switching**:
+  - Queues launcher icon changes and applies them seamlessly when the application exits or is sent to the background.
+  - Eliminates abrupt process terminations and launcher restart stuttering while preserving user selection across restarts.
+- **Expanded Icon Collection**:
+  - Added *Wisteria Glow*, *Sakura Dusk*, and *Forest Glow* icons alongside existing collection for 10 unique launcher styles.
+
+---
+
+### 4. Settings Wireup & Search Enhancements
+- **Complete Reference Wiring**: Fixed unresolved configuration references and aligned Appearance and Lyrics options.
+- **Deep Search Indexing**: Granular keyword matching across all settings categories with direct highlighting of target options upon search selection.
+
+---
+
+### 5. Architectural Consolidation & Source Cleanup
+- **Single Main Application**:
+  - Consolidated build flavors into a single unified main application target (`:app`).
+  - Google Cast functionality and dependencies integrated directly into the main application.
+  - Standardized release build workflow to generate a single Universal Release APK (`:app:assembleUniversalRelease`).
+- **Comprehensive Source Cleanup**:
+  - Purged obsolete native C++ code, build actions, and unused microphone hardware permissions (`RECORD_AUDIO`).
+  - Cleaned up orphaned database queries and unused string resources across all 19 supported languages.
+  - Preserved Room database schema compatibility at version 34 to ensure 100% data integrity for existing installations.
+- **Universal Multi-ABI Support**:
+  - Retained full multi-architecture native library inclusion across `arm64-v8a`, `armeabi-v7a`, `x86`, and `x86_64`.
+
+---
+
 ## [v1.0.0] - 2026-10-24
 
 Initial production release of MKR Music under the `com.kaif.music` application identity.
