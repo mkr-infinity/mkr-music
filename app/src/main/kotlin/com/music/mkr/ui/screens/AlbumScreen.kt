@@ -95,6 +95,8 @@ import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.HideExplicitKey
+import com.music.mkr.constants.UseExpressiveAlbumDesignKey
+import com.music.mkr.utils.rememberPreference
 import com.music.mkr.db.entities.Album
 import com.music.mkr.extensions.togglePlayPause
 import com.music.mkr.playback.queues.LocalAlbumRadio
@@ -152,6 +154,7 @@ fun AlbumScreen(
     val uiState by viewModel.uiState.collectAsState()
     val otherVersions by viewModel.otherVersions.collectAsState()
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
+    val useExpressiveAlbumDesign by rememberPreference(key = UseExpressiveAlbumDesignKey, defaultValue = true)
 
     val systemBarsTopPadding = WindowInsets.systemBars.asPaddingValues().calculateTopPadding()
     val surfaceColor = MaterialTheme.colorScheme.surface
@@ -240,7 +243,9 @@ fun AlbumScreen(
             .background(surfaceColor),
     ) {
         // Subtle ambient atmospheric glow derived from dynamic colors
-        MkrAmbientBackdrop(accentColor = accentColor, height = 360.dp, alpha = 0.15f)
+        if (useExpressiveAlbumDesign) {
+            MkrAmbientBackdrop(accentColor = accentColor, height = 360.dp, alpha = 0.15f)
+        }
 
         LazyColumn(
             state = lazyListState,

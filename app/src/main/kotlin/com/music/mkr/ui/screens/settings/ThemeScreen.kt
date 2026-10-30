@@ -373,6 +373,7 @@ fun ThemeControls(
                     targetMode = DarkMode.ON,
                     targetPureBlack = true,
                     label = "OLED",
+                    modifier = Modifier.settingsHighlight("appearance_pure_black"),
                     onClick = {
                         onDarkModeChange(DarkMode.ON)
                         onPureBlackChange(true)
@@ -382,7 +383,10 @@ fun ThemeControls(
             }
         }
 
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(
+            modifier = Modifier.settingsHighlight("appearance_theme_palette"),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             Text(
                 text = stringResource(R.string.color_palette),
                 style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
@@ -449,6 +453,7 @@ fun ModeCircle(
     targetPureBlack: Boolean,
     label: String,
     showIcon: Boolean,
+    modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     val context = LocalContext.current
@@ -493,6 +498,7 @@ fun ModeCircle(
     }
     
     Column(
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {

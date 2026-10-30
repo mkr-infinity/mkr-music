@@ -158,6 +158,7 @@ fun PrivacySettings(
                     onClick = { onPauseListenHistoryChange(!pauseListenHistory) }
                 ),
                 Material3SettingsItem(
+                    key = "privacy_clear_listen_history",
                     icon = painterResource(R.drawable.delete_history),
                     title = { Text(stringResource(R.string.clear_listen_history)) },
                     onClick = { showClearListenHistoryDialog = true }
@@ -192,6 +193,7 @@ fun PrivacySettings(
                     onClick = { onPauseSearchHistoryChange(!pauseSearchHistory) }
                 ),
                 Material3SettingsItem(
+                    key = "privacy_clear_search_history",
                     icon = painterResource(R.drawable.clear_all),
                     title = { Text(stringResource(R.string.clear_search_history)) },
                     onClick = { showClearSearchHistoryDialog = true }
@@ -205,6 +207,7 @@ fun PrivacySettings(
             title = stringResource(R.string.misc),
             items = listOf(
                 Material3SettingsItem(
+                    key = "privacy_disable_screenshot",
                     icon = painterResource(R.drawable.screenshot),
                     title = { Text(stringResource(R.string.disable_screenshot)) },
                     trailingContent = {

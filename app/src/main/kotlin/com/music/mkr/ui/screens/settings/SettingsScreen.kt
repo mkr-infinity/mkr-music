@@ -298,7 +298,7 @@ fun SettingsScreen(
                         key = "appearance_theme_palette",
                         icon = R.drawable.palette,
                         title = "Appearance",
-                        subtitle = "Themes, accents & fonts",
+                        subtitle = "Themes, accents, fonts & lyrics",
                         route = "settings/appearance"
                     ),
                     SettingsHubCategory(
@@ -345,6 +345,16 @@ fun SettingsScreen(
                         title = { Text(stringResource(R.string.content)) },
                         description = { Text("Language, country, lyrics providers & explicit filter") },
                         onClick = { navController.navigate("settings/content") }
+                    ),
+                    Material3SettingsItem(
+                        key = "appearance_lyrics_animation",
+                        icon = painterResource(R.drawable.lyrics),
+                        title = { Text(stringResource(R.string.lyrics_settings)) },
+                        description = { Text(stringResource(R.string.lyrics_settings_desc)) },
+                        onClick = {
+                            SettingsHighlightManager.requestHighlight("appearance_lyrics_animation", "appearance")
+                            navController.navigate("settings/appearance")
+                        }
                     ),
                     Material3SettingsItem(
                         key = "content_ai_lyrics",

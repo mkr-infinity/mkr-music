@@ -725,6 +725,7 @@ fun PlayerSettings(
                     onClick = { if (skipSilence) onSkipSilenceInstantChange(!skipSilenceInstant) }
                 ))
                 add(Material3SettingsItem(
+                    key = "player_seek_seconds",
                     icon = painterResource(R.drawable.arrow_forward),
                     title = { Text(stringResource(R.string.seek_seconds_addup)) },
                     description = { Text(stringResource(R.string.seek_seconds_addup_description)) },
@@ -748,6 +749,7 @@ fun PlayerSettings(
                 // Only show Cast setting in GMS builds (not in F-Droid/FOSS)
                 if (BuildConfig.CAST_AVAILABLE) {
                     add(Material3SettingsItem(
+                        key = "player_google_cast",
                         icon = painterResource(R.drawable.cast),
                         title = { Text(stringResource(R.string.google_cast)) },
                         description = { Text(stringResource(R.string.google_cast_description)) },
@@ -966,6 +968,7 @@ fun PlayerSettings(
                     onClick = { onDisableLoadMoreWhenRepeatAllChange(!disableLoadMoreWhenRepeatAll) }
                 ),
                 Material3SettingsItem(
+                    key = "player_auto_download_on_like",
                     icon = painterResource(R.drawable.download),
                     title = { Text(stringResource(R.string.auto_download_on_like)) },
                     description = { Text(stringResource(R.string.auto_download_on_like_desc)) },
@@ -1071,6 +1074,7 @@ fun PlayerSettings(
                     onClick = { onShufflePlaylistFirstChange(!shufflePlaylistFirst) }
                 ),
                 Material3SettingsItem(
+                    key = "player_prevent_duplicates",
                     icon = painterResource(R.drawable.queue_music),
                     title = { Text(stringResource(R.string.prevent_duplicate_tracks_in_queue)) },
                     description = { Text(stringResource(R.string.prevent_duplicate_tracks_in_queue_desc)) },
@@ -1172,6 +1176,7 @@ fun PlayerSettings(
                     onClick = { onStopMusicOnTaskClearChange(!stopMusicOnTaskClear) }
                 ),
                 Material3SettingsItem(
+                    key = "player_pause_on_mute",
                     icon = painterResource(R.drawable.volume_off_pause),
                     title = { Text(stringResource(R.string.pause_music_when_media_is_muted)) },
                     trailingContent = {
@@ -1213,6 +1218,7 @@ fun PlayerSettings(
                     onClick = { onResumeOnBluetoothConnectChange(!resumeOnBluetoothConnect) }
                 ),
                 Material3SettingsItem(
+                    key = "player_keep_screen_on",
                     icon = painterResource(R.drawable.screenshot),
                     title = { Text(stringResource(R.string.keep_screen_on_when_player_is_expanded)) },
                     trailingContent = {

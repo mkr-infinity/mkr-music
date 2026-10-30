@@ -127,6 +127,20 @@ fun LyricsV2(
     val lyricsTextPosition by rememberEnumPreference(LyricsTextPositionKey, LyricsPosition.LEFT)
     val lyricsAnimationStyle by rememberEnumPreference(LyricsAnimationStyleKey, defaultValue = LyricsAnimationStyle.APPLE_V2)
     val lyricsGlowEffect by rememberPreference(LyricsGlowEffectKey, defaultValue = true)
+    val lyricsClick by rememberPreference(LyricsClickKey, defaultValue = true)
+    val appleMusicLyricsBlur by rememberPreference(AppleMusicLyricsBlurKey, defaultValue = true)
+    val lyricsStandardBlur by rememberPreference(LyricsStandardBlurKey, defaultValue = false)
+
+    val blurLyrics = lyricsStandardBlur || (appleMusicLyricsBlur && (
+        lyricsAnimationStyle == LyricsAnimationStyle.APPLE ||
+        lyricsAnimationStyle == LyricsAnimationStyle.APPLE_V2 ||
+        lyricsAnimationStyle == LyricsAnimationStyle.MKRMUSIC_1 ||
+        lyricsAnimationStyle == LyricsAnimationStyle.LYRICS_V2 ||
+        lyricsAnimationStyle == LyricsAnimationStyle.FADE ||
+        lyricsAnimationStyle == LyricsAnimationStyle.GLOW ||
+        lyricsAnimationStyle == LyricsAnimationStyle.SLIDE ||
+        lyricsAnimationStyle == LyricsAnimationStyle.METRO_LYRICS
+    ))
 
     val menuState = LocalMenuState.current
     val bottomSheetPageState = LocalBottomSheetPageState.current
@@ -571,8 +585,9 @@ fun LyricsV2(
                                 lineSpacing = lyricsLineSpacing,
                                 lyricsAnimationStyle = lyricsAnimationStyle,
                                 glowEffectEnabled = lyricsGlowEffect,
+                                blurEnabled = blurLyrics,
                                 onClick = {
-                                    if (!isGuest && totalDurationMs > 0L) {
+                                    if (lyricsClick && !isGuest && totalDurationMs > 0L) {
                                         val targetSeek = (index.toFloat() / lines.size * totalDurationMs).toLong()
                                         playerConnection.player.seekTo(targetSeek)
                                     }
@@ -787,8 +802,9 @@ fun LyricsV2(
                                         lineSpacing = lyricsLineSpacing,
                                         lyricsAnimationStyle = lyricsAnimationStyle,
                                         glowEffectEnabled = lyricsGlowEffect,
+                                        blurEnabled = blurLyrics,
                                         onClick = {
-                                            if (!isGuest) {
+                                            if (lyricsClick && !isGuest) {
                                                 playerConnection.player.seekTo(line.time - lyricsOffset)
                                                 isAutoScrollEnabled = true
                                             }

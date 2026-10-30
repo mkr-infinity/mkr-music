@@ -393,7 +393,7 @@ fun AiSettings(
             title = stringResource(R.string.ai_provider),
             items = listOf(
                 Material3SettingsItem(
-                    key = "content_ai_lyrics",
+                    key = "ai_provider",
                     icon = painterResource(R.drawable.explore_outlined),
                     title = { Text(stringResource(R.string.ai_provider)) },
                     description = { Text(aiProvider) },
@@ -429,6 +429,7 @@ fun AiSettings(
                 if (aiProvider == "DeepL") {
                     add(
                         Material3SettingsItem(
+                            key = "ai_deepl",
                             icon = painterResource(R.drawable.key),
                             title = { Text("DeepL ${stringResource(R.string.ai_api_key)}") },
                             trailingContent = {
@@ -462,6 +463,7 @@ fun AiSettings(
                 } else {
                     add(
                         Material3SettingsItem(
+                            key = "ai_api_key",
                             icon = painterResource(R.drawable.key),
                             title = { Text(stringResource(R.string.ai_api_key)) },
                             trailingContent = {
@@ -478,6 +480,7 @@ fun AiSettings(
                     if (aiProvider != "Custom") {
                         add(
                             Material3SettingsItem(
+                                key = "ai_model",
                                 icon = painterResource(R.drawable.discover_tune),
                                 title = { Text(stringResource(R.string.ai_model)) },
                                 trailingContent = { Text(openRouterModel.ifBlank { stringResource(R.string.not_set) }) },
@@ -497,6 +500,7 @@ fun AiSettings(
                 if (aiProvider != "DeepL") {
                     add(
                         Material3SettingsItem(
+                            key = "ai_lyrics_translation",
                             icon = painterResource(R.drawable.translate),
                             title = { Text(stringResource(R.string.ai_translation_mode)) },
                             description = {

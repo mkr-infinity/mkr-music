@@ -166,7 +166,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Appearance & Themes",
             iconRes = R.drawable.palette,
             route = "settings/appearance",
-            targetKey = "appearance_animations",
+            targetKey = "appearance_interface_animations",
             keywords = listOf("animation", "motion", "spring", "transitions", "effects", "smooth", "disable animations", "reduced motion")
         ),
         SearchableSettingItem(
@@ -206,7 +206,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Appearance & Themes",
             iconRes = R.drawable.album,
             route = "settings/appearance",
-            targetKey = "appearance_thumbnail_shadow",
+            targetKey = "appearance_thumbnail_radius",
             keywords = listOf("shadow", "elevation", "depth", "glow", "artwork shadow", "thumbnail elevation")
         ),
         SearchableSettingItem(
@@ -320,7 +320,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Player and Audio",
             iconRes = R.drawable.bluetooth,
             route = "settings/player",
-            targetKey = "player_resume_bluetooth",
+            targetKey = "player_bluetooth_resume",
             keywords = listOf("bluetooth", "headphones", "earbuds", "car audio", "auto play", "resume", "connect", "handsfree")
         ),
         SearchableSettingItem(
@@ -390,7 +390,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Player and Audio",
             iconRes = R.drawable.skip_next,
             route = "settings/player",
-            targetKey = "player_auto_skip_error",
+            targetKey = "player_persistent_queue",
             keywords = listOf("skip on error", "playback error", "failed stream", "broken track", "skip unplayable")
         ),
         SearchableSettingItem(
@@ -420,7 +420,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Player and Audio",
             iconRes = R.drawable.graphic_eq,
             route = "settings/player",
-            targetKey = "player_pitch_speed",
+            targetKey = "player_equalizer",
             keywords = listOf("pitch", "speed", "tempo", "rate", "slow down", "speed up", "nightcore", "slowed", "playback speed")
         ),
         SearchableSettingItem(
@@ -430,7 +430,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Player and Audio",
             iconRes = R.drawable.palette,
             route = "settings/player",
-            targetKey = "player_style",
+            targetKey = "appearance_player_style",
             keywords = listOf("player style", "layout", "classic", "modern", "apple", "cinematic", "immersive", "material", "controls layout")
         ),
         SearchableSettingItem(
@@ -440,7 +440,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Player and Audio",
             iconRes = R.drawable.nav_bar,
             route = "settings/player",
-            targetKey = "player_apple_mini_player",
+            targetKey = "appearance_apple_player",
             keywords = listOf("mini player", "apple mini player", "ios", "floating mini", "capsule mini")
         ),
         SearchableSettingItem(
@@ -450,7 +450,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Player and Audio",
             iconRes = R.drawable.linear_scale,
             route = "settings/player",
-            targetKey = "player_liquid_mini_player",
+            targetKey = "appearance_liquid_mini_player",
             keywords = listOf("liquid", "wave", "liquid mini player", "fluid progress", "animated mini player")
         ),
         SearchableSettingItem(
@@ -460,7 +460,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Player and Audio",
             iconRes = R.drawable.palette,
             route = "settings/player",
-            targetKey = "player_pure_black_mini_player",
+            targetKey = "appearance_pure_black",
             keywords = listOf("pure black mini", "oled mini player", "dark mini player")
         ),
 
@@ -820,7 +820,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Storage & Cache",
             iconRes = R.drawable.storage,
             route = "settings/storage",
-            targetKey = "storage_song_cache",
+            targetKey = "storage_cache_limit",
             keywords = listOf("cache", "song cache", "audio cache", "disk space", "storage", "buffer", "clear cache")
         ),
         SearchableSettingItem(
@@ -830,7 +830,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Storage & Cache",
             iconRes = R.drawable.image,
             route = "settings/storage",
-            targetKey = "storage_image_cache",
+            targetKey = "storage_max_image_cache",
             keywords = listOf("image cache", "artwork cache", "thumbnails", "pictures", "storage", "clear image cache")
         ),
         SearchableSettingItem(
@@ -870,7 +870,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Storage & Cache",
             iconRes = R.drawable.storage,
             route = "settings/storage",
-            targetKey = "storage_pre_cache",
+            targetKey = "storage_cache_delay",
             keywords = listOf("pre-cache", "buffer", "playback cache", "stutter", "gapless buffer", "smooth playback")
         ),
 
@@ -884,7 +884,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Privacy & History",
             iconRes = R.drawable.history,
             route = "settings/privacy",
-            targetKey = "privacy_pause_listen_history",
+            targetKey = "privacy_history",
             keywords = listOf("pause history", "history", "listening history", "private listening", "incognito history")
         ),
         SearchableSettingItem(
@@ -904,7 +904,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Privacy & History",
             iconRes = R.drawable.search_off,
             route = "settings/privacy",
-            targetKey = "privacy_pause_search_history",
+            targetKey = "privacy_search_history",
             keywords = listOf("pause search", "search history", "recent searches", "incognito search")
         ),
         SearchableSettingItem(
@@ -957,7 +957,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             description = "Host or join synchronized real-time shared listening rooms with friends over the internet",
             category = "Integrations",
             iconRes = R.drawable.earbud_case,
-            route = "settings/integrations/listen_together",
+            route = "settings/integrations",
             targetKey = "integrations_listen_together",
             keywords = listOf("listen together", "group session", "room", "share", "party", "sync audio", "friends")
         ),
@@ -992,7 +992,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Account & System",
             iconRes = R.drawable.history,
             route = "settings/listening_summary",
-            targetKey = "account_summary",
+            targetKey = "privacy_listening_summary",
             keywords = listOf("summary", "stats", "statistics", "top songs", "top artists", "hours listened", "analytics")
         ),
         SearchableSettingItem(

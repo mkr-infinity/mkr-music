@@ -323,6 +323,7 @@ fun LastFMSettings(
             title = stringResource(R.string.options),
             items = listOf(
                 Material3SettingsItem(
+                    key = "integrations_lastfm",
                     icon = painterResource(R.drawable.check),
                     title = { Text(stringResource(R.string.enable_scrobbling)) },
                     enabled = isLoggedIn,

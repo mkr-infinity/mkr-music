@@ -124,6 +124,7 @@ fun SponsorBlockSettings(
             colors = CardDefaults.cardColors(containerColor = containerColor),
             modifier = Modifier
                 .fillMaxWidth()
+                .settingsHighlight("sponsorblock_master", RoundedCornerShape(50))
                 .settingsHighlight("player_sponsorblock", RoundedCornerShape(50))
         ) {
             Row(
@@ -152,6 +153,7 @@ fun SponsorBlockSettings(
             title = stringResource(R.string.sponsorblock_categories),
             items = listOf(
                 Material3SettingsItem(
+                    key = "sponsorblock_skip_non_music",
                     title = { Text(stringResource(R.string.sponsorblock_skip_non_music)) },
                     description = { Text(stringResource(R.string.sponsorblock_skip_non_music_desc)) },
                     trailingContent = {
@@ -165,6 +167,7 @@ fun SponsorBlockSettings(
                     onClick = { onSkipNonMusicChange(!skipNonMusic) }
                 ),
                 Material3SettingsItem(
+                    key = "sponsorblock_skip_sponsor",
                     title = { Text(stringResource(R.string.sponsorblock_skip_sponsor)) },
                     description = { Text(stringResource(R.string.sponsorblock_skip_sponsor_desc)) },
                     trailingContent = {
@@ -178,6 +181,7 @@ fun SponsorBlockSettings(
                     onClick = { onSkipSponsorChange(!skipSponsor) }
                 ),
                 Material3SettingsItem(
+                    key = "sponsorblock_skip_selfpromo",
                     title = { Text(stringResource(R.string.sponsorblock_skip_selfpromo)) },
                     description = { Text(stringResource(R.string.sponsorblock_skip_selfpromo_desc)) },
                     trailingContent = {
@@ -191,6 +195,7 @@ fun SponsorBlockSettings(
                     onClick = { onSkipSelfPromoChange(!skipSelfPromo) }
                 ),
                 Material3SettingsItem(
+                    key = "sponsorblock_skip_interaction",
                     title = { Text(stringResource(R.string.sponsorblock_skip_interaction)) },
                     description = { Text(stringResource(R.string.sponsorblock_skip_interaction_desc)) },
                     trailingContent = {
@@ -204,6 +209,7 @@ fun SponsorBlockSettings(
                     onClick = { onSkipInteractionChange(!skipInteraction) }
                 ),
                 Material3SettingsItem(
+                    key = "sponsorblock_skip_intro_outro",
                     title = { Text(stringResource(R.string.sponsorblock_skip_intro_outro)) },
                     description = { Text(stringResource(R.string.sponsorblock_skip_intro_outro_desc)) },
                     trailingContent = {
@@ -217,6 +223,7 @@ fun SponsorBlockSettings(
                     onClick = { onSkipIntroOutroChange(!skipIntroOutro) }
                 ),
                 Material3SettingsItem(
+                    key = "sponsorblock_skip_preview",
                     title = { Text(stringResource(R.string.sponsorblock_skip_preview_filler)) },
                     description = { Text(stringResource(R.string.sponsorblock_skip_preview_filler_desc)) },
                     trailingContent = {
@@ -239,6 +246,7 @@ fun SponsorBlockSettings(
             title = stringResource(R.string.general),
             items = listOf(
                 Material3SettingsItem(
+                    key = "sponsorblock_show_toast",
                     title = { Text(stringResource(R.string.sponsorblock_show_toast)) },
                     description = { Text(stringResource(R.string.sponsorblock_show_toast_desc)) },
                     trailingContent = {

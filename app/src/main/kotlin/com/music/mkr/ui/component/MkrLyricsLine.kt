@@ -5,6 +5,7 @@
 
 package com.music.mkr.ui.component
 
+import android.os.Build
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -31,6 +32,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.BlurredEdgeTreatment
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
@@ -185,6 +188,7 @@ fun MkrLyricsLine(
     lineSpacing: Float = 1.35f,
     lyricsAnimationStyle: LyricsAnimationStyle = LyricsAnimationStyle.APPLE_V2,
     glowEffectEnabled: Boolean = true,
+    blurEnabled: Boolean = false,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -285,8 +289,24 @@ fun MkrLyricsLine(
 
     val enableAnimation = lyricsAnimationStyle != LyricsAnimationStyle.NONE
 
+    val blurRadius = if (blurEnabled && !isActive && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        when (distanceFromCurrent) {
+            1 -> 3.5.dp
+            2 -> 6.dp
+            else -> 8.5.dp
+        }
+    } else {
+        0.dp
+    }
+
+    val lineModifier = if (blurRadius > 0.dp) {
+        modifier.blur(blurRadius, blurRadius, edgeTreatment = BlurredEdgeTreatment.Unbounded)
+    } else {
+        modifier
+    }
+
     Row(
-        modifier = modifier
+        modifier = lineModifier
             .fillMaxWidth()
             .graphicsLayer {
                 scaleX = animatedScale

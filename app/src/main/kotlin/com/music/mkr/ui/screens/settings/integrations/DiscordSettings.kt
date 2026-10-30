@@ -534,6 +534,7 @@ fun DiscordSettings(
             title = stringResource(R.string.options),
             items = listOf(
                 Material3SettingsItem(
+                    key = "integrations_discord",
                     title = { Text(stringResource(R.string.enable_discord_rpc)) },
                     trailingContent = {
                         Switch(

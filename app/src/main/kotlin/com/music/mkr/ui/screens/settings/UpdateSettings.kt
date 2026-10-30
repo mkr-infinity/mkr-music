@@ -211,6 +211,7 @@ fun UpdateSettings(
                 ),
 
                 Material3SettingsItem(
+                    key = "update_notifications",
                     icon = painterResource(R.drawable.notification),
                     title = { Text(stringResource(R.string.notification_settings)) },
                     trailingContent = {
@@ -233,6 +234,7 @@ fun UpdateSettings(
         ExpressiveSettingGroup(
             items = listOf(
                 Material3SettingsItem(
+                    key = "update_commits",
                     icon = painterResource(R.drawable.commit),
                     title = { Text(stringResource(R.string.commits)) },
                     description = { Text(stringResource(R.string.view_commit_history)) },

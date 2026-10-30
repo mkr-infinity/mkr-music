@@ -1045,6 +1045,7 @@ fun AppearanceSettings(
                 )
                 add(
                     Material3SettingsItem(
+                        key = "appearance_font",
                         icon = painterResource(R.drawable.alphabet_cyrillic),
                         title = { Text(stringResource(R.string.app_font)) },
                         trailingContent = {
@@ -1087,6 +1088,7 @@ fun AppearanceSettings(
                 )
                 add(
                     Material3SettingsItem(
+                        key = "appearance_high_refresh_rate",
                         icon = painterResource(R.drawable.speed),
                         title = { Text(stringResource(R.string.enable_high_refresh_rate)) },
                         description = { Text(stringResource(R.string.enable_high_refresh_rate_desc)) },
@@ -1116,6 +1118,7 @@ fun AppearanceSettings(
                 if (!isUsingCustomColor) {
                     add(
                         Material3SettingsItem(
+                            key = "appearance_dynamic_theme",
                             icon = painterResource(R.drawable.palette),
                             title = { Text(stringResource(R.string.enable_dynamic_theme)) },
                             trailingContent = {
@@ -1154,6 +1157,7 @@ fun AppearanceSettings(
             title = stringResource(R.string.player),
             items = listOfNotNull(
                 Material3SettingsItem(
+                    key = "appearance_audio_quality_badge",
                     icon = painterResource(R.drawable.tune),
                     title = { Text(stringResource(R.string.show_audio_quality_badge)) },
                     trailingContent = {
@@ -1256,6 +1260,7 @@ fun AppearanceSettings(
                     onClick = { showThumbnailCornerRadiusDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_crop_art",
                     icon = painterResource(R.drawable.crop),
                     title = { Text(stringResource(R.string.crop_album_art)) },
                     description = { Text(stringResource(R.string.crop_album_art_desc)) },
@@ -1331,6 +1336,7 @@ fun AppearanceSettings(
                 ),
 
                 Material3SettingsItem(
+                    key = "appearance_rotating_thumbnail",
                     icon = painterResource(R.drawable.image),
                     title = { Text(stringResource(R.string.rotating_thumbnail)) },
                     description = { Text(stringResource(R.string.rotating_thumbnail_desc)) },
@@ -1517,9 +1523,10 @@ fun AppearanceSettings(
         Spacer(modifier = Modifier.height(27.dp))
 
         ExpressiveSettingGroup(
-            title = stringResource(R.string.lyrics),
+            title = stringResource(R.string.lyrics_settings),
             items = listOfNotNull(
                 Material3SettingsItem(
+                    key = "appearance_lyrics_position",
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text(stringResource(R.string.lyrics_text_position)) },
                     trailingContent = {
@@ -1556,6 +1563,7 @@ fun AppearanceSettings(
                     onClick = { showLyricsAnimationStyleDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_lyrics_glow",
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text(stringResource(R.string.lyrics_glow_effect)) },
                     description = { Text(stringResource(R.string.lyrics_glow_effect_desc)) },
@@ -1576,8 +1584,9 @@ fun AppearanceSettings(
                     },
                     onClick = { onLyricsGlowEffectChange(!lyricsGlowEffect) }
                 ),
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && (lyricsAnimationStyle == LyricsAnimationStyle.MKRMUSIC_1 || lyricsAnimationStyle == LyricsAnimationStyle.APPLE_V2)) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && lyricsAnimationStyle != LyricsAnimationStyle.NONE) {
                     Material3SettingsItem(
+                        key = "appearance_lyrics_blur",
                         icon = painterResource(R.drawable.lyrics),
                         title = { Text(stringResource(R.string.apple_music_lyrics_blur)) },
                         description = { Text(stringResource(R.string.apple_music_lyrics_blur_desc)) },
@@ -1601,6 +1610,7 @@ fun AppearanceSettings(
                 } else null,
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     Material3SettingsItem(
+                        key = "appearance_lyrics_standard_blur",
                         icon = painterResource(R.drawable.lyrics),
                         title = { Text(stringResource(R.string.standard_lyrics_blur)) },
                         description = { Text(stringResource(R.string.apple_music_lyrics_blur_desc)) },
@@ -1623,18 +1633,21 @@ fun AppearanceSettings(
                     )
                 } else null,
                 Material3SettingsItem(
+                    key = "appearance_lyrics_size",
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text(stringResource(R.string.lyrics_text_size)) },
                     trailingContent = { Text("${lyricsTextSize.roundToInt()} sp") },
                     onClick = { showLyricsTextSizeDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_lyrics_spacing",
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text(stringResource(R.string.lyrics_line_spacing)) },
                     trailingContent = { Text("${String.format("%.1f", lyricsLineSpacing)}x") },
                     onClick = { showLyricsLineSpacingDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_lyrics_click",
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text(stringResource(R.string.lyrics_click_change)) },
                     trailingContent = {
@@ -1655,6 +1668,7 @@ fun AppearanceSettings(
                     onClick = { onLyricsClickChange(!lyricsClick) }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_lyrics_scroll",
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text(stringResource(R.string.lyrics_auto_scroll)) },
                     trailingContent = {
@@ -1675,6 +1689,7 @@ fun AppearanceSettings(
                     onClick = { onLyricsScrollChange(!lyricsScroll) }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_lyrics_swipe",
                     icon = painterResource(R.drawable.swipe),
                     title = { Text(stringResource(R.string.lyrics_swipe_to_change_song)) },
                     description = { Text(stringResource(R.string.lyrics_swipe_to_change_song_desc)) },
@@ -1696,6 +1711,7 @@ fun AppearanceSettings(
                     onClick = { onSwipeLyricsChange(!swipeLyrics) }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_lyrics_thumbnail_play_pause",
                     icon = painterResource(R.drawable.play),
                     title = { Text(stringResource(R.string.lyrics_thumbnail_play_pause)) },
                     description = { Text(stringResource(R.string.lyrics_thumbnail_play_pause_desc)) },
@@ -1715,6 +1731,16 @@ fun AppearanceSettings(
                         )
                     },
                     onClick = { onEnableLyricsThumbnailPlayPauseChange(!enableLyricsThumbnailPlayPause) }
+                ),
+                Material3SettingsItem(
+                    key = "appearance_lyrics_providers_link",
+                    icon = painterResource(R.drawable.tune),
+                    title = { Text(stringResource(R.string.lyrics_provider_priority)) },
+                    description = { Text("Configure Kugou, LRCLIB, BetterLyrics & provider order") },
+                    onClick = {
+                        SettingsHighlightManager.requestHighlight("content_lyrics_providers", "content")
+                        navController.navigate("settings/content")
+                    }
                 )
             )
         )
@@ -1725,6 +1751,7 @@ fun AppearanceSettings(
             title = stringResource(R.string.misc),
             items = listOf(
                 Material3SettingsItem(
+                    key = "appearance_default_tab",
                     icon = painterResource(R.drawable.nav_bar),
                     title = { Text(stringResource(R.string.default_open_tab)) },
                     trailingContent = {

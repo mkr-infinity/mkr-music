@@ -44,7 +44,7 @@ fun IntegrationScreen(
             title = stringResource(R.string.general),
             items = listOf(
                 Material3SettingsItem(
-                    key = "privacy_discord_rpc",
+                    key = "integrations_discord",
                     icon = painterResource(R.drawable.discord),
                     title = { Text(stringResource(R.string.discord_integration)) },
                     onClick = {
@@ -52,10 +52,20 @@ fun IntegrationScreen(
                     }
                 ),
                 Material3SettingsItem(
+                    key = "integrations_lastfm",
                     icon = painterResource(R.drawable.music_note),
                     title = { Text(stringResource(R.string.lastfm_integration)) },
                     onClick = {
                         navController.navigate("settings/integrations/lastfm")
+                    }
+                ),
+                Material3SettingsItem(
+                    key = "integrations_listen_together",
+                    icon = painterResource(R.drawable.group),
+                    title = { Text(stringResource(R.string.together)) },
+                    description = { Text("Synchronized live group listening sessions with friends") },
+                    onClick = {
+                        navController.navigate("listen_together")
                     }
                 )
             )

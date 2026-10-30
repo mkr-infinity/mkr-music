@@ -637,6 +637,7 @@ fun ContentSettings(
                     onClick = { showContentLanguageDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "content_country_region",
                     icon = painterResource(R.drawable.location_on),
                     title = { Text(stringResource(R.string.content_country)) },
                     trailingContent = {
@@ -678,6 +679,7 @@ fun ContentSettings(
                     onClick = { onHideExplicitChange(!hideExplicit) }
                 ),
                 Material3SettingsItem(
+                    key = "content_hide_videos",
                     icon = painterResource(R.drawable.slow_motion_video),
                     title = { Text(stringResource(R.string.hide_video_songs)) },
                     trailingContent = {
@@ -699,6 +701,7 @@ fun ContentSettings(
                 ),
 
                 Material3SettingsItem(
+                    key = "content_hide_shorts",
                     icon = painterResource(R.drawable.hide_image),
                     title = { Text(stringResource(R.string.hide_youtube_shorts)) },
                     trailingContent = {
@@ -748,6 +751,7 @@ fun ContentSettings(
             title = stringResource(R.string.artist_page_settings),
             items = listOf(
                 Material3SettingsItem(
+                    key = "content_artist_info",
                     icon = painterResource(R.drawable.info),
                     title = { Text(stringResource(R.string.show_artist_description)) },
                     trailingContent = {
@@ -788,6 +792,7 @@ fun ContentSettings(
                     onClick = { onShowArtistSubscriberCountChange(!showArtistSubscriberCount) }
                 ),
                 Material3SettingsItem(
+                    key = "content_monthly_listeners",
                     icon = painterResource(R.drawable.person),
                     title = { Text(stringResource(R.string.show_artist_monthly_listeners)) },
                     trailingContent = {
@@ -817,6 +822,7 @@ fun ContentSettings(
             items = listOf(
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                     Material3SettingsItem(
+                        key = "content_app_language",
                         icon = painterResource(R.drawable.language),
                         title = { Text(stringResource(R.string.app_language)) },
                         onClick = {
@@ -830,6 +836,7 @@ fun ContentSettings(
                     )
                 } else {
                     Material3SettingsItem(
+                        key = "content_app_language",
                         icon = painterResource(R.drawable.language),
                         title = { Text(stringResource(R.string.app_language)) },
                         description = {
@@ -864,6 +871,7 @@ fun ContentSettings(
                 ))
                 add(
                     Material3SettingsItem(
+                        key = "content_proxy_vpn",
                         icon = painterResource(R.drawable.wifi_proxy),
                         title = { Text(stringResource(R.string.enable_proxy)) },
                         trailingContent = {
@@ -902,6 +910,7 @@ fun ContentSettings(
             title = stringResource(R.string.lyrics),
             items = listOf(
                 Material3SettingsItem(
+                    key = "content_lyrics_providers",
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text(stringResource(R.string.enable_lrclib)) },
                     trailingContent = {
@@ -1054,6 +1063,7 @@ fun ContentSettings(
                     onClick = { showProviderPriorityDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "content_lyrics_reorder",
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text(stringResource(R.string.lyrics_prioritize_sync_accuracy)) },
                     description = { Text(stringResource(R.string.lyrics_prioritize_sync_accuracy_desc)) },
@@ -1082,33 +1092,34 @@ fun ContentSettings(
                 )
             )
         )
-//        Spacer(modifier = Modifier.height(27.dp))
-//
-//        ExpressiveSettingGroup(
-//            title = "Wrapped",
-//            items = listOf(
-//                Material3SettingsItem(
-//                    icon = painterResource(R.drawable.trending_up),
-//                    title = { Text(stringResource(R.string.show_wrapped_card)) },
-//                    trailingContent = {
-//                        Switch(
-//                            checked = showWrappedCard,
-//                            onCheckedChange = onShowWrappedCardChange,
-//                            thumbContent = {
-//                                Icon(
-//                                    painter = painterResource(
-//                                        id = if (showWrappedCard) R.drawable.check else R.drawable.close
-//                                    ),
-//                                    contentDescription = null,
-//                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-//                                )
-//                            }
-//                        )
-//                    },
-//                    onClick = { onShowWrappedCardChange(!showWrappedCard) }
-//                )
-//            )
-//        )
+        Spacer(modifier = Modifier.height(27.dp))
+
+        ExpressiveSettingGroup(
+            title = "Wrapped",
+            items = listOf(
+                Material3SettingsItem(
+                    key = "content_wrapped_card",
+                    icon = painterResource(R.drawable.trending_up),
+                    title = { Text(stringResource(R.string.show_wrapped_card)) },
+                    trailingContent = {
+                        Switch(
+                            checked = showWrappedCard,
+                            onCheckedChange = onShowWrappedCardChange,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (showWrappedCard) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { onShowWrappedCardChange(!showWrappedCard) }
+                )
+            )
+        )
 
         Spacer(modifier = Modifier.height(27.dp))
 
@@ -1116,6 +1127,7 @@ fun ContentSettings(
             title = stringResource(R.string.misc),
             items = listOf(
                 Material3SettingsItem(
+                    key = "content_randomize_home",
                     icon = painterResource(R.drawable.shuffle),
                     title = { Text(stringResource(R.string.randomize_home_order)) },
                     description = { Text(stringResource(R.string.randomize_home_order_desc)) },
@@ -1158,12 +1170,14 @@ fun ContentSettings(
                     onClick = { onHideSpeedDialChange(!hideSpeedDial) }
                 ),
                 Material3SettingsItem(
+                    key = "content_top_length",
                     icon = painterResource(R.drawable.trending_up),
                     title = { Text(stringResource(R.string.top_length)) },
                     trailingContent = { Text(lengthTop) },
                     onClick = { showTopLengthDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "content_quick_picks",
                     icon = painterResource(R.drawable.home_outlined),
                     title = { Text(stringResource(R.string.set_quick_picks)) },
                     trailingContent = {

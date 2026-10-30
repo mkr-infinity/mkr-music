@@ -148,6 +148,7 @@ fun BackupAndRestore(
             title = stringResource(R.string.backup_restore),
             items = listOf(
                 Material3SettingsItem(
+                    key = "backup_autobackup",
                     title = { Text(stringResource(R.string.autobackup_settings)) },
                     icon = painterResource(R.drawable.database_upload),
                     onClick = {
@@ -155,7 +156,7 @@ fun BackupAndRestore(
                     }
                 ),
                 Material3SettingsItem(
-                    key = "backup_export_import",
+                    key = "backup_export",
                     title = { Text(stringResource(R.string.action_backup)) },
                     icon = painterResource(R.drawable.backup),
                     onClick = {
@@ -168,6 +169,7 @@ fun BackupAndRestore(
                     }
                 ),
                 Material3SettingsItem(
+                    key = "backup_restore",
                     title = { Text(stringResource(R.string.action_restore)) },
                     icon = painterResource(R.drawable.restore),
                     onClick = {
@@ -197,6 +199,7 @@ fun BackupAndRestore(
                     }
                 ),
                 Material3SettingsItem(
+                    key = "integrations_spotify",
                     title = { Text(stringResource(R.string.import_from_spotify)) },
                     icon = painterResource(R.drawable.spotify),
                     onClick = {

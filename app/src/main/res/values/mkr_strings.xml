@@ -470,6 +470,8 @@
     <string name="cache_size_warning_confirm">Continue</string>
 
     <!-- Lyrics Animation Styles -->
+    <string name="lyrics_settings">Lyrics Settings</string>
+    <string name="lyrics_settings_desc">Display position, text size, progressive blur &amp; letter animation</string>
     <string name="lyrics_animation_style">Lyrics animation</string>
     <string name="none">None</string>
     <string name="fade">Fade</string>

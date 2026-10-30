@@ -86,6 +86,7 @@ fun RomanizationSettings(
             title = stringResource(R.string.general),
             items = listOf(
                 Material3SettingsItem(
+                    key = "romanization_main_lyrics",
                     icon = painterResource(R.drawable.lyrics),
                     title = { Text(stringResource(R.string.lyrics_romanize_as_main)) },
                     trailingContent = {
@@ -107,6 +108,7 @@ fun RomanizationSettings(
                     isExpressive = true
                 ),
                 Material3SettingsItem(
+                    key = "romanization_japanese",
                     icon = painterResource(R.drawable.language_japanese_latin),
                     title = { Text(stringResource(R.string.lyrics_romanize_japanese)) },
                     trailingContent = {
@@ -128,6 +130,7 @@ fun RomanizationSettings(
                     isExpressive = true
                 ),
                 Material3SettingsItem(
+                    key = "romanization_korean",
                     icon = painterResource(R.drawable.language_korean_latin),
                     title = { Text(stringResource(R.string.lyrics_romanize_korean)) },
                     trailingContent = {
@@ -149,6 +152,7 @@ fun RomanizationSettings(
                     isExpressive = true
                 ),
                 Material3SettingsItem(
+                    key = "romanization_chinese",
                     icon = painterResource(R.drawable.language),
                     title = { Text(stringResource(R.string.lyrics_romanize_chinese)) },
                     trailingContent = {
@@ -170,6 +174,7 @@ fun RomanizationSettings(
                     isExpressive = true
                 ),
                 Material3SettingsItem(
+                    key = "romanization_indic",
                     icon = painterResource(R.drawable.language),
                     title = { Text(stringResource(R.string.lyrics_romanize_hindi)) },
                     trailingContent = {
@@ -220,6 +225,7 @@ fun RomanizationSettings(
             title = stringResource(R.string.lyrics_romanization_cyrillic),
             items = listOf(
                 Material3SettingsItem(
+                    key = "romanization_cyrillic",
                     icon = painterResource(R.drawable.alphabet_cyrillic),
                     title = { Text(stringResource(R.string.lyrics_romanize_russian)) },
                     trailingContent = {
