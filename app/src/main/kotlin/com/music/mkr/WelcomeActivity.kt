@@ -171,6 +171,10 @@ class WelcomeActivity : ComponentActivity() {
         installSplashScreen()
         super.onCreate(savedInstanceState)
 
+        lifecycleScope.launch {
+            com.music.mkr.utils.IconUtils.applyPendingIconIfAny(this@WelcomeActivity)
+        }
+
         val isFirstRun = dataStore.get(IsFirstRunKey, true)
         val forceShow = intent.getBooleanExtra("FORCE_SHOW", false)
 

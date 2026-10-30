@@ -20,6 +20,7 @@ import com.music.innertube.models.IpVersion
 
 val IsFirstRunKey = booleanPreferencesKey("isFirstRun")
 val AppIconKey = stringPreferencesKey("appIcon")
+val PendingAppIconKey = stringPreferencesKey("pendingAppIcon")
 val EnableDynamicIconKey = booleanPreferencesKey("enableDynamicIcon")
 val EnableHighRefreshRateKey = booleanPreferencesKey("enableHighRefreshRate")
 val GitHubAccessTokenKey = stringPreferencesKey("gitHubAccessToken")

@@ -137,6 +137,7 @@ import com.music.mkr.constants.LyricsScrollKey
 import com.music.mkr.constants.ShowAudioQualityBadgeKey
 import com.music.mkr.constants.ShowCommentButtonKey
 import com.music.mkr.constants.AppIconKey
+import com.music.mkr.constants.PendingAppIconKey
 import com.music.mkr.ui.component.AppIconSelectionDialog
 import com.music.mkr.utils.AppIcon
 
@@ -183,31 +184,46 @@ fun AppearanceSettings(
     val currentAppIcon = remember(selectedAppIconKey) {
         AppIcon.fromKey(selectedAppIconKey)
     }
+
+    val (pendingAppIconKey, onPendingAppIconKeyChange) = rememberPreference(
+        PendingAppIconKey,
+        defaultValue = ""
+    )
+    val pendingAppIcon = remember(pendingAppIconKey) {
+        if (pendingAppIconKey.isNotBlank()) AppIcon.fromKey(pendingAppIconKey) else null
+    }
+
     var showAppIconDialog by rememberSaveable { mutableStateOf(false) }
 
+    fun applyIconAndRestart(targetIcon: AppIcon) {
+        onSelectedAppIconKeyChange(targetIcon.key)
+        onPendingAppIconKeyChange("")
+        IconUtils.applyIcon(activity, targetIcon)
+        IconUtils.restartAppGracefully(activity)
+    }
+
     fun handleAppIconChange(newIcon: AppIcon) {
-        onSelectedAppIconKeyChange(newIcon.key)
-        IconUtils.setIcon(activity, newIcon)
-        showAppIconDialog = false
-        coroutineScope.launch {
-            snackbarHostState.currentSnackbarData?.dismiss()
-            val autoDismissJob = launch {
-                delay(3000L)
+        if (newIcon == currentAppIcon) {
+            // Selecting current active icon clears pending choice
+            onPendingAppIconKeyChange("")
+            coroutineScope.launch {
                 snackbarHostState.currentSnackbarData?.dismiss()
             }
+            return
+        }
+
+        // Save new choice as pending icon
+        onPendingAppIconKeyChange(newIcon.key)
+
+        coroutineScope.launch {
+            snackbarHostState.currentSnackbarData?.dismiss()
             val result = snackbarHostState.showSnackbar(
-                message = "Launcher icon updated. Restart app to apply on your home screen.",
-                actionLabel = "Restart Now",
+                message = "${newIcon.title} selected. Restart app to update launcher icon.",
+                actionLabel = "Restart now",
                 duration = SnackbarDuration.Indefinite
             )
-            autoDismissJob.cancel()
             if (result == SnackbarResult.ActionPerformed) {
-                val packageManager = activity.packageManager
-                val intent = packageManager.getLaunchIntentForPackage(activity.packageName)
-                val componentName = intent?.component
-                val mainIntent = Intent.makeRestartActivityTask(componentName)
-                activity.startActivity(mainIntent)
-                Runtime.getRuntime().exit(0)
+                applyIconAndRestart(newIcon)
             }
         }
     }
@@ -223,17 +239,12 @@ fun AppearanceSettings(
             }
             val result = snackbarHostState.showSnackbar(
                 message = "Launcher icon updated. Restart app to apply on your home screen.",
-                actionLabel = "Restart Now",
+                actionLabel = "Restart now",
                 duration = SnackbarDuration.Indefinite
             )
             autoDismissJob.cancel()
             if (result == SnackbarResult.ActionPerformed) {
-                val packageManager = activity.packageManager
-                val intent = packageManager.getLaunchIntentForPackage(activity.packageName)
-                val componentName = intent?.component
-                val mainIntent = Intent.makeRestartActivityTask(componentName)
-                activity.startActivity(mainIntent)
-                Runtime.getRuntime().exit(0)
+                IconUtils.restartAppGracefully(activity)
             }
         }
     }
@@ -399,8 +410,13 @@ fun AppearanceSettings(
     if (showAppIconDialog) {
         AppIconSelectionDialog(
             currentIcon = currentAppIcon,
+            pendingIcon = pendingAppIcon,
             onDismiss = { showAppIconDialog = false },
-            onSelect = { handleAppIconChange(it) }
+            onSelect = { handleAppIconChange(it) },
+            onApplyAndRestart = { icon ->
+                showAppIconDialog = false
+                applyIconAndRestart(icon)
+            }
         )
     }
 
@@ -1030,10 +1046,18 @@ fun AppearanceSettings(
                         key = "appearance_icon_gallery",
                         icon = painterResource(R.drawable.ic_dynamic_icon),
                         title = { Text("App Icon") },
-                        description = { Text(currentAppIcon.title) },
+                        description = {
+                            val descText = if (pendingAppIcon != null && pendingAppIcon != currentAppIcon) {
+                                "${currentAppIcon.title} (Pending: ${pendingAppIcon.title})"
+                            } else {
+                                currentAppIcon.title
+                            }
+                            Text(descText)
+                        },
                         trailingContent = {
+                            val previewRes = pendingAppIcon?.previewDrawableRes ?: currentAppIcon.previewDrawableRes
                             Image(
-                                painter = painterResource(currentAppIcon.previewDrawableRes),
+                                painter = painterResource(previewRes),
                                 contentDescription = currentAppIcon.title,
                                 modifier = Modifier
                                     .size(36.dp)

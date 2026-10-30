@@ -89,6 +89,9 @@ class App : Application(), SingletonImageLoader.Factory {
     }
 
     private suspend fun initializeSettings() {
+        // Apply any pending app icon from deferred selection
+        com.music.mkr.utils.IconUtils.applyPendingIconIfAny(this@App)
+
         val settings = dataStore.data.first()
         val locale = Locale.getDefault()
         val languageTag = locale.language
