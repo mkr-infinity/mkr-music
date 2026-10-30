@@ -140,7 +140,7 @@ jobs:
       - name: Build Universal Release APK
         run: |
           echo "Building single Universal APK variant (including all supported ABIs)..."
-          ./gradlew assembleUniversalRelease \
+          ./gradlew :app:assembleUniversalRelease \
             --no-configuration-cache --console=plain --warning-mode summary -x lint
 
       - name: Sign Universal APK with Custom Keystore
