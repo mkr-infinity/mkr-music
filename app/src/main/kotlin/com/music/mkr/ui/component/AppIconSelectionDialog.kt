@@ -283,7 +283,7 @@ private fun IconGridCard(
             Text(
                 text = icon.title,
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = if (isActive || isPending) FontWeight.Bold else FontWeight.Medium,
+                fontWeight = if (isActive || isPending) FontWeight.Bold else FontWeight.SemiBold,
                 color = when {
                     isPending -> MaterialTheme.colorScheme.tertiary
                     isActive -> MaterialTheme.colorScheme.primary
@@ -294,65 +294,37 @@ private fun IconGridCard(
                 overflow = TextOverflow.Ellipsis
             )
 
-            // Status indicator
-            if (isActive) {
-                Text(
-                    text = "Current icon",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.85f),
-                    fontSize = 10.sp,
-                    maxLines = 1
-                )
-            } else if (isPending) {
-                Text(
-                    text = "Pending restart",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.tertiary,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 10.sp,
-                    maxLines = 1
-                )
-            } else {
-                Spacer(modifier = Modifier.height(2.dp))
-            }
+            Spacer(modifier = Modifier.height(2.dp))
 
-            Spacer(modifier = Modifier.height(6.dp))
-
-            // Creator Attribution Pill (Independently Clickable!)
-            Surface(
-                shape = RoundedCornerShape(10.dp),
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.55f),
-                border = BorderStroke(0.5.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
+            // Creator description style with platform logo
+            Row(
                 modifier = Modifier
-                    .clip(RoundedCornerShape(10.dp))
+                    .clip(RoundedCornerShape(8.dp))
                     .clickable(
                         role = Role.Button,
                         onClickLabel = "Open ${icon.attribution.username} on ${icon.attribution.platform.platformName}"
                     ) {
                         onOpenProfile(icon.attribution)
                     }
+                    .padding(horizontal = 6.dp, vertical = 2.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
             ) {
-                Row(
-                    modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Icon(
-                        painter = painterResource(icon.attribution.platform.iconRes),
-                        contentDescription = icon.attribution.platform.platformName,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(12.dp)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(
-                        text = icon.attribution.username,
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 11.sp,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                Icon(
+                    painter = painterResource(icon.attribution.platform.iconRes),
+                    contentDescription = icon.attribution.platform.platformName,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(13.dp)
+                )
+                Spacer(modifier = Modifier.width(4.dp))
+                Text(
+                    text = "by ${icon.attribution.username}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 11.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
             }
         }
     }

@@ -133,6 +133,39 @@ enum class AppIcon(
             platform = CreatorPlatform.TELEGRAM,
             profileUrl = "https://t.me/ultimatefinale"
         )
+    ),
+    WISTERIA_GLOW(
+        key = "wisteria_glow",
+        title = "Wisteria Glow",
+        aliasName = "com.music.mkr.icon.WisteriaGlow",
+        previewDrawableRes = R.drawable.ic_icon_wisteria_glow,
+        attribution = CreatorAttribution(
+            username = "@mkr-infinity",
+            platform = CreatorPlatform.GITHUB,
+            profileUrl = "https://github.com/mkr-infinity/"
+        )
+    ),
+    SAKURA_DUSK(
+        key = "sakura_dusk",
+        title = "Sakura Dusk",
+        aliasName = "com.music.mkr.icon.SakuraDusk",
+        previewDrawableRes = R.drawable.ic_icon_sakura_dusk,
+        attribution = CreatorAttribution(
+            username = "@mkr-infinity",
+            platform = CreatorPlatform.GITHUB,
+            profileUrl = "https://github.com/mkr-infinity/"
+        )
+    ),
+    FOREST_GLOW(
+        key = "forest_glow",
+        title = "Forest Glow",
+        aliasName = "com.music.mkr.icon.ForestGlow",
+        previewDrawableRes = R.drawable.ic_icon_forest_glow,
+        attribution = CreatorAttribution(
+            username = "@mkr-infinity",
+            platform = CreatorPlatform.GITHUB,
+            profileUrl = "https://github.com/mkr-infinity/"
+        )
     );
 
     companion object {
@@ -147,6 +180,9 @@ enum class AppIcon(
                 "matte_obsidian" -> MATTE_OBSIDIAN
                 "neon_crack" -> NEON_CRACK
                 "vinyl_nature" -> VINYL_NATURE
+                "wisteria_glow" -> WISTERIA_GLOW
+                "sakura_dusk" -> SAKURA_DUSK
+                "forest_glow" -> FOREST_GLOW
                 else -> entries.firstOrNull { it.key == key } ?: DEFAULT
             }
         }

@@ -290,6 +290,48 @@
             </intent-filter>
         </activity-alias>
 
+        <activity-alias
+            android:name=".icon.WisteriaGlow"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_wisteria_glow"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_wisteria_glow_round"
+            android:targetActivity=".WelcomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".icon.SakuraDusk"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_sakura_dusk"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_sakura_dusk_round"
+            android:targetActivity=".WelcomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".icon.ForestGlow"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_forest_glow"
+            android:label="@string/app_name"
+            android:roundIcon="@mipmap/ic_launcher_forest_glow_round"
+            android:targetActivity=".WelcomeActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.FileProvider"
