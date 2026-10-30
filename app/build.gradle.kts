@@ -88,17 +88,11 @@ android {
 //add nightly build label support
         val isNightly = project.hasProperty("nightly") && project.property("nightly") == "true"
         buildConfigField("Boolean", "IS_NIGHTLY", isNightly.toString())
+        buildConfigField("Boolean", "CAST_AVAILABLE", "true")
     }
 
-    flavorDimensions += listOf("abi", "variant")
+    flavorDimensions += listOf("abi")
     productFlavors {
-        // GMS variant (main production app with Google Cast support)
-        create("gms") {
-            dimension = "variant"
-            isDefault = true
-            buildConfigField("Boolean", "CAST_AVAILABLE", "true")
-        }
-        
         create("universal") {
             dimension = "abi"
             isDefault = true
@@ -306,10 +300,10 @@ dependencies {
     implementation(libs.media3.ui)
     implementation(libs.media3.okhttp)
 
-    // Google Cast - only included in GMS flavor (not available in F-Droid/FOSS builds)
-    "gmsImplementation"(libs.media3.cast)
-    "gmsImplementation"(libs.mediarouter)
-    "gmsImplementation"(libs.cast.framework)
+    // Google Cast
+    implementation(libs.media3.cast)
+    implementation(libs.mediarouter)
+    implementation(libs.cast.framework)
 
     implementation(libs.room.runtime)
     implementation(libs.kuromoji.ipadic)
@@ -326,7 +320,6 @@ dependencies {
     implementation(project(":innertube"))
     implementation(project(":kizzy"))
     implementation(project(":lastfm"))
-    implementation(project(":shazamkit"))
     implementation(project(":spotify"))
     implementation(project(":lyricsProvider"))
 

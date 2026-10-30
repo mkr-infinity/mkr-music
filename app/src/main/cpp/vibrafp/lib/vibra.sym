@@ -1,6 +1,0 @@
-{
-  global:
-    Java_com_music_mkr_recognition_VibraSignature_*;
-  local:
-    *;
-};

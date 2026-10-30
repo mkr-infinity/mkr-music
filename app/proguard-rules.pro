@@ -130,34 +130,14 @@
 -dontwarn com.google.re2j.**
 
 ##──────────────────────────────────────────────────────────────────────────────
-## 13. Vibra Fingerprint (native JNI)
-##──────────────────────────────────────────────────────────────────────────────
--keep class com.music.mkr.recognition.VibraSignature { *; }
--keepclassmembers class com.music.mkr.recognition.VibraSignature {
-    native <methods>;
-}
-
-##──────────────────────────────────────────────────────────────────────────────
-## 14. Ktor
+## 13. Ktor
 ##──────────────────────────────────────────────────────────────────────────────
 -keep class io.ktor.** { *; }
 -keepclassmembers class io.ktor.** { *; }
 -dontwarn io.ktor.**
 
 ##──────────────────────────────────────────────────────────────────────────────
-## 15. Shazam Models
-##──────────────────────────────────────────────────────────────────────────────
--keep class com.music.shazamkit.models.** { *; }
--keepclassmembers class com.music.shazamkit.models.** { *; }
--keepclassmembers class com.music.shazamkit.models.** {
-    *** Companion;
-}
--keepclasseswithmembers class com.music.shazamkit.models.** {
-    kotlinx.serialization.KSerializer serializer(...);
-}
-
-##──────────────────────────────────────────────────────────────────────────────
-## 16. Listen Together
+## 14. Listen Together
 ##──────────────────────────────────────────────────────────────────────────────
 -keep class com.music.mkr.listentogether.** { *; }
 -keepclassmembers class com.music.mkr.listentogether.** { *; }

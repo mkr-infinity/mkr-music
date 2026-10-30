@@ -36,9 +36,6 @@ jobs:
         with:
           cache-disabled: false
 
-      - name: Setup FFTW for Android
-        uses: ./.github/actions/setup-fftw
-
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
@@ -143,7 +140,7 @@ jobs:
       - name: Build Universal Release APK
         run: |
           echo "Building single Universal APK variant (including all supported ABIs)..."
-          ./gradlew assembleUniversalGmsRelease \
+          ./gradlew assembleUniversalRelease \
             --no-configuration-cache --console=plain --warning-mode summary -x lint
 
       - name: Sign Universal APK with Custom Keystore
@@ -151,7 +148,7 @@ jobs:
         id: sign_universal
         uses: ilharp/sign-android-release@v2.0.0
         with:
-          releaseDir: app/build/outputs/apk/universalGms/release/
+          releaseDir: app/build/outputs/apk/universal/release/
           signingKey: ${{ secrets.KEYSTORE }}
           keyAlias: ${{ secrets.KEY_ALIAS }}
           keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
@@ -166,7 +163,7 @@ jobs:
           if [ "${{ steps.check_keystore.outputs.has_keystore }}" == "true" ]; then
             UNIVERSAL_SRC="${{ steps.sign_universal.outputs.signedFile }}"
           else
-            UNIVERSAL_SRC=$(find app/build/outputs/apk/universalGms/release/ -name "*.apk" | head -n 1)
+            UNIVERSAL_SRC=$(find app/build/outputs/apk/universal/release/ -name "*.apk" | head -n 1)
           fi
 
           echo "Universal source: $UNIVERSAL_SRC"

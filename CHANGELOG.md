@@ -172,7 +172,7 @@ Initial production release of MKR Music under the `com.kaif.music` application i
 ---
 
 ### 16. Technical Specifications & Compatibility
-- **Build Variant**: Universal APK (`assembleUniversalGmsRelease`).
+- **Build Variant**: Universal APK (`assembleUniversalRelease`).
 - **Target SDK**: Android 15 (API 35).
 - **Minimum SDK**: Android 7.0 (API 24).
 - **License**: GNU General Public License v3.0 (GPL-3.0).

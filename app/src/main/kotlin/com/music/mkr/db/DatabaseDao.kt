@@ -41,7 +41,6 @@ import com.music.mkr.db.entities.Playlist
 import com.music.mkr.db.entities.PlaylistEntity
 import com.music.mkr.db.entities.PlaylistSong
 import com.music.mkr.db.entities.PlaylistSongMap
-import com.music.mkr.db.entities.RecognitionHistory
 import com.music.mkr.db.entities.RelatedSongMap
 import com.music.mkr.db.entities.SearchHistory
 import com.music.mkr.db.entities.SetVideoIdEntity
@@ -1212,37 +1211,6 @@ interface DatabaseDao {
     @Transaction
     @Query("DELETE FROM search_history")
     fun clearSearchHistory()
-
-    // Recognition History
-    @Transaction
-    @Query("SELECT * FROM recognition_history ORDER BY recognizedAt DESC")
-    fun recognitionHistory(): Flow<List<RecognitionHistory>>
-
-    @Transaction
-    @Query("SELECT * FROM recognition_history WHERE id = :id")
-    fun recognitionHistoryById(id: Long): Flow<RecognitionHistory?>
-
-    @Transaction
-    @Query("SELECT * FROM recognition_history WHERE title LIKE '%' || :query || '%' OR artist LIKE '%' || :query || '%' ORDER BY recognizedAt DESC")
-    fun searchRecognitionHistory(query: String): Flow<List<RecognitionHistory>>
-
-    @Transaction
-    @Query("DELETE FROM recognition_history")
-    fun clearRecognitionHistory()
-
-    @Transaction
-    @Query("DELETE FROM recognition_history WHERE id = :id")
-    fun deleteRecognitionHistoryById(id: Long)
-
-    @Transaction
-    @Query("UPDATE recognition_history SET liked = :liked WHERE id = :id")
-    fun updateRecognitionHistoryLiked(id: Long, liked: Boolean)
-
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
-    fun insert(recognitionHistory: RecognitionHistory): Long
-
-    @Delete
-    fun delete(recognitionHistory: RecognitionHistory)
 
     @Query("UPDATE song SET totalPlayTime = totalPlayTime + :playTime WHERE id = :songId")
     fun incrementTotalPlayTime(songId: String, playTime: Long)

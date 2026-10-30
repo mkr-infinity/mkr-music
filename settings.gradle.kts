@@ -36,7 +36,6 @@ include(":app")
 include(":innertube")
 include(":kizzy")
 include(":lastfm")
-include(":shazamkit")
 include(":spotify")
 include(":lyricsProvider")
 
