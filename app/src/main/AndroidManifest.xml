@@ -197,7 +197,7 @@
             android:icon="@mipmap/ic_launcher"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_round"
-            android:targetActivity=".WelcomeActivity">
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -211,7 +211,7 @@
             android:icon="@mipmap/ic_launcher_sunset_pastel"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_sunset_pastel_round"
-            android:targetActivity=".WelcomeActivity">
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -225,7 +225,7 @@
             android:icon="@mipmap/ic_launcher_retro_synthwave"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_retro_synthwave_round"
-            android:targetActivity=".WelcomeActivity">
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -239,7 +239,7 @@
             android:icon="@mipmap/ic_launcher_aurora_glow"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_aurora_glow_round"
-            android:targetActivity=".WelcomeActivity">
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -253,7 +253,7 @@
             android:icon="@mipmap/ic_launcher_matte_obsidian"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_matte_obsidian_round"
-            android:targetActivity=".WelcomeActivity">
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -267,7 +267,7 @@
             android:icon="@mipmap/ic_launcher_neon_crack"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_neon_crack_round"
-            android:targetActivity=".WelcomeActivity">
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -281,7 +281,7 @@
             android:icon="@mipmap/ic_launcher_vinyl_nature"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_vinyl_nature_round"
-            android:targetActivity=".WelcomeActivity">
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -295,7 +295,7 @@
             android:icon="@mipmap/ic_launcher_wisteria_glow"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_wisteria_glow_round"
-            android:targetActivity=".WelcomeActivity">
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -309,7 +309,7 @@
             android:icon="@mipmap/ic_launcher_sakura_dusk"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_sakura_dusk_round"
-            android:targetActivity=".WelcomeActivity">
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
@@ -323,7 +323,7 @@
             android:icon="@mipmap/ic_launcher_forest_glow"
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_forest_glow_round"
-            android:targetActivity=".WelcomeActivity">
+            android:targetActivity=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />

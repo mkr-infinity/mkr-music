@@ -45,7 +45,9 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🛠️ Fixed
+- **Task Clear & Cold Startup Crash (`CrashActivity`):** Resolved root cause crashes occurring when clearing the app from Recents after playing a track by adding `ContextCompat.RECEIVER_EXPORTED` flags across all audio, volume, bluetooth, and screen broadcast receivers for Android 14+ (targetSdk 37) compatibility, guarding `PlayerConnection` playback property initialization against uninitialized ExoPlayer state, and pointing all launcher activity aliases directly to `MainActivity`.
 - **Second-Launch Startup Crash:** Resolved window and splash screen collision on second launch after onboarding completion, ensuring smooth immediate entry into the main application.
+- **Consecutive Skip & Like Synchronization:** Fixed desynchronization when skipping tracks and liking songs consecutively by propagating active metadata during ExoPlayer crossfade swaps, resolving the active track's like state from the Room database upon media item transitions, and synchronizing player state flows eagerly.
 - **Local Liked Songs Library Updates:** Fixed Room database liked song persistence without login, guaranteeing that every liked song is immediately saved and instantly reflected in the Liked Songs playlist.
 - **Reliable Song Liking Pipeline:** Fixed desync between UI state, Room database entities, and synchronization tasks, ensuring likes persist reliably across all menus, players, and views.
 - **Stats Top-Right Navigation & Wrapped Stability:** Resolved crashes and infinite loops in Wrapped recap, adding safe bounds checking for smaller libraries and eliminating pre-composition auto-advances.
@@ -71,6 +73,8 @@ Milestone release delivering instant audio streaming, intelligent background cac
 
 ### 🎨 UI/UX
 - **Material 3 Expressive Refinements:** Edge-to-edge layouts, tactile spring physics on interactive buttons, subtle borders on action cards, and coherent dark mode themes.
+- **Floating Navigation Bar Tablet Adaptability:** Added responsive width constraints (`widthIn(max = 500.dp)`) to the floating glass navigation bar and amber dock navigation to prevent over-stretching across tablet and large-screen devices, and removed top specular flare indicators for a clean, unified pill shape.
+- **Dynamic Onboarding Ambient Wave:** Replaced isolated top button visual emblems with a living, harmonic acoustic wave background across all onboarding pages, adapting responsively for both mobile and tablet two-column layouts.
 - **Lyrics Customization Panel:** Dedicated toggles under Lyrics Settings allowing users to easily choose between character-level animation, line-by-line sync, or static text.
 - **Refined Navigation Bar:** Streamlined bottom navigation and player bar docking with adaptive gesture padding.
 

@@ -172,7 +172,16 @@ fun ApplePlayer(
             }
         }
         val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
-        context.registerReceiver(receiver, filter)
+        try {
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                receiver,
+                filter,
+                androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+            )
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Failed to register volume receiver in ApplePlayer")
+        }
         onDispose {
             try {
                 context.unregisterReceiver(receiver)

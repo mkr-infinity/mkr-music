@@ -439,15 +439,28 @@ fun BottomSheetPlayer(
             addAction("android.media.AUDIO_BECOMING_NOISY")
         }
         
-        context.registerReceiver(receiver, filter)
+        try {
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                receiver,
+                filter,
+                androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+            )
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Failed to register audio device receiver in Player")
+        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && callback != null) {
             audioManager.registerAudioDeviceCallback(callback, Handler(Looper.getMainLooper()))
         }
         
         awaitDispose {
-            context.unregisterReceiver(receiver)
+            try {
+                context.unregisterReceiver(receiver)
+            } catch (_: Exception) {}
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && callback != null) {
-                audioManager.unregisterAudioDeviceCallback(callback)
+                try {
+                    audioManager.unregisterAudioDeviceCallback(callback)
+                } catch (_: Exception) {}
             }
         }
     }
@@ -463,9 +476,20 @@ fun BottomSheetPlayer(
             }
         }
         val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
-        context.registerReceiver(receiver, filter)
+        try {
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                receiver,
+                filter,
+                androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+            )
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Failed to register volume receiver in Player")
+        }
         awaitDispose {
-            context.unregisterReceiver(receiver)
+            try {
+                context.unregisterReceiver(receiver)
+            } catch (_: Exception) {}
         }
     }
 
@@ -1238,11 +1262,7 @@ fun BottomSheetPlayer(
             } else {
                 mediaMetadata?.let { metadata ->
                     val isCurrentTrackLiked = if (currentSong?.id == metadata.id) {
-                        if (metadata.liked != (currentSong?.song?.liked == true)) {
-                            metadata.liked
-                        } else {
-                            currentSong?.song?.liked == true
-                        }
+                        currentSong?.song?.liked == true
                     } else {
                         metadata.liked
                     }

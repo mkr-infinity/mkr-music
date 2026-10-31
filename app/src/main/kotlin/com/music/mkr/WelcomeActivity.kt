@@ -361,58 +361,86 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
         ),
         OnboardingPageInfo(
             content = { _ ->
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.Start
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    val isWide = maxWidth >= 600.dp
+                    if (isWide) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(36.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(
+                                    text = stringResource(com.music.mkr.R.string.perm_required),
+                                    style = thinHeaderStyle,
+                                    color = MaterialTheme.colorScheme.onBackground
+                                )
+                                Text(
+                                    text = stringResource(com.music.mkr.R.string.perm_permissions),
+                                    fontFamily = GoogleSansFlex,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 44.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    lineHeight = 52.sp
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = stringResource(com.music.mkr.R.string.perm_intro_text),
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily = GoogleSansFlex
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
 
-                    PermissionsHeroVisual(modifier = Modifier.fillMaxWidth())
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = stringResource(com.music.mkr.R.string.perm_required),
-                        style = thinHeaderStyle,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = stringResource(com.music.mkr.R.string.perm_permissions),
-                        fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 48.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        lineHeight = 56.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = stringResource(com.music.mkr.R.string.perm_intro_text),
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = GoogleSansFlex
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(32.dp))
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        PermissionCard(
-                            icon = painterResource(id = R.drawable.notification),
-                            iconColor = Color(0xFFffaee4),
-                            iconTint = Color(0xFF8d0053),
-                            title = stringResource(com.music.mkr.R.string.perm_notif_title),
-                            description = stringResource(com.music.mkr.R.string.perm_notif_desc),
-                            shape = RoundedCornerShape(24.dp),
-                            control = {
-                                Switch(
-                                    checked = hasNotificationPermission,
-                                    onCheckedChange = {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1.2f)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                PermissionCard(
+                                    icon = painterResource(id = R.drawable.notification),
+                                    iconColor = Color(0xFFffaee4),
+                                    iconTint = Color(0xFF8d0053),
+                                    title = stringResource(com.music.mkr.R.string.perm_notif_title),
+                                    description = stringResource(com.music.mkr.R.string.perm_notif_desc),
+                                    shape = RoundedCornerShape(24.dp),
+                                    control = {
+                                        Switch(
+                                            checked = hasNotificationPermission,
+                                            onCheckedChange = {
+                                                if (hasNotificationPermission) {
+                                                    val intent =
+                                                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                                            putExtra(
+                                                                Settings.EXTRA_APP_PACKAGE,
+                                                                context.packageName
+                                                            )
+                                                        }
+                                                    context.startActivity(intent)
+                                                } else {
+                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                    }
+                                                }
+                                            },
+                                            thumbContent = {
+                                                Icon(
+                                                    painter = painterResource(if (hasNotificationPermission) R.drawable.check else R.drawable.close),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        )
+                                    },
+                                    onClick = {
                                         if (hasNotificationPermission) {
                                             val intent =
                                                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
@@ -427,165 +455,360 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                                                 notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                             }
                                         }
-                                    },
-                                    thumbContent = {
-                                        Icon(
-                                            painter = painterResource(if (hasNotificationPermission) R.drawable.check else R.drawable.close),
-                                            contentDescription = null,
-                                            modifier = Modifier.size(16.dp)
-                                        )
                                     }
                                 )
-                            },
-                            onClick = {
-                                if (hasNotificationPermission) {
-                                    val intent =
-                                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-                                            putExtra(
-                                                Settings.EXTRA_APP_PACKAGE,
-                                                context.packageName
-                                            )
-                                        }
-                                    context.startActivity(intent)
-                                } else {
-                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                                    }
-                                }
                             }
-                        )
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Spacer(modifier = Modifier.height(16.dp))
 
-                        Spacer(modifier = Modifier.height(100.dp))
+                            Text(
+                                text = stringResource(com.music.mkr.R.string.perm_required),
+                                style = thinHeaderStyle,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = stringResource(com.music.mkr.R.string.perm_permissions),
+                                fontFamily = GoogleSansFlex,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 44.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                                lineHeight = 52.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Text(
+                                text = stringResource(com.music.mkr.R.string.perm_intro_text),
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontFamily = GoogleSansFlex
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(28.dp))
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                PermissionCard(
+                                    icon = painterResource(id = R.drawable.notification),
+                                    iconColor = Color(0xFFffaee4),
+                                    iconTint = Color(0xFF8d0053),
+                                    title = stringResource(com.music.mkr.R.string.perm_notif_title),
+                                    description = stringResource(com.music.mkr.R.string.perm_notif_desc),
+                                    shape = RoundedCornerShape(24.dp),
+                                    control = {
+                                        Switch(
+                                            checked = hasNotificationPermission,
+                                            onCheckedChange = {
+                                                if (hasNotificationPermission) {
+                                                    val intent =
+                                                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                                            putExtra(
+                                                                Settings.EXTRA_APP_PACKAGE,
+                                                                context.packageName
+                                                            )
+                                                        }
+                                                    context.startActivity(intent)
+                                                } else {
+                                                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                        notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                    }
+                                                }
+                                            },
+                                            thumbContent = {
+                                                Icon(
+                                                    painter = painterResource(if (hasNotificationPermission) R.drawable.check else R.drawable.close),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        )
+                                    },
+                                    onClick = {
+                                        if (hasNotificationPermission) {
+                                            val intent =
+                                                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                                                    putExtra(
+                                                        Settings.EXTRA_APP_PACKAGE,
+                                                        context.packageName
+                                                    )
+                                                }
+                                            context.startActivity(intent)
+                                        } else {
+                                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                                notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                            }
+                                        }
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(100.dp))
+                            }
+                        }
                     }
                 }
             }
         ),
         OnboardingPageInfo(
             content = { _ ->
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.Start
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxSize()
                 ) {
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    CommunityHeroVisual(modifier = Modifier.fillMaxWidth())
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "Join our",
-                        style = thinHeaderStyle,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Text(
-                        text = "Community",
-                        fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 48.sp,
-                        color = MaterialTheme.colorScheme.primary,
-                        lineHeight = 56.sp
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Text(
-                        text = "MKR Music is open-source and crafted by ${com.music.mkr.github.GitHubConfig.DEV_NAME}. Connect with us, join our community, and support development!",
-                        style = MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = GoogleSansFlex
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    Spacer(modifier = Modifier.height(24.dp))
-
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                    ) {
-                        PermissionCard(
-                            icon = painterResource(id = R.drawable.star),
-                            iconColor = Color(0xFFfff1a8),
-                            iconTint = Color(0xFF8d6e00),
-                            title = "Star MKR Music",
-                            description = "Star our repository on GitHub to support our work.",
-                            shape = topCardShape,
-                            control = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.navigate_next),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    val isWide = maxWidth >= 600.dp
+                    if (isWide) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(36.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                horizontalAlignment = Alignment.Start
+                            ) {
+                                Text(
+                                    text = "Join our",
+                                    style = thinHeaderStyle,
+                                    color = MaterialTheme.colorScheme.onBackground
                                 )
-                            },
-                            onClick = {
-                                uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.REPO_URL)
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        PermissionCard(
-                            icon = painterResource(com.music.mkr.R.drawable.instagram),
-                            iconColor = Color(0xFFffb0cd),
-                            iconTint = Color(0xFF7b003a),
-                            title = "Instagram",
-                            description = "${com.music.mkr.github.GitHubConfig.DEV_HANDLE} - Follow for updates and news.",
-                            shape = middleCardShape,
-                            control = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.navigate_next),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                Text(
+                                    text = "Community",
+                                    fontFamily = GoogleSansFlex,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 44.sp,
+                                    color = MaterialTheme.colorScheme.primary,
+                                    lineHeight = 52.sp
                                 )
-                            },
-                            onClick = {
-                                uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.DEV_INSTAGRAM_URL)
-                            }
-                        )
-
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        PermissionCard(
-                            icon = painterResource(com.music.mkr.R.drawable.globe),
-                            iconColor = Color(0xFFb5e48c),
-                            iconTint = Color(0xFF1b4332),
-                            title = "Developer Website",
-                            description = "Visit mkr-infinity.github.io to explore more projects.",
-                            shape = middleCardShape,
-                            control = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.navigate_next),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "MKR Music is open-source and crafted by ${com.music.mkr.github.GitHubConfig.DEV_NAME}. Connect with us, join our community, and support development!",
+                                    style = MaterialTheme.typography.bodyLarge.copy(
+                                        fontFamily = GoogleSansFlex
+                                    ),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                            },
-                            onClick = {
-                                uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.DEV_WEBSITE_URL)
                             }
-                        )
 
-                        Spacer(modifier = Modifier.height(2.dp))
-
-                        PermissionCard(
-                            icon = painterResource(com.music.mkr.R.drawable.buymeacoffee),
-                            iconColor = Color(0xFFffb4ab),
-                            iconTint = Color(0xFF690005),
-                            title = "Buy Me a Coffee",
-                            description = "Support ongoing development of MKR Music directly.",
-                            shape = bottomCardShape,
-                            control = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.navigate_next),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            Column(
+                                modifier = Modifier
+                                    .weight(1.2f)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                PermissionCard(
+                                    icon = painterResource(id = R.drawable.star),
+                                    iconColor = Color(0xFFfff1a8),
+                                    iconTint = Color(0xFF8d6e00),
+                                    title = "Star MKR Music",
+                                    description = "Star our repository on GitHub to support our work.",
+                                    shape = topCardShape,
+                                    control = {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.navigate_next),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    onClick = {
+                                        uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.REPO_URL)
+                                    }
                                 )
-                            },
-                            onClick = {
-                                uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.DEV_BUYMEACOFFEE_URL)
-                            }
-                        )
 
-                        Spacer(modifier = Modifier.height(100.dp))
+                                Spacer(modifier = Modifier.height(2.dp))
+
+                                PermissionCard(
+                                    icon = painterResource(com.music.mkr.R.drawable.instagram),
+                                    iconColor = Color(0xFFffb0cd),
+                                    iconTint = Color(0xFF7b003a),
+                                    title = "Instagram",
+                                    description = "${com.music.mkr.github.GitHubConfig.DEV_HANDLE} - Follow for updates and news.",
+                                    shape = middleCardShape,
+                                    control = {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.navigate_next),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    onClick = {
+                                        uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.DEV_INSTAGRAM_URL)
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(2.dp))
+
+                                PermissionCard(
+                                    icon = painterResource(com.music.mkr.R.drawable.globe),
+                                    iconColor = Color(0xFFb5e48c),
+                                    iconTint = Color(0xFF1b4332),
+                                    title = "Developer Website",
+                                    description = "Visit mkr-infinity.github.io to explore more projects.",
+                                    shape = middleCardShape,
+                                    control = {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.navigate_next),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    onClick = {
+                                        uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.DEV_WEBSITE_URL)
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(2.dp))
+
+                                PermissionCard(
+                                    icon = painterResource(com.music.mkr.R.drawable.buymeacoffee),
+                                    iconColor = Color(0xFFffb4ab),
+                                    iconTint = Color(0xFF690005),
+                                    title = "Buy Me a Coffee",
+                                    description = "Support ongoing development of MKR Music directly.",
+                                    shape = bottomCardShape,
+                                    control = {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.navigate_next),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    onClick = {
+                                        uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.DEV_BUYMEACOFFEE_URL)
+                                    }
+                                )
+                            }
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.Start
+                        ) {
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Text(
+                                text = "Join our",
+                                style = thinHeaderStyle,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = "Community",
+                                fontFamily = GoogleSansFlex,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 44.sp,
+                                color = MaterialTheme.colorScheme.primary,
+                                lineHeight = 52.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(14.dp))
+
+                            Text(
+                                text = "MKR Music is open-source and crafted by ${com.music.mkr.github.GitHubConfig.DEV_NAME}. Connect with us, join our community, and support development!",
+                                style = MaterialTheme.typography.bodyLarge.copy(
+                                    fontFamily = GoogleSansFlex
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+
+                            Spacer(modifier = Modifier.height(24.dp))
+
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                PermissionCard(
+                                    icon = painterResource(id = R.drawable.star),
+                                    iconColor = Color(0xFFfff1a8),
+                                    iconTint = Color(0xFF8d6e00),
+                                    title = "Star MKR Music",
+                                    description = "Star our repository on GitHub to support our work.",
+                                    shape = topCardShape,
+                                    control = {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.navigate_next),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    onClick = {
+                                        uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.REPO_URL)
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(2.dp))
+
+                                PermissionCard(
+                                    icon = painterResource(com.music.mkr.R.drawable.instagram),
+                                    iconColor = Color(0xFFffb0cd),
+                                    iconTint = Color(0xFF7b003a),
+                                    title = "Instagram",
+                                    description = "${com.music.mkr.github.GitHubConfig.DEV_HANDLE} - Follow for updates and news.",
+                                    shape = middleCardShape,
+                                    control = {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.navigate_next),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    onClick = {
+                                        uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.DEV_INSTAGRAM_URL)
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(2.dp))
+
+                                PermissionCard(
+                                    icon = painterResource(com.music.mkr.R.drawable.globe),
+                                    iconColor = Color(0xFFb5e48c),
+                                    iconTint = Color(0xFF1b4332),
+                                    title = "Developer Website",
+                                    description = "Visit mkr-infinity.github.io to explore more projects.",
+                                    shape = middleCardShape,
+                                    control = {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.navigate_next),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    onClick = {
+                                        uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.DEV_WEBSITE_URL)
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(2.dp))
+
+                                PermissionCard(
+                                    icon = painterResource(com.music.mkr.R.drawable.buymeacoffee),
+                                    iconColor = Color(0xFFffb4ab),
+                                    iconTint = Color(0xFF690005),
+                                    title = "Buy Me a Coffee",
+                                    description = "Support ongoing development of MKR Music directly.",
+                                    shape = bottomCardShape,
+                                    control = {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.navigate_next),
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                    },
+                                    onClick = {
+                                        uriHandler.safeOpenUri(context, com.music.mkr.github.GitHubConfig.DEV_BUYMEACOFFEE_URL)
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(100.dp))
+                            }
+                        }
                     }
                 }
             }
@@ -740,14 +963,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.Start
                     ) {
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        FeaturesHeroVisual(
-                            activeColor = dynamicBgColor,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-
-                        Spacer(modifier = Modifier.height(12.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
                         Column(modifier = Modifier.padding(bottom = 12.dp)) {
                             Text(
@@ -985,10 +1201,85 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
         }
     }
 
+    val infiniteTransition = rememberInfiniteTransition(label = "PagerAmbientLiving")
+    val bgWavePhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2 * Math.PI).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 6500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "bgWavePhase"
+    )
+    val bgGlowScale by infiniteTransition.animateFloat(
+        initialValue = 0.90f,
+        targetValue = 1.25f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bgGlowScale"
+    )
+    val bgGlowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.08f,
+        targetValue = 0.20f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bgGlowAlpha"
+    )
+
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.TopCenter
     ) {
+        Canvas(modifier = Modifier.fillMaxSize()) {
+            val width = size.width
+            val height = size.height
+            val midY = height * 0.45f
+            val waveOffset = kotlin.math.sin(bgWavePhase.toDouble()).toFloat() * (height * 0.05f)
+
+            val path = Path().apply {
+                moveTo(0f, midY + waveOffset)
+                cubicTo(
+                    width * 0.25f, midY - height * 0.15f + waveOffset,
+                    width * 0.55f, midY + height * 0.15f - waveOffset,
+                    width * 0.80f, midY - height * 0.10f + waveOffset
+                )
+                cubicTo(
+                    width * 0.90f, midY + height * 0.10f - waveOffset,
+                    width, midY - height * 0.05f + waveOffset,
+                    width, midY
+                )
+            }
+            drawPath(
+                path = path,
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        primaryColor.copy(alpha = 0.03f),
+                        primaryColor.copy(alpha = 0.32f),
+                        primaryColor.copy(alpha = 0.15f),
+                        primaryColor.copy(alpha = 0.03f)
+                    )
+                ),
+                style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+            )
+
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        primaryColor.copy(alpha = bgGlowAlpha),
+                        primaryColor.copy(alpha = bgGlowAlpha * 0.3f),
+                        Color.Transparent
+                    ),
+                    center = Offset(width * 0.5f, midY),
+                    radius = width * 0.70f * bgGlowScale
+                ),
+                radius = width * 0.70f * bgGlowScale,
+                center = Offset(width * 0.5f, midY)
+            )
+        }
         AnimatedVisibility(
             visible = !showFinishingTransition,
             enter = fadeIn(MaterialTheme.motionScheme.defaultEffectsSpec()),
@@ -1678,295 +1969,7 @@ private fun WelcomeDeveloperChip(
     )
 }
 
-@Composable
-private fun PermissionsHeroVisual(modifier: Modifier = Modifier) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val tertiaryColor = MaterialTheme.colorScheme.tertiary
-    val infiniteTransition = rememberInfiniteTransition(label = "PermHeroAnimation")
 
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.94f,
-        targetValue = 1.06f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2800, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "permPulseScale"
-    )
-    val floatY by infiniteTransition.animateFloat(
-        initialValue = -3f,
-        targetValue = 3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2200, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "permFloatY"
-    )
-    val auraRotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(9000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "permAuraRotation"
-    )
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(84.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        // Rotating fluid aura
-        Box(
-            modifier = Modifier
-                .size(76.dp)
-                .graphicsLayer {
-                    rotationZ = auraRotation
-                    translationY = floatY
-                }
-                .clip(CircleShape)
-                .background(
-                    Brush.sweepGradient(
-                        listOf(
-                            primaryColor.copy(alpha = 0.25f),
-                            Color(0xFFffaee4).copy(alpha = 0.35f),
-                            tertiaryColor.copy(alpha = 0.25f),
-                            primaryColor.copy(alpha = 0.25f)
-                        )
-                    )
-                )
-        )
-
-        // Pulsing outer ripple ring
-        Box(
-            modifier = Modifier
-                .size(68.dp * pulseScale)
-                .graphicsLayer { translationY = floatY }
-                .clip(RoundedCornerShape(22.dp))
-                .background(Color(0xFFffaee4).copy(alpha = 0.20f))
-        )
-
-        // Elevated emblem
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = 8.dp,
-            border = BorderStroke(1.2.dp, primaryColor.copy(alpha = 0.35f)),
-            modifier = Modifier
-                .size(54.dp)
-                .graphicsLayer {
-                    scaleX = pulseScale
-                    scaleY = pulseScale
-                    translationY = floatY
-                }
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = painterResource(id = R.drawable.notification),
-                    contentDescription = null,
-                    tint = primaryColor,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun CommunityHeroVisual(modifier: Modifier = Modifier) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val goldColor = Color(0xFFFFB300)
-    val infiniteTransition = rememberInfiniteTransition(label = "CommunityHeroAnimation")
-
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.94f,
-        targetValue = 1.06f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(3000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "commPulseScale"
-    )
-    val floatY by infiniteTransition.animateFloat(
-        initialValue = -3.5f,
-        targetValue = 3.5f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2400, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "commFloatY"
-    )
-    val auraRotation by infiniteTransition.animateFloat(
-        initialValue = 360f,
-        targetValue = 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(8500, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "commAuraRotation"
-    )
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(84.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        // Rotating golden aura
-        Box(
-            modifier = Modifier
-                .size(76.dp)
-                .graphicsLayer {
-                    rotationZ = auraRotation
-                    translationY = floatY
-                }
-                .clip(CircleShape)
-                .background(
-                    Brush.sweepGradient(
-                        listOf(
-                            goldColor.copy(alpha = 0.30f),
-                            primaryColor.copy(alpha = 0.35f),
-                            Color(0xFFffb0cd).copy(alpha = 0.25f),
-                            goldColor.copy(alpha = 0.30f)
-                        )
-                    )
-                )
-        )
-
-        // Pulsing outer ripple ring
-        Box(
-            modifier = Modifier
-                .size(68.dp * pulseScale)
-                .graphicsLayer { translationY = floatY }
-                .clip(RoundedCornerShape(22.dp))
-                .background(goldColor.copy(alpha = 0.18f))
-        )
-
-        // Elevated emblem
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = 8.dp,
-            border = BorderStroke(1.2.dp, goldColor.copy(alpha = 0.40f)),
-            modifier = Modifier
-                .size(54.dp)
-                .graphicsLayer {
-                    scaleX = pulseScale
-                    scaleY = pulseScale
-                    translationY = floatY
-                }
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = painterResource(id = R.drawable.star),
-                    contentDescription = null,
-                    tint = goldColor,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun FeaturesHeroVisual(
-    activeColor: Color = MaterialTheme.colorScheme.primary,
-    modifier: Modifier = Modifier
-) {
-    val primaryColor = MaterialTheme.colorScheme.primary
-    val infiniteTransition = rememberInfiniteTransition(label = "FeaturesHeroAnimation")
-
-    val pulseScale by infiniteTransition.animateFloat(
-        initialValue = 0.95f,
-        targetValue = 1.05f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2600, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "featPulseScale"
-    )
-    val floatY by infiniteTransition.animateFloat(
-        initialValue = -3f,
-        targetValue = 3f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "featFloatY"
-    )
-    val auraRotation by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(7000, easing = LinearEasing),
-            repeatMode = RepeatMode.Restart
-        ),
-        label = "featAuraRotation"
-    )
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .height(84.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        // Rotating fluid chromatic aura synced with active feature
-        Box(
-            modifier = Modifier
-                .size(76.dp)
-                .graphicsLayer {
-                    rotationZ = auraRotation
-                    translationY = floatY
-                }
-                .clip(CircleShape)
-                .background(
-                    Brush.sweepGradient(
-                        listOf(
-                            activeColor.copy(alpha = 0.40f),
-                            primaryColor.copy(alpha = 0.25f),
-                            activeColor.copy(alpha = 0.50f),
-                            activeColor.copy(alpha = 0.40f)
-                        )
-                    )
-                )
-        )
-
-        // Pulsing outer ripple ring
-        Box(
-            modifier = Modifier
-                .size(68.dp * pulseScale)
-                .graphicsLayer { translationY = floatY }
-                .clip(RoundedCornerShape(22.dp))
-                .background(activeColor.copy(alpha = 0.22f))
-        )
-
-        // Elevated emblem
-        Surface(
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-            shadowElevation = 8.dp,
-            border = BorderStroke(1.2.dp, activeColor.copy(alpha = 0.50f)),
-            modifier = Modifier
-                .size(54.dp)
-                .graphicsLayer {
-                    scaleX = pulseScale
-                    scaleY = pulseScale
-                    translationY = floatY
-                }
-        ) {
-            Box(contentAlignment = Alignment.Center) {
-                Icon(
-                    painter = painterResource(id = R.drawable.sparks),
-                    contentDescription = null,
-                    tint = activeColor,
-                    modifier = Modifier.size(26.dp)
-                )
-            }
-        }
-    }
-}
 
 @Composable
 fun BlobClusterLoading(modifier: Modifier = Modifier) {

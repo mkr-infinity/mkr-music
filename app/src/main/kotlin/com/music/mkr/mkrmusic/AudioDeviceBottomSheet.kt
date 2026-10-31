@@ -203,22 +203,34 @@ fun AudioDeviceBottomSheet(
             }
         }
 
-        context.registerReceiver(
-            volumeChangeReceiver,
-            IntentFilter("android.media.VOLUME_CHANGED_ACTION")
-        )
+        try {
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                volumeChangeReceiver,
+                IntentFilter("android.media.VOLUME_CHANGED_ACTION"),
+                androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+            )
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Failed to register volumeChangeReceiver")
+        }
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            context.registerReceiver(
-                audioDeviceReceiver,
-                IntentFilter().apply {
-                    addAction(AudioManager.ACTION_HEADSET_PLUG)
-                    addAction(AudioManager.ACTION_HDMI_AUDIO_PLUG)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                        addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
-                    }
-                }
-            )
+            try {
+                androidx.core.content.ContextCompat.registerReceiver(
+                    context,
+                    audioDeviceReceiver,
+                    IntentFilter().apply {
+                        addAction(AudioManager.ACTION_HEADSET_PLUG)
+                        addAction(AudioManager.ACTION_HDMI_AUDIO_PLUG)
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                            addAction(AudioManager.ACTION_AUDIO_BECOMING_NOISY)
+                        }
+                    },
+                    androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+                )
+            } catch (e: Exception) {
+                timber.log.Timber.e(e, "Failed to register audioDeviceReceiver")
+            }
         }
 
         if (checkBluetoothPermission(context)) {
@@ -260,13 +272,19 @@ fun AudioDeviceBottomSheet(
             }
         }
 
-        context.registerReceiver(
-            bluetoothReceiver,
-            IntentFilter().apply {
-                addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
-                addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
-            }
-        )
+        try {
+            androidx.core.content.ContextCompat.registerReceiver(
+                context,
+                bluetoothReceiver,
+                IntentFilter().apply {
+                    addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+                    addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+                },
+                androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+            )
+        } catch (e: Exception) {
+            timber.log.Timber.e(e, "Failed to register bluetoothReceiver")
+        }
 
         val batteryPollingRunnable = object : Runnable {
             override fun run() {

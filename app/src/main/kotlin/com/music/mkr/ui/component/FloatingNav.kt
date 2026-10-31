@@ -116,6 +116,7 @@ fun AmberDockNavigationBar(
     ) {
         Row(
             modifier = Modifier
+                .widthIn(max = 500.dp)
                 .fillMaxWidth()
                 .height(68.dp)
                 .shadow(
@@ -347,6 +348,7 @@ fun FloatingGlassNavigationBar(
     ) {
         Box(
             modifier = Modifier
+                .widthIn(max = 500.dp)
                 .fillMaxWidth()
                 .height(dockHeight)
                 .shadow(
@@ -358,15 +360,6 @@ fun FloatingGlassNavigationBar(
                 .background(glassBaseColor, shape = glassShape)
                 .border(width = 1.dp, brush = glassRimBrush, shape = glassShape)
         ) {
-            // Subtle top refractive specular flare
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(1.dp)
-                    .padding(horizontal = 24.dp)
-                    .background(specularFlare)
-            )
-
             Row(
                 modifier = Modifier
                     .fillMaxSize()
@@ -533,17 +526,6 @@ private fun FloatingGlassItem(
                     overflow = TextOverflow.Ellipsis
                 )
             }
-
-            Spacer(modifier = Modifier.height(2.dp))
-
-            // Prismatic liquid underline indicator
-            Box(
-                modifier = Modifier
-                    .width(indicatorWidth)
-                    .height(2.5.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-            )
         }
     }
 }

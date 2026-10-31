@@ -619,7 +619,16 @@ class MusicService :
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_SCREEN_OFF)
         }
-        registerReceiver(screenStateReceiver, screenStateFilter)
+        try {
+            androidx.core.content.ContextCompat.registerReceiver(
+                this,
+                screenStateReceiver,
+                screenStateFilter,
+                androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+            )
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Failed to register screenStateReceiver")
+        }
 
         audioManager.registerAudioDeviceCallback(audioDeviceCallback, null)
 
@@ -2516,7 +2525,18 @@ class MusicService :
         mediaItem: MediaItem?,
         reason: Int,
     ) {
-        currentMediaMetadata.value = mediaItem?.metadata ?: player.currentMetadata
+        val rawMeta = mediaItem?.metadata ?: player.currentMetadata
+        val resolvedMeta = if (rawMeta != null) {
+            val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
+            if (dbSong != null) {
+                rawMeta.copy(
+                    liked = dbSong.song.liked,
+                    likedDate = dbSong.song.likedDate,
+                    inLibrary = dbSong.song.inLibrary
+                )
+            } else rawMeta
+        } else null
+        currentMediaMetadata.value = resolvedMeta
         cancelPendingDelayedCacheTimer()
         cancelPendingDelayedHistoryTimer()
         currentRecordedHistoryMediaId = null
@@ -4643,6 +4663,21 @@ class MusicService :
         player = nextPlayer
         _playerFlow.value = player
         secondaryPlayer = null
+
+        // Immediately sync currentMediaMetadata and notification for the newly active song on nextPlayer
+        val nextMeta = nextPlayer.currentMetadata
+        if (nextMeta != null) {
+            val dbSong = synchronized(database) { database.getSongByIdBlocking(nextMeta.id) }
+            val resolvedMeta = if (dbSong != null) {
+                nextMeta.copy(
+                    liked = dbSong.song.liked,
+                    likedDate = dbSong.song.likedDate,
+                    inLibrary = dbSong.song.inLibrary
+                )
+            } else nextMeta
+            currentMediaMetadata.value = resolvedMeta
+            updateNotification()
+        }
 
         fadingPlayer?.removeListener(this)
         fadingPlayer?.removeListener(sleepTimer)

@@ -140,14 +140,14 @@ class PlayerConnection(
     }.stateIn(
         scope,
         SharingStarted.Lazily,
-        player.playbackState != STATE_ENDED && player.playWhenReady
+        try { player.playbackState != STATE_ENDED && player.playWhenReady } catch (e: Exception) { false }
     )
     
-    val mediaMetadata = MutableStateFlow(player.currentMetadata)
+    val mediaMetadata = MutableStateFlow(try { player.currentMetadata } catch (e: Exception) { null })
     val currentSong =
         mediaMetadata.flatMapLatest {
             database.song(it?.id)
-        }
+        }.stateIn(scope, SharingStarted.Eagerly, null)
     val currentLyrics = mediaMetadata.flatMapLatest { mediaMetadata ->
         database.lyrics(mediaMetadata?.id)
     }
@@ -302,11 +302,18 @@ class PlayerConnection(
         try {
             val current = mediaMetadata.value
             if (current != null) {
-                // Optimistically update immediately for snappy UI responsiveness
-                val optimisticLiked = !current.liked
+                // Determine true current liked state from Room DB if loaded, otherwise from metadata
+                val currentSongEnt = currentSong.value
+                val isCurrentlyLiked = if (currentSongEnt?.id == current.id) {
+                    currentSongEnt.song.liked
+                } else {
+                    current.liked
+                }
+                val shouldLike = !isCurrentlyLiked
                 val optimisticMeta = current.copy(
-                    liked = optimisticLiked,
-                    likedDate = if (optimisticLiked) (current.likedDate ?: java.time.LocalDateTime.now()) else null
+                    liked = shouldLike,
+                    likedDate = if (shouldLike) (current.likedDate ?: java.time.LocalDateTime.now()) else null,
+                    inLibrary = if (shouldLike) (current.inLibrary ?: java.time.LocalDateTime.now()) else current.inLibrary
                 )
                 mediaMetadata.value = optimisticMeta
                 service.toggleLike(current)
@@ -515,9 +522,20 @@ class PlayerConnection(
         mediaItem: MediaItem?,
         reason: Int,
     ) {
-        mediaMetadata.value = mediaItem?.metadata ?: player.currentMetadata
-        currentMediaItemIndex.value = player.currentMediaItemIndex
-        currentWindowIndex.value = player.getCurrentQueueIndex()
+        val rawMeta = mediaItem?.metadata ?: (try { player.currentMetadata } catch (e: Exception) { null })
+        val resolvedMeta = if (rawMeta != null) {
+            val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
+            if (dbSong != null) {
+                rawMeta.copy(
+                    liked = dbSong.song.liked,
+                    likedDate = dbSong.song.likedDate,
+                    inLibrary = dbSong.song.inLibrary
+                )
+            } else rawMeta
+        } else null
+        mediaMetadata.value = resolvedMeta
+        currentMediaItemIndex.value = try { player.currentMediaItemIndex } catch (e: Exception) { -1 }
+        currentWindowIndex.value = try { player.getCurrentQueueIndex() } catch (e: Exception) { -1 }
         updateCanSkipPreviousAndNext()
         // Auto-refresh radio filter chips for every newly active song
         if (mediaItem != null) {
@@ -529,11 +547,22 @@ class PlayerConnection(
         timeline: Timeline,
         reason: Int,
     ) {
-        mediaMetadata.value = player.currentMetadata
-        queueWindows.value = player.getQueueWindows()
+        val rawMeta = try { player.currentMetadata } catch (e: Exception) { null }
+        val resolvedMeta = if (rawMeta != null) {
+            val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
+            if (dbSong != null) {
+                rawMeta.copy(
+                    liked = dbSong.song.liked,
+                    likedDate = dbSong.song.likedDate,
+                    inLibrary = dbSong.song.inLibrary
+                )
+            } else rawMeta
+        } else null
+        mediaMetadata.value = resolvedMeta
+        queueWindows.value = try { player.getQueueWindows() } catch (e: Exception) { emptyList() }
         queueTitle.value = service.queueTitle
-        currentMediaItemIndex.value = player.currentMediaItemIndex
-        currentWindowIndex.value = player.getCurrentQueueIndex()
+        currentMediaItemIndex.value = try { player.currentMediaItemIndex } catch (e: Exception) { -1 }
+        currentWindowIndex.value = try { player.getCurrentQueueIndex() } catch (e: Exception) { -1 }
         updateCanSkipPreviousAndNext()
     }
 

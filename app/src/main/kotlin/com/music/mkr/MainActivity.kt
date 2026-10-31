@@ -402,8 +402,20 @@ class MainActivity : ComponentActivity() {
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_LTR
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        getSharedPreferences("app_state", Context.MODE_PRIVATE)
-            .edit()
+        val sp = getSharedPreferences("app_state", Context.MODE_PRIVATE)
+        val hasCompletedOnboarding = sp.getBoolean("has_completed_onboarding", false) || !dataStore.get(com.music.mkr.constants.IsFirstRunKey, true)
+        if (!hasCompletedOnboarding) {
+            val welcomeIntent = Intent(this, WelcomeActivity::class.java).apply {
+                this@MainActivity.intent?.extras?.let { putExtras(it) }
+                action = this@MainActivity.intent?.action
+                data = this@MainActivity.intent?.data
+            }
+            startActivity(welcomeIntent)
+            finish()
+            return
+        }
+
+        sp.edit()
             .putBoolean("has_completed_onboarding", true)
             .apply()
 
