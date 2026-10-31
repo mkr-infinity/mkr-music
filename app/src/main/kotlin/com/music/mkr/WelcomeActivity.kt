@@ -199,7 +199,7 @@ class WelcomeActivity : ComponentActivity() {
         try {
             installSplashScreen()
         } catch (e: Exception) {
-            Timber.e(e, "SplashScreen install failed in WelcomeActivity")
+            timber.log.Timber.e(e, "SplashScreen install failed in WelcomeActivity")
         }
         super.onCreate(savedInstanceState)
 
