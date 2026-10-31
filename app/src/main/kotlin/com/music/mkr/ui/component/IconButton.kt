@@ -77,7 +77,7 @@ fun ResizableIconButton(
 @Composable
 fun IconButton(
     onClick: () -> Unit,
-    onLongClick: (() -> Unit)? = null,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),

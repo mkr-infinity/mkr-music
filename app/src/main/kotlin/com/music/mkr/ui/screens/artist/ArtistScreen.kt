@@ -111,7 +111,7 @@ import com.music.mkr.playback.queues.ListQueue
 import com.music.mkr.playback.queues.YouTubeQueue
 import com.music.mkr.ui.component.AlbumGridItem
 import com.music.mkr.ui.component.ExpandableText
-import com.music.mkr.ui.component.IconButton
+import androidx.compose.material3.IconButton
 import com.music.mkr.ui.component.LinkSegment
 import com.music.mkr.ui.component.LocalMenuState
 import com.music.mkr.ui.component.MkrAmbientBackdrop

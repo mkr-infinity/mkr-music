@@ -101,7 +101,7 @@ import com.music.mkr.db.entities.Album
 import com.music.mkr.extensions.togglePlayPause
 import com.music.mkr.playback.queues.LocalAlbumRadio
 import com.music.mkr.ui.component.EmptyPlaceholder
-import com.music.mkr.ui.component.IconButton
+import androidx.compose.material3.IconButton
 import com.music.mkr.ui.component.LocalMenuState
 import com.music.mkr.ui.component.MkrAmbientBackdrop
 import com.music.mkr.ui.component.MkrBadge

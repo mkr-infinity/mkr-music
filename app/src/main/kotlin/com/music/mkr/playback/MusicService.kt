@@ -1430,7 +1430,7 @@ class MusicService :
             com.music.mkr.models.MediaMetadata(
                 id = mediaId,
                 title = details.title.orEmpty(),
-                artists = listOf(com.music.mkr.models.Artist(id = details.channelId, name = details.author.orEmpty())),
+                artists = listOf(com.music.mkr.models.MediaMetadata.Artist(id = details.channelId, name = details.author.orEmpty())),
                 duration = details.lengthSeconds.toIntOrNull() ?: -1,
                 thumbnailUrl = details.thumbnail.thumbnails.lastOrNull()?.url
             )
