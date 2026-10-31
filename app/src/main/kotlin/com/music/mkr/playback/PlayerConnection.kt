@@ -117,6 +117,15 @@ class PlayerConnection(
                 }
             }
         }
+
+        // Keep local mediaMetadata updated when service updates currentMediaMetadata
+        scope.launch {
+            service.currentMediaMetadata.collect { meta ->
+                if (meta != null) {
+                    mediaMetadata.value = meta
+                }
+            }
+        }
         
         Timber.tag(TAG).d("PlayerConnection state flows initialized successfully")
     }

@@ -2311,29 +2311,29 @@ class MusicService :
 
         scope.launch(Dispatchers.IO) {
             try {
-                val requestedSong = synchronized(database) {
-                    var currentSongEntity = database.getSongByIdBlocking(mediaMetadata.id)
-                    if (currentSongEntity == null) {
+                var currentSongEntity = synchronized(database) { database.getSongByIdBlocking(mediaMetadata.id) }
+                if (currentSongEntity == null) {
+                    synchronized(database) {
                         database.insert(mediaMetadata)
                         currentSongEntity = database.getSongByIdBlocking(mediaMetadata.id)
                     }
-                    currentSongEntity?.let {
-                        val toggled = it.song.toggleLike()
-                        database.update(toggled)
-                        toggled
-                    }
-                } ?: return@launch
+                }
+                val entityToToggle = currentSongEntity?.song ?: mediaMetadata.toSongEntity()
+                val toggled = entityToToggle.toggleLike()
+                database.query {
+                    upsert(toggled)
+                }
 
-                syncUtils.likeSong(requestedSong)
+                syncUtils.likeSong(toggled)
 
                 // Check if auto-download on like is enabled and the song is now liked
-                if (!requestedSong.isLocal && dataStore.get(AutoDownloadOnLikeKey, false) && requestedSong.liked) {
+                if (!toggled.isLocal && dataStore.get(AutoDownloadOnLikeKey, false) && toggled.liked) {
                     // Trigger download for the liked song
                     val downloadRequest =
                         androidx.media3.exoplayer.offline.DownloadRequest
-                            .Builder(requestedSong.id, requestedSong.id.toUri())
-                            .setCustomCacheKey(requestedSong.id)
-                            .setData(requestedSong.title.toByteArray())
+                            .Builder(toggled.id, toggled.id.toUri())
+                            .setCustomCacheKey(toggled.id)
+                            .setData(toggled.title.toByteArray())
                             .build()
                     androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
                         this@MusicService,
@@ -2344,12 +2344,13 @@ class MusicService :
                 }
 
                 val updatedMetadata = mediaMetadata.copy(
-                    liked = requestedSong.liked,
-                    likedDate = requestedSong.likedDate,
-                    inLibrary = requestedSong.inLibrary
+                    liked = toggled.liked,
+                    likedDate = toggled.likedDate,
+                    inLibrary = toggled.inLibrary
                 )
                 withContext(Dispatchers.Main) {
                     currentMediaMetadata.value = updatedMetadata
+                    updateNotification()
                 }
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Error in toggleLike for ${mediaMetadata.id}")

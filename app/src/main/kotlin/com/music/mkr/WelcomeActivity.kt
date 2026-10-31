@@ -353,7 +353,11 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(40.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    PermissionsHeroVisual(modifier = Modifier.fillMaxWidth())
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
                         text = stringResource(com.music.mkr.R.string.perm_required),
@@ -450,7 +454,11 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(40.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    CommunityHeroVisual(modifier = Modifier.fillMaxWidth())
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
                         text = "Join our",
@@ -656,7 +664,11 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(64.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    FeaturesHeroVisual(modifier = Modifier.fillMaxWidth())
+
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     Column(modifier = Modifier.padding(bottom = 12.dp)) {
                         Text(
@@ -1346,6 +1358,26 @@ private fun WavySoundwaveHero(
         label = "emblemTranslationY"
     )
 
+    val logoAuraRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 7500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "logoAuraRotation"
+    )
+
+    val logoAuraPulse by infiniteTransition.animateFloat(
+        initialValue = 0.90f,
+        targetValue = 1.25f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "logoAuraPulse"
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -1433,6 +1465,38 @@ private fun WavySoundwaveHero(
                 center = Offset(width * 0.5f, midY)
             )
         }
+
+        // Living dynamic chromatic aura behind the app logo
+        Box(
+            modifier = Modifier
+                .size(heroSize * 1.38f * logoAuraPulse)
+                .graphicsLayer {
+                    rotationZ = logoAuraRotation
+                    translationY = emblemTranslationY
+                }
+                .clip(CircleShape)
+                .background(
+                    Brush.sweepGradient(
+                        listOf(
+                            primaryColor.copy(alpha = 0.35f),
+                            tertiaryColor.copy(alpha = 0.42f),
+                            Color(0xFFFFB300).copy(alpha = 0.25f),
+                            primaryColor.copy(alpha = 0.35f)
+                        )
+                    )
+                )
+        )
+
+        // Pulsating living expansion ring behind logo
+        Box(
+            modifier = Modifier
+                .size(heroSize * 1.22f * emblemScale)
+                .graphicsLayer {
+                    translationY = emblemTranslationY
+                }
+                .clip(RoundedCornerShape(36.dp))
+                .background(primaryColor.copy(alpha = 0.18f))
+        )
 
         // Layered elevated emblem with living breathing motion
         Surface(
@@ -1523,6 +1587,294 @@ private fun WelcomeDeveloperChip(
         ),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
     )
+}
+
+@Composable
+private fun PermissionsHeroVisual(modifier: Modifier = Modifier) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val infiniteTransition = rememberInfiniteTransition(label = "PermHeroAnimation")
+
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.94f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "permPulseScale"
+    )
+    val floatY by infiniteTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "permFloatY"
+    )
+    val auraRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(9000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "permAuraRotation"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(84.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Rotating fluid aura
+        Box(
+            modifier = Modifier
+                .size(76.dp)
+                .graphicsLayer {
+                    rotationZ = auraRotation
+                    translationY = floatY
+                }
+                .clip(CircleShape)
+                .background(
+                    Brush.sweepGradient(
+                        listOf(
+                            primaryColor.copy(alpha = 0.25f),
+                            Color(0xFFffaee4).copy(alpha = 0.35f),
+                            tertiaryColor.copy(alpha = 0.25f),
+                            primaryColor.copy(alpha = 0.25f)
+                        )
+                    )
+                )
+        )
+
+        // Pulsing outer ripple ring
+        Box(
+            modifier = Modifier
+                .size(68.dp * pulseScale)
+                .graphicsLayer { translationY = floatY }
+                .clip(RoundedCornerShape(22.dp))
+                .background(Color(0xFFffaee4).copy(alpha = 0.20f))
+        )
+
+        // Elevated emblem
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = 8.dp,
+            border = BorderStroke(1.2.dp, primaryColor.copy(alpha = 0.35f)),
+            modifier = Modifier
+                .size(54.dp)
+                .graphicsLayer {
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                    translationY = floatY
+                }
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(id = R.drawable.notification),
+                    contentDescription = null,
+                    tint = primaryColor,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityHeroVisual(modifier: Modifier = Modifier) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val goldColor = Color(0xFFFFB300)
+    val infiniteTransition = rememberInfiniteTransition(label = "CommunityHeroAnimation")
+
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.94f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "commPulseScale"
+    )
+    val floatY by infiniteTransition.animateFloat(
+        initialValue = -3.5f,
+        targetValue = 3.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "commFloatY"
+    )
+    val auraRotation by infiniteTransition.animateFloat(
+        initialValue = 360f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(8500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "commAuraRotation"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(84.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Rotating golden aura
+        Box(
+            modifier = Modifier
+                .size(76.dp)
+                .graphicsLayer {
+                    rotationZ = auraRotation
+                    translationY = floatY
+                }
+                .clip(CircleShape)
+                .background(
+                    Brush.sweepGradient(
+                        listOf(
+                            goldColor.copy(alpha = 0.30f),
+                            primaryColor.copy(alpha = 0.35f),
+                            Color(0xFFffb0cd).copy(alpha = 0.25f),
+                            goldColor.copy(alpha = 0.30f)
+                        )
+                    )
+                )
+        )
+
+        // Pulsing outer ripple ring
+        Box(
+            modifier = Modifier
+                .size(68.dp * pulseScale)
+                .graphicsLayer { translationY = floatY }
+                .clip(RoundedCornerShape(22.dp))
+                .background(goldColor.copy(alpha = 0.18f))
+        )
+
+        // Elevated emblem
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = 8.dp,
+            border = BorderStroke(1.2.dp, goldColor.copy(alpha = 0.40f)),
+            modifier = Modifier
+                .size(54.dp)
+                .graphicsLayer {
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                    translationY = floatY
+                }
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(id = R.drawable.star),
+                    contentDescription = null,
+                    tint = goldColor,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeaturesHeroVisual(modifier: Modifier = Modifier) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val infiniteTransition = rememberInfiniteTransition(label = "FeaturesHeroAnimation")
+
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.95f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "featPulseScale"
+    )
+    val floatY by infiniteTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "featFloatY"
+    )
+    val auraRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(7000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "featAuraRotation"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(84.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Rotating fluid chromatic aura
+        Box(
+            modifier = Modifier
+                .size(76.dp)
+                .graphicsLayer {
+                    rotationZ = auraRotation
+                    translationY = floatY
+                }
+                .clip(CircleShape)
+                .background(
+                    Brush.sweepGradient(
+                        listOf(
+                            primaryColor.copy(alpha = 0.30f),
+                            tertiaryColor.copy(alpha = 0.35f),
+                            Color(0xFF80da88).copy(alpha = 0.25f),
+                            primaryColor.copy(alpha = 0.30f)
+                        )
+                    )
+                )
+        )
+
+        // Pulsing outer ripple ring
+        Box(
+            modifier = Modifier
+                .size(68.dp * pulseScale)
+                .graphicsLayer { translationY = floatY }
+                .clip(RoundedCornerShape(22.dp))
+                .background(primaryColor.copy(alpha = 0.18f))
+        )
+
+        // Elevated emblem
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = 8.dp,
+            border = BorderStroke(1.2.dp, primaryColor.copy(alpha = 0.40f)),
+            modifier = Modifier
+                .size(54.dp)
+                .graphicsLayer {
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                    translationY = floatY
+                }
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(id = R.drawable.sparks),
+                    contentDescription = null,
+                    tint = primaryColor,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+        }
+    }
 }
 
 @Composable
