@@ -5,6 +5,10 @@
 
 package com.music.mkr.ui.screens.playlist
 
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -126,6 +130,7 @@ import com.music.mkr.ui.component.LocalMenuState
 import com.music.mkr.ui.component.MkrAmbientBackdrop
 import com.music.mkr.ui.component.MkrBadge
 import com.music.mkr.ui.component.NavigationTitle
+import com.music.mkr.ui.component.PlayingIndicator
 import com.music.mkr.ui.component.YouTubeGridItem
 import com.music.mkr.ui.component.YouTubeListItem
 import com.music.mkr.ui.component.mkrPressFeedback
@@ -156,6 +161,7 @@ fun OnlinePlaylistScreen(
     scrollBehavior: TopAppBarScrollBehavior,
     viewModel: OnlinePlaylistViewModel = hiltViewModel(),
 ) {
+    val context = LocalContext.current
     val menuState = LocalMenuState.current
     val database = LocalDatabase.current
     val haptic = LocalHapticFeedback.current
@@ -370,6 +376,17 @@ fun OnlinePlaylistScreen(
                             onSearchTrigger = {
                                 isSearching = true
                             },
+                            onAuthorClick = currentPlaylist.author?.id?.let { authorId ->
+                                { navController.navigate("artist/$authorId") }
+                            },
+                            onShareClick = {
+                                currentPlaylist.shareLink.let { link ->
+                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                    val clip = ClipData.newPlainText("Playlist Link", link)
+                                    clipboard.setPrimaryClip(clip)
+                                    Toast.makeText(context, R.string.link_copied, Toast.LENGTH_SHORT).show()
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(top = systemBarsTopPadding + 16.dp, start = 20.dp, end = 20.dp, bottom = 12.dp)
@@ -415,15 +432,22 @@ fun OnlinePlaylistScreen(
                         }
                     }
 
-                    YouTubeListItem(
-                        item = songItem,
+                    PlaylistTrackCard(
+                        index = index,
+                        songItem = songItem,
                         isActive = mediaMetadata?.id == songItem.id,
                         isPlaying = isPlaying,
                         isSelected = inSelectMode && songItem.id in selection,
-                        albumIndex = index + 1,
-                        shape = listItemShape(index, filteredSongs.size),
+                        inSelectMode = inSelectMode,
+                        onCheckedChange = onCheckedChange,
+                        onMenuClick = {
+                            menuState.show {
+                                YouTubeSongMenu(songItem, navController, menuState::dismiss)
+                            }
+                        },
                         modifier = Modifier
                             .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 4.dp)
                             .combinedClickable(
                                 enabled = !hideExplicit || !songItem.explicit,
                                 onClick = {
@@ -460,29 +484,7 @@ fun OnlinePlaylistScreen(
                                         onCheckedChange(true)
                                     }
                                 }
-                            ),
-                        trailingContent = {
-                            if (inSelectMode) {
-                                Checkbox(
-                                    checked = songItem.id in selection,
-                                    onCheckedChange = onCheckedChange
-                                )
-                            } else {
-                                IconButton(
-                                    onClick = {
-                                        menuState.show {
-                                            YouTubeSongMenu(songItem, navController, menuState::dismiss)
-                                        }
-                                    }
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.more_vert),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
+                            )
                     )
                 }
 
@@ -746,6 +748,8 @@ private fun OnlinePlaylistHeroHeader(
     onShuffle: () -> Unit,
     onToggleBookmark: () -> Unit,
     onSearchTrigger: () -> Unit,
+    onAuthorClick: (() -> Unit)? = null,
+    onShareClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     BoxWithConstraints(modifier = modifier) {
@@ -771,7 +775,8 @@ private fun OnlinePlaylistHeroHeader(
                     PlaylistMetadataContent(
                         playlist = playlist,
                         songs = songs,
-                        textAlign = TextAlign.Start
+                        textAlign = TextAlign.Start,
+                        onAuthorClick = onAuthorClick
                     )
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -782,7 +787,8 @@ private fun OnlinePlaylistHeroHeader(
                         onPlay = onPlay,
                         onShuffle = onShuffle,
                         onToggleBookmark = onToggleBookmark,
-                        onSearchTrigger = onSearchTrigger
+                        onSearchTrigger = onSearchTrigger,
+                        onShareClick = onShareClick
                     )
                 }
             }
@@ -802,7 +808,8 @@ private fun OnlinePlaylistHeroHeader(
                 PlaylistMetadataContent(
                     playlist = playlist,
                     songs = songs,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
+                    onAuthorClick = onAuthorClick
                 )
 
                 Spacer(modifier = Modifier.height(2.dp))
@@ -814,7 +821,8 @@ private fun OnlinePlaylistHeroHeader(
                     onPlay = onPlay,
                     onShuffle = onShuffle,
                     onToggleBookmark = onToggleBookmark,
-                    onSearchTrigger = onSearchTrigger
+                    onSearchTrigger = onSearchTrigger,
+                    onShareClick = onShareClick
                 )
             }
         }
@@ -868,6 +876,7 @@ private fun PlaylistMetadataContent(
     playlist: PlaylistItem,
     songs: List<SongItem>,
     textAlign: TextAlign,
+    onAuthorClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     val totalDuration = remember(songs) { songs.sumOf { it.duration ?: 0 } }
@@ -878,6 +887,24 @@ private fun PlaylistMetadataContent(
         horizontalAlignment = if (textAlign == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
+        // Tag Capsule: Curated Playlist
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+        ) {
+            Text(
+                text = "CURATED PLAYLIST",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp,
+                    fontSize = 10.sp
+                ),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+            )
+        }
+
         // Title
         Text(
             text = playlist.title,
@@ -894,17 +921,31 @@ private fun PlaylistMetadataContent(
 
         // Curator / Author
         playlist.author?.name?.let { authorName ->
-            Text(
-                text = authorName,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = textAlign
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .clip(RoundedCornerShape(8.dp))
+                    .then(if (onAuthorClick != null) Modifier.clickable(onClick = onAuthorClick) else Modifier)
+                    .padding(horizontal = 4.dp, vertical = 2.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.artist_screen),
+                    contentDescription = null,
+                    modifier = Modifier.size(15.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = authorName,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
 
         // Badges row: count, duration, explicit
@@ -970,6 +1011,7 @@ private fun PlaylistMetadataContent(
  *   - Shuffle button: Compact tonal pill (height 46dp) with Shuffle icon + label.
  *   - Save / Bookmark button: Compact squircle icon button (46dp x 46dp, radius 16dp).
  *   - Search in playlist button: Compact squircle icon button (46dp x 46dp, radius 16dp).
+ *   - Share link button: Compact squircle icon button (46dp x 46dp, radius 16dp).
  */
 @Composable
 private fun OnlinePlaylistActionButtons(
@@ -979,6 +1021,7 @@ private fun OnlinePlaylistActionButtons(
     onShuffle: () -> Unit,
     onToggleBookmark: () -> Unit,
     onSearchTrigger: () -> Unit,
+    onShareClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Row(
@@ -1003,11 +1046,18 @@ private fun OnlinePlaylistActionButtons(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    painter = painterResource(if (isPlaying) R.drawable.pause else R.drawable.play),
-                    contentDescription = null,
-                    modifier = Modifier.size(18.dp)
-                )
+                if (isPlaying) {
+                    PlayingIndicator(
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(16.dp)
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(R.drawable.play),
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
                     text = if (isPlaying) stringResource(R.string.pause) else stringResource(R.string.play),
@@ -1092,6 +1142,29 @@ private fun OnlinePlaylistActionButtons(
                 Icon(
                     painter = painterResource(R.drawable.search),
                     contentDescription = stringResource(R.string.search),
+                    modifier = Modifier.size(20.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+
+        // Share Squircle Button
+        Surface(
+            modifier = Modifier
+                .size(46.dp)
+                .mkrPressFeedback()
+                .clickable(onClick = onShareClick),
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+        ) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.link),
+                    contentDescription = stringResource(R.string.share),
                     modifier = Modifier.size(20.dp),
                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -1244,6 +1317,201 @@ private fun OnlinePlaylistStateCard(
                             fontWeight = FontWeight.Bold
                         )
                     }
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Curated Playlist Track Card:
+ * - Clean numbered index or selection checkbox or live PlayingIndicator.
+ * - Squircle thumbnail with smooth 12dp corners.
+ * - Bold title with active track highlight.
+ * - Explicit badge and artists/album subtitle.
+ * - Duration capsule and context menu.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun PlaylistTrackCard(
+    index: Int,
+    songItem: SongItem,
+    isActive: Boolean,
+    isPlaying: Boolean,
+    isSelected: Boolean,
+    inSelectMode: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    onMenuClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val durationStr = songItem.duration?.let { dur ->
+        makeTimeString(dur.toLong() * 1000L)
+    }
+
+    val containerColor = if (isActive) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLow
+    }
+
+    val borderColor = if (isActive) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+    } else {
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f)
+    }
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .mkrPressFeedback(),
+        shape = RoundedCornerShape(16.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Track index or Live Visualizer or Selection Checkbox
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .padding(end = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (inSelectMode) {
+                    Checkbox(
+                        checked = isSelected,
+                        onCheckedChange = onCheckedChange
+                    )
+                } else if (isActive) {
+                    PlayingIndicator(
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                } else {
+                    Text(
+                        text = String.format("%02d", index + 1),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // Thumbnail Squircle
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh
+            ) {
+                if (!songItem.thumbnail.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(songItem.thumbnail.resize(120, 120))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.music_note),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Metadata: Title, Artists, Explicit
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = songItem.title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.SemiBold,
+                        fontSize = 14.5.sp
+                    ),
+                    color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (songItem.explicit) {
+                        Icon(
+                            painter = painterResource(R.drawable.explicit),
+                            contentDescription = null,
+                            modifier = Modifier.size(13.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+
+                    Text(
+                        text = songItem.artists.joinToString { it.name }.ifEmpty { songItem.album?.name ?: "" },
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 12.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            // Duration Pill
+            if (!durationStr.isNullOrEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(start = 4.dp, end = 2.dp)
+                ) {
+                    Text(
+                        text = durationStr,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 11.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            // More Options Menu Button
+            if (!inSelectMode) {
+                IconButton(
+                    onClick = onMenuClick,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.more_vert),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
         }
