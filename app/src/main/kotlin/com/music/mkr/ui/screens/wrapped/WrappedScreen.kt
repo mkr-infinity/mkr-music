@@ -272,7 +272,8 @@ fun WrappedScreenContent(navController: NavController) {
                     is WrappedScreenType.MinutesTease -> WrappedMinutesTease(
                         messagePair = messagePair,
                         onNavigateForward = { scope.launch { pagerState.animateScrollToPage(page = 2) } },
-                        isDataReady = state.isDataReady
+                        isDataReady = state.isDataReady,
+                        isVisible = pagerState.currentPage == screens.indexOf(WrappedScreenType.MinutesTease)
                     )
                     is WrappedScreenType.MinutesReveal -> WrappedMinutesScreen(
                         messagePair = messagePair, totalMinutes = state.totalMinutes,

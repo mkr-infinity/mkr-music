@@ -2293,19 +2293,22 @@ class MusicService :
 
     fun toggleLike() {
         val currentItem = player.currentMediaItem
-        val mediaMetadata = currentMediaMetadata.value
-            ?: player.currentMetadata
+        val currentItemId = currentItem?.mediaId
+        val mediaMetadata = (if (currentItemId != null && currentMediaMetadata.value?.id == currentItemId) currentMediaMetadata.value else null)
+            ?: (if (currentItemId != null && player.currentMetadata?.id == currentItemId) player.currentMetadata else null)
             ?: currentItem?.metadata
-            ?: currentItem?.mediaId?.takeIf { it.isNotBlank() }?.let { id ->
+            ?: currentMediaMetadata.value
+            ?: player.currentMetadata
+            ?: currentItemId?.takeIf { it.isNotBlank() }?.let { id ->
                 val fromDb = synchronized(database) { database.getSongByIdBlocking(id) }
                 fromDb?.toMediaMetadata() ?: com.music.mkr.models.MediaMetadata(
                     id = id,
-                    title = currentItem.mediaMetadata.title?.toString() ?: "Unknown",
-                    artists = (currentItem.mediaMetadata.artist ?: currentItem.mediaMetadata.subtitle)?.toString()?.let {
+                    title = currentItem?.mediaMetadata?.title?.toString() ?: "Unknown",
+                    artists = (currentItem?.mediaMetadata?.artist ?: currentItem?.mediaMetadata?.subtitle)?.toString()?.let {
                         listOf(com.music.mkr.models.MediaMetadata.Artist(id = null, name = it))
                     } ?: emptyList(),
                     duration = (player.duration.coerceAtLeast(0) / 1000).toInt(),
-                    thumbnailUrl = currentItem.mediaMetadata.artworkUri?.toString()
+                    thumbnailUrl = currentItem?.mediaMetadata?.artworkUri?.toString()
                 )
             } ?: return
 
@@ -2320,9 +2323,7 @@ class MusicService :
                 }
                 val entityToToggle = currentSongEntity?.song ?: mediaMetadata.toSongEntity()
                 val toggled = entityToToggle.toggleLike()
-                database.query {
-                    upsert(toggled)
-                }
+                database.upsert(toggled)
 
                 syncUtils.likeSong(toggled)
 

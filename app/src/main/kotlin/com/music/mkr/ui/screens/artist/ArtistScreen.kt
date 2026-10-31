@@ -376,10 +376,15 @@ fun ArtistScreen(
                                         }
                                         val entityToToggle = currentSongEntity?.song ?: song.toMediaMetadata().toSongEntity()
                                         val toggled = entityToToggle.toggleLike()
-                                        database.query {
-                                            upsert(toggled)
-                                        }
+                                        database.upsert(toggled)
                                         syncUtils.likeSong(toggled)
+                                        if (playerConnection.mediaMetadata.value?.id == song.id) {
+                                            playerConnection.mediaMetadata.value = playerConnection.mediaMetadata.value?.copy(
+                                                liked = toggled.liked,
+                                                likedDate = toggled.likedDate,
+                                                inLibrary = toggled.inLibrary
+                                            )
+                                        }
                                     }
                                 },
                                 onMenuClick = {
@@ -531,10 +536,15 @@ fun ArtistScreen(
                                             }
                                             val entityToToggle = songToUpdate?.song ?: song.toMediaMetadata().toSongEntity()
                                             val s = entityToToggle.toggleLike()
-                                            database.query {
-                                                upsert(s)
-                                            }
+                                            database.upsert(s)
                                             syncUtils.likeSong(s)
+                                            if (playerConnection.mediaMetadata.value?.id == song.id) {
+                                                playerConnection.mediaMetadata.value = playerConnection.mediaMetadata.value?.copy(
+                                                    liked = s.liked,
+                                                    likedDate = s.likedDate,
+                                                    inLibrary = s.inLibrary
+                                                )
+                                            }
                                         }
                                     },
                                     onMenuClick = {

@@ -31,12 +31,14 @@ import kotlinx.coroutines.delay
 fun WrappedMinutesTease(
     messagePair: MessagePair?,
     onNavigateForward: () -> Unit,
-    isDataReady: Boolean
+    isDataReady: Boolean,
+    isVisible: Boolean = true
 ) {
-    val manager = LocalWrappedManager.current
-    LaunchedEffect(Unit) {
-        delay(3500)
-        onNavigateForward()
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            delay(3500)
+            onNavigateForward()
+        }
     }
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         AnimatedVisibility(

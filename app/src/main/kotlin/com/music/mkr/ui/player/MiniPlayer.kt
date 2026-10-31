@@ -1251,7 +1251,12 @@ private fun FavoriteButton(
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val librarySong by database.song(songId).collectAsState(initial = null)
-    val isLiked = librarySong?.song?.liked == true
+    val currentMetadata by playerConnection.mediaMetadata.collectAsState()
+    val isLiked = if (currentMetadata?.id == songId) {
+        if (currentMetadata?.liked == true) true else (librarySong?.song?.liked == true)
+    } else {
+        librarySong?.song?.liked == true
+    }
     
     Box(
         contentAlignment = Alignment.Center,
@@ -1267,7 +1272,7 @@ private fun FavoriteButton(
                 color = if (isLiked) errorColor.copy(alpha = 0.1f) else Color.Transparent,
                 shape = CircleShape
             )
-            .clickable { playerConnection.service.toggleLike() }
+            .clickable { playerConnection.toggleLike() }
     ) {
         Icon(
             painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),

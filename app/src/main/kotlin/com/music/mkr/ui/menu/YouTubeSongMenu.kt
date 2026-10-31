@@ -224,11 +224,10 @@ fun YouTubeSongMenu(
                             database.insert(song.toMediaMetadata())
                             songToUpdate = database.getSongByIdBlocking(song.id)
                         }
-                        songToUpdate?.let {
-                            val s = it.song.toggleLike()
-                            database.update(s)
-                            syncUtils.likeSong(s)
-                        }
+                        val entityToToggle = songToUpdate?.song ?: song.toMediaMetadata().toSongEntity()
+                        val s = entityToToggle.toggleLike()
+                        database.upsert(s)
+                        syncUtils.likeSong(s)
                     }
                 },  
             ) {  

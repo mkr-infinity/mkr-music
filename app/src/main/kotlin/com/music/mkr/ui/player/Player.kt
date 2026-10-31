@@ -1237,7 +1237,15 @@ fun BottomSheetPlayer(
                 }
             } else {
                 mediaMetadata?.let { metadata ->
-                    val isCurrentTrackLiked = currentSong?.song?.liked == true || (currentSong == null && metadata.liked)
+                    val isCurrentTrackLiked = if (currentSong?.id == metadata.id) {
+                        if (metadata.liked != (currentSong?.song?.liked == true)) {
+                            metadata.liked
+                        } else {
+                            currentSong?.song?.liked == true
+                        }
+                    } else {
+                        metadata.liked
+                    }
                     Crossfade(
                         targetState = playerStyle,
                         animationSpec = if (interfaceAnimations) tween(durationMillis = 240) else snap(),

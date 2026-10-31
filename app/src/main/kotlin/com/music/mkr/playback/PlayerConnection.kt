@@ -300,6 +300,11 @@ class PlayerConnection(
 
     fun toggleLike() {
         try {
+            val current = mediaMetadata.value
+            if (current != null) {
+                // Optimistically update immediately for snappy UI responsiveness
+                mediaMetadata.value = current.copy(liked = !current.liked)
+            }
             service.toggleLike()
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in toggleLike")

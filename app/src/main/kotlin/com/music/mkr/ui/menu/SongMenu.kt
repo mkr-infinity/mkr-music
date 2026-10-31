@@ -314,9 +314,9 @@ fun SongMenu(
                             database.insert(song.toMediaMetadata())
                             currentSongEntity = database.getSongByIdBlocking(song.id)
                         }
-                        val entityToToggle = currentSongEntity?.song ?: song.song
+                        val entityToToggle = currentSongEntity?.song ?: song.toMediaMetadata().toSongEntity()
                         val s = entityToToggle.toggleLike()
-                        database.update(s)
+                        database.upsert(s)
                         syncUtils.likeSong(s)
                     }
                 },
