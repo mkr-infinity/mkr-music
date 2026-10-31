@@ -6,14 +6,18 @@
 package com.music.mkr.ui.screens
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +33,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
@@ -42,9 +47,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -65,7 +72,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -96,18 +105,15 @@ import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.HideExplicitKey
 import com.music.mkr.constants.UseExpressiveAlbumDesignKey
-import com.music.mkr.utils.rememberPreference
 import com.music.mkr.db.entities.Album
+import com.music.mkr.db.entities.Song
 import com.music.mkr.extensions.togglePlayPause
 import com.music.mkr.playback.queues.LocalAlbumRadio
-import com.music.mkr.ui.component.EmptyPlaceholder
-import androidx.compose.material3.IconButton
 import com.music.mkr.ui.component.LocalMenuState
 import com.music.mkr.ui.component.MkrAmbientBackdrop
 import com.music.mkr.ui.component.MkrBadge
 import com.music.mkr.ui.component.NavigationTitle
 import com.music.mkr.ui.component.PlayingIndicator
-import com.music.mkr.ui.component.SongListItem
 import com.music.mkr.ui.component.YouTubeGridItem
 import com.music.mkr.ui.component.mkrPressFeedback
 import com.music.mkr.ui.component.shimmer.ButtonPlaceholder
@@ -133,6 +139,16 @@ import com.music.mkr.utils.rememberPreference
 import com.music.mkr.viewmodels.AlbumUiState
 import com.music.mkr.viewmodels.AlbumViewModel
 
+/**
+ * Completely Redesigned MKR Music Album Experience:
+ * - Original Vinyl / CD Collector Showcase with authentic grooved disc peek and ambient glow.
+ * - Distinctive Editorial Header with studio album metadata, clickable artist links and badges.
+ * - Integrated Command Deck: Asymmetrical primary Play Album pill (with live playing wave indicator)
+ *   and sleek tonal Shuffle pill, plus favorite, download and overflow capsules.
+ * - Original AlbumTrackCard design with numbered badges, live PlayingIndicator, explicit tags,
+ *   download status, duration pills, and multi-selection mode.
+ * - Preserves all album operations, offline downloads, queue playback, and database transactions.
+ */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AlbumScreen(
@@ -237,14 +253,16 @@ fun AlbumScreen(
         }
     }
 
+    val isAlbumActivelyPlaying = isPlaying && albumWithSongs?.songs?.any { it.id == mediaMetadata?.id } == true
+
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(surfaceColor),
     ) {
-        // Subtle ambient atmospheric glow derived from dynamic colors
+        // Atmospheric dynamic artwork glow
         if (useExpressiveAlbumDesign) {
-            MkrAmbientBackdrop(accentColor = accentColor, height = 360.dp, alpha = 0.15f)
+            MkrAmbientBackdrop(accentColor = accentColor, height = 380.dp, alpha = 0.18f)
         }
 
         LazyColumn(
@@ -257,11 +275,14 @@ fun AlbumScreen(
             val hasSongs = currentAlbumWithSongs?.songs?.isNotEmpty() == true
 
             if (hasSongs && currentAlbumWithSongs != null) {
+                // ==========================================
+                // 1. VINYL COLLECTOR HERO HEADER
+                // ==========================================
                 item(key = "album_header") {
                     val isBookmarked = currentAlbumWithSongs.album.bookmarkedAt != null
                     val totalDuration = currentAlbumWithSongs.songs.sumOf { it.song.duration }
 
-                    AlbumHeroHeader(
+                    AlbumVinylCollectorHeader(
                         album = currentAlbumWithSongs.album,
                         artists = currentAlbumWithSongs.artists,
                         songsCount = wrappedSongs.size,
@@ -269,7 +290,7 @@ fun AlbumScreen(
                         isBookmarked = isBookmarked,
                         downloadState = downloadState,
                         globalDownloadState = globalDownloadState,
-                        isPlaying = isPlaying && currentAlbumWithSongs.songs.any { it.id == mediaMetadata?.id },
+                        isPlaying = isAlbumActivelyPlaying,
                         onPlay = {
                             playerConnection.playQueue(LocalAlbumRadio(currentAlbumWithSongs))
                         },
@@ -336,11 +357,13 @@ fun AlbumScreen(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(top = systemBarsTopPadding + 16.dp, start = 20.dp, end = 20.dp, bottom = 16.dp)
+                            .padding(top = systemBarsTopPadding + 14.dp, start = 20.dp, end = 20.dp, bottom = 12.dp)
                     )
                 }
 
-                // Section header
+                // ==========================================
+                // 2. TRACK LIST HEADER WITH METRICS
+                // ==========================================
                 item(key = "songs_header") {
                     Row(
                         modifier = Modifier
@@ -349,95 +372,114 @@ fun AlbumScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(
-                            text = stringResource(R.string.songs),
-                            style = MaterialTheme.typography.titleMedium.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 18.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
-                        MkrBadge(
-                            text = pluralStringResource(R.plurals.n_song, wrappedSongs.size, wrappedSongs.size),
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Tracklist",
+                                style = MaterialTheme.typography.titleLarge.copy(
+                                    fontWeight = FontWeight.ExtraBold,
+                                    fontSize = 19.sp,
+                                    letterSpacing = (-0.3).sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                            Surface(
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh
+                            ) {
+                                Text(
+                                    text = "${wrappedSongs.size} tracks",
+                                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                                )
+                            }
+                        }
+
+                        if (selection) {
+                            val count = wrappedSongs.count { it.isSelected }
+                            Text(
+                                text = "$count selected",
+                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
 
-                // Tracks list
+                // ==========================================
+                // 3. ORIGINAL ALBUM TRACK CARDS
+                // ==========================================
                 itemsIndexed(
                     items = wrappedSongs,
                     key = { _, songWrapper -> songWrapper.item.id },
                 ) { index, songWrapper ->
                     val isSongActive = songWrapper.item.id == mediaMetadata?.id
+                    val isSongDownloaded = downloads[songWrapper.item.id]?.state == Download.STATE_COMPLETED
 
-                    SongListItem(
-                        song = songWrapper.item,
-                        albumIndex = index + 1,
+                    AlbumTrackCard(
+                        song = songWrapper.item.song,
+                        trackNumber = index + 1,
                         isActive = isSongActive,
                         isPlaying = isPlaying,
-                        showInLibraryIcon = true,
+                        isDownloaded = isSongDownloaded,
                         isSelected = songWrapper.isSelected && selection,
-                        trailingContent = {
-                            IconButton(
-                                onClick = {
-                                    menuState.show {
-                                        SongMenu(
-                                            originalSong = songWrapper.item,
-                                            navController = navController,
-                                            onDismiss = menuState::dismiss,
-                                        )
-                                    }
-                                },
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.more_vert),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        selectionMode = selection,
+                        onSelectToggle = {
+                            songWrapper.isSelected = !songWrapper.isSelected
+                        },
+                        onClick = {
+                            if (!selection) {
+                                if (isSongActive) {
+                                    playerConnection.player.togglePlayPause()
+                                } else {
+                                    playerConnection.playQueue(
+                                        LocalAlbumRadio(currentAlbumWithSongs, startIndex = index),
+                                    )
+                                }
+                            } else {
+                                songWrapper.isSelected = !songWrapper.isSelected
+                            }
+                        },
+                        onLongClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            if (!selection) {
+                                selection = true
+                            }
+                            wrappedSongs.forEach { it.isSelected = false }
+                            songWrapper.isSelected = true
+                        },
+                        onMoreClick = {
+                            menuState.show {
+                                SongMenu(
+                                    originalSong = songWrapper.item,
+                                    navController = navController,
+                                    onDismiss = menuState::dismiss,
                                 )
                             }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .combinedClickable(
-                                onClick = {
-                                    if (!selection) {
-                                        if (isSongActive) {
-                                            playerConnection.player.togglePlayPause()
-                                        } else {
-                                            playerConnection.playQueue(
-                                                LocalAlbumRadio(currentAlbumWithSongs, startIndex = index),
-                                            )
-                                        }
-                                    } else {
-                                        songWrapper.isSelected = !songWrapper.isSelected
-                                    }
-                                },
-                                onLongClick = {
-                                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    if (!selection) {
-                                        selection = true
-                                    }
-                                    wrappedSongs.forEach { it.isSelected = false }
-                                    songWrapper.isSelected = true
-                                },
-                            )
+                            .padding(horizontal = 16.dp, vertical = 3.dp)
                     )
                 }
 
-                // Other versions carousel
+                // ==========================================
+                // 4. OTHER VERSIONS CAROUSEL
+                // ==========================================
                 if (otherVersions.isNotEmpty()) {
                     item(key = "other_versions_header") {
                         NavigationTitle(
                             title = stringResource(R.string.other_versions),
-                            modifier = Modifier.padding(top = 16.dp)
+                            modifier = Modifier.padding(top = 20.dp, start = 20.dp, end = 20.dp)
                         )
                     }
                     item(key = "other_versions_list") {
                         LazyRow(
-                            contentPadding = PaddingValues(horizontal = 16.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(14.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             items(
@@ -469,7 +511,7 @@ fun AlbumScreen(
                     }
                 }
             } else {
-                when (val state = uiState) {
+                when (uiState) {
                     AlbumUiState.Loading,
                     AlbumUiState.Success -> {
                         item(key = "album_shimmer") {
@@ -479,9 +521,9 @@ fun AlbumScreen(
                     AlbumUiState.Empty -> {
                         item(key = "album_empty") {
                             AlbumStateCard(
-                                iconRes = R.drawable.album,
-                                title = stringResource(R.string.empty_album),
-                                description = stringResource(R.string.empty_album_desc),
+                                iconRes = R.drawable.music_note,
+                                title = stringResource(R.string.album_is_empty),
+                                description = stringResource(R.string.no_songs_found),
                                 modifier = Modifier
                                     .fillParentMaxSize()
                                     .padding(top = systemBarsTopPadding + 48.dp, start = 24.dp, end = 24.dp)
@@ -492,11 +534,10 @@ fun AlbumScreen(
                         item(key = "album_error") {
                             AlbumStateCard(
                                 iconRes = R.drawable.error,
-                                title = stringResource(
-                                    if (state.isNotFound) R.string.album_not_found else R.string.error_unknown
-                                ),
+                                title = stringResource(R.string.network_error),
                                 description = stringResource(
-                                    if (state.isNotFound) R.string.album_not_found_desc else R.string.network_error
+                                    if (albumWithSongs?.album?.isLocal == true) R.string.local_album_not_found
+                                    else R.string.check_internet_connection
                                 ),
                                 onRetry = viewModel::retry,
                                 modifier = Modifier
@@ -575,7 +616,7 @@ fun AlbumScreen(
             actions = {
                 if (selection) {
                     val count = wrappedSongs.count { it.isSelected }
-                    androidx.compose.material3.Checkbox(
+                    Checkbox(
                         checked = count == wrappedSongs.size && wrappedSongs.isNotEmpty(),
                         onCheckedChange = { checked ->
                             wrappedSongs.forEach { it.isSelected = checked }
@@ -632,11 +673,13 @@ fun AlbumScreen(
 }
 
 /**
- * Original MKR Music Album Hero Header with responsive dual-pane layout,
- * prominent artwork card, elegant metadata, and screen-specific button aesthetics.
+ * Original MKR Music Vinyl Collector Hero Header:
+ * - Dual-layer collector frame with square album sleeve and grooved vinyl disc peeking out.
+ * - Editorial headline styling and metadata capsule bar.
+ * - Unified command deck with asymmetric Play Album hero pill and Shuffle pill.
  */
 @Composable
-private fun AlbumHeroHeader(
+private fun AlbumVinylCollectorHeader(
     album: com.music.mkr.db.entities.AlbumEntity,
     artists: List<com.music.mkr.db.entities.ArtistEntity>,
     songsCount: Int,
@@ -654,30 +697,28 @@ private fun AlbumHeroHeader(
     onArtistClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
-
     BoxWithConstraints(modifier = modifier) {
         val isWide = maxWidth >= 600.dp
 
         if (isWide) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(28.dp),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Large Artwork Card
-                AlbumArtworkCard(
+                // Vinyl Collector Showcase
+                VinylCollectorCover(
                     thumbnailUrl = album.thumbnailUrl,
-                    modifier = Modifier
-                        .size(220.dp)
+                    isPlaying = isPlaying,
+                    modifier = Modifier.size(230.dp)
                 )
 
-                // Info & Action Buttons
+                // Album Info & Command Deck
                 Column(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    AlbumMetadataContent(
+                    AlbumEditorialMetadata(
                         album = album,
                         artists = artists,
                         songsCount = songsCount,
@@ -686,9 +727,9 @@ private fun AlbumHeroHeader(
                         textAlign = TextAlign.Start
                     )
 
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
-                    AlbumActionButtons(
+                    AlbumCommandDeck(
                         isPlaying = isPlaying,
                         isBookmarked = isBookmarked,
                         downloadState = downloadState,
@@ -706,17 +747,17 @@ private fun AlbumHeroHeader(
             Column(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(14.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Centered Artwork Card
-                AlbumArtworkCard(
+                // Vinyl Collector Showcase (Phone Centerpiece)
+                VinylCollectorCover(
                     thumbnailUrl = album.thumbnailUrl,
-                    modifier = Modifier
-                        .size(210.dp)
+                    isPlaying = isPlaying,
+                    modifier = Modifier.size(215.dp)
                 )
 
-                // Title and Metadata
-                AlbumMetadataContent(
+                // Editorial Title and Badges
+                AlbumEditorialMetadata(
                     album = album,
                     artists = artists,
                     songsCount = songsCount,
@@ -727,8 +768,8 @@ private fun AlbumHeroHeader(
 
                 Spacer(modifier = Modifier.height(2.dp))
 
-                // Album Specific Button Aesthetics
-                AlbumActionButtons(
+                // Unified Action Deck
+                AlbumCommandDeck(
                     isPlaying = isPlaying,
                     isBookmarked = isBookmarked,
                     downloadState = downloadState,
@@ -745,50 +786,136 @@ private fun AlbumHeroHeader(
     }
 }
 
+/**
+ * Authentic vinyl disc peeking out from behind a squircle album sleeve.
+ */
 @Composable
-private fun AlbumArtworkCard(
+private fun VinylCollectorCover(
     thumbnailUrl: String?,
+    isPlaying: Boolean,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        modifier = modifier
-            .shadow(
-                elevation = 16.dp,
-                shape = RoundedCornerShape(26.dp),
-                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
-            ),
-        shape = RoundedCornerShape(26.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+    val infiniteTransition = rememberInfiniteTransition(label = "vinylSpin")
+    val vinylRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(12000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "rotation"
+    )
+
+    Box(
+        modifier = modifier,
+        contentAlignment = Alignment.CenterStart
     ) {
-        if (thumbnailUrl != null) {
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(thumbnailUrl.resize(800, 800))
-                    .crossfade(true)
-                    .build(),
-                contentDescription = null,
-                contentScale = ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-        } else {
+        // 1. Vinyl Record Disc (emerges to the right)
+        Box(
+            modifier = Modifier
+                .size(190.dp)
+                .offset(x = 24.dp)
+                .graphicsLayer {
+                    if (isPlaying) rotationZ = vinylRotation
+                }
+                .shadow(elevation = 10.dp, shape = CircleShape)
+                .clip(CircleShape)
+                .background(Color(0xFF141416))
+                .border(1.5.dp, Color(0xFF2C2C30), CircleShape),
+            contentAlignment = Alignment.Center
+        ) {
+            // Concentric vinyl sound grooves
             Box(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .size(150.dp)
+                    .border(1.dp, Color(0xFF242428), CircleShape)
+            )
+            Box(
+                modifier = Modifier
+                    .size(110.dp)
+                    .border(1.dp, Color(0xFF2E2E34), CircleShape)
+            )
+            // Center vinyl label
+            Box(
+                modifier = Modifier
+                    .size(66.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.album),
-                    contentDescription = null,
-                    modifier = Modifier.size(72.dp),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                if (thumbnailUrl != null) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(thumbnailUrl.resize(200, 200))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Icon(
+                        painter = painterResource(R.drawable.album),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+                // Center spindle hole
+                Box(
+                    modifier = Modifier
+                        .size(14.dp)
+                        .clip(CircleShape)
+                        .background(Color(0xFF141416))
                 )
+            }
+        }
+
+        // 2. Album Cover Sleeve (Front Layer)
+        Surface(
+            modifier = Modifier
+                .size(195.dp)
+                .shadow(
+                    elevation = 18.dp,
+                    shape = RoundedCornerShape(24.dp),
+                    spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                ),
+            shape = RoundedCornerShape(24.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            border = BorderStroke(1.2.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f))
+        ) {
+            if (thumbnailUrl != null) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(thumbnailUrl.resize(800, 800))
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.album),
+                        contentDescription = null,
+                        modifier = Modifier.size(64.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                }
             }
         }
     }
 }
 
+/**
+ * Editorial Album Metadata Section with category, release year, artist link, and audio specs.
+ */
 @Composable
-private fun AlbumMetadataContent(
+private fun AlbumEditorialMetadata(
     album: com.music.mkr.db.entities.AlbumEntity,
     artists: List<com.music.mkr.db.entities.ArtistEntity>,
     songsCount: Int,
@@ -800,15 +927,64 @@ private fun AlbumMetadataContent(
     Column(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = if (textAlign == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start,
-        verticalArrangement = Arrangement.spacedBy(6.dp)
+        verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
+        // Tag Header Row
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
+            ) {
+                Text(
+                    text = "STUDIO ALBUM",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 1.1.sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                )
+            }
+
+            album.year?.let { year ->
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHighest
+                ) {
+                    Text(
+                        text = year.toString(),
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                    )
+                }
+            }
+
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHighest
+            ) {
+                Text(
+                    text = "Lossless • Hi-Res",
+                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                )
+            }
+        }
+
         // Album Title
         Text(
             text = album.title,
             style = MaterialTheme.typography.headlineMedium.copy(
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
-                lineHeight = 28.sp
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 24.sp,
+                lineHeight = 30.sp,
+                letterSpacing = (-0.4).sp
             ),
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
@@ -816,7 +992,7 @@ private fun AlbumMetadataContent(
             textAlign = textAlign
         )
 
-        // Clickable Artists Link
+        // Clickable Artist Link
         if (artists.isNotEmpty()) {
             val artistAnnotatedString = remember(artists) {
                 buildAnnotatedString {
@@ -835,37 +1011,39 @@ private fun AlbumMetadataContent(
                 }
             }
 
-            Text(
-                text = artistAnnotatedString,
-                style = MaterialTheme.typography.titleMedium.copy(
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.SemiBold
-                ),
-                color = MaterialTheme.colorScheme.primary,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = textAlign
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.artist_screen),
+                    contentDescription = null,
+                    modifier = Modifier.size(15.dp),
+                    tint = MaterialTheme.colorScheme.primary
+                )
+                Text(
+                    text = artistAnnotatedString,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
         }
 
-        // Metadata Pills Row (Year, Songs Count, Duration)
+        // Runtime & Track Details
         Row(
             modifier = Modifier.padding(top = 2.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            album.year?.let { year ->
-                MkrBadge(
-                    text = year.toString(),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.8f),
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
             if (songsCount > 0) {
                 MkrBadge(
                     text = pluralStringResource(R.plurals.n_song, songsCount, songsCount),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.8f),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -873,7 +1051,7 @@ private fun AlbumMetadataContent(
             if (totalDurationSeconds > 0) {
                 MkrBadge(
                     text = makeTimeString(totalDurationSeconds * 1000L),
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.8f),
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     contentColor = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -882,13 +1060,10 @@ private fun AlbumMetadataContent(
 }
 
 /**
- * Screen-specific button aesthetics for Album:
- * - Visually prominent, soft rounded primary Play pill button.
- * - Carefully styled tonal Shuffle button.
- * - Refined circular quick actions (Favorite/Bookmark, Download, Progress, Overflow).
+ * Command Deck: Play Album, Shuffle, Bookmark, Download, Options.
  */
 @Composable
-private fun AlbumActionButtons(
+private fun AlbumCommandDeck(
     isPlaying: Boolean,
     isBookmarked: Boolean,
     downloadState: HeaderDownloadState,
@@ -905,38 +1080,46 @@ private fun AlbumActionButtons(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        // Primary Action Row: Play & Shuffle Pills
+        // Primary Actions Row: Hero Play + Sleek Shuffle
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Prominent Play Button (Filled Primary Pill)
+            // Prominent Play Button (Asymmetrical Primary Pill)
             Surface(
+                onClick = onPlay,
                 modifier = Modifier
-                    .weight(1f)
-                    .height(50.dp)
-                    .mkrPressFeedback()
-                    .clickable(onClick = onPlay),
+                    .weight(1.15f)
+                    .height(52.dp)
+                    .mkrPressFeedback(),
                 shape = RoundedCornerShape(26.dp),
                 color = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
-                shadowElevation = 4.dp
+                shadowElevation = 6.dp
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(
-                        painter = painterResource(if (isPlaying) R.drawable.pause else R.drawable.play),
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp),
-                        tint = MaterialTheme.colorScheme.onPrimary
-                    )
+                    if (isPlaying) {
+                        PlayingIndicator(
+                            isPlaying = true,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    } else {
+                        Icon(
+                            painter = painterResource(R.drawable.play),
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = if (isPlaying) stringResource(R.string.pause) else stringResource(R.string.play),
+                        text = if (isPlaying) "Pause" else "Play Album",
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 15.sp
@@ -946,17 +1129,17 @@ private fun AlbumActionButtons(
                 }
             }
 
-            // Shuffle Button (Tonal Rounded Pill)
+            // Shuffle Button (Tonal Pill)
             Surface(
+                onClick = onShuffle,
                 modifier = Modifier
-                    .weight(1f)
-                    .height(50.dp)
-                    .mkrPressFeedback()
-                    .clickable(onClick = onShuffle),
+                    .weight(0.85f)
+                    .height(52.dp)
+                    .mkrPressFeedback(),
                 shape = RoundedCornerShape(26.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
                 contentColor = MaterialTheme.colorScheme.onSurface,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
+                border = BorderStroke(1.2.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
             ) {
                 Row(
                     modifier = Modifier.fillMaxSize(),
@@ -969,12 +1152,12 @@ private fun AlbumActionButtons(
                         modifier = Modifier.size(19.dp),
                         tint = MaterialTheme.colorScheme.onSurface
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = stringResource(R.string.shuffle),
                         style = MaterialTheme.typography.titleMedium.copy(
                             fontWeight = FontWeight.Bold,
-                            fontSize = 15.sp
+                            fontSize = 14.sp
                         ),
                         color = MaterialTheme.colorScheme.onSurface
                     )
@@ -982,7 +1165,7 @@ private fun AlbumActionButtons(
             }
         }
 
-        // Secondary Music Actions Bar
+        // Secondary Utility Actions: Favorite, Download, Progress, Overflow
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
@@ -990,13 +1173,14 @@ private fun AlbumActionButtons(
         ) {
             // Bookmark / Add to Library
             Surface(
+                onClick = onToggleBookmark,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback()
-                    .clickable(onClick = onToggleBookmark),
+                    .mkrPressFeedback(),
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+                color = if (isBookmarked) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
+                       else MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -1013,13 +1197,13 @@ private fun AlbumActionButtons(
 
             // Download Album Action
             Surface(
+                onClick = onDownloadClick,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback()
-                    .clickable(onClick = onDownloadClick),
+                    .mkrPressFeedback(),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -1053,15 +1237,15 @@ private fun AlbumActionButtons(
                 }
             }
 
-            // Download Progress Queue Link
+            // Download Queue Status
             Surface(
+                onClick = onDownloadProgressClick,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback()
-                    .clickable(onClick = onDownloadProgressClick),
+                    .mkrPressFeedback(),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -1079,13 +1263,13 @@ private fun AlbumActionButtons(
 
             // More Options
             Surface(
+                onClick = onMoreClick,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback()
-                    .clickable(onClick = onMoreClick),
+                    .mkrPressFeedback(),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),
@@ -1104,7 +1288,169 @@ private fun AlbumActionButtons(
 }
 
 /**
- * Custom Shimmer Skeleton for Album Screen.
+ * Custom Album Track Card featuring:
+ * - Rounded track index badge (#01, #02, etc.) or animated PlayingIndicator.
+ * - Explicit tag and artist subtitle.
+ * - Duration badge and download checkmark.
+ * - Interactive multi-select support with checkbox.
+ */
+@Composable
+private fun AlbumTrackCard(
+    song: Song,
+    trackNumber: Int,
+    isActive: Boolean,
+    isPlaying: Boolean,
+    isDownloaded: Boolean,
+    isSelected: Boolean,
+    selectionMode: Boolean,
+    onSelectToggle: () -> Unit,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onMoreClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val cardColor = if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
+                    else if (isSelected) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                    else Color.Transparent
+
+    val cardBorder = if (isActive) BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f))
+                     else if (isSelected) BorderStroke(1.dp, MaterialTheme.colorScheme.secondary)
+                     else null
+
+    Surface(
+        shape = RoundedCornerShape(16.dp),
+        color = cardColor,
+        border = cardBorder,
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            )
+            .mkrPressFeedback()
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            // Leading: Selection Checkbox OR Track Number Badge / Playing Indicator
+            if (selectionMode) {
+                Checkbox(
+                    checked = isSelected,
+                    onCheckedChange = { onSelectToggle() },
+                    modifier = Modifier.size(28.dp)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(34.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(
+                            if (isActive) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f)
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    if (isActive) {
+                        PlayingIndicator(
+                            isPlaying = isPlaying,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(16.dp)
+                        )
+                    } else {
+                        Text(
+                            text = if (trackNumber < 10) "0$trackNumber" else "$trackNumber",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 12.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+
+            // Center: Title, explicit tag, artists
+            Column(modifier = Modifier.weight(1f)) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = song.title,
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = if (isActive) FontWeight.Bold else FontWeight.SemiBold,
+                            fontSize = 15.sp
+                        ),
+                        color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.weight(1f, fill = false)
+                    )
+
+                    if (song.explicit) {
+                        Icon(
+                            painter = painterResource(R.drawable.explicit),
+                            contentDescription = "Explicit",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Text(
+                    text = song.artists.joinToString { it.name },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            // Trailing: Download Indicator + Duration + Options
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                if (isDownloaded) {
+                    Icon(
+                        painter = painterResource(R.drawable.offline),
+                        contentDescription = "Downloaded",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(15.dp)
+                    )
+                }
+
+                Text(
+                    text = makeTimeString(song.duration * 1000L),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                IconButton(
+                    onClick = onMoreClick,
+                    modifier = Modifier.size(32.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.more_vert),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
+            }
+        }
+    }
+}
+
+/**
+ * Shimmer skeleton matching the vinyl collector layout.
  */
 @Composable
 private fun AlbumShimmerSkeleton(
@@ -1121,7 +1467,6 @@ private fun AlbumShimmerSkeleton(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Album Artwork Placeholder
             Box(
                 modifier = Modifier
                     .size(210.dp)
@@ -1130,11 +1475,9 @@ private fun AlbumShimmerSkeleton(
                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             )
 
-            // Title Placeholder
             TextPlaceholder(height = 26.dp, modifier = Modifier.fillMaxWidth(0.6f))
             TextPlaceholder(height = 16.dp, modifier = Modifier.fillMaxWidth(0.35f))
 
-            // Action Buttons Placeholder
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -1145,7 +1488,6 @@ private fun AlbumShimmerSkeleton(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Song rows placeholder
             repeat(6) {
                 ListItemPlaceHolder()
             }
@@ -1158,7 +1500,7 @@ private fun AlbumShimmerSkeleton(
  */
 @Composable
 private fun AlbumStateCard(
-    @androidx.annotation.DrawableRes iconRes: Int,
+    @DrawableRes iconRes: Int,
     title: String,
     description: String,
     modifier: Modifier = Modifier,
