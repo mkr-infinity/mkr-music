@@ -79,6 +79,7 @@ import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalDownloadUtil
 import com.music.mkr.LocalListenTogetherManager
 import com.music.mkr.mkrmusic.AudioDeviceBottomSheet
+import com.music.mkr.ui.component.EqualizerDialog
 import com.music.mkr.utils.oem.SystemMediaControlResolver
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
@@ -229,6 +230,19 @@ fun PlayerMenu(
         AudioDeviceBottomSheet(
             onDismiss = {
                 showAudioOutputSheet = false
+                onDismiss()
+            }
+        )
+    }
+
+    var showEqualizerSheet by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showEqualizerSheet) {
+        EqualizerDialog(
+            onDismiss = {
+                showEqualizerSheet = false
                 onDismiss()
             }
         )
@@ -659,8 +673,7 @@ fun PlayerMenu(
                                     )
                                 },
                                 onClick = {
-                                    com.music.mkr.utils.openSystemEqualizer(context, playerConnection.player.audioSessionId)
-                                    onDismiss()
+                                    showEqualizerSheet = true
                                 }
                             )
                         )

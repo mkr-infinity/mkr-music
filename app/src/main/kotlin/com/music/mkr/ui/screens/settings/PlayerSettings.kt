@@ -94,6 +94,7 @@ import com.music.mkr.ui.component.ActionPromptDialog
 import com.music.mkr.ui.component.CrossfadeCurvePreview
 import com.music.mkr.ui.component.DefaultDialog
 import com.music.mkr.ui.component.EnumDialog
+import com.music.mkr.ui.component.EqualizerDialog
 import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.ExpressiveSettingGroup
 import com.music.mkr.ui.component.Material3SettingsItem
@@ -292,6 +293,13 @@ fun PlayerSettings(
     var showMiniPlayerBackgroundDialog by remember { mutableStateOf(false) }
     var showCrossfadeBetaDialog by remember { mutableStateOf(false) }
     var showCrossfadeCurveDialog by remember { mutableStateOf(false) }
+    var showEqualizerDialog by remember { mutableStateOf(false) }
+
+    if (showEqualizerDialog) {
+        EqualizerDialog(
+            onDismiss = { showEqualizerDialog = false }
+        )
+    }
 
     if (showPlayerDesignDialog) {
         PlayerStyleSelectionDialog(
@@ -628,8 +636,8 @@ fun PlayerSettings(
                     key = "player_equalizer",
                     icon = painterResource(R.drawable.equalizer),
                     title = { Text(stringResource(R.string.equalizer)) },
-                    description = { Text(stringResource(R.string.system_equalizer)) },
-                    onClick = { com.music.mkr.utils.openSystemEqualizer(context, playerConnection?.player?.audioSessionId ?: 0) }
+                    description = { Text("Built-in acoustic tuning, presets & sound effects") },
+                    onClick = { showEqualizerDialog = true }
                 ))
                 add(Material3SettingsItem(
                     key = "player_audio_normalization",
