@@ -2505,8 +2505,11 @@ class MusicService :
     ) {
         currentMediaMetadata.value = mediaItem?.metadata ?: player.currentMetadata
         cancelPendingDelayedCacheTimer()
+        cancelPendingDelayedHistoryTimer()
+        currentRecordedHistoryMediaId = null
         if (mediaItem != null) {
             scheduleDelayedCache(mediaItem.mediaId)
+            scheduleDelayedHistory(mediaItem.mediaId)
         }
         if (mediaItem != null) {
             loadMoodRecommendations(mediaItem.mediaId)
@@ -2759,9 +2762,13 @@ class MusicService :
             val mediaId = player.currentMediaItem?.mediaId
             if (mediaId != null) {
                 scheduleDelayedCache(mediaId)
+                if (currentRecordedHistoryMediaId != mediaId) {
+                    scheduleDelayedHistory(mediaId)
+                }
             }
         } else {
             cancelPendingDelayedCacheTimer()
+            cancelPendingDelayedHistoryTimer()
         }
     }
 
@@ -3520,6 +3527,51 @@ class MusicService :
         }
     }
 
+    private var pendingHistoryTimerJob: Job? = null
+    private var currentRecordedHistoryMediaId: String? = null
+
+    private fun cancelPendingDelayedHistoryTimer() {
+        pendingHistoryTimerJob?.cancel()
+        pendingHistoryTimerJob = null
+    }
+
+    private fun scheduleDelayedHistory(mediaId: String) {
+        cancelPendingDelayedHistoryTimer()
+        if (dataStore.get(PauseListenHistoryKey, false)) return
+
+        val historySeconds = dataStore.get(HistoryDuration, 5f).toLong().coerceIn(1L, 100L)
+        pendingHistoryTimerJob = scope.launch(Dispatchers.IO) {
+            delay(historySeconds * 1000L)
+
+            val isStillPlaying = withContext(Dispatchers.Main) {
+                player.isPlaying && player.currentMediaItem?.mediaId == mediaId
+            }
+            if (!isStillPlaying) return@launch
+
+            currentRecordedHistoryMediaId = mediaId
+            val metadata = withContext(Dispatchers.Main) {
+                player.findMediaItemById(mediaId)?.metadata
+            }
+            database.query {
+                val song = song(mediaId).first()
+                if (song == null && metadata != null) {
+                    insert(metadata)
+                }
+                incrementTotalPlayTime(mediaId, historySeconds * 1000L)
+                try {
+                    insert(
+                        Event(
+                            songId = mediaId,
+                            timestamp = LocalDateTime.now(),
+                            playTime = historySeconds * 1000L,
+                        ),
+                    )
+                } catch (_: SQLException) {
+                }
+            }
+        }
+    }
+
     private fun cacheSongInBackground(mediaId: String) {
         if (dataStore.get(DisableSongCacheKey, false)) return
         if (activeCacheJobs[mediaId]?.isActive == true) return
@@ -3861,22 +3913,32 @@ class MusicService :
         playbackStats: PlaybackStats,
     ) {
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
-        val historyDurationMs = dataStore[HistoryDuration]?.times(1000f) ?: 30000f
+        val historyDurationMs = dataStore[HistoryDuration]?.times(1000f) ?: 5000f
 
         if (playbackStats.totalPlayTimeMs >= historyDurationMs &&
             !dataStore.get(PauseListenHistoryKey, false)
         ) {
+            val wasAlreadyRecorded = currentRecordedHistoryMediaId == mediaItem.mediaId
             database.query {
-                incrementTotalPlayTime(mediaItem.mediaId, playbackStats.totalPlayTimeMs)
-                try {
-                    insert(
-                        Event(
-                            songId = mediaItem.mediaId,
-                            timestamp = LocalDateTime.now(),
-                            playTime = playbackStats.totalPlayTimeMs,
-                        ),
-                    )
-                } catch (_: SQLException) {
+                val incrementalTime = if (wasAlreadyRecorded) {
+                    (playbackStats.totalPlayTimeMs - historyDurationMs).coerceAtLeast(0L)
+                } else {
+                    playbackStats.totalPlayTimeMs
+                }
+                if (incrementalTime > 0) {
+                    incrementTotalPlayTime(mediaItem.mediaId, incrementalTime)
+                }
+                if (!wasAlreadyRecorded) {
+                    try {
+                        insert(
+                            Event(
+                                songId = mediaItem.mediaId,
+                                timestamp = LocalDateTime.now(),
+                                playTime = playbackStats.totalPlayTimeMs,
+                            ),
+                        )
+                    } catch (_: SQLException) {
+                    }
                 }
             }
 

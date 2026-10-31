@@ -1162,17 +1162,25 @@ class HomeViewModel @Inject constructor(
 
     fun refresh() {
         if (isRefreshing.value) return
+        val isLoggedIn = YouTube.cookie != null
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 isRefreshing.value = true
+                if (!isLoggedIn) {
+                    // Reset selected filter chip so that full unauthenticated content refreshes cleanly
+                    selectedChip.value = null
+                    previousHomePage.value = null
+                }
                 load()
             } finally {
                 isRefreshing.value = false
             }
         }
-        // Run sync when user manually refreshes
-        viewModelScope.launch(Dispatchers.IO) {
-            syncUtils.tryAutoSync()
+        if (isLoggedIn) {
+            // Run sync when user manually refreshes (only applicable when logged in)
+            viewModelScope.launch(Dispatchers.IO) {
+                syncUtils.tryAutoSync()
+            }
         }
         // Force refresh GitHub update metadata
         gitHubUpdateManager.checkForUpdates(viewModelScope, force = true)

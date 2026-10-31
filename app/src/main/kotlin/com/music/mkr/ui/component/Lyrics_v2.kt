@@ -12,6 +12,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.*
@@ -38,6 +39,8 @@ import com.music.mkr.R
 import com.music.mkr.db.entities.LyricsEntity
 import com.music.mkr.db.entities.LyricsEntity.Companion.LYRICS_NOT_FOUND
 import com.music.mkr.lyrics.LyricsEntry
+import com.music.mkr.lyrics.LyricsProviderRegistry
+import com.music.mkr.lyrics.LyricsResult
 import com.music.mkr.lyrics.LyricsUtils
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.ui.component.MkrLyricsLine
@@ -177,6 +180,56 @@ fun LyricsV2(
     }
 
     val currentTrackId = mediaMetadata?.id
+    var showProviderSelectorDialog by remember { mutableStateOf(false) }
+    val availableProviders = remember { mutableStateListOf<LyricsResult>() }
+    var isLoadingProviders by remember { mutableStateOf(false) }
+
+    LaunchedEffect(currentTrackId) {
+        availableProviders.clear()
+        val cur = currentLyrics
+        if (cur != null && cur.id == currentTrackId && cur.lyrics.isNotBlank() && cur.lyrics != LYRICS_NOT_FOUND) {
+            val pName = cur.provider.ifBlank { "Current" }
+            availableProviders.add(LyricsResult(pName, cur.lyrics))
+        }
+    }
+
+    LaunchedEffect(showProviderSelectorDialog, currentTrackId) {
+        if (showProviderSelectorDialog && mediaMetadata != null) {
+            val trackId = mediaMetadata.id
+            val cur = currentLyrics
+            if (cur != null && cur.id == trackId && cur.lyrics.isNotBlank() && cur.lyrics != LYRICS_NOT_FOUND) {
+                if (availableProviders.none { it.providerName.equals(cur.provider, ignoreCase = true) }) {
+                    availableProviders.add(LyricsResult(cur.provider, cur.lyrics))
+                }
+            }
+            isLoadingProviders = true
+            try {
+                val entryPoint = EntryPointAccessors.fromApplication(
+                    context.applicationContext,
+                    com.music.mkr.di.LyricsHelperEntryPoint::class.java
+                )
+                val lyricsHelper = entryPoint.lyricsHelper()
+                withContext(Dispatchers.IO) {
+                    lyricsHelper.getAllLyrics(
+                        mediaId = trackId,
+                        songTitle = mediaMetadata.title,
+                        songArtists = mediaMetadata.artists.joinToString { it.name },
+                        duration = mediaMetadata.duration,
+                        album = mediaMetadata.album?.title
+                    ) { result ->
+                        if (result.lyrics.isNotBlank() && result.lyrics != LYRICS_NOT_FOUND) {
+                            if (availableProviders.none { it.providerName.equals(result.providerName, ignoreCase = true) }) {
+                                availableProviders.add(result)
+                            }
+                        }
+                    }
+                }
+            } catch (_: Exception) {
+            } finally {
+                isLoadingProviders = false
+            }
+        }
+    }
     LaunchedEffect(currentTrackId) {
         if (currentTrackId != null) {
             val existing = currentLyrics
@@ -558,7 +611,8 @@ fun LyricsV2(
                                 isSynced = false,
                                 palette = artworkPalette,
                                 isRomanized = showRomanized,
-                                onToggleRomanize = onToggleRomanize
+                                onToggleRomanize = onToggleRomanize,
+                                onProviderClick = { showProviderSelectorDialog = true }
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                         }
@@ -771,7 +825,8 @@ fun LyricsV2(
                                 isSynced = hasSyncedTimestamps,
                                 palette = artworkPalette,
                                 isRomanized = showRomanized,
-                                onToggleRomanize = onToggleRomanize
+                                onToggleRomanize = onToggleRomanize,
+                                onProviderClick = { showProviderSelectorDialog = true }
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                         }
@@ -1000,6 +1055,32 @@ fun LyricsV2(
             }
         }
     }
+
+    if (showProviderSelectorDialog && mediaMetadata != null) {
+        LyricsProviderSelectorDialog(
+            currentProvider = currentLyrics?.provider,
+            availableProviders = availableProviders,
+            isLoading = isLoadingProviders,
+            palette = artworkPalette,
+            songTitle = mediaMetadata.title,
+            songArtist = mediaMetadata.artists.joinToString { it.name },
+            onSelectProvider = { selected ->
+                coroutineScope.launch(Dispatchers.IO) {
+                    database.query {
+                        upsert(
+                            LyricsEntity(
+                                id = mediaMetadata.id,
+                                lyrics = selected.lyrics,
+                                provider = selected.providerName
+                            )
+                        )
+                    }
+                }
+                showProviderSelectorDialog = false
+            },
+            onDismiss = { showProviderSelectorDialog = false }
+        )
+    }
 }
 
 @Composable
@@ -1011,6 +1092,7 @@ private fun LyricsHeader(
     isSynced: Boolean = true,
     isRomanized: Boolean? = null,
     onToggleRomanize: (() -> Unit)? = null,
+    onProviderClick: (() -> Unit)? = null,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -1044,18 +1126,40 @@ private fun LyricsHeader(
             }
 
             if (!provider.isNullOrBlank() && provider != "Unknown") {
+                val displayName = LyricsProviderRegistry.getDisplayName(provider)
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = palette.surfaceElevated.copy(alpha = 0.85f),
                     border = BorderStroke(1.dp, palette.primaryAccent.copy(alpha = 0.25f)),
+                    modifier = if (onProviderClick != null) Modifier.clickable(onClick = onProviderClick) else Modifier
                 ) {
-                    Text(
-                        text = "Lyrics via $provider",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = palette.textSecondary,
-                        fontWeight = FontWeight.Medium,
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
-                    )
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.lyrics),
+                            contentDescription = "Lyrics provider",
+                            tint = palette.textSecondary,
+                            modifier = Modifier.size(13.dp)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "Lyrics via $displayName",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = palette.textSecondary,
+                            fontWeight = FontWeight.Medium
+                        )
+                        if (onProviderClick != null) {
+                            Spacer(modifier = Modifier.width(3.dp))
+                            Icon(
+                                painter = painterResource(R.drawable.expand_more),
+                                contentDescription = "Change provider",
+                                tint = palette.textSecondary.copy(alpha = 0.7f),
+                                modifier = Modifier.size(13.dp)
+                            )
+                        }
+                    }
                 }
             }
 
@@ -1111,6 +1215,235 @@ private fun LyricsHeader(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )
+        }
+    }
+}
+
+@Composable
+private fun LyricsProviderSelectorDialog(
+    currentProvider: String?,
+    availableProviders: List<LyricsResult>,
+    isLoading: Boolean,
+    palette: PlayerArtworkPalette,
+    songTitle: String,
+    songArtist: String,
+    onSelectProvider: (LyricsResult) -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(
+        onDismissRequest = onDismiss,
+        properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            shape = RoundedCornerShape(24.dp),
+            color = palette.surfaceElevated,
+            border = BorderStroke(1.dp, palette.primaryAccent.copy(alpha = 0.22f)),
+            modifier = Modifier
+                .fillMaxWidth(0.92f)
+                .padding(vertical = 24.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp)
+            ) {
+                // Header
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .background(palette.primaryAccent.copy(alpha = 0.15f), CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.lyrics),
+                            contentDescription = null,
+                            tint = palette.primaryAccent,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Choose Lyrics Provider",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = palette.textPrimary
+                        )
+                        if (songTitle.isNotBlank()) {
+                            Text(
+                                text = songTitle + if (songArtist.isNotBlank()) " - $songArtist" else "",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = palette.textSecondary,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Provider list
+                if (availableProviders.isEmpty() && isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(28.dp),
+                                color = palette.primaryAccent,
+                                strokeWidth = 2.5.dp
+                            )
+                            Spacer(modifier = Modifier.height(12.dp))
+                            Text(
+                                text = "Searching available providers...",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = palette.textSecondary
+                            )
+                        }
+                    }
+                } else if (availableProviders.isEmpty() && !isLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No providers found with lyrics for this track",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = palette.textSecondary,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 340.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(availableProviders, key = { it.providerName }) { item ->
+                            val isSelected = currentProvider != null &&
+                                    item.providerName.equals(currentProvider, ignoreCase = true)
+                            val syncType = try {
+                                LyricsUtils.getSyncType(item.lyrics)
+                            } catch (_: Exception) {
+                                LyricsUtils.SyncType.NONE
+                            }
+                            val displayName = LyricsProviderRegistry.getDisplayName(item.providerName)
+
+                            Surface(
+                                shape = RoundedCornerShape(14.dp),
+                                color = if (isSelected) palette.primaryAccent.copy(alpha = 0.16f)
+                                else palette.surfaceElevated.copy(alpha = 0.5f),
+                                border = BorderStroke(
+                                    1.dp,
+                                    if (isSelected) palette.primaryAccent.copy(alpha = 0.6f)
+                                    else palette.primaryAccent.copy(alpha = 0.15f)
+                                ),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onSelectProvider(item) }
+                            ) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 14.dp, vertical = 12.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        painter = painterResource(
+                                            if (syncType == LyricsUtils.SyncType.WORD || syncType == LyricsUtils.SyncType.LINE)
+                                                R.drawable.sync
+                                            else
+                                                R.drawable.lyrics
+                                        ),
+                                        contentDescription = null,
+                                        tint = if (isSelected) palette.primaryAccent else palette.textSecondary,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = displayName,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                            color = palette.textPrimary
+                                        )
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.padding(top = 2.dp)
+                                        ) {
+                                            val badgeText = when (syncType) {
+                                                LyricsUtils.SyncType.WORD -> "Word-by-word synced"
+                                                LyricsUtils.SyncType.LINE -> "Line synced"
+                                                else -> "Plain text"
+                                            }
+                                            Text(
+                                                text = badgeText,
+                                                style = MaterialTheme.typography.labelSmall,
+                                                color = palette.textSecondary
+                                            )
+                                        }
+                                    }
+                                    if (isSelected) {
+                                        Icon(
+                                            painter = painterResource(R.drawable.check),
+                                            contentDescription = "Selected",
+                                            tint = palette.primaryAccent,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (isLoading && availableProviders.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(14.dp),
+                            color = palette.primaryAccent,
+                            strokeWidth = 1.8.dp
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Checking other providers...",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = palette.textSecondary
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text(
+                            text = "Close",
+                            color = palette.primaryAccent,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
+                }
+            }
         }
     }
 }
