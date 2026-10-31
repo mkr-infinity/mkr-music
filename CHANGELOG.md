@@ -8,35 +8,52 @@
 
 ## [v1.1.0] - 2026-10-31
 
-Milestone release delivering instant audio streaming, intelligent background caching, complete UI redesigns for Album, Artist, and Playlist views, universal letter-by-letter synchronized lyrics animation, an overhauled App Icon gallery with deferred switching, and architectural consolidation into a single Universal Release APK.
+Milestone release delivering instant audio streaming, intelligent background caching, complete UI redesigns for Album, Artist, and Playlist views, universal synchronized lyrics animation with dynamic provider selection, hardware equalizer integration with fine-tuned presets, default floating glass capsule navigation, an overhauled App Icon gallery with deferred switching, and architectural consolidation into a single Universal Release APK.
 
 ---
 
 ### 🚀 Added
+- **Default Floating Glass Navigation:** Default floating frosted glass navigation bar featuring fluid pill-shaped buttons, active gradient glows, and tactile spring press animations.
+- **Audio Output Equalizer Quick-Access:** Dedicated Equalizer button integrated into the Audio Output sheet for immediate sound customization without leaving playback.
+- **Hardware Equalizer Presets:** High-precision built-in acoustic presets including *Flat*, *Bass Boost*, *Pure Clarity*, *MKR Signature*, *Electronic*, and *Rock*.
+- **Dynamic Lyrics Provider Switching:** Real-time provider switcher chip in the lyrics view allowing listeners to seamlessly swap between available lyric sources on the fly with custom source logos.
+- **Lyrics Phonetics & Romanization Toggle:** Quick-access toggle on the lyrics screen providing instantaneous romanization without navigating to settings.
+- **Dynamic Onboarding Ambient Effects:** Fluid animated pulse wave behind the welcome logo and real-time color-morphing ambient backdrops on the features onboarding carousel that adapt to each feature theme.
+- **Comprehensive Listening Breakdown:** Rich stats summary displaying total listening duration, active listening days, and daily listening averages.
 - **11 Launcher Icon Styles:** Complete gallery of high-resolution launcher icons including *Default*, *Monochrome*, *Retro*, *Neon*, *Gold*, *Creative Cracked Record Cover*, *Creative Vinyl Forest*, *Creative Moonlit Cherry Blossom*, *Creative Neon Wisteria*, *Creative Autumn Glow*, and *Creative Cyberpunk Neon*.
 - **Deferred Launcher Icon Switching:** Safe queued launcher icon application that applies the chosen icon when the app is sent to the background (`MainActivity.onStop()`) or on cold startup, eliminating sudden process terminations and launcher restart stuttering.
 - **Creator Attribution in Icon Gallery:** Description-style attribution badges displaying creator usernames (`@kaif-coder`, `@mkr-infinity`) and GitHub platform badges for all 11 launcher icons.
-- **Configurable Background Cache Delay:** Dedicated slider under Storage & Cache settings (5s–90s, default 10s) ensuring only actively listened tracks are cached to device storage.
+- **Configurable Background Cache Delay:** Dedicated slider under Storage & Cache settings (5s–90s, default 5s) ensuring only actively listened tracks are cached to device storage.
 - **Watch-Inspired History Navigation:** Dedicated timepiece action capsule on the Home screen providing immediate one-tap navigation to listening history and playback events.
 - **Multi-Density Adaptive Launcher Assets:** Full set of `anydpi-v26` adaptive XML, round XML, and 5 legacy density buckets (`mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`) for all launcher icon styles.
 
 ---
 
 ### 🌟 Improved
+- **Instantaneous Like & Favorite Response:** Optimistic UI updating on like button interactions across all player layouts and the mini-player for zero-latency feedback.
+- **Equalizer Session Card Styling:** Displays the active track title directly on the equalizer session card with clean typography, zero raw identifiers, and zero bullet dots.
 - **Instant Audio Playback Pipeline:** Starts audio streaming immediately upon selection by bypassing initial cache write buffer lag, delivering near-instant online playback.
 - **Redesigned Album Screen:** Elevated album artwork hero presentation with dynamic color extraction, release year, track count, total runtime, record label details, and prominent primary action capsules (Play All, Shuffle, Download, Favorite, Share).
 - **Redesigned Artist Screen:** Full-width header banner with artist avatar, subscriber count stats, top songs spotlight, and categorized discography carousels separating studio albums, singles, EPs, and appearances.
 - **Redesigned Online Playlist Screen:** Expressive header card with creator attribution, track count, and duration summary, accompanied by tactile floating action controls.
 - **Universal Letter-by-Letter Lyrics Animation:** Character-level progressive reveal active across all songs and providers with smooth offscreen Canvas clipping (`BlendMode.DstIn`) and zero layout shifts.
+- **Word-by-Word Lyrics Precision:** Refined word sync algorithm to ensure smooth progression without unexpected line-end jumping.
+- **Notification Media Controls:** Restored media seekbar slider seeking directly in the system media notification.
 - **Settings Discovery & Deep Search:** Pre-tokenized keyword search indexing all configuration items, toggles, and descriptions with instant relevance ranking and direct target highlighting.
 - **Account-Aware Header Navigation:** Dynamic avatar button on the Home screen that displays current account authentication status with smooth transitions.
 
 ---
 
 ### 🛠️ Fixed
+- **Reliable Song Liking Pipeline:** Fixed desync between UI state, Room database entities, and synchronization tasks, ensuring likes persist reliably across all menus, players, and views.
+- **Stats Top-Right Navigation & Wrapped Stability:** Resolved crashes and infinite loops in Wrapped recap, adding safe bounds checking for smaller libraries and eliminating pre-composition auto-advances.
+- **Wrapped Display & Layout Freezes:** Clamped text measurement while loops in recap screens to prevent freezes across varying screen aspect ratios and tablets.
+- **Appearance Settings Clean-up:** Removed redundant duplicate top bar quick-access setting from Auto Playlists while preserving the home screen shortcut.
+- **Strict Clean Typography Policy:** Enforced complete elimination of unwanted bullet dots and separator symbols across all song info and status strings.
+- **Unused Translation Cleanup:** Removed 35 obsolete unused translations to ensure clean multi-locale builds.
 - **Settings Reference Wiring:** Resolved broken, missing, or unmapped configuration references across Appearance, Lyrics, and Storage settings screens.
 - **Lyrics Seeking Synchronization:** Fixed character desync during seek operations, pausing animations cleanly on pause and preventing stale character carryover when switching tracks.
-- **System Window Insets & Overlaps:** Resolved navigation bar, status bar, and mini-player clipping across all 18 primary screens using `LocalPlayerAwareWindowInsets` and `WindowInsets.ime`.
+- **System Window Insets & Overlaps:** Resolved navigation bar, status bar, and mini-player clipping across all primary screens using `LocalPlayerAwareWindowInsets` and `WindowInsets.ime`.
 - **App Icon Grid Sizing:** Hardened dialog layout constraints with `heightIn(max = 420.dp)` and adaptive column sizing (`minSize = 135.dp`) preventing title truncation on compact screens.
 - **Queue Duplicate Track Suppression:** Fixed duplicate track insertion across all queue entry paths, keeping playback queues clean.
 - **Offline Cache Indexing:** Resolved caching edge cases ensuring downloaded songs and cached tracks are properly recognized across History, Library, and offline playback modes.
