@@ -6,9 +6,13 @@
 package com.music.mkr.ui.screens
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.ui.util.lerp
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import androidx.compose.ui.util.lerp
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -16,10 +20,13 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,6 +42,7 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.items
@@ -43,6 +51,7 @@ import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
@@ -85,6 +94,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.Modifier
@@ -137,6 +147,7 @@ import com.music.mkr.db.entities.PlaylistSongMap
 import com.music.mkr.db.entities.Song
 import com.music.mkr.extensions.toMediaItem
 import com.music.mkr.LocalDatabase
+import com.music.mkr.LocalListenTogetherManager
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.models.toMediaMetadata
@@ -170,6 +181,7 @@ import com.music.mkr.ui.menu.YouTubeArtistMenu
 import com.music.mkr.ui.menu.YouTubePlaylistMenu
 import com.music.mkr.ui.menu.YouTubeSongMenu
 import com.music.mkr.ui.utils.SnapLayoutInfoProvider
+import com.music.mkr.ui.utils.isScrollingUp
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.listItemShape
 import com.music.mkr.utils.rememberEnumPreference
@@ -2296,6 +2308,13 @@ fun HomeScreen(
                     }
                 }
             )
+
+            ListenTogetherShortcut(
+                lazyListState = lazylistState,
+                onClick = {
+                    navController.navigate(Screens.ListenTogether.route)
+                }
+            )
         }
     }
 
@@ -2304,5 +2323,112 @@ fun HomeScreen(
             state = updateState,
             onDismiss = { showUpdateDialog = false }
         )
+    }
+}
+
+@Composable
+fun BoxScope.ListenTogetherShortcut(
+    lazyListState: LazyListState,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val listenTogetherManager = LocalListenTogetherManager.current
+    val isInRoom = listenTogetherManager?.isInRoom == true
+    val interactionSource = remember { MutableInteractionSource() }
+    val isPressed by interactionSource.collectIsPressedAsState()
+    val scale by animateFloatAsState(
+        targetValue = if (isPressed) 0.94f else 1f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow,
+        ),
+        label = "listen_together_shortcut_press",
+    )
+
+    AnimatedVisibility(
+        visible = lazyListState.isScrollingUp(),
+        enter = slideInVertically { it },
+        exit = slideOutVertically { it },
+        modifier = modifier
+            .align(Alignment.BottomStart)
+            .windowInsetsPadding(
+                LocalPlayerAwareWindowInsets.current
+                    .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+            )
+            .padding(16.dp),
+    ) {
+        Surface(
+            onClick = onClick,
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
+            contentColor = MaterialTheme.colorScheme.onSurface,
+            tonalElevation = 4.dp,
+            shadowElevation = 6.dp,
+            border = BorderStroke(
+                width = 1.dp,
+                color = if (isInRoom) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                } else {
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                },
+            ),
+            interactionSource = interactionSource,
+            modifier = Modifier
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                },
+        ) {
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 14.dp, vertical = 9.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .clip(CircleShape)
+                        .background(
+                            if (isInRoom) {
+                                MaterialTheme.colorScheme.primary
+                            } else {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
+                            },
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(if (isInRoom) R.drawable.link else R.drawable.group),
+                        contentDescription = null,
+                        tint = if (isInRoom) {
+                            MaterialTheme.colorScheme.onPrimary
+                        } else {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        },
+                        modifier = Modifier.size(16.dp),
+                    )
+                }
+
+                Text(
+                    text = stringResource(R.string.listen_together),
+                    style = MaterialTheme.typography.labelLarge.copy(
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = 0.1.sp,
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                )
+
+                if (isInRoom) {
+                    Box(
+                        modifier = Modifier
+                            .size(7.dp)
+                            .clip(CircleShape)
+                            .background(Color(0xFF4CAF50)),
+                    )
+                }
+            }
+        }
     }
 }
