@@ -164,6 +164,7 @@ import com.music.mkr.db.entities.FormatEntity
 import com.music.mkr.db.entities.LyricsEntity
 import com.music.mkr.db.entities.RelatedSongMap
 import com.music.mkr.db.entities.Song
+import com.music.mkr.db.entities.SongEntity
 import com.music.mkr.di.DownloadCache
 import com.music.mkr.di.PlayerCache
 import com.music.mkr.eq.EqualizerService

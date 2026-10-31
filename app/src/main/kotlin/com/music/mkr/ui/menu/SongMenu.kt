@@ -80,6 +80,7 @@ import com.music.mkr.db.entities.Event
 import com.music.mkr.db.entities.SpeedDialItem
 import com.music.mkr.db.entities.PlaylistSong
 import com.music.mkr.db.entities.Song
+import com.music.mkr.db.entities.SongEntity
 import com.music.mkr.extensions.toMediaItem
 import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.playback.ExoDownloadService
