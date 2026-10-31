@@ -56,6 +56,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -281,9 +282,9 @@ private fun AmberDockItem(
 }
 
 // ---------------------------------------------------------------------------
-// STYLE A: Floating Glass Navigation (Telegram-inspired Floating Glass Capsule)
-// Refined floating dock with authentic translucent frosted glass depth,
-// specular top rim highlight, and illuminated frosted active capsule.
+// STYLE A: Floating Glass Navigation (Lightweight Liquid Glass Dock)
+// Authentic liquid translucent glass dock with ambient depth, dual specular
+// rim light reflection, subtle top refractive glint, and liquid illuminated active pill.
 // ---------------------------------------------------------------------------
 @Composable
 fun FloatingGlassNavigationBar(
@@ -296,51 +297,97 @@ fun FloatingGlassNavigationBar(
     onSearchLongClick: (() -> Unit)? = null,
     bottomInset: Dp = 0.dp,
 ) {
-    val containerColor = if (pureBlack) Color(0xE6121316) else Color(0xDD18191E)
+    val isDark = pureBlack || MaterialTheme.colorScheme.surface.luminance() < 0.5f
+
+    val glassShape = RoundedCornerShape(26.dp)
+
+    val glassBaseColor = when {
+        pureBlack -> Color(0xB8090A0D)
+        isDark -> MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.72f)
+        else -> MaterialTheme.colorScheme.surface.copy(alpha = 0.82f)
+    }
+
     val glassRimBrush = Brush.verticalGradient(
+        colors = if (isDark) {
+            listOf(
+                Color(0x50FFFFFF),
+                Color(0x20FFFFFF),
+                Color(0x08FFFFFF),
+                Color(0x18000000)
+            )
+        } else {
+            listOf(
+                Color(0xA0FFFFFF),
+                Color(0x40FFFFFF),
+                Color(0x14000000),
+                Color(0x24000000)
+            )
+        }
+    )
+
+    val specularFlare = Brush.horizontalGradient(
         colors = listOf(
-            Color(0x40FFFFFF),
-            Color(0x18FFFFFF),
-            Color(0x0AFFFFFF)
+            Color.Transparent,
+            if (isDark) Color(0x20FFFFFF) else Color(0x45FFFFFF),
+            if (isDark) Color(0x45FFFFFF) else Color(0x80FFFFFF),
+            if (isDark) Color(0x20FFFFFF) else Color(0x45FFFFFF),
+            Color.Transparent
         )
     )
+
+    val dockHeight = if (slimNav) 56.dp else 66.dp
+    val bottomPad = bottomInset + if (slimNav) 8.dp else 10.dp
 
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 24.dp)
-            .padding(bottom = bottomInset + 12.dp),
+            .padding(horizontal = 20.dp)
+            .padding(bottom = bottomPad),
         contentAlignment = Alignment.Center
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(64.dp)
+                .height(dockHeight)
                 .shadow(
-                    elevation = 12.dp,
-                    shape = RoundedCornerShape(32.dp),
-                    ambientColor = Color(0x35000000),
-                    spotColor = Color(0x45000000)
+                    elevation = 10.dp,
+                    shape = glassShape,
+                    ambientColor = if (isDark) Color(0x30000000) else Color(0x1A000000),
+                    spotColor = if (isDark) Color(0x45000000) else Color(0x25000000)
                 )
-                .background(containerColor, shape = RoundedCornerShape(32.dp))
-                .border(width = 1.dp, brush = glassRimBrush, shape = RoundedCornerShape(32.dp))
-                .padding(horizontal = 8.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
+                .background(glassBaseColor, shape = glassShape)
+                .border(width = 1.dp, brush = glassRimBrush, shape = glassShape)
         ) {
-            navigationItems.forEach { screen ->
-                val isSelected = remember(currentRoute, screen.route) {
-                    isNavRouteSelected(currentRoute, screen.route, navigationItems)
-                }
+            // Subtle top refractive specular flare
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .padding(horizontal = 24.dp)
+                    .background(specularFlare)
+            )
 
-                FloatingGlassItem(
-                    screen = screen,
-                    isSelected = isSelected,
-                    onClick = { onItemClick(screen, isSelected) },
-                    slimNav = slimNav,
-                    modifier = Modifier.weight(1f),
-                    onSearchLongClick = onSearchLongClick
-                )
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                navigationItems.forEach { screen ->
+                    val isSelected = remember(currentRoute, screen.route) {
+                        isNavRouteSelected(currentRoute, screen.route, navigationItems)
+                    }
+
+                    FloatingGlassItem(
+                        screen = screen,
+                        isSelected = isSelected,
+                        onClick = { onItemClick(screen, isSelected) },
+                        slimNav = slimNav,
+                        modifier = Modifier.weight(1f),
+                        onSearchLongClick = onSearchLongClick
+                    )
+                }
             }
         }
     }
@@ -406,36 +453,60 @@ private fun FloatingGlassItem(
         targetValue = if (isSelected) {
             MaterialTheme.colorScheme.primary
         } else {
-            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.70f)
+            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.68f)
         },
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = tween(durationMillis = 180),
         label = "glassContentColor"
     )
 
-    val capsuleBg by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.18f) else Color.Transparent,
-        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-        label = "glassCapsuleBg"
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val activePillBrush = remember(primaryColor) {
+        Brush.verticalGradient(
+            colors = listOf(
+                primaryColor.copy(alpha = 0.22f),
+                primaryColor.copy(alpha = 0.10f)
+            )
+        )
+    }
+    val activePillBorder = remember(primaryColor) {
+        Brush.verticalGradient(
+            colors = listOf(
+                primaryColor.copy(alpha = 0.48f),
+                primaryColor.copy(alpha = 0.16f)
+            )
+        )
+    }
+
+    val indicatorWidth by animateDpAsState(
+        targetValue = if (isSelected) 22.dp else 0.dp,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMediumLow
+        ),
+        label = "glassIndicatorWidth"
     )
 
-    val capsuleBorder by animateColorAsState(
-        targetValue = if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.35f) else Color.Transparent,
-        animationSpec = tween(durationMillis = 220, easing = FastOutSlowInEasing),
-        label = "glassCapsuleBorder"
-    )
+    val itemShape = RoundedCornerShape(18.dp)
 
     Box(
         modifier = modifier
             .scale(pressScale)
-            .clip(RoundedCornerShape(22.dp))
-            .background(capsuleBg, shape = RoundedCornerShape(22.dp))
-            .border(width = 1.dp, color = capsuleBorder, shape = RoundedCornerShape(22.dp))
+            .clip(itemShape)
+            .then(
+                if (isSelected) {
+                    Modifier
+                        .background(brush = activePillBrush, shape = itemShape)
+                        .border(width = 1.dp, brush = activePillBorder, shape = itemShape)
+                } else {
+                    Modifier
+                }
+            )
             .clickable(
                 interactionSource = interactionSource,
                 indication = ripple(bounded = true),
                 onClick = onClick
             )
-            .padding(vertical = 5.dp),
+            .padding(vertical = if (slimNav) 8.dp else 5.dp),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -447,7 +518,7 @@ private fun FloatingGlassItem(
                 contentDescription = stringResource(screen.titleId),
                 tint = contentColor,
                 modifier = Modifier
-                    .size(22.dp)
+                    .size(23.dp)
                     .scale(iconScale)
             )
 
@@ -462,6 +533,17 @@ private fun FloatingGlassItem(
                     overflow = TextOverflow.Ellipsis
                 )
             }
+
+            Spacer(modifier = Modifier.height(2.dp))
+
+            // Prismatic liquid underline indicator
+            Box(
+                modifier = Modifier
+                    .width(indicatorWidth)
+                    .height(2.5.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primary)
+            )
         }
     }
 }
@@ -744,7 +826,7 @@ fun FloatingNavigationBar(
     onSearchLongClick: (() -> Unit)? = null,
     bottomInset: Dp = 0.dp
 ) {
-    AmberDockNavigationBar(
+    FloatingGlassNavigationBar(
         navigationItems = navigationItems,
         currentRoute = currentRoute,
         onItemClick = onItemClick,
