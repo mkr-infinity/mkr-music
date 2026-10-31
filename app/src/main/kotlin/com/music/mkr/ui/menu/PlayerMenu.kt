@@ -656,7 +656,7 @@ fun PlayerMenu(
                                 description = { Text(text = audioDevice.name) },
                                 icon = {
                                     Icon(
-                                        imageVector = audioDevice.type.imageVector,
+                                        painter = painterResource(audioDevice.type.iconRes),
                                         contentDescription = null,
                                         modifier = Modifier.size(24.dp)
                                     )

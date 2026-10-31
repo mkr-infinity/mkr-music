@@ -777,7 +777,7 @@ fun Queue(
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
                         ) {
                             Icon(
-                                imageVector = audioDevice.type.imageVector,
+                                painter = painterResource(audioDevice.type.iconRes),
                                 contentDescription = audioDevice.name,
                                 modifier = Modifier.size(16.dp),
                                 tint = MaterialTheme.colorScheme.primary,

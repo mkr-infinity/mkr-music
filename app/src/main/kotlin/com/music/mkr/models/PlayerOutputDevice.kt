@@ -6,26 +6,21 @@
 package com.music.mkr.models
 
 import android.media.AudioDeviceInfo
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Bluetooth
-import androidx.compose.material.icons.rounded.Cable
-import androidx.compose.material.icons.rounded.Headphones
-import androidx.compose.material.icons.rounded.Speaker
-import androidx.compose.material.icons.rounded.Usb
+import androidx.annotation.DrawableRes
 import androidx.compose.runtime.Immutable
-import androidx.compose.ui.graphics.vector.ImageVector
+import com.music.mkr.R
 
 enum class PlayerOutputDevice(
-    val imageVector: ImageVector,
+    @DrawableRes val iconRes: Int,
     val isProduct: Boolean,
     val defaultName: String,
 ) {
-    Bluetooth(Icons.Rounded.Bluetooth, isProduct = true, defaultName = "Bluetooth"),
-    Usb(Icons.Rounded.Usb, isProduct = true, defaultName = "USB"),
-    Headset(Icons.Rounded.Headphones, isProduct = false, defaultName = "Headset"),
-    Hdmi(Icons.Rounded.Cable, isProduct = false, defaultName = "HDMI"),
-    BuiltinSpeaker(Icons.Rounded.Speaker, isProduct = false, defaultName = "Speaker"),
-    Unknown(Icons.Rounded.Speaker, isProduct = false, defaultName = "Speaker"),
+    Bluetooth(R.drawable.bluetooth, isProduct = true, defaultName = "Bluetooth"),
+    Usb(R.drawable.usb, isProduct = true, defaultName = "USB"),
+    Headset(R.drawable.headphones, isProduct = false, defaultName = "Headset"),
+    Hdmi(R.drawable.home_speaker_devices, isProduct = false, defaultName = "HDMI"),
+    BuiltinSpeaker(R.drawable.speaker, isProduct = false, defaultName = "Speaker"),
+    Unknown(R.drawable.speaker, isProduct = false, defaultName = "Speaker"),
     ;
 
     companion object {
