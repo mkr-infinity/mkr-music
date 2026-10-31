@@ -224,12 +224,6 @@ fun ChangelogItem(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Box(
-                modifier = Modifier
-                    .size(6.dp)
-                    .background(MaterialTheme.colorScheme.primary, RoundedCornerShape(50))
-            )
-            androidx.compose.foundation.layout.Spacer(modifier = Modifier.size(16.dp))
             ClickableText(
                 text = annotatedText,
                 onClick = { offset ->

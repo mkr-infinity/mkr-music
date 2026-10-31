@@ -69,7 +69,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -98,6 +100,7 @@ import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalListenTogetherManager
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
+import com.music.mkr.LocalSyncUtils
 import com.music.mkr.R
 import com.music.mkr.constants.HideExplicitKey
 import com.music.mkr.constants.ShowArtistDescriptionKey
@@ -171,6 +174,9 @@ fun ArtistScreen(
     val showArtistDescription by rememberPreference(key = ShowArtistDescriptionKey, defaultValue = true)
     val showArtistSubscriberCount by rememberPreference(key = ShowArtistSubscriberCountKey, defaultValue = true)
     val showMonthlyListeners by rememberPreference(key = ShowMonthlyListenersKey, defaultValue = true)
+    val syncUtils = LocalSyncUtils.current
+    val likedSongs by database.likedSongsByRowIdAsc().collectAsState(initial = emptyList())
+    val likedSongIds = remember(likedSongs) { likedSongs.map { it.id }.toSet() }
 
     val lazyListState = rememberLazyListState()
     val snackbarHostState = remember { SnackbarHostState() }
@@ -205,8 +211,42 @@ fun ArtistScreen(
             .fillMaxSize()
             .background(surfaceColor)
     ) {
-        // Soft atmospheric ambient glow
-        MkrAmbientBackdrop(accentColor = accentColor, height = 360.dp, alpha = 0.16f)
+        // Cinematic Artist Backdrop
+        if (!thumbnail.isNullOrEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(440.dp)
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(context)
+                        .data(thumbnail.resize(1000, 1000))
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { alpha = 0.38f }
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            Brush.verticalGradient(
+                                colors = listOf(
+                                    surfaceColor.copy(alpha = 0.25f),
+                                    surfaceColor.copy(alpha = 0.60f),
+                                    surfaceColor.copy(alpha = 0.90f),
+                                    surfaceColor
+                                )
+                            )
+                        )
+                )
+            }
+        } else {
+            MkrAmbientBackdrop(accentColor = accentColor, height = 360.dp, alpha = 0.18f)
+        }
 
         LazyColumn(
             state = lazyListState,
@@ -326,6 +366,14 @@ fun ArtistScreen(
                                 explicit = song.song.explicit,
                                 isActive = song.id == mediaMetadata?.id,
                                 isPlaying = isPlaying,
+                                isLiked = song.id in likedSongIds,
+                                onLikeClick = {
+                                    coroutineScope.launch(Dispatchers.IO) {
+                                        val toggled = song.song.toggleLike()
+                                        database.update(toggled)
+                                        syncUtils.likeSong(toggled)
+                                    }
+                                },
                                 onMenuClick = {
                                     menuState.show {
                                         SongMenu(
@@ -454,7 +502,7 @@ fun ArtistScreen(
                                 val subtitleText = listOfNotNull(
                                     song.album?.name,
                                     song.viewCountText
-                                ).joinToString(" • ")
+                                ).joinToString(", ")
 
                                 ArtistTrackLeaderboardCard(
                                     rank = index + 1,
@@ -465,6 +513,21 @@ fun ArtistScreen(
                                     explicit = song.explicit,
                                     isActive = mediaMetadata?.id == song.id,
                                     isPlaying = isPlaying,
+                                    isLiked = song.id in likedSongIds,
+                                    onLikeClick = {
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            var songToUpdate = database.getSongByIdBlocking(song.id)
+                                            if (songToUpdate == null) {
+                                                database.insert(song.toMediaMetadata())
+                                                songToUpdate = database.getSongByIdBlocking(song.id)
+                                            }
+                                            songToUpdate?.let {
+                                                val s = it.song.toggleLike()
+                                                database.update(s)
+                                                syncUtils.likeSong(s)
+                                            }
+                                        }
+                                    },
                                     onMenuClick = {
                                         menuState.show {
                                             YouTubeSongMenu(
@@ -873,13 +936,14 @@ private fun ArtistAvatar(
     Surface(
         modifier = modifier
             .shadow(
-                elevation = 16.dp,
-                shape = CircleShape,
-                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)
+                elevation = 20.dp,
+                shape = RoundedCornerShape(36.dp),
+                spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.4f),
+                ambientColor = Color(0x30000000)
             ),
-        shape = CircleShape,
+        shape = RoundedCornerShape(36.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
+        border = BorderStroke(2.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.45f))
     ) {
         if (thumbnailUrl != null) {
             AsyncImage(
@@ -922,27 +986,38 @@ private fun ArtistInfoAndBadges(
     ) {
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
         ) {
-            Text(
-                text = "VERIFIED ARTIST",
-                style = MaterialTheme.typography.labelSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.2.sp,
-                    fontSize = 10.sp
-                ),
-                color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
-            )
+            Row(
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.check),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(12.dp)
+                )
+                Text(
+                    text = "VERIFIED ARTIST",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp,
+                        fontSize = 10.sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
         }
 
         Text(
             text = artistName,
             style = MaterialTheme.typography.headlineLarge.copy(
                 fontWeight = FontWeight.ExtraBold,
-                fontSize = 26.sp,
-                lineHeight = 32.sp
+                fontSize = 28.sp,
+                lineHeight = 34.sp
             ),
             color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2,
@@ -1277,25 +1352,28 @@ private fun ArtistTrackLeaderboardCard(
     isActive: Boolean,
     isPlaying: Boolean,
     onMenuClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    isLiked: Boolean = false,
+    onLikeClick: (() -> Unit)? = null,
 ) {
-    val containerColor = if (isActive) {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
-    } else {
-        MaterialTheme.colorScheme.surfaceContainerLow
+    val isTopOne = rank == 1
+    val containerColor = when {
+        isActive -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+        isTopOne -> MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.9f)
+        else -> MaterialTheme.colorScheme.surfaceContainerLow
     }
 
-    val borderColor = if (isActive) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
-    } else {
-        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f)
+    val borderColor = when {
+        isActive -> MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+        isTopOne -> Color(0xFFFFB300).copy(alpha = 0.35f)
+        else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f)
     }
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
             .mkrPressFeedback(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(if (isTopOne) 18.dp else 16.dp),
         color = containerColor,
         border = BorderStroke(1.dp, borderColor)
     ) {
@@ -1484,6 +1562,20 @@ private fun ArtistTrackLeaderboardCard(
                         ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            if (onLikeClick != null) {
+                IconButton(
+                    onClick = onLikeClick,
+                    modifier = Modifier.size(36.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
+                        contentDescription = "Favorite",
+                        tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }

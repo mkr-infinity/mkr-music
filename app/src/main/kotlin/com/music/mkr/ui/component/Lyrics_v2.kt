@@ -554,6 +554,7 @@ fun LyricsV2(
                                 title = mediaMetadata?.title.orEmpty(),
                                 artist = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
                                 provider = currentLyrics?.provider,
+                                isSynced = false,
                                 palette = artworkPalette,
                                 isRomanized = showRomanized,
                                 onToggleRomanize = onToggleRomanize
@@ -766,6 +767,7 @@ fun LyricsV2(
                                 title = mediaMetadata?.title.orEmpty(),
                                 artist = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
                                 provider = currentLyrics?.provider,
+                                isSynced = true,
                                 palette = artworkPalette,
                                 isRomanized = showRomanized,
                                 onToggleRomanize = onToggleRomanize
@@ -1005,6 +1007,7 @@ private fun LyricsHeader(
     artist: String,
     provider: String?,
     palette: PlayerArtworkPalette,
+    isSynced: Boolean = true,
     isRomanized: Boolean? = null,
     onToggleRomanize: (() -> Unit)? = null,
     modifier: Modifier = Modifier
@@ -1020,29 +1023,38 @@ private fun LyricsHeader(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier.padding(bottom = 10.dp)
         ) {
+            if (!isSynced) {
+                Surface(
+                    shape = RoundedCornerShape(12.dp),
+                    color = palette.surfaceElevated.copy(alpha = 0.85f),
+                    border = BorderStroke(1.dp, palette.primaryAccent.copy(alpha = 0.25f)),
+                ) {
+                    Text(
+                        text = "Synced lyrics unavailable for this track",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = palette.textSecondary,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+                if (!provider.isNullOrBlank() && provider != "Unknown") {
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+            }
+
             if (!provider.isNullOrBlank() && provider != "Unknown") {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
                     color = palette.surfaceElevated.copy(alpha = 0.85f),
                     border = BorderStroke(1.dp, palette.primaryAccent.copy(alpha = 0.25f)),
                 ) {
-                    Row(
-                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(6.dp)
-                                .background(palette.primaryAccent, CircleShape)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Lyrics via $provider",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = palette.textSecondary,
-                            fontWeight = FontWeight.Medium
-                        )
-                    }
+                    Text(
+                        text = "Lyrics via $provider",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = palette.textSecondary,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
                 }
             }
 

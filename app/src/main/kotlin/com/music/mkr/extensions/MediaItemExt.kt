@@ -16,7 +16,24 @@ import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.ui.utils.resize
 
 val MediaItem.metadata: MediaMetadata?
-    get() = localConfiguration?.tag as? MediaMetadata
+    get() = (localConfiguration?.tag as? MediaMetadata) ?: run {
+        if (mediaId.isBlank()) return null
+        val titleStr = mediaMetadata.title?.toString()?.takeIf { it.isNotBlank() } ?: return null
+        val artistStr = (mediaMetadata.artist ?: mediaMetadata.subtitle)?.toString() ?: ""
+        val artworkUriStr = mediaMetadata.artworkUri?.toString()
+            ?: mediaMetadata.extras?.getString("artwork_uri")
+        val durationMs = mediaMetadata.extras?.getLong("duration") ?: 0L
+        MediaMetadata(
+            id = mediaId,
+            title = titleStr,
+            artists = if (artistStr.isNotBlank()) {
+                artistStr.split(", ").map { MediaMetadata.Artist(id = null, name = it.trim()) }
+            } else emptyList(),
+            duration = (durationMs / 1000).toInt(),
+            thumbnailUrl = artworkUriStr,
+            album = mediaMetadata.albumTitle?.let { MediaMetadata.Album(id = "", title = it.toString()) }
+        )
+    }
 
 fun Song.toMediaItem() = MediaItem.Builder()
     .setMediaId(song.id)

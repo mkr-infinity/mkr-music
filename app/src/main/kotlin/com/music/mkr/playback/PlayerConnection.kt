@@ -494,7 +494,7 @@ class PlayerConnection(
         mediaItem: MediaItem?,
         reason: Int,
     ) {
-        mediaMetadata.value = mediaItem?.metadata
+        mediaMetadata.value = mediaItem?.metadata ?: player.currentMetadata
         currentMediaItemIndex.value = player.currentMediaItemIndex
         currentWindowIndex.value = player.getCurrentQueueIndex()
         updateCanSkipPreviousAndNext()
