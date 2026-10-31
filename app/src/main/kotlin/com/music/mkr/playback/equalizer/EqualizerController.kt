@@ -28,10 +28,21 @@ class EqualizerController @Inject constructor(
     @ApplicationContext private val context: Context,
     val repository: EqualizerPresetRepository,
 ) {
-    private companion object {
+    companion object {
         private const val TAG = "EqualizerController"
         private const val DEFAULT_BAND_COUNT = 5
         private val FALLBACK_FREQS = listOf(60, 230, 910, 3600, 14000)
+
+        fun resampleLevels(source: List<Int>, targetCount: Int): List<Int> {
+            if (targetCount <= 0) return emptyList()
+            if (source.isEmpty()) return List(targetCount) { 0 }
+            if (source.size == targetCount) return source
+            return List(targetCount) { index ->
+                val ratio = index.toFloat() / (targetCount - 1).coerceAtLeast(1)
+                val sourceIndex = (ratio * (source.size - 1)).roundToInt().coerceIn(0, source.size - 1)
+                source[sourceIndex]
+            }
+        }
     }
 
     private var equalizer: Equalizer? = null
@@ -322,18 +333,5 @@ class EqualizerController @Inject constructor(
             applyPreset(active)
         }
         return result
-    }
-
-    companion object {
-        fun resampleLevels(source: List<Int>, targetCount: Int): List<Int> {
-            if (targetCount <= 0) return emptyList()
-            if (source.isEmpty()) return List(targetCount) { 0 }
-            if (source.size == targetCount) return source
-            return List(targetCount) { index ->
-                val ratio = index.toFloat() / (targetCount - 1).coerceAtLeast(1)
-                val sourceIndex = (ratio * (source.size - 1)).roundToInt().coerceIn(0, source.size - 1)
-                source[sourceIndex]
-            }
-        }
     }
 }
