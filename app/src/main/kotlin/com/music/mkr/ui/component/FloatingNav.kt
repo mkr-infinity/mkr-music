@@ -486,7 +486,7 @@ private fun FloatingGlassItem(
         label = "glassIndicatorWidth"
     )
 
-    val itemShape = RoundedCornerShape(18.dp)
+    val itemShape = CircleShape
 
     Box(
         modifier = modifier

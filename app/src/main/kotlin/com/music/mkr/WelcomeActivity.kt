@@ -17,6 +17,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.togetherWith
@@ -60,6 +61,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
@@ -353,7 +355,11 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(40.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    PermissionsHeroVisual(modifier = Modifier.fillMaxWidth())
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
                         text = stringResource(com.music.mkr.R.string.perm_required),
@@ -450,7 +456,11 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(40.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    CommunityHeroVisual(modifier = Modifier.fillMaxWidth())
+
+                    Spacer(modifier = Modifier.height(16.dp))
 
                     Text(
                         text = "Join our",
@@ -652,195 +662,276 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     pageCount = { Int.MAX_VALUE }
                 )
 
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Spacer(modifier = Modifier.height(64.dp))
+                val currentRealIndex = (featurePagerState.currentPage % featureCount + featureCount) % featureCount
+                val activeFeature = features[currentRealIndex]
 
-                    Column(modifier = Modifier.padding(bottom = 12.dp)) {
-                        Text(
-                            text = stringResource(com.music.mkr.R.string.feat_discover),
-                            style = thinHeaderStyle,
-                            color = MaterialTheme.colorScheme.onBackground
+                val dynamicBgColor by animateColorAsState(
+                    targetValue = activeFeature.iconColor,
+                    animationSpec = tween(600, easing = FastOutSlowInEasing),
+                    label = "featuresDynamicBgColor"
+                )
+                val dynamicTintColor by animateColorAsState(
+                    targetValue = activeFeature.iconTint,
+                    animationSpec = tween(600, easing = FastOutSlowInEasing),
+                    label = "featuresDynamicTintColor"
+                )
+
+                val infiniteTransition = rememberInfiniteTransition(label = "FeaturesAmbientAnim")
+                val ambientFloatY by infiniteTransition.animateFloat(
+                    initialValue = -10f,
+                    targetValue = 10f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(3800, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "ambientFloatY"
+                )
+                val ambientPulseScale by infiniteTransition.animateFloat(
+                    initialValue = 0.94f,
+                    targetValue = 1.06f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(3000, easing = FastOutSlowInEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "ambientPulseScale"
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .drawBehind {
+                            // Top-right dynamic ambient glow according to active feature
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(
+                                        dynamicBgColor.copy(alpha = 0.28f),
+                                        dynamicBgColor.copy(alpha = 0.08f),
+                                        Color.Transparent
+                                    ),
+                                    center = Offset(size.width * 0.85f, size.height * 0.12f + ambientFloatY),
+                                    radius = size.width * 0.65f * ambientPulseScale
+                                )
+                            )
+                            // Bottom-left dynamic aura glow according to active feature
+                            drawCircle(
+                                brush = Brush.radialGradient(
+                                    colors = listOf(
+                                        dynamicTintColor.copy(alpha = 0.22f),
+                                        dynamicBgColor.copy(alpha = 0.06f),
+                                        Color.Transparent
+                                    ),
+                                    center = Offset(size.width * 0.25f, size.height * 0.75f - ambientFloatY),
+                                    radius = size.width * 0.70f * ambientPulseScale
+                                )
+                            )
+                        }
+                ) {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.Start
+                    ) {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        FeaturesHeroVisual(
+                            activeColor = dynamicBgColor,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                        Text(
-                            text = stringResource(com.music.mkr.R.string.feat_features),
-                            fontFamily = GoogleSansFlex,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 44.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            lineHeight = 50.sp
-                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Column(modifier = Modifier.padding(bottom = 12.dp)) {
+                            Text(
+                                text = stringResource(com.music.mkr.R.string.feat_discover),
+                                style = thinHeaderStyle,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                            Text(
+                                text = stringResource(com.music.mkr.R.string.feat_features),
+                                fontFamily = GoogleSansFlex,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 44.sp,
+                                color = dynamicBgColor,
+                                lineHeight = 50.sp
+                            )
+
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Text(
+                                text = "Slide smoothly across features crafted for the ultimate music journey.",
+                                style = MaterialTheme.typography.bodyMedium.copy(
+                                    fontFamily = GoogleSansFlex
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
 
                         Spacer(modifier = Modifier.height(8.dp))
 
-                        Text(
-                            text = "Slide smoothly across features crafted for the ultimate music journey.",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = GoogleSansFlex
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            HorizontalPager(
+                                state = featurePagerState,
+                                contentPadding = PaddingValues(horizontal = 36.dp),
+                                pageSpacing = 16.dp,
+                                modifier = Modifier.fillMaxWidth()
+                            ) { page ->
+                                val actualIndex = (page % featureCount + featureCount) % featureCount
+                                val item = features[actualIndex]
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                                val pageOffset = ((featurePagerState.currentPage - page) + featurePagerState.currentPageOffsetFraction).absoluteValue
+                                val scale = lerp(0.88f, 1f, 1f - pageOffset.coerceIn(0f, 1f))
+                                val alpha = lerp(0.50f, 1f, 1f - pageOffset.coerceIn(0f, 1f))
 
-                    Box(
-                        modifier = Modifier
-                            .weight(1f)
-                            .fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        HorizontalPager(
-                            state = featurePagerState,
-                            contentPadding = PaddingValues(horizontal = 36.dp),
-                            pageSpacing = 16.dp,
-                            modifier = Modifier.fillMaxWidth()
-                        ) { page ->
-                            val actualIndex = (page % featureCount + featureCount) % featureCount
-                            val item = features[actualIndex]
-
-                            val pageOffset = ((featurePagerState.currentPage - page) + featurePagerState.currentPageOffsetFraction).absoluteValue
-                            val scale = lerp(0.88f, 1f, 1f - pageOffset.coerceIn(0f, 1f))
-                            val alpha = lerp(0.50f, 1f, 1f - pageOffset.coerceIn(0f, 1f))
-
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(310.dp)
-                                    .graphicsLayer {
-                                        scaleX = scale
-                                        scaleY = scale
-                                        this.alpha = alpha
-                                    },
-                                shape = RoundedCornerShape(32.dp),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                ),
-                                border = BorderStroke(
-                                    1.dp,
-                                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                                )
-                            ) {
-                                Column(
+                                Card(
                                     modifier = Modifier
-                                        .fillMaxSize()
-                                        .padding(24.dp),
-                                    verticalArrangement = Arrangement.SpaceBetween
+                                        .fillMaxWidth()
+                                        .height(310.dp)
+                                        .graphicsLayer {
+                                            scaleX = scale
+                                            scaleY = scale
+                                            this.alpha = alpha
+                                        },
+                                    shape = RoundedCornerShape(32.dp),
+                                    colors = CardDefaults.cardColors(
+                                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                                    ),
+                                    border = BorderStroke(
+                                        1.2.dp,
+                                        item.iconColor.copy(alpha = lerp(0.25f, 0.70f, 1f - pageOffset.coerceIn(0f, 1f)))
+                                    )
                                 ) {
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        verticalAlignment = Alignment.CenterVertically
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(
+                                                Brush.radialGradient(
+                                                    colors = listOf(
+                                                        item.iconColor.copy(alpha = 0.14f),
+                                                        Color.Transparent
+                                                    ),
+                                                    center = Offset(Float.POSITIVE_INFINITY, 0f),
+                                                    radius = 450f
+                                                )
+                                            )
+                                            .padding(24.dp),
+                                        verticalArrangement = Arrangement.SpaceBetween
                                     ) {
-                                        Surface(
-                                            shape = RoundedCornerShape(18.dp),
-                                            color = item.iconColor,
-                                            modifier = Modifier.size(54.dp)
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically
                                         ) {
-                                            Box(contentAlignment = Alignment.Center) {
-                                                Icon(
-                                                    painter = painterResource(id = item.iconRes),
-                                                    contentDescription = null,
-                                                    tint = item.iconTint,
-                                                    modifier = Modifier.size(28.dp)
+                                            Surface(
+                                                shape = RoundedCornerShape(18.dp),
+                                                color = item.iconColor,
+                                                modifier = Modifier.size(54.dp)
+                                            ) {
+                                                Box(contentAlignment = Alignment.Center) {
+                                                    Icon(
+                                                        painter = painterResource(id = item.iconRes),
+                                                        contentDescription = null,
+                                                        tint = item.iconTint,
+                                                        modifier = Modifier.size(28.dp)
+                                                    )
+                                                }
+                                            }
+
+                                            Surface(
+                                                shape = CircleShape,
+                                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
+                                            ) {
+                                                Text(
+                                                    text = item.tag,
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontFamily = GoogleSansFlex,
+                                                        fontWeight = FontWeight.Bold,
+                                                        letterSpacing = 1.1.sp
+                                                    ),
+                                                    color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
                                                 )
                                             }
                                         }
 
-                                        Surface(
-                                            shape = CircleShape,
-                                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
-                                        ) {
+                                        Column(modifier = Modifier.padding(vertical = 12.dp)) {
                                             Text(
-                                                text = item.tag,
-                                                style = MaterialTheme.typography.labelSmall.copy(
-                                                    fontFamily = GoogleSansFlex,
-                                                    fontWeight = FontWeight.Bold,
-                                                    letterSpacing = 1.1.sp
-                                                ),
-                                                color = MaterialTheme.colorScheme.onSecondaryContainer,
-                                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                                text = item.title,
+                                                fontWeight = FontWeight.Bold,
+                                                fontFamily = GoogleSansFlex,
+                                                fontSize = 21.sp,
+                                                lineHeight = 27.sp,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+
+                                            Spacer(modifier = Modifier.height(10.dp))
+
+                                            Text(
+                                                text = item.description,
+                                                fontFamily = GoogleSansFlex,
+                                                fontSize = 14.sp,
+                                                lineHeight = 21.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
-                                    }
 
-                                    Column(modifier = Modifier.padding(vertical = 12.dp)) {
-                                        Text(
-                                            text = item.title,
-                                            fontWeight = FontWeight.Bold,
-                                            fontFamily = GoogleSansFlex,
-                                            fontSize = 21.sp,
-                                            lineHeight = 27.sp,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-
-                                        Spacer(modifier = Modifier.height(10.dp))
-
-                                        Text(
-                                            text = item.description,
-                                            fontFamily = GoogleSansFlex,
-                                            fontSize = 14.sp,
-                                            lineHeight = 21.sp,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-
-                                    Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.End,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Text(
-                                            text = "${actualIndex + 1} / $featureCount",
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontFamily = GoogleSansFlex,
-                                                fontWeight = FontWeight.Medium
-                                            ),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                                        )
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.End,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Text(
+                                                text = "${actualIndex + 1} / $featureCount",
+                                                style = MaterialTheme.typography.labelSmall.copy(
+                                                    fontFamily = GoogleSansFlex,
+                                                    fontWeight = FontWeight.Medium
+                                                ),
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                        Spacer(modifier = Modifier.height(16.dp))
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 6.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        val currentRealIndex = (featurePagerState.currentPage % featureCount + featureCount) % featureCount
-                        repeat(featureCount) { idx ->
-                            val isSelected = idx == currentRealIndex
-                            val dotWidth by animateDpAsState(
-                                targetValue = if (isSelected) 24.dp else 8.dp,
-                                animationSpec = tween(280),
-                                label = "featureDotWidth"
-                            )
-                            val dotColor = if (isSelected) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 6.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            repeat(featureCount) { idx ->
+                                val isSelected = idx == currentRealIndex
+                                val dotWidth by animateDpAsState(
+                                    targetValue = if (isSelected) 24.dp else 8.dp,
+                                    animationSpec = tween(280),
+                                    label = "featureDotWidth"
+                                )
+                                val dotColor = if (isSelected) {
+                                    dynamicBgColor
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.25f)
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .padding(horizontal = 3.dp)
+                                        .height(8.dp)
+                                        .width(dotWidth)
+                                        .clip(CircleShape)
+                                        .background(dotColor)
+                                )
                             }
-
-                            Box(
-                                modifier = Modifier
-                                    .padding(horizontal = 3.dp)
-                                    .height(8.dp)
-                                    .width(dotWidth)
-                                    .clip(CircleShape)
-                                    .background(dotColor)
-                            )
                         }
-                    }
 
-                    Spacer(modifier = Modifier.height(4.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
+                    }
                 }
             }
         )
@@ -1346,6 +1437,26 @@ private fun WavySoundwaveHero(
         label = "emblemTranslationY"
     )
 
+    val logoAuraRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 7500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "logoAuraRotation"
+    )
+
+    val logoAuraPulse by infiniteTransition.animateFloat(
+        initialValue = 0.90f,
+        targetValue = 1.25f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "logoAuraPulse"
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -1433,6 +1544,38 @@ private fun WavySoundwaveHero(
                 center = Offset(width * 0.5f, midY)
             )
         }
+
+        // Living dynamic chromatic aura behind the app logo
+        Box(
+            modifier = Modifier
+                .size(heroSize * 1.38f * logoAuraPulse)
+                .graphicsLayer {
+                    rotationZ = logoAuraRotation
+                    translationY = emblemTranslationY
+                }
+                .clip(CircleShape)
+                .background(
+                    Brush.sweepGradient(
+                        listOf(
+                            primaryColor.copy(alpha = 0.35f),
+                            tertiaryColor.copy(alpha = 0.42f),
+                            Color(0xFFFFB300).copy(alpha = 0.25f),
+                            primaryColor.copy(alpha = 0.35f)
+                        )
+                    )
+                )
+        )
+
+        // Pulsating living expansion ring behind logo
+        Box(
+            modifier = Modifier
+                .size(heroSize * 1.22f * emblemScale)
+                .graphicsLayer {
+                    translationY = emblemTranslationY
+                }
+                .clip(RoundedCornerShape(36.dp))
+                .background(primaryColor.copy(alpha = 0.18f))
+        )
 
         // Layered elevated emblem with living breathing motion
         Surface(
@@ -1523,6 +1666,296 @@ private fun WelcomeDeveloperChip(
         ),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
     )
+}
+
+@Composable
+private fun PermissionsHeroVisual(modifier: Modifier = Modifier) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val infiniteTransition = rememberInfiniteTransition(label = "PermHeroAnimation")
+
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.94f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2800, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "permPulseScale"
+    )
+    val floatY by infiniteTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "permFloatY"
+    )
+    val auraRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(9000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "permAuraRotation"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(84.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Rotating fluid aura
+        Box(
+            modifier = Modifier
+                .size(76.dp)
+                .graphicsLayer {
+                    rotationZ = auraRotation
+                    translationY = floatY
+                }
+                .clip(CircleShape)
+                .background(
+                    Brush.sweepGradient(
+                        listOf(
+                            primaryColor.copy(alpha = 0.25f),
+                            Color(0xFFffaee4).copy(alpha = 0.35f),
+                            tertiaryColor.copy(alpha = 0.25f),
+                            primaryColor.copy(alpha = 0.25f)
+                        )
+                    )
+                )
+        )
+
+        // Pulsing outer ripple ring
+        Box(
+            modifier = Modifier
+                .size(68.dp * pulseScale)
+                .graphicsLayer { translationY = floatY }
+                .clip(RoundedCornerShape(22.dp))
+                .background(Color(0xFFffaee4).copy(alpha = 0.20f))
+        )
+
+        // Elevated emblem
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = 8.dp,
+            border = BorderStroke(1.2.dp, primaryColor.copy(alpha = 0.35f)),
+            modifier = Modifier
+                .size(54.dp)
+                .graphicsLayer {
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                    translationY = floatY
+                }
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(id = R.drawable.notification),
+                    contentDescription = null,
+                    tint = primaryColor,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun CommunityHeroVisual(modifier: Modifier = Modifier) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val goldColor = Color(0xFFFFB300)
+    val infiniteTransition = rememberInfiniteTransition(label = "CommunityHeroAnimation")
+
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.94f,
+        targetValue = 1.06f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(3000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "commPulseScale"
+    )
+    val floatY by infiniteTransition.animateFloat(
+        initialValue = -3.5f,
+        targetValue = 3.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "commFloatY"
+    )
+    val auraRotation by infiniteTransition.animateFloat(
+        initialValue = 360f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(8500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "commAuraRotation"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(84.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Rotating golden aura
+        Box(
+            modifier = Modifier
+                .size(76.dp)
+                .graphicsLayer {
+                    rotationZ = auraRotation
+                    translationY = floatY
+                }
+                .clip(CircleShape)
+                .background(
+                    Brush.sweepGradient(
+                        listOf(
+                            goldColor.copy(alpha = 0.30f),
+                            primaryColor.copy(alpha = 0.35f),
+                            Color(0xFFffb0cd).copy(alpha = 0.25f),
+                            goldColor.copy(alpha = 0.30f)
+                        )
+                    )
+                )
+        )
+
+        // Pulsing outer ripple ring
+        Box(
+            modifier = Modifier
+                .size(68.dp * pulseScale)
+                .graphicsLayer { translationY = floatY }
+                .clip(RoundedCornerShape(22.dp))
+                .background(goldColor.copy(alpha = 0.18f))
+        )
+
+        // Elevated emblem
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = 8.dp,
+            border = BorderStroke(1.2.dp, goldColor.copy(alpha = 0.40f)),
+            modifier = Modifier
+                .size(54.dp)
+                .graphicsLayer {
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                    translationY = floatY
+                }
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(id = R.drawable.star),
+                    contentDescription = null,
+                    tint = goldColor,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeaturesHeroVisual(
+    activeColor: Color = MaterialTheme.colorScheme.primary,
+    modifier: Modifier = Modifier
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val infiniteTransition = rememberInfiniteTransition(label = "FeaturesHeroAnimation")
+
+    val pulseScale by infiniteTransition.animateFloat(
+        initialValue = 0.95f,
+        targetValue = 1.05f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "featPulseScale"
+    )
+    val floatY by infiniteTransition.animateFloat(
+        initialValue = -3f,
+        targetValue = 3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(2000, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "featFloatY"
+    )
+    val auraRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(7000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "featAuraRotation"
+    )
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(84.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        // Rotating fluid chromatic aura synced with active feature
+        Box(
+            modifier = Modifier
+                .size(76.dp)
+                .graphicsLayer {
+                    rotationZ = auraRotation
+                    translationY = floatY
+                }
+                .clip(CircleShape)
+                .background(
+                    Brush.sweepGradient(
+                        listOf(
+                            activeColor.copy(alpha = 0.40f),
+                            primaryColor.copy(alpha = 0.25f),
+                            activeColor.copy(alpha = 0.50f),
+                            activeColor.copy(alpha = 0.40f)
+                        )
+                    )
+                )
+        )
+
+        // Pulsing outer ripple ring
+        Box(
+            modifier = Modifier
+                .size(68.dp * pulseScale)
+                .graphicsLayer { translationY = floatY }
+                .clip(RoundedCornerShape(22.dp))
+                .background(activeColor.copy(alpha = 0.22f))
+        )
+
+        // Elevated emblem
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = MaterialTheme.colorScheme.surfaceContainerHigh,
+            shadowElevation = 8.dp,
+            border = BorderStroke(1.2.dp, activeColor.copy(alpha = 0.50f)),
+            modifier = Modifier
+                .size(54.dp)
+                .graphicsLayer {
+                    scaleX = pulseScale
+                    scaleY = pulseScale
+                    translationY = floatY
+                }
+        ) {
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    painter = painterResource(id = R.drawable.sparks),
+                    contentDescription = null,
+                    tint = activeColor,
+                    modifier = Modifier.size(26.dp)
+                )
+            }
+        }
+    }
 }
 
 @Composable

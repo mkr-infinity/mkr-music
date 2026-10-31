@@ -35,6 +35,6 @@ enum class NavigationStyle(
     );
 
     companion object {
-        val DEFAULT = EXPRESSIVE_PILL
+        val DEFAULT = FLOATING_GLASS
     }
 }

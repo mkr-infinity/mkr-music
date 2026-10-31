@@ -75,7 +75,7 @@ fun AutoResizingText(
             }
         },
         onTextLayout = { textLayoutResult ->
-            if (textLayoutResult.didOverflowWidth) {
+            if (textLayoutResult.didOverflowWidth && scaledTextStyle.fontSize.value > 12f) {
                 scaledTextStyle =
                     scaledTextStyle.copy(fontSize = scaledTextStyle.fontSize * 0.9)
             } else {

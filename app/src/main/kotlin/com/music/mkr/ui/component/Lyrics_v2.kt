@@ -156,15 +156,33 @@ fun LyricsV2(
     val coroutineScope = rememberCoroutineScope()
     val currentSong by playerConnection.currentSong.collectAsState(initial = null)
     val lyricsOffset = (currentSong?.song?.lyricsOffset ?: 0).toLong()
-    val showRomanized = currentSong?.song?.romanizeLyrics ?: true
+    var localRomanizedOverride by remember(mediaMetadata?.id) { mutableStateOf<Boolean?>(null) }
+    val showRomanized = localRomanizedOverride ?: currentSong?.song?.romanizeLyrics ?: true
 
-    val onToggleRomanize: () -> Unit = remember(currentSong?.song) {
+    val onToggleRomanize: () -> Unit = remember(currentSong?.song, mediaMetadata?.id, showRomanized) {
         {
-            val nextVal = !(currentSong?.song?.romanizeLyrics ?: true)
-            currentSong?.song?.let { song ->
-                coroutineScope.launch(Dispatchers.IO) {
+            val nextVal = !showRomanized
+            localRomanizedOverride = nextVal
+            coroutineScope.launch(Dispatchers.IO) {
+                val song = currentSong?.song
+                if (song != null) {
                     database.query {
                         upsert(song.copy(romanizeLyrics = nextVal))
+                    }
+                } else {
+                    val songId = mediaMetadata?.id
+                    if (songId != null) {
+                        var existing = database.getSongByIdBlocking(songId)
+                        if (existing == null) {
+                            mediaMetadata?.let { meta -> database.insert(meta) }
+                            existing = database.getSongByIdBlocking(songId)
+                        }
+                        val toSave = existing?.song ?: mediaMetadata?.toSongEntity()
+                        toSave?.let { entity ->
+                            database.query {
+                                upsert(entity.copy(romanizeLyrics = nextVal))
+                            }
+                        }
                     }
                 }
             }

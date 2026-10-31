@@ -225,6 +225,7 @@ private fun EqualizerContent(
 
     // 2. Audio Session Status Banner
     AudioSessionStatusCard(
+        isEnabled = isEnabled,
         isSessionActive = isSessionActive,
         sessionId = currentSessionId,
         bandCount = bandCount,
@@ -401,13 +402,15 @@ private fun EqualizerContent(
 
 @Composable
 private fun AudioSessionStatusCard(
+    isEnabled: Boolean,
     isSessionActive: Boolean,
     sessionId: Int,
     bandCount: Int,
     songTitle: String?,
 ) {
+    val isEffectiveActive = isEnabled && isSessionActive
     val containerColor by animateColorAsState(
-        targetValue = if (isSessionActive) {
+        targetValue = if (isEffectiveActive) {
             MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
         } else {
             MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.6f)
@@ -420,7 +423,7 @@ private fun AudioSessionStatusCard(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(containerColor = containerColor),
-        border = if (isSessionActive) {
+        border = if (isEffectiveActive) {
             BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
         } else {
             BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.2f))
@@ -434,31 +437,35 @@ private fun AudioSessionStatusCard(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             Icon(
-                painter = painterResource(if (isSessionActive) R.drawable.graphic_eq else R.drawable.volume_up),
+                painter = painterResource(if (isEffectiveActive) R.drawable.graphic_eq else R.drawable.volume_up),
                 contentDescription = null,
-                tint = if (isSessionActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                tint = if (isEffectiveActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
                 modifier = Modifier.size(20.dp),
             )
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = if (isSessionActive) {
-                        "Session Active $bandCount Bands"
-                    } else {
-                        "No Active Audio Session"
+                    text = when {
+                        !isEnabled -> "Equalizer Disabled"
+                        isSessionActive -> "Session Active $bandCount Bands"
+                        else -> "No Active Audio Session"
                     },
                     style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = MaterialTheme.colorScheme.onSurface,
                 )
                 Text(
-                    text = if (isSessionActive) {
-                        if (!songTitle.isNullOrBlank()) {
+                    text = when {
+                        !isEnabled -> if (!songTitle.isNullOrBlank()) {
+                            "Sound processing off for $songTitle"
+                        } else {
+                            "Enable equalizer to apply sound effects"
+                        }
+                        isSessionActive -> if (!songTitle.isNullOrBlank()) {
                             "Audio effects active for $songTitle"
                         } else {
                             "Audio effects active for current track"
                         }
-                    } else {
-                        "Play music to enable live hardware equalizer processing"
+                        else -> "Play music to enable live hardware equalizer processing"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

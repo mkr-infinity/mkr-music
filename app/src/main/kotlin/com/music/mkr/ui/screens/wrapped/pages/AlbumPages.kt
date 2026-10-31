@@ -110,8 +110,9 @@ fun WrappedTotalAlbumsScreen(uniqueAlbumCount: Int, isVisible: Boolean) {
                 val textStyle = remember(uniqueAlbumCount, maxWidth) {
                     val finalText = uniqueAlbumCount.toString()
                     var style = baseStyle.copy(fontSize = 96.sp)
+                    val targetWidth = constraints.maxWidth.coerceAtLeast(1)
                     var textWidth = textMeasurer.measure(finalText, style).size.width
-                    while (textWidth > constraints.maxWidth) {
+                    while (textWidth > targetWidth && style.fontSize.value > 12f) {
                         style = style.copy(fontSize = style.fontSize * 0.95f)
                         textWidth = textMeasurer.measure(finalText, style).size.width
                     }

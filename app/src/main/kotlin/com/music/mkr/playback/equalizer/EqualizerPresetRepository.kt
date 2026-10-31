@@ -45,7 +45,7 @@ class EqualizerPresetRepository @Inject constructor(
     private val _activePresetId = MutableStateFlow(EqualizerDefaults.PRESET_FLAT_ID)
     val activePresetId: StateFlow<String> = _activePresetId.asStateFlow()
 
-    private val _isEnabled = MutableStateFlow(true)
+    private val _isEnabled = MutableStateFlow(false)
     val isEnabled: StateFlow<Boolean> = _isEnabled.asStateFlow()
 
     init {
@@ -54,7 +54,7 @@ class EqualizerPresetRepository @Inject constructor(
 
     private fun loadFromStorage() {
         try {
-            _isEnabled.value = prefs.getBoolean(KEY_ENABLED, true)
+            _isEnabled.value = prefs.getBoolean(KEY_ENABLED, false)
             val savedPresetId = prefs.getString(KEY_ACTIVE_PRESET_ID, EqualizerDefaults.PRESET_FLAT_ID)
                 ?: EqualizerDefaults.PRESET_FLAT_ID
             _activePresetId.value = savedPresetId

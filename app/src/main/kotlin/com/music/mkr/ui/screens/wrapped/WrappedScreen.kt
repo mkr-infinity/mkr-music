@@ -209,7 +209,18 @@ fun WrappedScreenContent(navController: NavController) {
         containerColor = Color(0xFF0F0620)
     ) { paddingValues ->
         WrappedBackground {
-            if (state.isDataReady && state.topSongs.isEmpty() && state.totalMinutes == 0L) {
+            if (!state.isDataReady) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+            } else if (state.topSongs.isEmpty() && state.totalMinutes == 0L) {
                 Box(
                     modifier = Modifier
                         .fillMaxSize()

@@ -369,8 +369,16 @@ fun ArtistScreen(
                                 isLiked = song.id in likedSongIds,
                                 onLikeClick = {
                                     coroutineScope.launch(Dispatchers.IO) {
-                                        val toggled = song.song.toggleLike()
-                                        database.update(toggled)
+                                        var currentSongEntity = database.getSongByIdBlocking(song.id)
+                                        if (currentSongEntity == null) {
+                                            database.insert(song.toMediaMetadata())
+                                            currentSongEntity = database.getSongByIdBlocking(song.id)
+                                        }
+                                        val entityToToggle = currentSongEntity?.song ?: song.toMediaMetadata().toSongEntity()
+                                        val toggled = entityToToggle.toggleLike()
+                                        database.query {
+                                            upsert(toggled)
+                                        }
                                         syncUtils.likeSong(toggled)
                                     }
                                 },
@@ -521,11 +529,12 @@ fun ArtistScreen(
                                                 database.insert(song.toMediaMetadata())
                                                 songToUpdate = database.getSongByIdBlocking(song.id)
                                             }
-                                            songToUpdate?.let {
-                                                val s = it.song.toggleLike()
-                                                database.update(s)
-                                                syncUtils.likeSong(s)
+                                            val entityToToggle = songToUpdate?.song ?: song.toMediaMetadata().toSongEntity()
+                                            val s = entityToToggle.toggleLike()
+                                            database.query {
+                                                upsert(s)
                                             }
+                                            syncUtils.likeSong(s)
                                         }
                                     },
                                     onMenuClick = {

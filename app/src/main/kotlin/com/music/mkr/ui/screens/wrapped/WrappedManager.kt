@@ -110,25 +110,26 @@ class WrappedManager(
         withContext(Dispatchers.IO) {
             val playlistMap = mutableMapOf<WrappedScreenType, String>()
 
-            // Intro Part: Random song from top 6-30
-            val introSongPool = topSongs.subList(5, topSongs.size)
-            val introSong = introSongPool.randomOrNull()?.id ?: topSongs.last().id
+            // Intro Part: Random song from top 6-30 (or any available song)
+            val introSongPool = if (topSongs.size > 5) topSongs.subList(5, topSongs.size) else topSongs
+            val introSong = introSongPool.randomOrNull()?.id ?: topSongs.lastOrNull()?.id ?: topSongs.firstOrNull()?.id.orEmpty()
             playlistMap[WrappedScreenType.Welcome] = introSong
             playlistMap[WrappedScreenType.MinutesTease] = introSong
             playlistMap[WrappedScreenType.MinutesReveal] = introSong
 
             // Music Part: Top 1 song
-            val topSong = topSongs.first()
-            playlistMap[WrappedScreenType.TotalSongs] = topSong.id
-            playlistMap[WrappedScreenType.TopSongReveal] = topSong.id
-            playlistMap[WrappedScreenType.Top5Songs] = topSong.id
+            val topSong = topSongs.firstOrNull()
+            val topSongId = topSong?.id.orEmpty()
+            playlistMap[WrappedScreenType.TotalSongs] = topSongId
+            playlistMap[WrappedScreenType.TopSongReveal] = topSongId
+            playlistMap[WrappedScreenType.Top5Songs] = topSongId
 
             // Album Part: Random song from top album
             val topAlbum = _state.value.topAlbum
             val albumSong = topAlbum?.let { album ->
-                val albumSongs = databaseDao.albumSongs(album.id).first()
+                val albumSongs = databaseDao.albumSongs(album.id).firstOrNull() ?: emptyList()
                 albumSongs.randomOrNull()?.id
-            } ?: topSong.id // Fallback to top song if no album songs
+            } ?: topSongId // Fallback to top song if no album songs
             playlistMap[WrappedScreenType.TotalAlbums] = albumSong
             playlistMap[WrappedScreenType.TopAlbumReveal] = albumSong
             playlistMap[WrappedScreenType.Top5Albums] = albumSong
@@ -149,28 +150,28 @@ class WrappedManager(
                     descending = true,
                     fromTimeStamp = fromTimestamp,
                     toTimeStamp = toTimestamp
-                ).first()
+                ).firstOrNull() ?: emptyList()
                 if (artistTopSongs.isNotEmpty()) {
                     val artistTopSong = artistTopSongs.first()
-                    if (artistTopSong.id == topSong.id) {
+                    if (artistTopSong.id == topSongId) {
                         // Overlap: Use the artist's second song.
                         // If a second song doesn't exist, use a random song from their list.
-                        artistTopSongs.getOrNull(1)?.id ?: artistTopSongs.filter { it.id != topSong.id }.randomOrNull()?.id ?: artistTopSong.id
+                        artistTopSongs.getOrNull(1)?.id ?: artistTopSongs.filter { it.id != topSongId }.randomOrNull()?.id ?: artistTopSong.id
                     } else {
                         artistTopSong.id
                     }
                 } else {
                     // Data anomaly: Fallback to the user's top song.
-                    topSong.id
+                    topSongId
                 }
-            } ?: topSong.id // Fallback if no top artist.
+            } ?: topSongId // Fallback if no top artist.
             playlistMap[WrappedScreenType.TotalArtists] = artistSong
             playlistMap[WrappedScreenType.TopArtistReveal] = artistSong
             playlistMap[WrappedScreenType.Top5Artists] = artistSong
 
             // End Part
-            val endSongPool = topSongs.subList(2, 5)
-            val endSong = endSongPool.randomOrNull()?.id ?: topSongs[2].id
+            val endSongPool = if (topSongs.size > 2) topSongs.subList(2, minOf(5, topSongs.size)) else topSongs
+            val endSong = endSongPool.randomOrNull()?.id ?: topSongId
             playlistMap[WrappedScreenType.Playlist] = endSong
             playlistMap[WrappedScreenType.Conclusion] = "2-p9DM2Xvsc"
 
@@ -183,58 +184,63 @@ class WrappedManager(
         if (_state.value.isDataReady) return
         Timber.tag("WrappedManager").d("Starting Wrapped data preparation")
 
-        val fromTimestamp = Calendar.getInstance().apply {
-            set(WrappedConstants.YEAR, Calendar.JANUARY, 1, 0, 0, 0)
-        }.timeInMillis
+        try {
+            val fromTimestamp = Calendar.getInstance().apply {
+                set(WrappedConstants.YEAR, Calendar.JANUARY, 1, 0, 0, 0)
+            }.timeInMillis
 
-        val toTimestamp = Calendar.getInstance().apply {
-            set(WrappedConstants.YEAR, Calendar.DECEMBER, 31, 23, 59, 59)
-        }.timeInMillis
+            val toTimestamp = Calendar.getInstance().apply {
+                set(WrappedConstants.YEAR, Calendar.DECEMBER, 31, 23, 59, 59)
+            }.timeInMillis
 
-        withContext(Dispatchers.IO) {
-            val accountInfoDeferred = async { YouTube.accountInfo().getOrNull() }
-            val topSongsDeferred = async { databaseDao.mostPlayedSongsStats(fromTimestamp, toTimeStamp = toTimestamp, limit = 30).first() }
-            val topArtistsDeferred = async { databaseDao.mostPlayedArtists(fromTimestamp, toTimeStamp = toTimestamp, limit = 5).first() }
-            val topAlbumsDeferred = async { databaseDao.mostPlayedAlbums(fromTimestamp, toTimeStamp = toTimestamp, limit = 5).first() }
-            val uniqueSongCountDeferred = async { databaseDao.getUniqueSongCountInRange(fromTimestamp, toTimestamp).first() }
-            val uniqueArtistCountDeferred = async { databaseDao.getUniqueArtistCountInRange(fromTimestamp, toTimestamp).first() }
-            val uniqueAlbumCountDeferred = async { databaseDao.getUniqueAlbumCountInRange(fromTimestamp, toTimestamp).first() }
-            val totalPlayTimeMsDeferred = async { databaseDao.getTotalPlayTimeInRange(fromTimestamp, toTimestamp).first() ?: 0L }
+            withContext(Dispatchers.IO) {
+                val accountInfoDeferred = async { YouTube.accountInfo().getOrNull() }
+                val topSongsDeferred = async { databaseDao.mostPlayedSongsStats(fromTimestamp, toTimeStamp = toTimestamp, limit = 30).firstOrNull() ?: emptyList() }
+                val topArtistsDeferred = async { databaseDao.mostPlayedArtists(fromTimestamp, toTimeStamp = toTimestamp, limit = 5).firstOrNull() ?: emptyList() }
+                val topAlbumsDeferred = async { databaseDao.mostPlayedAlbums(fromTimestamp, toTimeStamp = toTimestamp, limit = 5).firstOrNull() ?: emptyList() }
+                val uniqueSongCountDeferred = async { databaseDao.getUniqueSongCountInRange(fromTimestamp, toTimestamp).firstOrNull() ?: 0 }
+                val uniqueArtistCountDeferred = async { databaseDao.getUniqueArtistCountInRange(fromTimestamp, toTimestamp).firstOrNull() ?: 0 }
+                val uniqueAlbumCountDeferred = async { databaseDao.getUniqueAlbumCountInRange(fromTimestamp, toTimestamp).firstOrNull() ?: 0 }
+                val totalPlayTimeMsDeferred = async { databaseDao.getTotalPlayTimeInRange(fromTimestamp, toTimestamp).firstOrNull() ?: 0L }
 
-            val results = awaitAll(
-                accountInfoDeferred,
-                topSongsDeferred,
-                topArtistsDeferred,
-                topAlbumsDeferred,
-                uniqueSongCountDeferred,
-                uniqueArtistCountDeferred,
-                uniqueAlbumCountDeferred,
-                totalPlayTimeMsDeferred
-            )
-
-            @Suppress("UNCHECKED_CAST")
-            val topSongsResult = results[1] as List<SongWithStats>
-            @Suppress("UNCHECKED_CAST")
-            val topAlbumsResult = results[3] as List<com.music.mkr.db.entities.Album>
-            @Suppress("UNCHECKED_CAST")
-            val topArtistsResult = results[2] as List<Artist>
-            _state.update {
-                it.copy(
-                    accountInfo = results[0] as AccountInfo?,
-                    topSongs = topSongsResult,
-                    topArtists = topArtistsResult,
-                    top5Albums = topAlbumsResult,
-                    topAlbum = topAlbumsResult.firstOrNull(),
-                    uniqueSongCount = results[4] as Int,
-                    uniqueArtistCount = results[5] as Int,
-                    totalAlbums = results[6] as Int,
-                    totalMinutes = (results[7] as Long) / 1000 / 60
+                val results = awaitAll(
+                    accountInfoDeferred,
+                    topSongsDeferred,
+                    topArtistsDeferred,
+                    topAlbumsDeferred,
+                    uniqueSongCountDeferred,
+                    uniqueArtistCountDeferred,
+                    uniqueAlbumCountDeferred,
+                    totalPlayTimeMsDeferred
                 )
-            }
-        }
 
-        generatePlaylistMap()
-        _state.update { it.copy(isDataReady = true) }
-        Timber.tag("WrappedManager").d("Wrapped data preparation finished")
+                @Suppress("UNCHECKED_CAST")
+                val topSongsResult = results[1] as List<SongWithStats>
+                @Suppress("UNCHECKED_CAST")
+                val topAlbumsResult = results[3] as List<com.music.mkr.db.entities.Album>
+                @Suppress("UNCHECKED_CAST")
+                val topArtistsResult = results[2] as List<Artist>
+                _state.update {
+                    it.copy(
+                        accountInfo = results[0] as AccountInfo?,
+                        topSongs = topSongsResult,
+                        topArtists = topArtistsResult,
+                        top5Albums = topAlbumsResult,
+                        topAlbum = topAlbumsResult.firstOrNull(),
+                        uniqueSongCount = (results[4] as? Int) ?: 0,
+                        uniqueArtistCount = (results[5] as? Int) ?: 0,
+                        totalAlbums = (results[6] as? Int) ?: 0,
+                        totalMinutes = ((results[7] as? Long) ?: 0L) / 1000 / 60
+                    )
+                }
+            }
+
+            generatePlaylistMap()
+        } catch (e: Exception) {
+            Timber.tag("WrappedManager").e(e, "Error during Wrapped data preparation")
+        } finally {
+            _state.update { it.copy(isDataReady = true) }
+            Timber.tag("WrappedManager").d("Wrapped data preparation finished")
+        }
     }
 }
