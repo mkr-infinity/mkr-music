@@ -32,6 +32,16 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import javax.inject.Inject
 
+data class ListeningHabits(
+    val activeDays: Int = 0,
+    val currentStreak: Int = 0,
+    val morningPercent: Float = 0f,
+    val afternoonPercent: Float = 0f,
+    val eveningPercent: Float = 0f,
+    val nightPercent: Float = 0f,
+    val peakPeriod: String = "",
+)
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class StatsViewModel
@@ -116,6 +126,74 @@ constructor(
 
     val allTimeAlbumsCount = database.getUniqueAlbumCountInRange(0, Long.MAX_VALUE)
         .stateIn(viewModelScope, SharingStarted.Lazily, 0)
+
+    val totalPlaysCount = mostPlayedSongsStats.map { songs ->
+        songs.sumOf { it.songCountListened }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, 0)
+
+    val listeningHabits = database.events().map { eventList ->
+        if (eventList.isEmpty()) {
+            ListeningHabits()
+        } else {
+            val dateGroups = eventList.groupBy { it.event.timestamp.toLocalDate() }
+            val activeDays = dateGroups.size
+
+            val sortedDates = dateGroups.keys.sortedDescending()
+            var streak = 0
+            var checkDate = java.time.LocalDate.now()
+            if (sortedDates.isNotEmpty() && sortedDates.first() == checkDate.minusDays(1)) {
+                checkDate = checkDate.minusDays(1)
+            }
+            for (date in sortedDates) {
+                if (date == checkDate) {
+                    streak++
+                    checkDate = checkDate.minusDays(1)
+                } else if (date.isBefore(checkDate)) {
+                    break
+                }
+            }
+
+            var morning = 0L
+            var afternoon = 0L
+            var evening = 0L
+            var night = 0L
+
+            for (e in eventList) {
+                val hour = e.event.timestamp.hour
+                val weight = if (e.event.playTime > 0) e.event.playTime else 1L
+                when (hour) {
+                    in 5..11 -> morning += weight
+                    in 12..16 -> afternoon += weight
+                    in 17..21 -> evening += weight
+                    else -> night += weight
+                }
+            }
+
+            val totalWeight = morning + afternoon + evening + night
+            val mPct = if (totalWeight > 0) morning.toFloat() / totalWeight else 0f
+            val aPct = if (totalWeight > 0) afternoon.toFloat() / totalWeight else 0f
+            val ePct = if (totalWeight > 0) evening.toFloat() / totalWeight else 0f
+            val nPct = if (totalWeight > 0) night.toFloat() / totalWeight else 0f
+
+            val maxPct = maxOf(mPct, aPct, ePct, nPct)
+            val peak = when (maxPct) {
+                mPct -> "Morning (5am - 12pm)"
+                aPct -> "Afternoon (12pm - 5pm)"
+                ePct -> "Evening (5pm - 10pm)"
+                else -> "Night (10pm - 5am)"
+            }
+
+            ListeningHabits(
+                activeDays = activeDays,
+                currentStreak = streak,
+                morningPercent = mPct,
+                afternoonPercent = aPct,
+                eveningPercent = ePct,
+                nightPercent = nPct,
+                peakPeriod = peak
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, ListeningHabits())
 
     val mostPlayedSongsStats =
         combine(
