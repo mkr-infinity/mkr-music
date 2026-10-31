@@ -349,6 +349,9 @@ class MainActivity : ComponentActivity() {
             }
             isServiceBound = false
         }
+        lifecycleScope.launch(Dispatchers.IO) {
+            com.music.mkr.utils.IconUtils.applyPendingIconIfAny(this@MainActivity)
+        }
         super.onStop()
     }
 
