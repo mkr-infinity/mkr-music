@@ -45,6 +45,8 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🛠️ Fixed
+- **Second-Launch Startup Crash:** Resolved window and splash screen collision on second launch after onboarding completion, ensuring smooth immediate entry into the main application.
+- **Local Liked Songs Library Updates:** Fixed Room database liked song persistence without login, guaranteeing that every liked song is immediately saved and instantly reflected in the Liked Songs playlist.
 - **Reliable Song Liking Pipeline:** Fixed desync between UI state, Room database entities, and synchronization tasks, ensuring likes persist reliably across all menus, players, and views.
 - **Stats Top-Right Navigation & Wrapped Stability:** Resolved crashes and infinite loops in Wrapped recap, adding safe bounds checking for smaller libraries and eliminating pre-composition auto-advances.
 - **Wrapped Display & Layout Freezes:** Clamped text measurement while loops in recap screens to prevent freezes across varying screen aspect ratios and tablets.

@@ -190,14 +190,20 @@ fun QueueMenu(
                     coroutineScope.launch(Dispatchers.IO) {
                         var songToUpdate = database.getSongByIdBlocking(mediaMetadata.id)
                         if (songToUpdate == null) {
-                            database.insert(mediaMetadata)
+                            database.insert(mediaMetadata.copy(liked = false, likedDate = null))
                             songToUpdate = database.getSongByIdBlocking(mediaMetadata.id)
                         }
-                        songToUpdate?.let {
-                            val s = it.song.toggleLike()
-                            database.update(s)
-                            syncUtils.likeSong(s)
-                        }
+                        val isCurrentlyLiked = songToUpdate?.song?.liked == true
+                        val shouldLike = !isCurrentlyLiked
+                        val baseSong = songToUpdate?.song ?: mediaMetadata.toSongEntity()
+                        val now = java.time.LocalDateTime.now()
+                        val s = baseSong.copy(
+                            liked = shouldLike,
+                            likedDate = if (shouldLike) (baseSong.likedDate ?: now) else null,
+                            inLibrary = if (shouldLike) (baseSong.inLibrary ?: now) else baseSong.inLibrary
+                        )
+                        database.upsert(s)
+                        syncUtils.likeSong(s)
                     }
                 },
             ) {

@@ -311,11 +311,18 @@ fun SongMenu(
                     coroutineScope.launch(Dispatchers.IO) {
                         var currentSongEntity = database.getSongByIdBlocking(song.id)
                         if (currentSongEntity == null) {
-                            database.insert(song.toMediaMetadata())
+                            database.insert(song.toMediaMetadata().copy(liked = false, likedDate = null))
                             currentSongEntity = database.getSongByIdBlocking(song.id)
                         }
-                        val entityToToggle = currentSongEntity?.song ?: song.toMediaMetadata().toSongEntity()
-                        val s = entityToToggle.toggleLike()
+                        val isCurrentlyLiked = currentSongEntity?.song?.liked == true
+                        val shouldLike = !isCurrentlyLiked
+                        val baseSong = currentSongEntity?.song ?: song.toMediaMetadata().toSongEntity()
+                        val now = java.time.LocalDateTime.now()
+                        val s = baseSong.copy(
+                            liked = shouldLike,
+                            likedDate = if (shouldLike) (baseSong.likedDate ?: now) else null,
+                            inLibrary = if (shouldLike) (baseSong.inLibrary ?: now) else baseSong.inLibrary
+                        )
                         database.upsert(s)
                         syncUtils.likeSong(s)
                     }

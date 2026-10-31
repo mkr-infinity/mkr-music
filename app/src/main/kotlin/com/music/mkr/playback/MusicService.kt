@@ -2291,14 +2291,13 @@ class MusicService :
         }
     }
 
-    fun toggleLike() {
+    fun toggleLike(targetMetadata: com.music.mkr.models.MediaMetadata? = null) {
         val currentItem = player.currentMediaItem
         val currentItemId = currentItem?.mediaId
-        val mediaMetadata = (if (currentItemId != null && currentMediaMetadata.value?.id == currentItemId) currentMediaMetadata.value else null)
+        val mediaMetadata = targetMetadata
+            ?: (if (currentItemId != null && currentMediaMetadata.value?.id == currentItemId) currentMediaMetadata.value else null)
             ?: (if (currentItemId != null && player.currentMetadata?.id == currentItemId) player.currentMetadata else null)
-            ?: currentItem?.metadata
-            ?: currentMediaMetadata.value
-            ?: player.currentMetadata
+            ?: (if (currentItemId != null) currentItem?.metadata else null)
             ?: currentItemId?.takeIf { it.isNotBlank() }?.let { id ->
                 val fromDb = synchronized(database) { database.getSongByIdBlocking(id) }
                 fromDb?.toMediaMetadata() ?: com.music.mkr.models.MediaMetadata(
@@ -2310,20 +2309,32 @@ class MusicService :
                     duration = (player.duration.coerceAtLeast(0) / 1000).toInt(),
                     thumbnailUrl = currentItem?.mediaMetadata?.artworkUri?.toString()
                 )
-            } ?: return
+            }
+            ?: currentMediaMetadata.value
+            ?: player.currentMetadata
+            ?: return
 
         scope.launch(Dispatchers.IO) {
             try {
                 var currentSongEntity = synchronized(database) { database.getSongByIdBlocking(mediaMetadata.id) }
                 if (currentSongEntity == null) {
                     synchronized(database) {
-                        database.insert(mediaMetadata)
+                        database.insert(mediaMetadata.copy(liked = false, likedDate = null))
                         currentSongEntity = database.getSongByIdBlocking(mediaMetadata.id)
                     }
                 }
-                val entityToToggle = currentSongEntity?.song ?: mediaMetadata.toSongEntity()
-                val toggled = entityToToggle.toggleLike()
-                database.upsert(toggled)
+                val isCurrentlyLiked = currentSongEntity?.song?.liked == true
+                val shouldLike = !isCurrentlyLiked
+                val baseSong = currentSongEntity?.song ?: mediaMetadata.toSongEntity()
+                val now = java.time.LocalDateTime.now()
+                val toggled = baseSong.copy(
+                    liked = shouldLike,
+                    likedDate = if (shouldLike) (baseSong.likedDate ?: now) else null,
+                    inLibrary = if (shouldLike) (baseSong.inLibrary ?: now) else baseSong.inLibrary
+                )
+                synchronized(database) {
+                    database.upsert(toggled)
+                }
 
                 syncUtils.likeSong(toggled)
 
@@ -2345,7 +2356,7 @@ class MusicService :
                 }
 
                 val updatedMetadata = mediaMetadata.copy(
-                    liked = toggled.liked,
+                    liked = shouldLike,
                     likedDate = toggled.likedDate,
                     inLibrary = toggled.inLibrary
                 )

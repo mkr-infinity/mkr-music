@@ -303,9 +303,16 @@ class PlayerConnection(
             val current = mediaMetadata.value
             if (current != null) {
                 // Optimistically update immediately for snappy UI responsiveness
-                mediaMetadata.value = current.copy(liked = !current.liked)
+                val optimisticLiked = !current.liked
+                val optimisticMeta = current.copy(
+                    liked = optimisticLiked,
+                    likedDate = if (optimisticLiked) (current.likedDate ?: java.time.LocalDateTime.now()) else null
+                )
+                mediaMetadata.value = optimisticMeta
+                service.toggleLike(current)
+            } else {
+                service.toggleLike()
             }
-            service.toggleLike()
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in toggleLike")
         }

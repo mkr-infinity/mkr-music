@@ -178,13 +178,6 @@ private data class OnboardingFeatureItem(
 
 class WelcomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
-        super.onCreate(savedInstanceState)
-
-        lifecycleScope.launch {
-            com.music.mkr.utils.IconUtils.applyPendingIconIfAny(this@WelcomeActivity)
-        }
-
         val sp = getSharedPreferences("app_state", Context.MODE_PRIVATE)
         val hasCompletedOnboardingSp = sp.getBoolean("has_completed_onboarding", false)
 
@@ -197,6 +190,23 @@ class WelcomeActivity : ComponentActivity() {
 
         val completedOnboarding = !isFirstRun || hasCompletedOnboardingSp
 
+        if (completedOnboarding && !forceShow) {
+            super.onCreate(savedInstanceState)
+            finishOnboarding()
+            return
+        }
+
+        try {
+            installSplashScreen()
+        } catch (e: Exception) {
+            Timber.e(e, "SplashScreen install failed in WelcomeActivity")
+        }
+        super.onCreate(savedInstanceState)
+
+        lifecycleScope.launch {
+            com.music.mkr.utils.IconUtils.applyPendingIconIfAny(this@WelcomeActivity)
+        }
+
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             val appLang = dataStore.get(AppLanguageKey, SYSTEM_DEFAULT)
             val locale = appLang
@@ -204,11 +214,6 @@ class WelcomeActivity : ComponentActivity() {
                 ?.let { java.util.Locale.forLanguageTag(it) }
                 ?: java.util.Locale.getDefault()
             com.music.mkr.utils.setAppLocale(this, locale)
-        }
-
-        if (completedOnboarding && !forceShow) {
-            finishOnboarding()
-            return
         }
 
         enableEdgeToEdge()
@@ -238,7 +243,12 @@ class WelcomeActivity : ComponentActivity() {
     }
 
     private fun finishOnboarding() {
-        startActivity(Intent(this, MainActivity::class.java))
+        val intent = Intent(this, MainActivity::class.java).apply {
+            this@WelcomeActivity.intent.extras?.let { putExtras(it) }
+            action = this@WelcomeActivity.intent.action
+            data = this@WelcomeActivity.intent.data
+        }
+        startActivity(intent)
         finish()
     }
 }
