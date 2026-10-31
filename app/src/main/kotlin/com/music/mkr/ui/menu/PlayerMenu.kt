@@ -78,6 +78,7 @@ import com.music.innertube.YouTube
 import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalDownloadUtil
 import com.music.mkr.LocalListenTogetherManager
+import com.music.mkr.mkrmusic.AudioDeviceBottomSheet
 import com.music.mkr.utils.oem.SystemMediaControlResolver
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
@@ -217,6 +218,19 @@ fun PlayerMenu(
     if (showPitchTempoDialog) {
         TempoPitchDialog(
             onDismiss = { showPitchTempoDialog = false },
+        )
+    }
+
+    var showAudioOutputSheet by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showAudioOutputSheet) {
+        AudioDeviceBottomSheet(
+            onDismiss = {
+                showAudioOutputSheet = false
+                onDismiss()
+            }
         )
     }
 
@@ -662,8 +676,7 @@ fun PlayerMenu(
                                     )
                                 },
                                 onClick = {
-                                    SystemMediaControlResolver.openMediaOutputSwitcher(context)
-                                    onDismiss()
+                                    showAudioOutputSheet = true
                                 }
                             )
                         )

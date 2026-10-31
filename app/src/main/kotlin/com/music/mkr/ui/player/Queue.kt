@@ -763,10 +763,10 @@ fun Queue(
                         }
                     }
 
-                    // Audio Output Switcher (ArchiveTune Parity)
+                    // Audio Output Switcher (MKR Parity)
                     Surface(
                         onClick = {
-                            SystemMediaControlResolver.openMediaOutputSwitcher(context)
+                            showAudioDeviceBottomSheet = true
                         },
                         shape = RoundedCornerShape(20.dp),
                         color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
