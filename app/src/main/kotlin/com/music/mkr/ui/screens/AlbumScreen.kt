@@ -374,7 +374,7 @@ fun AlbumScreen(
 
                     SongListItem(
                         song = songWrapper.item,
-                        albumIndex = songWrapper.item.song.trackNumber ?: (index + 1),
+                        albumIndex = index + 1,
                         isActive = isSongActive,
                         isPlaying = isPlaying,
                         showInLibraryIcon = true,

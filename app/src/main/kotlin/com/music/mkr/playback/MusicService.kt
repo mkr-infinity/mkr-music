@@ -1427,12 +1427,12 @@ class MusicService :
         val mediaMetadata = withContext(Dispatchers.Main) {
             player.findMediaItemById(mediaId)?.metadata
         } ?: playbackData?.videoDetails?.let { details ->
-            MediaMetadata(
+            com.music.mkr.models.MediaMetadata(
                 id = mediaId,
-                title = details.title,
-                artists = listOf(Artist(id = details.author, name = details.author)),
-                duration = details.lengthSeconds?.toInt() ?: -1,
-                thumbnailUrl = details.thumbnails?.lastOrNull()?.url
+                title = details.title.orEmpty(),
+                artists = listOf(com.music.mkr.models.Artist(id = details.channelId, name = details.author.orEmpty())),
+                duration = details.lengthSeconds.toIntOrNull() ?: -1,
+                thumbnailUrl = details.thumbnail.thumbnails.lastOrNull()?.url
             )
         } ?: return
         val duration = song?.song?.duration?.takeIf { it != -1 }

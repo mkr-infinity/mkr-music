@@ -404,7 +404,7 @@ fun ThemeControls(
                         palette = palette,
                         isSelected = isSelected,
                         onClick = { 
-                            handleColorSelection(palette.seedColor)
+                            onSelectedThemeColorChange(palette.seedColor)
                         }
                     )
                 }

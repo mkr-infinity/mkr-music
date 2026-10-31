@@ -201,6 +201,8 @@ fun Queue(
     onToggleLyrics: () -> Unit = {},
 ) {
     val context = LocalContext.current
+    var showAudioDeviceBottomSheet by remember { mutableStateOf(false) }
+    val isBluetoothConnected = isBluetoothHeadphoneConnected(context)
     val haptic = LocalHapticFeedback.current
     val clipboardManager = LocalClipboard.current
     val menuState = LocalMenuState.current
