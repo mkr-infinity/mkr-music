@@ -1252,11 +1252,7 @@ private fun FavoriteButton(
     val playerConnection = LocalPlayerConnection.current ?: return
     val librarySong by database.song(songId).collectAsState(initial = null)
     val currentMetadata by playerConnection.mediaMetadata.collectAsState()
-    val isLiked = if (currentMetadata?.id == songId) {
-        if (currentMetadata?.liked == true) true else (librarySong?.song?.liked == true)
-    } else {
-        librarySong?.song?.liked == true
-    }
+    val isLiked = librarySong?.song?.liked ?: (currentMetadata?.takeIf { it.id == songId }?.liked == true)
     
     Box(
         contentAlignment = Alignment.Center,

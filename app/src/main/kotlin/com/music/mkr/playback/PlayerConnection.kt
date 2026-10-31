@@ -119,15 +119,6 @@ class PlayerConnection(
                 }
             }
         }
-
-        // Keep local mediaMetadata updated when service updates currentMediaMetadata
-        scope.launch {
-            service.currentMediaMetadata.collect { meta ->
-                if (meta != null) {
-                    mediaMetadata.value = meta
-                }
-            }
-        }
         
         Timber.tag(TAG).d("PlayerConnection state flows initialized successfully")
     }
@@ -201,6 +192,15 @@ class PlayerConnection(
             // Initial setup if flow hasn't emitted yet but service is ready
             if (attachedPlayer == null && service.isPlayerReady.value) {
                  updateAttachedPlayer(player)
+            }
+
+            // Keep local mediaMetadata updated when service updates currentMediaMetadata
+            scope.launch {
+                service.currentMediaMetadata.collect { meta ->
+                    if (meta != null) {
+                        mediaMetadata.value = meta
+                    }
+                }
             }
 
             Timber.tag(TAG).d("PlayerConnection flow observer registered")
@@ -608,9 +608,11 @@ class PlayerConnection(
     }
 
     private fun updateCanSkipPreviousAndNext() {
-        if (!player.currentTimeline.isEmpty) {
+        val index = try { player.currentMediaItemIndex } catch (e: Exception) { -1 }
+        val timeline = try { player.currentTimeline } catch (e: Exception) { null }
+        if (timeline != null && !timeline.isEmpty && index >= 0 && index < timeline.windowCount) {
             val window =
-                player.currentTimeline.getWindow(player.currentMediaItemIndex, Timeline.Window())
+                timeline.getWindow(index, Timeline.Window())
             canSkipPrevious.value = player.isCommandAvailable(COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM) ||
                     !window.isLive ||
                     player.isCommandAvailable(COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM) ||

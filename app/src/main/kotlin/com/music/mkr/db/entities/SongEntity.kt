@@ -60,18 +60,14 @@ data class SongEntity(
     fun localToggleLike() = copy(
         liked = !liked,
         likedDate = if (!liked) LocalDateTime.now() else null,
+        inLibrary = if (!liked) inLibrary ?: LocalDateTime.now() else inLibrary,
     )
 
-    fun toggleLike() =
-        if (isLocal) {
-            localToggleLike()
-        } else {
-            copy(
-                liked = !liked,
-                likedDate = if (!liked) LocalDateTime.now() else null,
-                inLibrary = if (!liked) inLibrary ?: LocalDateTime.now() else inLibrary,
-            )
-        }
+    fun toggleLike() = copy(
+        liked = !liked,
+        likedDate = if (!liked) LocalDateTime.now() else null,
+        inLibrary = if (!liked) inLibrary ?: LocalDateTime.now() else inLibrary,
+    )
 
     fun toggleLibrary(syncToYouTube: Boolean = true) = copy(
         liked = if (inLibrary == null) liked else false,

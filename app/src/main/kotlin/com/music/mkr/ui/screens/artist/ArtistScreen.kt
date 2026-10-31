@@ -368,22 +368,16 @@ fun ArtistScreen(
                                 isPlaying = isPlaying,
                                 isLiked = song.id in likedSongIds,
                                 onLikeClick = {
-                                    coroutineScope.launch(Dispatchers.IO) {
-                                        var currentSongEntity = database.getSongByIdBlocking(song.id)
+                                    database.transaction {
+                                        val currentSongEntity = getSongByIdBlocking(song.id)
+                                        val toggled: SongEntity
                                         if (currentSongEntity == null) {
-                                             database.insert(song.toMediaMetadata().copy(liked = false, likedDate = null))
-                                             currentSongEntity = database.getSongByIdBlocking(song.id)
+                                            insert(song.toMediaMetadata(), SongEntity::toggleLike)
+                                            toggled = song.toMediaMetadata().toSongEntity().toggleLike()
+                                        } else {
+                                            toggled = currentSongEntity.song.toggleLike()
+                                            update(toggled)
                                         }
-                                        val isCurrentlyLiked = currentSongEntity?.song?.liked == true
-                                        val shouldLike = !isCurrentlyLiked
-                                        val baseSong = currentSongEntity?.song ?: song.toMediaMetadata().toSongEntity()
-                                        val now = java.time.LocalDateTime.now()
-                                        val toggled = baseSong.copy(
-                                            liked = shouldLike,
-                                            likedDate = if (shouldLike) (baseSong.likedDate ?: now) else null,
-                                            inLibrary = if (shouldLike) (baseSong.inLibrary ?: now) else baseSong.inLibrary
-                                        )
-                                        database.upsert(toggled)
                                         syncUtils.likeSong(toggled)
                                         if (playerConnection.mediaMetadata.value?.id == song.id) {
                                             playerConnection.mediaMetadata.value = playerConnection.mediaMetadata.value?.copy(
@@ -535,22 +529,16 @@ fun ArtistScreen(
                                     isPlaying = isPlaying,
                                     isLiked = song.id in likedSongIds,
                                     onLikeClick = {
-                                        coroutineScope.launch(Dispatchers.IO) {
-                                            var songToUpdate = database.getSongByIdBlocking(song.id)
+                                        database.transaction {
+                                            val songToUpdate = getSongByIdBlocking(song.id)
+                                            val s: SongEntity
                                             if (songToUpdate == null) {
-                                                database.insert(song.toMediaMetadata().copy(liked = false, likedDate = null))
-                                                songToUpdate = database.getSongByIdBlocking(song.id)
+                                                insert(song.toMediaMetadata(), SongEntity::toggleLike)
+                                                s = song.toMediaMetadata().toSongEntity().toggleLike()
+                                            } else {
+                                                s = songToUpdate.song.toggleLike()
+                                                update(s)
                                             }
-                                            val isCurrentlyLiked = songToUpdate?.song?.liked == true
-                                            val shouldLike = !isCurrentlyLiked
-                                            val baseSong = songToUpdate?.song ?: song.toMediaMetadata().toSongEntity()
-                                            val now = java.time.LocalDateTime.now()
-                                            val s = baseSong.copy(
-                                                liked = shouldLike,
-                                                likedDate = if (shouldLike) (baseSong.likedDate ?: now) else null,
-                                                inLibrary = if (shouldLike) (baseSong.inLibrary ?: now) else baseSong.inLibrary
-                                            )
-                                            database.upsert(s)
                                             syncUtils.likeSong(s)
                                             if (playerConnection.mediaMetadata.value?.id == song.id) {
                                                 playerConnection.mediaMetadata.value = playerConnection.mediaMetadata.value?.copy(

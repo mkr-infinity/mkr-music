@@ -624,7 +624,7 @@ class MusicService :
                 this,
                 screenStateReceiver,
                 screenStateFilter,
-                androidx.core.content.ContextCompat.RECEIVER_EXPORTED
+                androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
             )
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to register screenStateReceiver")
@@ -1455,17 +1455,19 @@ class MusicService :
                 .getOrNull()?.videoDetails)?.lengthSeconds?.toInt()
             ?: -1
         database.query {
-            if (song == null) insert(mediaMetadata.copy(duration = duration))
-            else {
-                var updatedSong = song.song
-                if (song.song.duration == -1) {
+            val latestSong = getSongByIdBlocking(mediaId)
+            if (latestSong == null) {
+                insert(mediaMetadata.copy(duration = duration))
+            } else {
+                var updatedSong = latestSong.song
+                if (latestSong.song.duration == -1) {
                     updatedSong = updatedSong.copy(duration = duration)
                 }
                 // Update isVideo flag if it's different from the current value
-                if (song.song.isVideo != mediaMetadata.isVideoSong) {
+                if (latestSong.song.isVideo != mediaMetadata.isVideoSong) {
                     updatedSong = updatedSong.copy(isVideo = mediaMetadata.isVideoSong)
                 }
-                if (updatedSong != song.song) {
+                if (updatedSong != latestSong.song) {
                     update(updatedSong)
                 }
             }
@@ -2315,10 +2317,10 @@ class MusicService :
         val fallbackDuration = (player.duration.coerceAtLeast(0) / 1000).toInt()
         val fallbackThumb = currentItem?.mediaMetadata?.artworkUri?.toString()
 
-        scope.launch(Dispatchers.IO) {
+        database.transaction {
             val mediaMetadata = initialMetadata
                 ?: currentItemId?.takeIf { it.isNotBlank() }?.let { id ->
-                    val fromDb = synchronized(database) { database.getSongByIdBlocking(id) }
+                    val fromDb = getSongByIdBlocking(id)
                     fromDb?.toMediaMetadata() ?: com.music.mkr.models.MediaMetadata(
                         id = id,
                         title = fallbackTitle,
@@ -2327,54 +2329,27 @@ class MusicService :
                         thumbnailUrl = fallbackThumb
                     )
                 }
-                ?: return@launch
+                ?: return@transaction
 
             try {
-                var currentSongEntity = synchronized(database) { database.getSongByIdBlocking(mediaMetadata.id) }
-                if (currentSongEntity == null) {
-                    synchronized(database) {
-                        database.insert(mediaMetadata.copy(liked = false, likedDate = null))
-                        currentSongEntity = database.getSongByIdBlocking(mediaMetadata.id)
-                    }
-                }
-                val isCurrentlyLiked = currentSongEntity?.song?.liked == true
-                val shouldLike = !isCurrentlyLiked
-                val baseSong = currentSongEntity?.song ?: mediaMetadata.toSongEntity()
-                val now = java.time.LocalDateTime.now()
-                val toggled = baseSong.copy(
-                    liked = shouldLike,
-                    likedDate = if (shouldLike) (baseSong.likedDate ?: now) else null,
-                    inLibrary = if (shouldLike) (baseSong.inLibrary ?: now) else baseSong.inLibrary
-                )
-                synchronized(database) {
-                    database.upsert(toggled)
+                val dbSong = getSongByIdBlocking(mediaMetadata.id)
+                val toggledSong: SongEntity
+                if (dbSong == null) {
+                    insert(mediaMetadata, SongEntity::toggleLike)
+                    toggledSong = mediaMetadata.toSongEntity().toggleLike()
+                } else {
+                    toggledSong = dbSong.song.toggleLike()
+                    update(toggledSong)
                 }
 
-                syncUtils.likeSong(toggled)
-
-                // Check if auto-download on like is enabled and the song is now liked
-                if (!toggled.isLocal && dataStore.get(AutoDownloadOnLikeKey, false) && toggled.liked) {
-                    // Trigger download for the liked song
-                    val downloadRequest =
-                        androidx.media3.exoplayer.offline.DownloadRequest
-                            .Builder(toggled.id, toggled.id.toUri())
-                            .setCustomCacheKey(toggled.id)
-                            .setData(toggled.title.toByteArray())
-                            .build()
-                    androidx.media3.exoplayer.offline.DownloadService.sendAddDownload(
-                        this@MusicService,
-                        ExoDownloadService::class.java,
-                        downloadRequest,
-                        false
-                    )
-                }
+                syncUtils.likeSong(toggledSong)
 
                 val updatedMetadata = mediaMetadata.copy(
-                    liked = shouldLike,
-                    likedDate = toggled.likedDate,
-                    inLibrary = toggled.inLibrary
+                    liked = toggledSong.liked,
+                    likedDate = toggledSong.likedDate,
+                    inLibrary = toggledSong.inLibrary
                 )
-                withContext(Dispatchers.Main) {
+                scope.launch(Dispatchers.Main) {
                     currentMediaMetadata.value = updatedMetadata
                     updateNotification()
                 }
@@ -4165,12 +4140,6 @@ class MusicService :
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Guard against headless zombie restarts: if restarted by AMS with null intent and inactive playback, stop immediately
-        if (intent == null && (!player.isPlaying || player.mediaItemCount == 0)) {
-            Timber.d("MusicService started with null intent and no active playback - stopping immediately to prevent zombie process")
-            stopSelf()
-            return START_NOT_STICKY
-        }
         when (intent?.action) {
             MusicWidgetReceiver.ACTION_PLAY_PAUSE -> {
                 if (player.isPlaying) player.pause() else player.play()

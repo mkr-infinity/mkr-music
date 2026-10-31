@@ -218,22 +218,16 @@ fun YouTubeSongMenu(
         trailingContent = {  
             IconButton(  
                 onClick = {  
-                    coroutineScope.launch(Dispatchers.IO) {
-                        var songToUpdate = database.getSongByIdBlocking(song.id)
+                    database.transaction {
+                        val songToUpdate = getSongByIdBlocking(song.id)
+                        val s: SongEntity
                         if (songToUpdate == null) {
-                            database.insert(song.toMediaMetadata().copy(liked = false, likedDate = null))
-                            songToUpdate = database.getSongByIdBlocking(song.id)
+                            insert(song.toMediaMetadata(), SongEntity::toggleLike)
+                            s = song.toMediaMetadata().toSongEntity().toggleLike()
+                        } else {
+                            s = songToUpdate.song.toggleLike()
+                            update(s)
                         }
-                        val isCurrentlyLiked = songToUpdate?.song?.liked == true
-                        val shouldLike = !isCurrentlyLiked
-                        val baseSong = songToUpdate?.song ?: song.toMediaMetadata().toSongEntity()
-                        val now = java.time.LocalDateTime.now()
-                        val s = baseSong.copy(
-                            liked = shouldLike,
-                            likedDate = if (shouldLike) (baseSong.likedDate ?: now) else null,
-                            inLibrary = if (shouldLike) (baseSong.inLibrary ?: now) else baseSong.inLibrary
-                        )
-                        database.upsert(s)
                         syncUtils.likeSong(s)
                     }
                 },  
