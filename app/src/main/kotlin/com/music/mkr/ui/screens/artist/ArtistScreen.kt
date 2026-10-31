@@ -117,6 +117,7 @@ import com.music.mkr.ui.component.LocalMenuState
 import com.music.mkr.ui.component.MkrAmbientBackdrop
 import com.music.mkr.ui.component.MkrBadge
 import com.music.mkr.ui.component.NavigationTitle
+import com.music.mkr.ui.component.PlayingIndicator
 import com.music.mkr.ui.component.SongListItem
 import com.music.mkr.ui.component.YouTubeGridItem
 import com.music.mkr.ui.component.YouTubeListItem
@@ -136,6 +137,7 @@ import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.isScrollingUp
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.listItemShape
+import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.viewmodels.ArtistViewModel
 import kotlinx.coroutines.Dispatchers
@@ -314,33 +316,28 @@ fun ArtistScreen(
                             items = filteredLibrarySongs,
                             key = { index, item -> "local_song_${item.id}_$index" }
                         ) { index, song ->
-                            SongListItem(
-                                song = song,
-                                showInLibraryIcon = true,
+                            val artistsSubtitle = song.artists.joinToString { it.name }.ifEmpty { song.song.albumName ?: artistName }
+                            ArtistTrackLeaderboardCard(
+                                rank = index + 1,
+                                title = song.song.title,
+                                subtitle = artistsSubtitle,
+                                thumbnailUrl = song.song.thumbnailUrl,
+                                durationText = song.song.durationText,
+                                explicit = song.song.explicit,
                                 isActive = song.id == mediaMetadata?.id,
                                 isPlaying = isPlaying,
-                                shape = listItemShape(index, filteredLibrarySongs.size),
-                                trailingContent = {
-                                    IconButton(
-                                        onClick = {
-                                            menuState.show {
-                                                SongMenu(
-                                                    originalSong = song,
-                                                    navController = navController,
-                                                    onDismiss = menuState::dismiss,
-                                                )
-                                            }
-                                        },
-                                    ) {
-                                        Icon(
-                                            painter = painterResource(R.drawable.more_vert),
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                onMenuClick = {
+                                    menuState.show {
+                                        SongMenu(
+                                            originalSong = song,
+                                            navController = navController,
+                                            onDismiss = menuState::dismiss,
                                         )
                                     }
                                 },
                                 modifier = Modifier
                                     .fillMaxWidth()
+                                    .padding(horizontal = 16.dp, vertical = 4.dp)
                                     .combinedClickable(
                                         onClick = {
                                             if (song.id == mediaMetadata?.id) {
@@ -443,40 +440,43 @@ fun ArtistScreen(
                         }
 
                         if ((section.items.firstOrNull() as? SongItem)?.album != null) {
-                            // Song list representation
+                            // Song list representation as leaderboard
                             val distinctSongs = section.items.distinctBy { it.id }
 
                             itemsIndexed(
                                 items = distinctSongs,
                                 key = { _, it -> "youtube_song_${it.id}" },
-                            ) { index, song ->
-                                YouTubeListItem(
-                                    item = song as SongItem,
+                            ) { index, songItem ->
+                                val song = songItem as SongItem
+                                val durationStr = song.duration?.let { dur ->
+                                    makeTimeString(dur.toLong() * 1000L)
+                                }
+                                val subtitleText = listOfNotNull(
+                                    song.album?.name,
+                                    song.viewCountText
+                                ).joinToString(" • ")
+
+                                ArtistTrackLeaderboardCard(
+                                    rank = index + 1,
+                                    title = song.title,
+                                    subtitle = subtitleText.ifEmpty { artistName },
+                                    thumbnailUrl = song.thumbnail,
+                                    durationText = durationStr,
+                                    explicit = song.explicit,
                                     isActive = mediaMetadata?.id == song.id,
                                     isPlaying = isPlaying,
-                                    albumIndex = index + 1,
-                                    shape = listItemShape(index, distinctSongs.size),
-                                    trailingContent = {
-                                        IconButton(
-                                            onClick = {
-                                                menuState.show {
-                                                    YouTubeSongMenu(
-                                                        song = song,
-                                                        navController = navController,
-                                                        onDismiss = menuState::dismiss,
-                                                    )
-                                                }
-                                            },
-                                        ) {
-                                            Icon(
-                                                painter = painterResource(R.drawable.more_vert),
-                                                contentDescription = null,
-                                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    onMenuClick = {
+                                        menuState.show {
+                                            YouTubeSongMenu(
+                                                song = song,
+                                                navController = navController,
+                                                onDismiss = menuState::dismiss,
                                             )
                                         }
                                     },
                                     modifier = Modifier
                                         .fillMaxWidth()
+                                        .padding(horizontal = 16.dp, vertical = 4.dp)
                                         .combinedClickable(
                                             onClick = {
                                                 if (song.id == mediaMetadata?.id) {
@@ -920,6 +920,23 @@ private fun ArtistInfoAndBadges(
         horizontalAlignment = if (textAlign == TextAlign.Center) Alignment.CenterHorizontally else Alignment.Start,
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+        ) {
+            Text(
+                text = "VERIFIED ARTIST",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp,
+                    fontSize = 10.sp
+                ),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+            )
+        }
+
         Text(
             text = artistName,
             style = MaterialTheme.typography.headlineLarge.copy(
@@ -1234,6 +1251,254 @@ private fun ArtistShimmerSkeleton(
             // Items Placeholders
             repeat(5) {
                 ListItemPlaceHolder()
+            }
+        }
+    }
+}
+
+/**
+ * Leaderboard-style Track Card for Artist's biggest/top songs:
+ * - Dynamic Rank numbering: Podium badge styling (#1 gold amber, #2 silver slate, #3 warm bronze, #4+ subtle).
+ * - Live animated PlayingIndicator when track is active.
+ * - Squircle thumbnail with smooth corners.
+ * - Bold title with active primary coloration.
+ * - Explicit badge and metadata subtitle.
+ * - Duration capsule and context menu.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ArtistTrackLeaderboardCard(
+    rank: Int,
+    title: String,
+    subtitle: String,
+    thumbnailUrl: String?,
+    durationText: String?,
+    explicit: Boolean,
+    isActive: Boolean,
+    isPlaying: Boolean,
+    onMenuClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val containerColor = if (isActive) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLow
+    }
+
+    val borderColor = if (isActive) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+    } else {
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f)
+    }
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .mkrPressFeedback(),
+        shape = RoundedCornerShape(16.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Rank Badge or Live Visualizer
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .padding(end = 4.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                if (isActive) {
+                    PlayingIndicator(
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                } else {
+                    when (rank) {
+                        1 -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFFFFB300).copy(alpha = 0.18f),
+                                border = BorderStroke(1.dp, Color(0xFFFFB300).copy(alpha = 0.7f)),
+                                modifier = Modifier.size(26.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "1",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 12.sp
+                                        ),
+                                        color = Color(0xFFFFB300)
+                                    )
+                                }
+                            }
+                        }
+                        2 -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFF90A4AE).copy(alpha = 0.18f),
+                                border = BorderStroke(1.dp, Color(0xFFCFD8DC).copy(alpha = 0.7f)),
+                                modifier = Modifier.size(26.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "2",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 12.sp
+                                        ),
+                                        color = Color(0xFFCFD8DC)
+                                    )
+                                }
+                            }
+                        }
+                        3 -> {
+                            Surface(
+                                shape = CircleShape,
+                                color = Color(0xFFFF7043).copy(alpha = 0.18f),
+                                border = BorderStroke(1.dp, Color(0xFFFF8A65).copy(alpha = 0.7f)),
+                                modifier = Modifier.size(26.dp)
+                            ) {
+                                Box(contentAlignment = Alignment.Center) {
+                                    Text(
+                                        text = "3",
+                                        style = MaterialTheme.typography.labelMedium.copy(
+                                            fontWeight = FontWeight.ExtraBold,
+                                            fontSize = 12.sp
+                                        ),
+                                        color = Color(0xFFFF8A65)
+                                    )
+                                }
+                            }
+                        }
+                        else -> {
+                            Text(
+                                text = rank.toString(),
+                                style = MaterialTheme.typography.labelLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 13.sp
+                                ),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.65f),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(6.dp))
+
+            // Artwork Thumbnail (Squircle)
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh
+            ) {
+                if (!thumbnailUrl.isNullOrEmpty()) {
+                    AsyncImage(
+                        model = ImageRequest.Builder(LocalContext.current)
+                            .data(thumbnailUrl.resize(120, 120))
+                            .crossfade(true)
+                            .build(),
+                        contentDescription = null,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.music_note),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Metadata: Title, Subtitle, Explicit badge
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.SemiBold,
+                        fontSize = 14.5.sp
+                    ),
+                    color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(2.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (explicit) {
+                        Icon(
+                            painter = painterResource(R.drawable.explicit),
+                            contentDescription = null,
+                            modifier = Modifier.size(13.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            fontSize = 12.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+            }
+
+            // Duration capsule if present
+            if (!durationText.isNullOrEmpty()) {
+                Surface(
+                    shape = RoundedCornerShape(8.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+                    modifier = Modifier.padding(start = 4.dp, end = 2.dp)
+                ) {
+                    Text(
+                        text = durationText,
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 11.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                    )
+                }
+            }
+
+            // More Options Menu Button
+            IconButton(
+                onClick = onMenuClick,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.more_vert),
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                    modifier = Modifier.size(18.dp)
+                )
             }
         }
     }
