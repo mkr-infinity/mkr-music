@@ -50,13 +50,17 @@ data class ArchiveTunePayload(
 object EqualizerDefaults {
     const val PRESET_FLAT_ID = "preset_flat"
     const val PRESET_BASS_BOOST_ID = "preset_bass_boost"
-    const val PRESET_VOCAL_CLARITY_ID = "preset_vocal_clarity"
+    const val PRESET_PURE_CLARITY_ID = "preset_pure_clarity"
+    const val PRESET_VOCAL_CLARITY_ID = "preset_pure_clarity"
+    const val PRESET_MKR_SIGNATURE_ID = "preset_mkr_signature"
+    const val PRESET_ELECTRONIC_ID = "preset_electronic"
+    const val PRESET_ROCK_ID = "preset_rock"
 
     val PRESET_FLAT = EqualizerPreset(
         id = PRESET_FLAT_ID,
         name = "Flat",
         isBuiltIn = true,
-        bandLevelsMb = listOf(0, 0, 0, 0, 0),
+        bandLevelsMb = listOf(0, 0, 0, 0, 0, 0, 0, 0, 0, 0),
         bassBoostStrength = 0,
         virtualizerStrength = 0,
     )
@@ -65,23 +69,53 @@ object EqualizerDefaults {
         id = PRESET_BASS_BOOST_ID,
         name = "Bass Boost",
         isBuiltIn = true,
-        bandLevelsMb = listOf(600, 350, 0, 100, 200),
-        bassBoostStrength = 600,
+        bandLevelsMb = listOf(500, 400, 250, 100, 0, -50, 0, 100, 200, 300),
+        bassBoostStrength = 500,
         virtualizerStrength = 0,
     )
 
-    val PRESET_VOCAL_CLARITY = EqualizerPreset(
-        id = PRESET_VOCAL_CLARITY_ID,
-        name = "Vocal Clarity",
+    val PRESET_PURE_CLARITY = EqualizerPreset(
+        id = PRESET_PURE_CLARITY_ID,
+        name = "Pure Clarity",
         isBuiltIn = true,
-        bandLevelsMb = listOf(-200, 0, 450, 550, 300),
+        bandLevelsMb = listOf(100, 50, -80, -150, -50, 150, 250, 200, 150, 100),
         bassBoostStrength = 0,
-        virtualizerStrength = 250,
+        virtualizerStrength = 200,
+    )
+
+    val PRESET_MKR_SIGNATURE = EqualizerPreset(
+        id = PRESET_MKR_SIGNATURE_ID,
+        name = "MKR Signature",
+        isBuiltIn = true,
+        bandLevelsMb = listOf(250, 200, 80, -120, -50, 120, 180, 100, 280, 450),
+        bassBoostStrength = 250,
+        virtualizerStrength = 150,
+    )
+
+    val PRESET_ELECTRONIC = EqualizerPreset(
+        id = PRESET_ELECTRONIC_ID,
+        name = "Electronic",
+        isBuiltIn = true,
+        bandLevelsMb = listOf(350, 280, 120, -50, -150, 50, 180, 300, 400, 500),
+        bassBoostStrength = 350,
+        virtualizerStrength = 200,
+    )
+
+    val PRESET_ROCK = EqualizerPreset(
+        id = PRESET_ROCK_ID,
+        name = "Rock",
+        isBuiltIn = true,
+        bandLevelsMb = listOf(300, 220, 150, 50, -100, 120, 200, 250, 320, 380),
+        bassBoostStrength = 300,
+        virtualizerStrength = 100,
     )
 
     val BUILT_IN_PRESETS = listOf(
         PRESET_FLAT,
         PRESET_BASS_BOOST,
-        PRESET_VOCAL_CLARITY,
+        PRESET_PURE_CLARITY,
+        PRESET_MKR_SIGNATURE,
+        PRESET_ELECTRONIC,
+        PRESET_ROCK,
     )
 }

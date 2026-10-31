@@ -1284,6 +1284,68 @@ private fun WavySoundwaveHero(
     val heroSize = if (compact) 92.dp else 120.dp
     val canvasHeight = if (compact) 160.dp else 220.dp
 
+    val infiniteTransition = rememberInfiniteTransition(label = "HeroLivingAnimation")
+
+    val wavePhase by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = (2 * Math.PI).toFloat(),
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 4000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "wavePhase"
+    )
+
+    val wavePhase2 by infiniteTransition.animateFloat(
+        initialValue = (2 * Math.PI).toFloat(),
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 5500, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "wavePhase2"
+    )
+
+    val glowScale by infiniteTransition.animateFloat(
+        initialValue = 0.90f,
+        targetValue = 1.35f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glowScale"
+    )
+
+    val glowAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.16f,
+        targetValue = 0.36f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2600, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "glowAlpha"
+    )
+
+    val emblemScale by infiniteTransition.animateFloat(
+        initialValue = 0.97f,
+        targetValue = 1.03f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 3200, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "emblemScale"
+    )
+
+    val emblemTranslationY by infiniteTransition.animateFloat(
+        initialValue = -3.5f,
+        targetValue = 3.5f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2400, easing = FastOutSlowInEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "emblemTranslationY"
+    )
+
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -1299,18 +1361,21 @@ private fun WavySoundwaveHero(
             val height = size.height
             val midY = height * 0.52f
 
-            // Wavy Path 1: Harmonic crest (Primary gradient)
+            val wave1Offset = kotlin.math.sin(wavePhase.toDouble()).toFloat() * (height * 0.08f)
+            val wave2Offset = kotlin.math.cos(wavePhase2.toDouble()).toFloat() * (height * 0.07f)
+
+            // Animated Wavy Path 1: Harmonic crest (Primary gradient)
             val path1 = Path().apply {
-                moveTo(0f, midY + height * 0.12f)
+                moveTo(0f, midY + height * 0.12f + wave1Offset * 0.5f)
                 cubicTo(
-                    width * 0.22f, midY - height * 0.28f,
-                    width * 0.42f, midY + height * 0.32f,
-                    width * 0.65f, midY - height * 0.20f
+                    width * 0.22f, midY - height * 0.28f + wave1Offset,
+                    width * 0.42f, midY + height * 0.32f - wave1Offset,
+                    width * 0.65f, midY - height * 0.20f + wave1Offset
                 )
                 cubicTo(
-                    width * 0.82f, midY - height * 0.45f,
-                    width * 0.92f, midY + height * 0.15f,
-                    width, midY - height * 0.05f
+                    width * 0.82f, midY - height * 0.45f - wave1Offset * 0.6f,
+                    width * 0.92f, midY + height * 0.15f + wave1Offset * 0.4f,
+                    width, midY - height * 0.05f + wave1Offset * 0.3f
                 )
             }
             drawPath(
@@ -1326,18 +1391,18 @@ private fun WavySoundwaveHero(
                 style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
             )
 
-            // Wavy Path 2: Harmonic counter-wave (Tertiary gradient)
+            // Animated Wavy Path 2: Harmonic counter-wave (Tertiary gradient)
             val path2 = Path().apply {
-                moveTo(0f, midY - height * 0.08f)
+                moveTo(0f, midY - height * 0.08f + wave2Offset * 0.4f)
                 cubicTo(
-                    width * 0.18f, midY + height * 0.25f,
-                    width * 0.38f, midY - height * 0.30f,
-                    width * 0.58f, midY + height * 0.18f
+                    width * 0.18f, midY + height * 0.25f - wave2Offset,
+                    width * 0.38f, midY - height * 0.30f + wave2Offset,
+                    width * 0.58f, midY + height * 0.18f - wave2Offset
                 )
                 cubicTo(
-                    width * 0.76f, midY + height * 0.38f,
-                    width * 0.88f, midY - height * 0.22f,
-                    width, midY + height * 0.04f
+                    width * 0.76f, midY + height * 0.38f + wave2Offset * 0.7f,
+                    width * 0.88f, midY - height * 0.22f - wave2Offset * 0.5f,
+                    width, midY + height * 0.04f + wave2Offset * 0.3f
                 )
             }
             drawPath(
@@ -1353,29 +1418,35 @@ private fun WavySoundwaveHero(
                 style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
             )
 
-            // Central ambient radial glow
+            // Animated Central ambient radial glow
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        primaryColor.copy(alpha = 0.22f),
-                        tertiaryColor.copy(alpha = 0.08f),
+                        primaryColor.copy(alpha = glowAlpha),
+                        tertiaryColor.copy(alpha = glowAlpha * 0.4f),
                         Color.Transparent
                     ),
                     center = Offset(width * 0.5f, midY),
-                    radius = (heroSize.toPx() * 1.4f)
+                    radius = (heroSize.toPx() * 1.4f * glowScale)
                 ),
-                radius = heroSize.toPx() * 1.4f,
+                radius = heroSize.toPx() * 1.4f * glowScale,
                 center = Offset(width * 0.5f, midY)
             )
         }
 
-        // Layered elevated emblem with wavy/squircle contour
+        // Layered elevated emblem with living breathing motion
         Surface(
             shape = RoundedCornerShape(32.dp),
             color = surfaceColor,
             shadowElevation = 12.dp,
             border = BorderStroke(1.5.dp, primaryColor.copy(alpha = 0.40f)),
-            modifier = Modifier.size(heroSize)
+            modifier = Modifier
+                .size(heroSize)
+                .graphicsLayer {
+                    scaleX = emblemScale
+                    scaleY = emblemScale
+                    translationY = emblemTranslationY
+                }
         ) {
             Image(
                 painter = painterResource(id = R.drawable.icon),

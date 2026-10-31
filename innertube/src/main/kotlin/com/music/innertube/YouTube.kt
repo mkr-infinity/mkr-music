@@ -1454,11 +1454,32 @@ object YouTube {
     suspend fun transcript(videoId: String): Result<String> = runCatching {
         val response = innerTube.getTranscript(WEB, videoId).body<GetTranscriptResponse>()
         response.actions?.firstOrNull()?.updateEngagementPanelAction?.content?.transcriptRenderer?.body?.transcriptBodyRenderer?.cueGroups?.joinToString(separator = "\n") { group ->
-            val time = group.transcriptCueGroupRenderer.cues[0].transcriptCueRenderer.startOffsetMs
-            val text = group.transcriptCueGroupRenderer.cues[0].transcriptCueRenderer.cue.simpleText
+            val cue = group.transcriptCueGroupRenderer.cues[0].transcriptCueRenderer
+            val time = cue.startOffsetMs
+            val duration = cue.durationMs
+            val text = cue.cue.simpleText
                 .trim('♪')
                 .trim(' ')
-            "[%02d:%02d.%03d]$text".format(time / 60000, (time / 1000) % 60, time % 1000)
+            val words = text.split(Regex("\\s+")).filter { it.isNotBlank() }
+            if (words.size > 1 && duration > 0L) {
+                val wordDuration = duration.toDouble() / words.size
+                val richWords = words.mapIndexed { idx, word ->
+                    val wTime = (time + (idx * wordDuration)).toLong()
+                    val minutes = wTime / 60000
+                    val seconds = (wTime / 1000) % 60
+                    val millis = (wTime % 1000) / 10
+                    "<%02d:%02d.%02d>%s".format(minutes, seconds, millis, word)
+                }.joinToString(" ")
+                val min = time / 60000
+                val sec = (time / 1000) % 60
+                val ms = (time % 1000) / 10
+                "[%02d:%02d.%02d]%s".format(min, sec, ms, richWords)
+            } else {
+                val min = time / 60000
+                val sec = (time / 1000) % 60
+                val ms = time % 1000
+                "[%02d:%02d.%03d]$text".format(min, sec, ms)
+            }
         }!!
     }
 

@@ -117,7 +117,7 @@ fun StorageSettings(
     )
     val (songCacheDelaySeconds, onSongCacheDelaySecondsChange) = rememberPreference(
         key = SongCacheDelaySecondsKey,
-        defaultValue = 10
+        defaultValue = 5
     )
     val (customDownloadFolderUri, onCustomDownloadFolderUriChange) = rememberPreference(
         key = CustomDownloadFolderUriKey,

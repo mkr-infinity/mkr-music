@@ -3508,7 +3508,7 @@ class MusicService :
         cancelPendingDelayedCacheTimer()
         if (dataStore.get(DisableSongCacheKey, false)) return
 
-        val delaySeconds = dataStore.get(SongCacheDelaySecondsKey, 10).coerceIn(5, 90)
+        val delaySeconds = dataStore.get(SongCacheDelaySecondsKey, 5).coerceIn(5, 90)
         pendingCacheTimerJob = scope.launch(Dispatchers.IO) {
             delay(delaySeconds * 1000L)
 

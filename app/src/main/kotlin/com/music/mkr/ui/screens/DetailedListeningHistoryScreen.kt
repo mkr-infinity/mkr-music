@@ -172,10 +172,7 @@ fun DetailedListeningHistoryScreen(
                         itemsIndexed(mostPlayedSongs, key = { _, song -> song.id }) { index, song ->
                             LocalSongsGrid(
                                 title = "${index + 1}. ${song.title}",
-                                subtitle = joinByBullet(
-                                    "${song.songCountListened} plays",
-                                    makeTimeString(song.timeListened ?: 0L)
-                                ),
+                                subtitle = "${song.songCountListened} plays   ${makeTimeString(song.timeListened ?: 0L)}",
                                 thumbnailUrl = song.thumbnailUrl,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -191,10 +188,7 @@ fun DetailedListeningHistoryScreen(
                         itemsIndexed(mostPlayedArtists, key = { _, artist -> artist.id }) { index, artist ->
                             LocalArtistsGrid(
                                 title = "${index + 1}. ${artist.artist.name}",
-                                subtitle = joinByBullet(
-                                    "${artist.songCount} plays",
-                                    makeTimeString(artist.timeListened?.toLong() ?: 0L)
-                                ),
+                                subtitle = "${artist.songCount} plays   ${makeTimeString(artist.timeListened?.toLong() ?: 0L)}",
                                 thumbnailUrl = artist.artist.thumbnailUrl
                             )
                         }
@@ -209,10 +203,7 @@ fun DetailedListeningHistoryScreen(
                         itemsIndexed(mostPlayedAlbums, key = { _, album -> album.id }) { index, album ->
                             LocalAlbumsGrid(
                                 title = "${index + 1}. ${album.album.title}",
-                                subtitle = joinByBullet(
-                                    "${album.songCountListened} plays",
-                                    makeTimeString(album.timeListened ?: 0L)
-                                ),
+                                subtitle = "${album.songCountListened} plays   ${makeTimeString(album.timeListened ?: 0L)}",
                                 thumbnailUrl = album.album.thumbnailUrl,
                                 modifier = Modifier.fillMaxWidth()
                             )
