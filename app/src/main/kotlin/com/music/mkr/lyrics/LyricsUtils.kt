@@ -628,6 +628,8 @@ object LyricsUtils {
         lines: List<LyricsEntry>,
         position: Long,
     ): Int {
+        if (lines.isEmpty()) return -1
+        if (lines.all { it.time == 0L }) return 0
         for (index in lines.indices) {
             if (lines[index].time >= position + 300L) {
                 return index - 1

@@ -169,6 +169,9 @@ private fun EqualizerContent(
     val virtualizerStrength by controller.virtualizerStrength.collectAsState()
     val activePresetId by controller.activePresetId.collectAsState()
     val allPresets by controller.allPresets.collectAsState()
+    val playerConnection = LocalPlayerConnection.current
+    val mediaMetadata by (playerConnection?.mediaMetadata ?: kotlinx.coroutines.flow.MutableStateFlow(null)).collectAsState()
+    val songTitle = mediaMetadata?.title
 
     // 1. Header with Master Switch
     Row(
@@ -225,6 +228,7 @@ private fun EqualizerContent(
         isSessionActive = isSessionActive,
         sessionId = currentSessionId,
         bandCount = bandCount,
+        songTitle = songTitle,
     )
 
     Spacer(modifier = Modifier.height(18.dp))
@@ -400,6 +404,7 @@ private fun AudioSessionStatusCard(
     isSessionActive: Boolean,
     sessionId: Int,
     bandCount: Int,
+    songTitle: String?,
 ) {
     val containerColor by animateColorAsState(
         targetValue = if (isSessionActive) {
@@ -438,7 +443,7 @@ private fun AudioSessionStatusCard(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = if (isSessionActive) {
-                        "Session Active: $bandCount-Band DSP Connected"
+                        "Session Active $bandCount Bands"
                     } else {
                         "No Active Audio Session"
                     },
@@ -447,9 +452,13 @@ private fun AudioSessionStatusCard(
                 )
                 Text(
                     text = if (isSessionActive) {
-                        "Audio effects bound to playback session #$sessionId"
+                        if (!songTitle.isNullOrBlank()) {
+                            "Audio effects active for $songTitle"
+                        } else {
+                            "Audio effects active for current track"
+                        }
                     } else {
-                        "Play music to enable live hardware equalizer processing. Custom profiles saved here apply automatically."
+                        "Play music to enable live hardware equalizer processing"
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,

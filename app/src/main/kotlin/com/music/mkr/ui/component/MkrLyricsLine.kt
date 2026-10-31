@@ -158,22 +158,8 @@ fun MkrLyricsLine(
         rawText
     }
 
-    // Determine whether this line has finished singing in playback
-    val isLinePast = if (isSynced) {
-        if (!entry.words.isNullOrEmpty()) {
-            val lastWordEndMs = (entry.words.last().endTime * 1000).toLong()
-            adjustedPlaybackPosition >= lastWordEndMs
-        } else if (nextEntryTime != null) {
-            adjustedPlaybackPosition >= nextEntryTime
-        } else {
-            adjustedPlaybackPosition >= entry.time + (mainText.length * 160L).coerceIn(2500L, 6000L)
-        }
-    } else {
-        false
-    }
-
-    // Prepare tokens for rich word-by-word synced lyrics (only when genuine word timestamps exist)
-    val tokens = remember(entry.words, mainText) {
+    // Prepare tokens for rich word-by-word synced lyrics or line-synced lyrics
+    val tokens = remember(entry.words, mainText, entry.time, nextEntryTime, isSynced) {
         if (!entry.words.isNullOrEmpty()) {
             val isCjk = LyricsUtils.isJapanese(mainText) || LyricsUtils.isChinese(mainText)
             entry.words.mapIndexed { index, word ->
@@ -186,9 +172,44 @@ fun MkrLyricsLine(
                     hasTrailingSpace = index < entry.words.size - 1 && !isCjk
                 )
             }
+        } else if (isSynced && mainText.isNotBlank() && entry.time > 0L) {
+            val rawWords = mainText.trim().split(Regex("\\s+")).filter { it.isNotBlank() }
+            if (rawWords.isNotEmpty()) {
+                val lineDurationMs = if (nextEntryTime != null && nextEntryTime > entry.time) {
+                    minOf(nextEntryTime - entry.time, 7000L).coerceAtLeast(800L)
+                } else {
+                    (mainText.length * 140L).coerceIn(2000L, 5000L)
+                }
+                val wordDuration = lineDurationMs / rawWords.size
+                rawWords.mapIndexed { index, word ->
+                    val startMs = entry.time + (index * wordDuration)
+                    val endMs = if (index == rawWords.lastIndex) entry.time + lineDurationMs else startMs + wordDuration
+                    LyricWordToken(
+                        text = word,
+                        startTimeMs = startMs,
+                        endTimeMs = endMs,
+                        hasTrailingSpace = index < rawWords.lastIndex
+                    )
+                }
+            } else {
+                emptyList()
+            }
         } else {
             emptyList()
         }
+    }
+
+    // Determine whether this line has finished singing in playback
+    val isLinePast = if (isSynced) {
+        if (tokens.isNotEmpty()) {
+            adjustedPlaybackPosition >= tokens.last().endTimeMs
+        } else if (nextEntryTime != null) {
+            adjustedPlaybackPosition >= nextEntryTime
+        } else {
+            adjustedPlaybackPosition >= entry.time + (mainText.length * 160L).coerceIn(2500L, 6000L)
+        }
+    } else {
+        false
     }
 
     val enableAnimation = lyricsAnimationStyle != LyricsAnimationStyle.NONE

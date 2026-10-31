@@ -518,7 +518,8 @@ fun LyricsV2(
                 }
 
                 // If plain text (not synced), render with gentle active indicator fallback
-                if (lines.isNotEmpty() && lines.all { it.time == 0L }) {
+                val hasSyncedTimestamps = remember(lines) { lines.count { it.time > 0L } > 1 }
+                if (lines.isNotEmpty() && !hasSyncedTimestamps) {
                     val totalDurationMs = (mediaMetadata?.duration ?: 0) * 1000L
                     val activeUnsyncedIndex = if (totalDurationMs > 0L) {
                         ((currentPosition.toFloat() / totalDurationMs) * lines.size).toInt().coerceIn(0, lines.lastIndex)
@@ -767,7 +768,7 @@ fun LyricsV2(
                                 title = mediaMetadata?.title.orEmpty(),
                                 artist = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
                                 provider = currentLyrics?.provider,
-                                isSynced = true,
+                                isSynced = hasSyncedTimestamps,
                                 palette = artworkPalette,
                                 isRomanized = showRomanized,
                                 onToggleRomanize = onToggleRomanize

@@ -83,6 +83,7 @@ fun ListeningSummaryScreen(
     }
 
     Scaffold(
+        containerColor = MaterialTheme.colorScheme.background,
         topBar = {
             TopAppBar(
                 title = { Text(text = "Listening Summary") },
@@ -97,13 +98,19 @@ fun ListeningSummaryScreen(
             )
         }
     ) { paddingValues ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+                .padding(paddingValues),
+            contentAlignment = Alignment.TopCenter
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 840.dp)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
             item { Spacer(modifier = Modifier.height(8.dp)) }
 
             // Musical Mood & Quote Card
@@ -439,4 +446,5 @@ fun ListeningSummaryScreen(
             item { Spacer(modifier = Modifier.height(60.dp)) }
         }
     }
+}
 }

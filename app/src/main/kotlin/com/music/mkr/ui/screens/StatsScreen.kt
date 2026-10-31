@@ -285,6 +285,7 @@ fun StatsScreen(
                     uniqueSongsCount = uniqueSongsCount,
                     uniqueArtistsCount = uniqueArtistsCount,
                     uniqueAlbumsCount = uniqueAlbumsCount,
+                    activeDays = listeningHabits.activeDays,
                     modifier = Modifier.animateItem()
                 )
             }
@@ -418,15 +419,7 @@ fun StatsScreen(
                         ) { index, artist ->
                             LocalArtistsGrid(
                                 title = "${index + 1}. ${artist.artist.name}",
-                                subtitle =
-                                joinByBullet(
-                                    pluralStringResource(
-                                        R.plurals.n_time,
-                                        artist.songCount,
-                                        artist.songCount
-                                    ),
-                                    makeTimeString(artist.timeListened?.toLong()),
-                                ),
+                                subtitle = "${pluralStringResource(R.plurals.n_time, artist.songCount, artist.songCount)}   ${makeTimeString(artist.timeListened?.toLong())}",
                                 thumbnailUrl = artist.artist.thumbnailUrl,
                                 modifier =
                                 Modifier
@@ -468,15 +461,7 @@ fun StatsScreen(
                         ) { index, album ->
                             LocalAlbumsGrid(
                                 title = "${index + 1}. ${album.album.title}",
-                                subtitle =
-                                joinByBullet(
-                                    pluralStringResource(
-                                        R.plurals.n_time,
-                                        album.songCountListened!!,
-                                        album.songCountListened
-                                    ),
-                                    makeTimeString(album.timeListened),
-                                ),
+                                subtitle = "${pluralStringResource(R.plurals.n_time, album.songCountListened!!, album.songCountListened)}   ${makeTimeString(album.timeListened)}",
                                 thumbnailUrl = album.album.thumbnailUrl,
                                 isActive = album.id == mediaMetadata?.album?.id,
                                 isPlaying = isPlaying,
@@ -542,7 +527,7 @@ fun StatsScreen(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.history),
-                        contentDescription = null,
+                        contentDescription = stringResource(R.string.listening_summary),
                     )
                 }
                 IconButton(
@@ -550,7 +535,7 @@ fun StatsScreen(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.sparks),
-                        contentDescription = null,
+                        contentDescription = "Wrapped",
                     )
                 }
             }
@@ -583,6 +568,7 @@ private fun StatsSummarySection(
     uniqueSongsCount: Int,
     uniqueArtistsCount: Int,
     uniqueAlbumsCount: Int,
+    activeDays: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -634,7 +620,13 @@ private fun StatsSummarySection(
                     color = MaterialTheme.colorScheme.onSurface
                 )
 
-                if (allTimePlayTime > 0 && allTimePlayTime != totalPlayTime) {
+                if (activeDays > 0 && totalPlayTime > 0) {
+                    Text(
+                        text = "Average ${formatDurationGracefully(totalPlayTime / activeDays)} per active listening day",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else if (allTimePlayTime > 0 && allTimePlayTime != totalPlayTime) {
                     Text(
                         text = "All-time listening: ${formatDurationGracefully(allTimePlayTime)}",
                         style = MaterialTheme.typography.labelMedium,
@@ -950,7 +942,7 @@ private fun StatsHighlightsSection(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "${song.artistName ?: ""} • ${pluralStringResource(R.plurals.n_time, song.songCountListened, song.songCountListened)} • ${formatDurationGracefully(song.timeListened ?: 0L)}",
+                            text = "${song.artistName ?: ""}   ${pluralStringResource(R.plurals.n_time, song.songCountListened, song.songCountListened)}   ${formatDurationGracefully(song.timeListened ?: 0L)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -1022,7 +1014,7 @@ private fun StatsHighlightsSection(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "${artist.songCount} ${stringResource(R.string.songs).lowercase()} • ${formatDurationGracefully(artist.timeListened?.toLong() ?: 0L)}",
+                            text = "${artist.songCount} ${stringResource(R.string.songs).lowercase()}   ${formatDurationGracefully(artist.timeListened?.toLong() ?: 0L)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,
@@ -1090,7 +1082,7 @@ private fun StatsHighlightsSection(
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "${album.artists?.joinToString { it.name } ?: ""} • ${pluralStringResource(R.plurals.n_time, album.songCountListened ?: 0, album.songCountListened ?: 0)}",
+                            text = "${album.artists?.joinToString { it.name } ?: ""}   ${pluralStringResource(R.plurals.n_time, album.songCountListened ?: 0, album.songCountListened ?: 0)}",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1,

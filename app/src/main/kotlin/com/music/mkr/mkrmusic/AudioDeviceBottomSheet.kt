@@ -104,6 +104,7 @@ import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.AudioQuality
 import com.music.mkr.constants.AudioQualityKey
+import com.music.mkr.ui.component.EqualizerDialog
 import com.music.mkr.ui.component.mkrPressFeedback
 import com.music.mkr.utils.oem.SystemMediaControlResolver
 import com.music.mkr.utils.rememberEnumPreference
@@ -152,6 +153,7 @@ fun AudioDeviceBottomSheet(
     }
     var isUserDragging by remember { mutableStateOf(false) }
     val maxVolume by remember { mutableStateOf(audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC)) }
+    var showEqualizerDialog by rememberSaveable { mutableStateOf(false) }
 
     val playerConnection = LocalPlayerConnection.current
     val service = playerConnection?.service
@@ -313,7 +315,7 @@ fun AudioDeviceBottomSheet(
                         .fillMaxWidth()
                         .padding(bottom = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.Start
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -348,36 +350,6 @@ fun AudioDeviceBottomSheet(
                                 text = "Playback destinations",
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
-
-                    // System Output Switcher Quick Button
-                    Surface(
-                        onClick = {
-                            SystemMediaControlResolver.openMediaOutputSwitcher(context)
-                            onDismiss()
-                        },
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-                        modifier = Modifier.mkrPressFeedback()
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.cast),
-                                contentDescription = "System Output",
-                                modifier = Modifier.size(15.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                            Text(
-                                text = "Cast",
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -552,9 +524,8 @@ fun AudioDeviceBottomSheet(
                                     })
                                 }
                             },
-                            onOpenSystemSwitcher = {
-                                SystemMediaControlResolver.openMediaOutputSwitcher(context)
-                                onDismiss()
+                            onOpenEqualizer = {
+                                showEqualizerDialog = true
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -578,6 +549,12 @@ fun AudioDeviceBottomSheet(
                 }
             }
         }
+    }
+
+    if (showEqualizerDialog) {
+        EqualizerDialog(
+            onDismiss = { showEqualizerDialog = false }
+        )
     }
 }
 
@@ -1170,12 +1147,12 @@ private fun OutputDestinationTile(
 }
 
 /**
- * Quick-access card for pairing Bluetooth devices or launching OEM System Output Switcher.
+ * Quick-access card for pairing Bluetooth devices or launching Equalizer.
  */
 @Composable
 private fun AudioRoutingActionsCard(
     onOpenBluetoothSettings: () -> Unit,
-    onOpenSystemSwitcher: () -> Unit,
+    onOpenEqualizer: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Surface(
@@ -1236,9 +1213,9 @@ private fun AudioRoutingActionsCard(
                     }
                 }
 
-                // System Media Switcher Button
+                // Equalizer Button
                 Surface(
-                    onClick = onOpenSystemSwitcher,
+                    onClick = onOpenEqualizer,
                     shape = RoundedCornerShape(14.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
                     border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
@@ -1255,13 +1232,13 @@ private fun AudioRoutingActionsCard(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         Icon(
-                            painter = painterResource(R.drawable.cast),
+                            painter = painterResource(R.drawable.graphic_eq),
                             contentDescription = null,
                             tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(18.dp)
                         )
                         Text(
-                            text = "System Output",
+                            text = "Equalizer",
                             style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                             color = MaterialTheme.colorScheme.onSurface,
                             maxLines = 1,

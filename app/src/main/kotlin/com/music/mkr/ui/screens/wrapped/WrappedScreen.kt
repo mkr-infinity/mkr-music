@@ -114,9 +114,19 @@ fun WrappedScreenContent(navController: NavController) {
     val lifecycleOwner = LocalLifecycleOwner.current
 
     DisposableEffect(Unit) {
-        val window = (view.context as android.app.Activity).window
-        val insetsController = WindowCompat.getInsetsController(window, view)
-        insetsController.hide(WindowInsetsCompat.Type.systemBars())
+        val activity = runCatching {
+            var ctx = view.context
+            while (ctx is android.content.ContextWrapper) {
+                if (ctx is android.app.Activity) break
+                ctx = ctx.baseContext
+            }
+            ctx as? android.app.Activity
+        }.getOrNull()
+        val window = activity?.window
+        if (window != null) {
+            val insetsController = WindowCompat.getInsetsController(window, view)
+            insetsController.hide(WindowInsetsCompat.Type.systemBars())
+        }
 
         val observer = LifecycleEventObserver { _, event ->
             when (event) {
@@ -128,7 +138,10 @@ fun WrappedScreenContent(navController: NavController) {
         lifecycleOwner.lifecycle.addObserver(observer)
 
         onDispose {
-            insetsController.show(WindowInsetsCompat.Type.systemBars())
+            if (window != null) {
+                val insetsController = WindowCompat.getInsetsController(window, view)
+                insetsController.show(WindowInsetsCompat.Type.systemBars())
+            }
             lifecycleOwner.lifecycle.removeObserver(observer)
             audioService.release()
         }
@@ -191,13 +204,56 @@ fun WrappedScreenContent(navController: NavController) {
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.Transparent)
             )
         },
-        containerColor = Color.Transparent
+        containerColor = Color(0xFF0F0620)
     ) { paddingValues ->
         WrappedBackground {
-            VerticalPager(
-                state = pagerState,
-                modifier = Modifier.fillMaxSize()
-            ) { page ->
+            if (state.isDataReady && state.topSongs.isEmpty() && state.totalMinutes == 0L) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues)
+                        .padding(32.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    androidx.compose.foundation.layout.Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(16.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.sparks),
+                            contentDescription = null,
+                            tint = Color.White,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                        androidx.compose.material3.Text(
+                            text = "Not Enough Listening Data",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = androidx.compose.ui.text.font.FontWeight.Bold,
+                            color = Color.White,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        androidx.compose.material3.Text(
+                            text = "Play music with MKR Music throughout the year to unlock your personal Wrapped recap and music statistics.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.White.copy(alpha = 0.8f),
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
+                        androidx.compose.material3.Button(
+                            onClick = onClose,
+                            colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary
+                            ),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(20.dp)
+                        ) {
+                            androidx.compose.material3.Text("Go Back")
+                        }
+                    }
+                }
+            } else {
+                VerticalPager(
+                    state = pagerState,
+                    modifier = Modifier.fillMaxSize()
+                ) { page ->
                 when (screens[page]) {
                     is WrappedScreenType.Welcome -> WrappedIntro { scope.launch { pagerState.animateScrollToPage(page = 1) } }
                     is WrappedScreenType.MinutesTease -> WrappedMinutesTease(
@@ -251,4 +307,5 @@ fun WrappedScreenContent(navController: NavController) {
             }
         }
     }
+}
 }
