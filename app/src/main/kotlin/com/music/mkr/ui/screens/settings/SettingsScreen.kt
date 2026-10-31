@@ -347,16 +347,6 @@ fun SettingsScreen(
                         onClick = { navController.navigate("settings/content") }
                     ),
                     Material3SettingsItem(
-                        key = "appearance_lyrics_animation",
-                        icon = painterResource(R.drawable.lyrics),
-                        title = { Text(stringResource(R.string.lyrics_settings)) },
-                        description = { Text(stringResource(R.string.lyrics_settings_desc)) },
-                        onClick = {
-                            SettingsHighlightManager.requestHighlight("appearance_lyrics_animation", "appearance")
-                            navController.navigate("settings/appearance")
-                        }
-                    ),
-                    Material3SettingsItem(
                         key = "content_ai_lyrics",
                         icon = painterResource(R.drawable.translate),
                         title = { Text(stringResource(R.string.ai_lyrics_translation)) },
