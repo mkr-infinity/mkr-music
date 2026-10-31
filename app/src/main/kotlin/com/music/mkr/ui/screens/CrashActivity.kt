@@ -75,7 +75,8 @@ class CrashActivity : ComponentActivity() {
         
         setContent {
             val darkTheme = isSystemInDarkTheme()
-            mkrMusicTheme(darkTheme = darkTheme) {
+            val colorScheme = if (darkTheme) androidx.compose.material3.darkColorScheme() else androidx.compose.material3.lightColorScheme()
+            MaterialTheme(colorScheme = colorScheme) {
                 CrashScreen(
                     crashLog = crashLog,
                     onClose = { finishAffinity() },

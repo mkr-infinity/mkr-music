@@ -1476,25 +1476,27 @@ class MainActivity : ComponentActivity() {
                                 }
                             } else {
                                 if (currentRoute != "wrapped" && currentRoute != "update" && currentRoute != "listen_together/chat") {
-                                    BottomSheetPlayer(
-                                        state = playerBottomSheetState,
-                                        navController = navController,
-                                        pureBlack = pureBlack
-                                    )
-                                }
+                                    Box(modifier = Modifier.fillMaxWidth()) {
+                                        BottomSheetPlayer(
+                                            state = playerBottomSheetState,
+                                            navController = navController,
+                                            pureBlack = pureBlack
+                                        )
 
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .align(Alignment.BottomCenter)
-                                        .height(bottomInsetDp)
-                                        // Use graphicsLayer for background color changes
-                                        .graphicsLayer {
-                                            val progress = playerBottomSheetState.progress
-                                            alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar)) 0f else 1f
-                                        }
-                                        .background(baseBg)
-                                )
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .align(Alignment.BottomCenter)
+                                                .height(bottomInsetDp)
+                                                // Use graphicsLayer for background color changes
+                                                .graphicsLayer {
+                                                    val progress = playerBottomSheetState.progress
+                                                    alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar)) 0f else 1f
+                                                }
+                                                .background(baseBg)
+                                        )
+                                    }
+                                }
                             }
                         },
                         modifier = Modifier

@@ -2526,17 +2526,26 @@ class MusicService :
         reason: Int,
     ) {
         val rawMeta = mediaItem?.metadata ?: player.currentMetadata
-        val resolvedMeta = if (rawMeta != null) {
-            val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
-            if (dbSong != null) {
-                rawMeta.copy(
-                    liked = dbSong.song.liked,
-                    likedDate = dbSong.song.likedDate,
-                    inLibrary = dbSong.song.inLibrary
-                )
-            } else rawMeta
-        } else null
-        currentMediaMetadata.value = resolvedMeta
+        currentMediaMetadata.value = rawMeta
+        if (rawMeta != null) {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
+                    if (dbSong != null && currentMediaMetadata.value?.id == rawMeta.id) {
+                        withContext(Dispatchers.Main) {
+                            if (currentMediaMetadata.value?.id == rawMeta.id) {
+                                currentMediaMetadata.value = rawMeta.copy(
+                                    liked = dbSong.song.liked,
+                                    likedDate = dbSong.song.likedDate,
+                                    inLibrary = dbSong.song.inLibrary
+                                )
+                                updateNotification()
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
         cancelPendingDelayedCacheTimer()
         cancelPendingDelayedHistoryTimer()
         currentRecordedHistoryMediaId = null
@@ -4667,16 +4676,25 @@ class MusicService :
         // Immediately sync currentMediaMetadata and notification for the newly active song on nextPlayer
         val nextMeta = nextPlayer.currentMetadata
         if (nextMeta != null) {
-            val dbSong = synchronized(database) { database.getSongByIdBlocking(nextMeta.id) }
-            val resolvedMeta = if (dbSong != null) {
-                nextMeta.copy(
-                    liked = dbSong.song.liked,
-                    likedDate = dbSong.song.likedDate,
-                    inLibrary = dbSong.song.inLibrary
-                )
-            } else nextMeta
-            currentMediaMetadata.value = resolvedMeta
+            currentMediaMetadata.value = nextMeta
             updateNotification()
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val dbSong = synchronized(database) { database.getSongByIdBlocking(nextMeta.id) }
+                    if (dbSong != null && currentMediaMetadata.value?.id == nextMeta.id) {
+                        withContext(Dispatchers.Main) {
+                            if (currentMediaMetadata.value?.id == nextMeta.id) {
+                                currentMediaMetadata.value = nextMeta.copy(
+                                    liked = dbSong.song.liked,
+                                    likedDate = dbSong.song.likedDate,
+                                    inLibrary = dbSong.song.inLibrary
+                                )
+                                updateNotification()
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
         }
 
         fadingPlayer?.removeListener(this)

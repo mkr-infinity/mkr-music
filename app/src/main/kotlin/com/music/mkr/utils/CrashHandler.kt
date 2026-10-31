@@ -24,6 +24,24 @@ class CrashHandler private constructor(
 
     override fun uncaughtException(thread: Thread, throwable: Throwable) {
         try {
+            val processName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                android.app.Application.getProcessName()
+            } else {
+                try {
+                    val pid = android.os.Process.myPid()
+                    val am = applicationContext.getSystemService(Context.ACTIVITY_SERVICE) as? android.app.ActivityManager
+                    am?.runningAppProcesses?.firstOrNull { it.pid == pid }?.processName ?: ""
+                } catch (_: Exception) { "" }
+            }
+
+            if (processName.endsWith(":crash")) {
+                Timber.e(throwable, "Crash occurred inside :crash process, terminating to avoid infinite loop")
+                defaultHandler?.uncaughtException(thread, throwable)
+                android.os.Process.killProcess(android.os.Process.myPid())
+                exitProcess(1)
+                return
+            }
+
             val crashLog = buildCrashLog(throwable)
             Timber.e(throwable, "App crashed")
             

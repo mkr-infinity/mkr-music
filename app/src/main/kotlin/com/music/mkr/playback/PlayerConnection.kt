@@ -28,6 +28,7 @@ import com.music.mkr.playback.queues.YouTubeQueue
 import com.music.innertube.pages.RadioChip
 import com.music.mkr.utils.reportException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,6 +36,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -523,17 +525,25 @@ class PlayerConnection(
         reason: Int,
     ) {
         val rawMeta = mediaItem?.metadata ?: (try { player.currentMetadata } catch (e: Exception) { null })
-        val resolvedMeta = if (rawMeta != null) {
-            val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
-            if (dbSong != null) {
-                rawMeta.copy(
-                    liked = dbSong.song.liked,
-                    likedDate = dbSong.song.likedDate,
-                    inLibrary = dbSong.song.inLibrary
-                )
-            } else rawMeta
-        } else null
-        mediaMetadata.value = resolvedMeta
+        mediaMetadata.value = rawMeta
+        if (rawMeta != null) {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
+                    if (dbSong != null && mediaMetadata.value?.id == rawMeta.id) {
+                        withContext(Dispatchers.Main) {
+                            if (mediaMetadata.value?.id == rawMeta.id) {
+                                mediaMetadata.value = rawMeta.copy(
+                                    liked = dbSong.song.liked,
+                                    likedDate = dbSong.song.likedDate,
+                                    inLibrary = dbSong.song.inLibrary
+                                )
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
         currentMediaItemIndex.value = try { player.currentMediaItemIndex } catch (e: Exception) { -1 }
         currentWindowIndex.value = try { player.getCurrentQueueIndex() } catch (e: Exception) { -1 }
         updateCanSkipPreviousAndNext()
@@ -548,17 +558,25 @@ class PlayerConnection(
         reason: Int,
     ) {
         val rawMeta = try { player.currentMetadata } catch (e: Exception) { null }
-        val resolvedMeta = if (rawMeta != null) {
-            val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
-            if (dbSong != null) {
-                rawMeta.copy(
-                    liked = dbSong.song.liked,
-                    likedDate = dbSong.song.likedDate,
-                    inLibrary = dbSong.song.inLibrary
-                )
-            } else rawMeta
-        } else null
-        mediaMetadata.value = resolvedMeta
+        mediaMetadata.value = rawMeta
+        if (rawMeta != null) {
+            scope.launch(Dispatchers.IO) {
+                try {
+                    val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
+                    if (dbSong != null && mediaMetadata.value?.id == rawMeta.id) {
+                        withContext(Dispatchers.Main) {
+                            if (mediaMetadata.value?.id == rawMeta.id) {
+                                mediaMetadata.value = rawMeta.copy(
+                                    liked = dbSong.song.liked,
+                                    likedDate = dbSong.song.likedDate,
+                                    inLibrary = dbSong.song.inLibrary
+                                )
+                            }
+                        }
+                    }
+                } catch (_: Exception) {}
+            }
+        }
         queueWindows.value = try { player.getQueueWindows() } catch (e: Exception) { emptyList() }
         queueTitle.value = service.queueTitle
         currentMediaItemIndex.value = try { player.currentMediaItemIndex } catch (e: Exception) { -1 }

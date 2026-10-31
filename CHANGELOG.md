@@ -45,6 +45,9 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🛠️ Fixed
+- **Tablet Playback & Track Transition Stability:** Shifted metadata Room database lookups inside ExoPlayer media item transitions from the Main Thread to background IO coroutines (`Dispatchers.IO`), eliminating Room main-thread database access exceptions when starting playback on tablets and mobile devices.
+- **Recursive Crash Screen Loop Prevention:** Hardened `CrashHandler` with active process-name inspection to immediately terminate recursive crashes originating from the `:crash` process without re-triggering `CrashActivity`, and switched `CrashActivity` to self-contained MaterialTheme to eliminate cross-process DataStore collisions.
+- **Tablet Landscape Scaffold Layout:** Wrapped the tablet navigation rail and bottom player bar within a dedicated bounded `Box` layout in `MainActivity`, preventing measure constraint mismatches and unboxed child crashes.
 - **Task Clear & Cold Startup Crash (`CrashActivity`):** Resolved root cause crashes occurring when clearing the app from Recents after playing a track by adding `ContextCompat.RECEIVER_EXPORTED` flags across all audio, volume, bluetooth, and screen broadcast receivers for Android 14+ (targetSdk 37) compatibility, guarding `PlayerConnection` playback property initialization against uninitialized ExoPlayer state, and pointing all launcher activity aliases directly to `MainActivity`.
 - **Second-Launch Startup Crash:** Resolved window and splash screen collision on second launch after onboarding completion, ensuring smooth immediate entry into the main application.
 - **Consecutive Skip & Like Synchronization:** Fixed desynchronization when skipping tracks and liking songs consecutively by propagating active metadata during ExoPlayer crossfade swaps, resolving the active track's like state from the Room database upon media item transitions, and synchronizing player state flows eagerly.
