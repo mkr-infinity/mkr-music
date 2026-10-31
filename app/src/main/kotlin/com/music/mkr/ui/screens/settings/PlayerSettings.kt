@@ -262,11 +262,11 @@ fun PlayerSettings(
     }
     val (useAppleMiniPlayer, onUseAppleMiniPlayerChange) = rememberPreference(
         UseAppleMiniPlayerKey,
-        defaultValue = true
+        defaultValue = false
     )
     val (useNewMiniPlayerDesign, onUseNewMiniPlayerDesignChange) = rememberPreference(
         UseNewMiniPlayerDesignKey,
-        defaultValue = false
+        defaultValue = true
     )
     val (liquidMiniPlayer, onLiquidMiniPlayerChange) = rememberPreference(
         LiquidMiniPlayerKey,
