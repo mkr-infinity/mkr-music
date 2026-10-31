@@ -2316,20 +2316,20 @@ class MusicService :
         val fallbackThumb = currentItem?.mediaMetadata?.artworkUri?.toString()
 
         scope.launch(Dispatchers.IO) {
-            try {
-                val mediaMetadata = initialMetadata
-                    ?: currentItemId?.takeIf { it.isNotBlank() }?.let { id ->
-                        val fromDb = synchronized(database) { database.getSongByIdBlocking(id) }
-                        fromDb?.toMediaMetadata() ?: com.music.mkr.models.MediaMetadata(
-                            id = id,
-                            title = fallbackTitle,
-                            artists = fallbackArtist?.let { listOf(com.music.mkr.models.MediaMetadata.Artist(id = null, name = it)) } ?: emptyList(),
-                            duration = fallbackDuration,
-                            thumbnailUrl = fallbackThumb
-                        )
-                    }
-                    ?: return@launch
+            val mediaMetadata = initialMetadata
+                ?: currentItemId?.takeIf { it.isNotBlank() }?.let { id ->
+                    val fromDb = synchronized(database) { database.getSongByIdBlocking(id) }
+                    fromDb?.toMediaMetadata() ?: com.music.mkr.models.MediaMetadata(
+                        id = id,
+                        title = fallbackTitle,
+                        artists = fallbackArtist?.let { listOf(com.music.mkr.models.MediaMetadata.Artist(id = null, name = it)) } ?: emptyList(),
+                        duration = fallbackDuration,
+                        thumbnailUrl = fallbackThumb
+                    )
+                }
+                ?: return@launch
 
+            try {
                 var currentSongEntity = synchronized(database) { database.getSongByIdBlocking(mediaMetadata.id) }
                 if (currentSongEntity == null) {
                     synchronized(database) {
