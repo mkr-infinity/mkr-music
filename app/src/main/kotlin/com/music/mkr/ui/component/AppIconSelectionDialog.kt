@@ -13,6 +13,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -132,7 +133,7 @@ fun AppIconSelectionDialog(
                         .heightIn(min = 160.dp, max = gridMaxHeight)
                 ) {
                     LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = 130.dp),
+                        columns = GridCells.Adaptive(minSize = 136.dp),
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -185,9 +186,14 @@ fun AppIconSelectionDialog(
                                 Text(
                                     text = "${pendingIcon?.title} selected",
                                     style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.8f),
+                                    color = MaterialTheme.colorScheme.onTertiaryContainer.copy(alpha = 0.85f),
                                     maxLines = 1,
-                                    overflow = TextOverflow.Ellipsis
+                                    softWrap = false,
+                                    modifier = Modifier.basicMarquee(
+                                        iterations = Int.MAX_VALUE,
+                                        initialDelayMillis = 1500,
+                                        velocity = 25.dp
+                                    )
                                 )
                             }
                             Spacer(modifier = Modifier.width(8.dp))
@@ -312,40 +318,66 @@ private fun IconGridCard(
                 },
                 textAlign = TextAlign.Center,
                 maxLines = 1,
-                overflow = TextOverflow.Ellipsis
+                softWrap = false,
+                modifier = Modifier
+                    .padding(horizontal = 4.dp)
+                    .basicMarquee(
+                        iterations = Int.MAX_VALUE,
+                        initialDelayMillis = 2000,
+                        velocity = 25.dp
+                    )
             )
 
-            Spacer(modifier = Modifier.height(2.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // Creator description style with platform logo
-            Row(
+            // Complete creator attribution pill with platform logo and non-truncated handle
+            Surface(
+                shape = RoundedCornerShape(10.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.55f),
+                border = BorderStroke(
+                    0.5.dp,
+                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+                ),
                 modifier = Modifier
-                    .clip(RoundedCornerShape(8.dp))
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(10.dp))
                     .clickable(
                         role = Role.Button,
                         onClickLabel = "Open ${icon.attribution.username} on ${icon.attribution.platform.platformName}"
                     ) {
                         onOpenProfile(icon.attribution)
                     }
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
             ) {
-                Icon(
-                    painter = painterResource(icon.attribution.platform.iconRes),
-                    contentDescription = icon.attribution.platform.platformName,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(13.dp)
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                    text = "by ${icon.attribution.username}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 11.sp,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 6.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        painter = painterResource(icon.attribution.platform.iconRes),
+                        contentDescription = icon.attribution.platform.platformName,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(12.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "by ${icon.attribution.username}",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 10.5.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        maxLines = 1,
+                        softWrap = false,
+                        modifier = Modifier.basicMarquee(
+                            iterations = Int.MAX_VALUE,
+                            initialDelayMillis = 1500,
+                            velocity = 25.dp
+                        )
+                    )
+                }
             }
         }
     }
