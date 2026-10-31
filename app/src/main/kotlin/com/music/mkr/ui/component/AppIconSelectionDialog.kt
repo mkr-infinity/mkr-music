@@ -6,8 +6,10 @@
 package com.music.mkr.ui.component
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +26,8 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -43,6 +47,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -52,6 +57,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.DialogProperties
 import com.music.mkr.R
 import com.music.mkr.utils.AppIcon
 import com.music.mkr.utils.CreatorAttribution
@@ -67,9 +73,20 @@ fun AppIconSelectionDialog(
 ) {
     val icons = remember { AppIcon.entries.toList() }
     val context = LocalContext.current
+    val configuration = LocalConfiguration.current
+    val screenHeight = configuration.screenHeightDp.dp
+    val screenWidth = configuration.screenWidthDp.dp
+
+    val dialogMaxWidth = if (screenWidth >= 600.dp) 540.dp else 400.dp
+    val gridMaxHeight = (screenHeight * 0.52f).coerceIn(220.dp, 460.dp)
 
     AlertDialog(
         onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+        modifier = Modifier
+            .widthIn(min = 280.dp, max = dialogMaxWidth)
+            .fillMaxWidth(0.92f)
+            .padding(horizontal = 16.dp, vertical = 24.dp),
         title = {
             Column {
                 Row(
@@ -104,14 +121,18 @@ fun AppIconSelectionDialog(
             }
         },
         text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .wrapContentHeight()
+            ) {
                 Box(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .heightIn(max = 420.dp)
+                        .heightIn(min = 160.dp, max = gridMaxHeight)
                 ) {
                     LazyVerticalGrid(
-                        columns = GridCells.Adaptive(minSize = 135.dp),
+                        columns = GridCells.Adaptive(minSize = 130.dp),
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(10.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -136,8 +157,8 @@ fun AppIconSelectionDialog(
                 // Banner inside dialog when a new pending icon is selected
                 AnimatedVisibility(
                     visible = pendingIcon != null && pendingIcon != currentIcon,
-                    enter = fadeIn(),
-                    exit = fadeOut()
+                    enter = fadeIn() + expandVertically(),
+                    exit = fadeOut() + shrinkVertically()
                 ) {
                     Surface(
                         shape = RoundedCornerShape(16.dp),

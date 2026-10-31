@@ -175,8 +175,17 @@ class WelcomeActivity : ComponentActivity() {
             com.music.mkr.utils.IconUtils.applyPendingIconIfAny(this@WelcomeActivity)
         }
 
+        val sp = getSharedPreferences("app_state", Context.MODE_PRIVATE)
+        val hasCompletedOnboardingSp = sp.getBoolean("has_completed_onboarding", false)
+
         val isFirstRun = dataStore.get(IsFirstRunKey, true)
         val forceShow = intent.getBooleanExtra("FORCE_SHOW", false)
+
+        if (!isFirstRun && !hasCompletedOnboardingSp) {
+            sp.edit().putBoolean("has_completed_onboarding", true).apply()
+        }
+
+        val completedOnboarding = !isFirstRun || hasCompletedOnboardingSp
 
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
             val appLang = dataStore.get(AppLanguageKey, SYSTEM_DEFAULT)
@@ -187,7 +196,7 @@ class WelcomeActivity : ComponentActivity() {
             com.music.mkr.utils.setAppLocale(this, locale)
         }
 
-        if (!isFirstRun && !forceShow) {
+        if (completedOnboarding && !forceShow) {
             finishOnboarding()
             return
         }
@@ -201,6 +210,10 @@ class WelcomeActivity : ComponentActivity() {
                 ) {
                     WelcomePagerScreen(onFinished = {
                         lifecycleScope.launch {
+                            getSharedPreferences("app_state", Context.MODE_PRIVATE)
+                                .edit()
+                                .putBoolean("has_completed_onboarding", true)
+                                .apply()
                             dataStore.edit { it[IsFirstRunKey] = false }
                             if (forceShow) {
                                 finish()

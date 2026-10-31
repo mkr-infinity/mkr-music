@@ -206,26 +206,11 @@ fun AppearanceSettings(
         if (newIcon == currentAppIcon) {
             // Selecting current active icon clears pending choice
             onPendingAppIconKeyChange("")
-            coroutineScope.launch {
-                snackbarHostState.currentSnackbarData?.dismiss()
-            }
             return
         }
 
         // Save new choice as pending icon
         onPendingAppIconKeyChange(newIcon.key)
-
-        coroutineScope.launch {
-            snackbarHostState.currentSnackbarData?.dismiss()
-            val result = snackbarHostState.showSnackbar(
-                message = "${newIcon.title} selected. Restart app to update launcher icon.",
-                actionLabel = "Restart now",
-                duration = SnackbarDuration.Indefinite
-            )
-            if (result == SnackbarResult.ActionPerformed) {
-                applyIconAndRestart(newIcon)
-            }
-        }
     }
 
     fun handleIconChange(enabled: Boolean) {

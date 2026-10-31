@@ -397,6 +397,11 @@ class MainActivity : ComponentActivity() {
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_LTR
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
+        getSharedPreferences("app_state", Context.MODE_PRIVATE)
+            .edit()
+            .putBoolean("has_completed_onboarding", true)
+            .apply()
+
         // Initialize Listen Together manager
         listenTogetherManager.initialize()
 

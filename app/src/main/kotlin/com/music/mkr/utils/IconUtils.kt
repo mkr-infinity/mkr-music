@@ -13,8 +13,11 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import androidx.annotation.DrawableRes
 import androidx.datastore.preferences.core.edit
+import com.music.mkr.MainActivity
 import com.music.mkr.R
+import com.music.mkr.WelcomeActivity
 import com.music.mkr.constants.AppIconKey
+import com.music.mkr.constants.IsFirstRunKey
 import com.music.mkr.constants.PendingAppIconKey
 import kotlinx.coroutines.flow.first
 import timber.log.Timber
@@ -276,10 +279,18 @@ object IconUtils {
     fun restartAppGracefully(activity: Activity) {
         if (!restartLock.compareAndSet(false, true)) return
         try {
-            val pm = activity.packageManager
-            val intent = pm.getLaunchIntentForPackage(activity.packageName)
-            val componentName = intent?.component ?: ComponentName(activity.packageName, "com.music.mkr.WelcomeActivity")
-            val restartIntent = Intent.makeRestartActivityTask(componentName)
+            val isFirstRun = activity.dataStore.get(IsFirstRunKey, true)
+            val sp = activity.getSharedPreferences("app_state", Context.MODE_PRIVATE)
+            val hasCompletedOnboardingSp = sp.getBoolean("has_completed_onboarding", false)
+            val completedOnboarding = !isFirstRun || hasCompletedOnboardingSp || activity is MainActivity
+
+            val targetClass = if (completedOnboarding) {
+                MainActivity::class.java
+            } else {
+                WelcomeActivity::class.java
+            }
+
+            val restartIntent = Intent.makeRestartActivityTask(ComponentName(activity, targetClass))
             activity.startActivity(restartIntent)
             activity.finish()
         } catch (e: Exception) {
