@@ -591,10 +591,10 @@ private fun StatsSummarySection(
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
         // Hero Total Time Card
-        ElevatedCard(
+        Card(
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.elevatedCardColors(
+            colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
             ),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
@@ -747,12 +747,12 @@ private fun ListeningHabitsSection(
 ) {
     if (habits.activeDays <= 0) return
 
-    ElevatedCard(
+    Card(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp),
         shape = RoundedCornerShape(24.dp),
-        colors = CardDefaults.elevatedCardColors(
+        colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
@@ -889,12 +889,13 @@ private fun StatsHighlightsSection(
             .padding(horizontal = 16.dp, vertical = 6.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp)
     ) {
-        topSong?.let { song ->
-            ElevatedCard(
+        if (topSong != null) {
+            val song = topSong
+            Card(
                 onClick = onPlayTopSong,
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.elevatedCardColors(
+                colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 ),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
@@ -970,12 +971,13 @@ private fun StatsHighlightsSection(
             }
         }
 
-        topArtist?.let { artist ->
-            ElevatedCard(
+        if (topArtist != null) {
+            val artist = topArtist
+            Card(
                 onClick = { navController.navigate("artist/${artist.id}") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.elevatedCardColors(
+                colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 ),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))
@@ -1037,12 +1039,13 @@ private fun StatsHighlightsSection(
             }
         }
 
-        topAlbum?.let { album ->
-            ElevatedCard(
+        if (topAlbum != null) {
+            val album = topAlbum
+            Card(
                 onClick = { navController.navigate("album/${album.id}") },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.elevatedCardColors(
+                colors = CardDefaults.cardColors(
                     containerColor = MaterialTheme.colorScheme.surfaceContainer
                 ),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.15f))

@@ -127,10 +127,6 @@ constructor(
     val allTimeAlbumsCount = database.getUniqueAlbumCountInRange(0, Long.MAX_VALUE)
         .stateIn(viewModelScope, SharingStarted.Lazily, 0)
 
-    val totalPlaysCount = mostPlayedSongsStats.map { songs ->
-        songs.sumOf { it.songCountListened }
-    }.stateIn(viewModelScope, SharingStarted.Lazily, 0)
-
     val listeningHabits = database.events().map { eventList ->
         if (eventList.isEmpty()) {
             ListeningHabits()
@@ -220,6 +216,10 @@ constructor(
                         if (hideVideoSongs) songs.filter { !it.isVideo } else songs
                     }
             }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+
+    val totalPlaysCount = mostPlayedSongsStats.map { songs ->
+        songs.sumOf { it.songCountListened }
+    }.stateIn(viewModelScope, SharingStarted.Lazily, 0)
 
     val mostPlayedSongs =
         combine(

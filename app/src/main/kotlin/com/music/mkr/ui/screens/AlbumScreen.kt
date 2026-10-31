@@ -420,7 +420,7 @@ fun AlbumScreen(
                     val isSongDownloaded = downloads[songWrapper.item.id]?.state == Download.STATE_COMPLETED
 
                     AlbumTrackCard(
-                        song = songWrapper.item.song,
+                        song = songWrapper.item,
                         trackNumber = index + 1,
                         isActive = isSongActive,
                         isPlaying = isPlaying,
@@ -522,8 +522,8 @@ fun AlbumScreen(
                         item(key = "album_empty") {
                             AlbumStateCard(
                                 iconRes = R.drawable.music_note,
-                                title = stringResource(R.string.album_is_empty),
-                                description = stringResource(R.string.no_songs_found),
+                                title = stringResource(R.string.empty_album),
+                                description = stringResource(R.string.empty_album_desc),
                                 modifier = Modifier
                                     .fillParentMaxSize()
                                     .padding(top = systemBarsTopPadding + 48.dp, start = 24.dp, end = 24.dp)
@@ -534,11 +534,8 @@ fun AlbumScreen(
                         item(key = "album_error") {
                             AlbumStateCard(
                                 iconRes = R.drawable.error,
-                                title = stringResource(R.string.network_error),
-                                description = stringResource(
-                                    if (albumWithSongs?.album?.isLocal == true) R.string.local_album_not_found
-                                    else R.string.check_internet_connection
-                                ),
+                                title = stringResource(R.string.album_not_found),
+                                description = stringResource(R.string.album_not_found_desc),
                                 onRetry = viewModel::retry,
                                 modifier = Modifier
                                     .fillParentMaxSize()
@@ -1105,7 +1102,6 @@ private fun AlbumCommandDeck(
                 ) {
                     if (isPlaying) {
                         PlayingIndicator(
-                            isPlaying = true,
                             color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(18.dp)
                         )
@@ -1357,7 +1353,6 @@ private fun AlbumTrackCard(
                 ) {
                     if (isActive) {
                         PlayingIndicator(
-                            isPlaying = isPlaying,
                             color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.size(16.dp)
                         )
@@ -1381,7 +1376,7 @@ private fun AlbumTrackCard(
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
                     Text(
-                        text = song.title,
+                        text = song.song.title,
                         style = MaterialTheme.typography.bodyLarge.copy(
                             fontWeight = if (isActive) FontWeight.Bold else FontWeight.SemiBold,
                             fontSize = 15.sp
@@ -1392,7 +1387,7 @@ private fun AlbumTrackCard(
                         modifier = Modifier.weight(1f, fill = false)
                     )
 
-                    if (song.explicit) {
+                    if (song.song.explicit) {
                         Icon(
                             painter = painterResource(R.drawable.explicit),
                             contentDescription = "Explicit",
@@ -1428,7 +1423,7 @@ private fun AlbumTrackCard(
                 }
 
                 Text(
-                    text = makeTimeString(song.duration * 1000L),
+                    text = makeTimeString(song.song.duration * 1000L),
                     style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

@@ -322,7 +322,7 @@ fun ArtistScreen(
                                 title = song.song.title,
                                 subtitle = artistsSubtitle,
                                 thumbnailUrl = song.song.thumbnailUrl,
-                                durationText = song.song.durationText,
+                                durationText = if (song.song.duration > 0) makeTimeString(song.song.duration.toLong() * 1000L) else null,
                                 explicit = song.song.explicit,
                                 isActive = song.id == mediaMetadata?.id,
                                 isPlaying = isPlaying,
