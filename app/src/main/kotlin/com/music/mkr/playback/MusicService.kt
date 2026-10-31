@@ -2298,11 +2298,11 @@ class MusicService :
             ?: currentItem?.metadata
             ?: currentItem?.mediaId?.takeIf { it.isNotBlank() }?.let { id ->
                 val fromDb = synchronized(database) { database.getSongByIdBlocking(id) }
-                fromDb?.toMediaMetadata() ?: MediaMetadata(
+                fromDb?.toMediaMetadata() ?: com.music.mkr.models.MediaMetadata(
                     id = id,
                     title = currentItem.mediaMetadata.title?.toString() ?: "Unknown",
                     artists = (currentItem.mediaMetadata.artist ?: currentItem.mediaMetadata.subtitle)?.toString()?.let {
-                        listOf(MediaMetadata.Artist(id = null, name = it))
+                        listOf(com.music.mkr.models.MediaMetadata.Artist(id = null, name = it))
                     } ?: emptyList(),
                     duration = (player.duration.coerceAtLeast(0) / 1000).toInt(),
                     thumbnailUrl = currentItem.mediaMetadata.artworkUri?.toString()
@@ -3552,8 +3552,8 @@ class MusicService :
             val metadata = withContext(Dispatchers.Main) {
                 player.findMediaItemById(mediaId)?.metadata
             }
+            val song = database.song(mediaId).first()
             database.query {
-                val song = song(mediaId).first()
                 if (song == null && metadata != null) {
                     insert(metadata)
                 }
@@ -3913,7 +3913,7 @@ class MusicService :
         playbackStats: PlaybackStats,
     ) {
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
-        val historyDurationMs = dataStore[HistoryDuration]?.times(1000f) ?: 5000f
+        val historyDurationMs = (dataStore[HistoryDuration]?.times(1000f) ?: 5000f).toLong()
 
         if (playbackStats.totalPlayTimeMs >= historyDurationMs &&
             !dataStore.get(PauseListenHistoryKey, false)
