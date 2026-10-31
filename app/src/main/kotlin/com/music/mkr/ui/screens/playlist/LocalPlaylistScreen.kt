@@ -186,6 +186,7 @@ fun LocalPlaylistScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val playlist by viewModel.playlist.collectAsState()
+    val isLocalFiles = viewModel.playlistId == "0"
     val songs by viewModel.playlistSongs.collectAsState()
     val mutableSongs = remember { mutableStateListOf<PlaylistSong>() }
     val playlistLength =
@@ -480,16 +481,48 @@ fun LocalPlaylistScreen(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime).asPaddingValues(),
         ) {
-            playlist?.let { playlist ->
-                if (playlist.songCount == 0 && playlist.playlist.remoteSongCount == 0) {
+            val isEmpty = if (isLocalFiles) {
+                filteredSongs.isEmpty()
+            } else {
+                playlist == null || (playlist?.songCount == 0 && playlist?.playlist?.remoteSongCount == 0)
+            }
+
+            if (isEmpty) {
+                if (isSearching) {
+                    item(key = "no_results") {
+                        EmptyPlaceholder(
+                            icon = R.drawable.search,
+                            text = stringResource(R.string.no_results_found),
+                            modifier = Modifier
+                                .fillParentMaxSize()
+                                .animateItem()
+                        )
+                    }
+                } else if (isLocalFiles) {
+                    item(key = "empty_local_files") {
+                        EmptyPlaceholder(
+                            icon = R.drawable.snippet_folder,
+                            text = "Nothing found",
+                            description = "Your local music files will appear here.",
+                            modifier = Modifier
+                                .fillParentMaxSize()
+                                .animateItem()
+                        )
+                    }
+                } else {
                     item(key = "empty_placeholder") {
                         EmptyPlaceholder(
                             icon = R.drawable.music_note,
                             text = stringResource(R.string.playlist_is_empty),
-                            modifier = Modifier.animateItem()
+                            description = stringResource(R.string.empty_playlist_desc),
+                            modifier = Modifier
+                                .fillParentMaxSize()
+                                .animateItem()
                         )
                     }
-                } else {
+                }
+            } else {
+                playlist?.let { playlist ->
                     if (!isSearching) {
                         item(key = "playlist_header") {
                             LocalPlaylistHeader(
@@ -759,8 +792,8 @@ fun LocalPlaylistScreen(
                             .fillMaxWidth()
                             .focusRequester(focusRequester)
                     )
-                } else if (showTopBarTitle) {
-                    Text(playlist?.playlist?.name.orEmpty())
+                } else if (showTopBarTitle || isLocalFiles) {
+                    Text(if (isLocalFiles) stringResource(R.string.library_local_files) else playlist?.playlist?.name.orEmpty())
                 }
             },
             navigationIcon = {
