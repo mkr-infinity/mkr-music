@@ -264,15 +264,9 @@ private fun DeveloperHeroCard(
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(7.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                    )
                     Text(
                         text = GitHubConfig.DEV_ROLE,
                         style = MaterialTheme.typography.labelMedium,

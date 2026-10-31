@@ -2292,7 +2292,23 @@ class MusicService :
     }
 
     fun toggleLike() {
-        val mediaMetadata = currentMediaMetadata.value ?: player.currentMetadata ?: return
+        val currentItem = player.currentMediaItem
+        val mediaMetadata = currentMediaMetadata.value
+            ?: player.currentMetadata
+            ?: currentItem?.metadata
+            ?: currentItem?.mediaId?.takeIf { it.isNotBlank() }?.let { id ->
+                val fromDb = synchronized(database) { database.getSongByIdBlocking(id) }
+                fromDb?.toMediaMetadata() ?: MediaMetadata(
+                    id = id,
+                    title = currentItem.mediaMetadata.title?.toString() ?: "Unknown",
+                    artists = (currentItem.mediaMetadata.artist ?: currentItem.mediaMetadata.subtitle)?.toString()?.let {
+                        listOf(MediaMetadata.Artist(id = null, name = it))
+                    } ?: emptyList(),
+                    duration = (player.duration.coerceAtLeast(0) / 1000).toInt(),
+                    thumbnailUrl = currentItem.mediaMetadata.artworkUri?.toString()
+                )
+            } ?: return
+
         scope.launch(Dispatchers.IO) {
             try {
                 val requestedSong = synchronized(database) {
@@ -2326,8 +2342,14 @@ class MusicService :
                         false
                     )
                 }
+
+                val updatedMetadata = mediaMetadata.copy(
+                    liked = requestedSong.liked,
+                    likedDate = requestedSong.likedDate,
+                    inLibrary = requestedSong.inLibrary
+                )
                 withContext(Dispatchers.Main) {
-                    currentMediaMetadata.value = player.currentMetadata
+                    currentMediaMetadata.value = updatedMetadata
                 }
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Error in toggleLike for ${mediaMetadata.id}")
@@ -2481,6 +2503,7 @@ class MusicService :
         mediaItem: MediaItem?,
         reason: Int,
     ) {
+        currentMediaMetadata.value = mediaItem?.metadata ?: player.currentMetadata
         cancelPendingDelayedCacheTimer()
         if (mediaItem != null) {
             scheduleDelayedCache(mediaItem.mediaId)

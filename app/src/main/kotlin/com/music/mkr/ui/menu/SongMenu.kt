@@ -309,7 +309,13 @@ fun SongMenu(
             IconButton(
                 onClick = {
                     coroutineScope.launch(Dispatchers.IO) {
-                        val s = song.song.toggleLike()
+                        var currentSongEntity = database.getSongByIdBlocking(song.id)
+                        if (currentSongEntity == null) {
+                            database.insert(song.toMediaMetadata())
+                            currentSongEntity = database.getSongByIdBlocking(song.id)
+                        }
+                        val entityToToggle = currentSongEntity?.song ?: song.song
+                        val s = entityToToggle.toggleLike()
                         database.update(s)
                         syncUtils.likeSong(s)
                     }

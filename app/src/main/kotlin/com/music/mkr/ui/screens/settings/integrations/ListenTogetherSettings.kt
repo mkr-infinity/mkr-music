@@ -78,6 +78,8 @@ import com.music.mkr.constants.ListenTogetherSmartResyncKey
 import com.music.mkr.constants.ListenTogetherSyncVolumeKey
 import com.music.mkr.constants.ListenTogetherUsernameKey
 import com.music.mkr.constants.ListenTogetherAvatarIndexKey
+import com.music.mkr.constants.ListenTogetherInTopBarKey
+import com.music.mkr.constants.ShowListenTogetherHomeShortcutKey
 import com.music.mkr.listentogether.ListenTogetherEvent
 import com.music.mkr.listentogether.ListenTogetherServer
 import com.music.mkr.listentogether.ListenTogetherServers
@@ -117,6 +119,8 @@ fun ListenTogetherSettings(
     var autoApproval by rememberPreference(ListenTogetherAutoApprovalKey, false)
     var syncHostVolume by rememberPreference(ListenTogetherSyncVolumeKey, true)
     var smartResync by rememberPreference(ListenTogetherSmartResyncKey, true)
+    var showHomeShortcut by rememberPreference(ShowListenTogetherHomeShortcutKey, true)
+    var listenTogetherInTopBar by rememberPreference(ListenTogetherInTopBarKey, true)
     
     var showServerUrlDialog by rememberSaveable { mutableStateOf(false) }
     var showUsernameDialog by rememberSaveable { mutableStateOf(false) }
@@ -518,6 +522,52 @@ fun ListenTogetherSettings(
                         )
                     },
                     onClick = { smartResync = !smartResync }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.group),
+                    title = { Text("Show Shortcut on Home Screen") },
+                    description = {
+                        Text("Display floating Listen Together action button on the home screen")
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = showHomeShortcut,
+                            onCheckedChange = { showHomeShortcut = it },
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (showHomeShortcut) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                )
+                            }
+                        )
+                    },
+                    onClick = { showHomeShortcut = !showHomeShortcut }
+                ),
+                Material3SettingsItem(
+                    icon = painterResource(R.drawable.link),
+                    title = { Text("Show in Top App Bar") },
+                    description = {
+                        Text("Display Listen Together quick access in the top navigation bar")
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = listenTogetherInTopBar,
+                            onCheckedChange = { listenTogetherInTopBar = it },
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (listenTogetherInTopBar) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize),
+                                )
+                            }
+                        )
+                    },
+                    onClick = { listenTogetherInTopBar = !listenTogetherInTopBar }
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.bug_report),

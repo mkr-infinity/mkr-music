@@ -67,97 +67,7 @@ internal data class LyricWordToken(
     val hasTrailingSpace: Boolean
 )
 
-/**
- * Helper to identify CJK character blocks for unspaced language segmentation.
- */
-private fun isCjkChar(c: Char): Boolean {
-    val block = Character.UnicodeBlock.of(c)
-    return block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS ||
-            block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A ||
-            block == Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_B ||
-            block == Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS ||
-            block == Character.UnicodeBlock.HIRAGANA ||
-            block == Character.UnicodeBlock.KATAKANA ||
-            block == Character.UnicodeBlock.HANGUL_SYLLABLES ||
-            block == Character.UnicodeBlock.HANGUL_JAMO ||
-            block == Character.UnicodeBlock.HANGUL_COMPATIBILITY_JAMO
-}
 
-/**
- * Synthesizes proportional word and syllable tokens for standard line-synced LRC files.
- * This ensures that letter-by-letter progressive animation works consistently across all
- * songs and providers, even when word-level timestamps are not originally present.
- */
-private fun synthesizeWordTokens(
-    text: String,
-    lineStartMs: Long,
-    nextEntryTime: Long?
-): List<LyricWordToken> {
-    if (text.isBlank()) return emptyList()
-
-    val trimmedText = text.trim()
-
-    // 1. Determine realistic line duration
-    val lineDurationMs = if (nextEntryTime != null && nextEntryTime > lineStartMs) {
-        val gap = nextEntryTime - lineStartMs
-        if (gap > 4500L) {
-            val charBased = (trimmedText.length * 150L).coerceIn(2000L, 5500L)
-            minOf(gap - 600L, charBased)
-        } else {
-            (gap - 80L).coerceAtLeast(800L)
-        }
-    } else {
-        (trimmedText.length * 160L).coerceIn(2200L, 6000L)
-    }
-
-    // 2. Parse text into raw units while preserving space delimiter intent
-    val wordsWithSpacing = mutableListOf<Pair<String, Boolean>>()
-    val rawWords = trimmedText.split(Regex("\\s+")).filter { it.isNotEmpty() }
-
-    for (wIndex in rawWords.indices) {
-        val word = rawWords[wIndex]
-        val hasTrailingSpaceAfterWord = wIndex < rawWords.lastIndex
-
-        // Check if word consists of CJK characters without internal spaces
-        val isAllCjk = word.all { isCjkChar(it) }
-        if (isAllCjk && word.length > 1) {
-            for (cIndex in word.indices) {
-                val isLastChar = cIndex == word.lastIndex
-                wordsWithSpacing.add(
-                    Pair(
-                        word[cIndex].toString(),
-                        isLastChar && hasTrailingSpaceAfterWord
-                    )
-                )
-            }
-        } else {
-            wordsWithSpacing.add(Pair(word, hasTrailingSpaceAfterWord))
-        }
-    }
-
-    if (wordsWithSpacing.isEmpty()) return emptyList()
-
-    val totalChars = wordsWithSpacing.sumOf { it.first.length }.coerceAtLeast(1)
-    var currentOffset = lineStartMs
-
-    return wordsWithSpacing.mapIndexed { index, (unitText, hasSpace) ->
-        val proportion = unitText.length.toDouble() / totalChars
-        val duration = (lineDurationMs * proportion).toLong().coerceAtLeast(80L)
-        val startMs = currentOffset
-        val endMs = if (index == wordsWithSpacing.lastIndex) {
-            lineStartMs + lineDurationMs
-        } else {
-            startMs + duration
-        }
-        currentOffset = endMs
-        LyricWordToken(
-            text = unitText,
-            startTimeMs = startMs,
-            endTimeMs = endMs,
-            hasTrailingSpace = hasSpace
-        )
-    }
-}
 
 /**
  * Original MKR Music Synchronized Lyric Line.
@@ -262,8 +172,8 @@ fun MkrLyricsLine(
         false
     }
 
-    // Prepare tokens for rich-sync or line-synced lyrics
-    val tokens = remember(entry.words, mainText, entry.time, nextEntryTime) {
+    // Prepare tokens for rich word-by-word synced lyrics (only when genuine word timestamps exist)
+    val tokens = remember(entry.words, mainText) {
         if (!entry.words.isNullOrEmpty()) {
             val isCjk = LyricsUtils.isJapanese(mainText) || LyricsUtils.isChinese(mainText)
             entry.words.mapIndexed { index, word ->
@@ -276,12 +186,6 @@ fun MkrLyricsLine(
                     hasTrailingSpace = index < entry.words.size - 1 && !isCjk
                 )
             }
-        } else if (isSynced && mainText.isNotBlank()) {
-            synthesizeWordTokens(
-                text = mainText,
-                lineStartMs = entry.time,
-                nextEntryTime = nextEntryTime
-            )
         } else {
             emptyList()
         }

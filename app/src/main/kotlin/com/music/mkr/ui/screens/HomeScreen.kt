@@ -138,6 +138,7 @@ import com.music.mkr.constants.RandomizeHomeOrderKey
 import com.music.mkr.constants.HideSpeedDialKey
 import com.music.mkr.constants.SmallGridThumbnailHeight
 import com.music.mkr.constants.ThumbnailCornerRadius
+import com.music.mkr.constants.ShowListenTogetherHomeShortcutKey
 import com.music.mkr.db.entities.Album
 import com.music.mkr.db.entities.Artist
 import com.music.mkr.db.entities.LocalItem
@@ -596,6 +597,7 @@ fun HomeScreen(
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
     val (randomizeHomeOrder) = rememberPreference(RandomizeHomeOrderKey, true)
     val (hideSpeedDial) = rememberPreference(HideSpeedDialKey, false)
+    val (showListenTogetherShortcut) = rememberPreference(ShowListenTogetherHomeShortcutKey, true)
     val updateState by viewModel.updateState.collectAsState()
     var showUpdateDialog by remember { mutableStateOf(false) }
     var updateDismissed by rememberSaveable { mutableStateOf(false) }
@@ -2309,12 +2311,14 @@ fun HomeScreen(
                 }
             )
 
-            ListenTogetherShortcut(
-                lazyListState = lazylistState,
-                onClick = {
-                    navController.navigate(Screens.ListenTogether.route)
-                }
-            )
+            if (showListenTogetherShortcut) {
+                ListenTogetherShortcut(
+                    lazyListState = lazylistState,
+                    onClick = {
+                        navController.navigate(Screens.ListenTogether.route)
+                    }
+                )
+            }
         }
     }
 
@@ -2419,15 +2423,6 @@ fun BoxScope.ListenTogetherShortcut(
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                 )
-
-                if (isInRoom) {
-                    Box(
-                        modifier = Modifier
-                            .size(7.dp)
-                            .clip(CircleShape)
-                            .background(Color(0xFF4CAF50)),
-                    )
-                }
             }
         }
     }

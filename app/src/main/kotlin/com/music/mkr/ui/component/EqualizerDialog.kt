@@ -428,19 +428,17 @@ private fun AudioSessionStatusCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .size(10.dp)
-                    .clip(CircleShape)
-                    .background(
-                        if (isSessionActive) Color(0xFF4CAF50) else MaterialTheme.colorScheme.outline
-                    ),
+            Icon(
+                painter = painterResource(if (isSessionActive) R.drawable.graphic_eq else R.drawable.volume_up),
+                contentDescription = null,
+                tint = if (isSessionActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline,
+                modifier = Modifier.size(20.dp),
             )
 
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = if (isSessionActive) {
-                        "Session Active • $bandCount-Band DSP Connected"
+                        "Session Active: $bandCount-Band DSP Connected"
                     } else {
                         "No Active Audio Session"
                     },

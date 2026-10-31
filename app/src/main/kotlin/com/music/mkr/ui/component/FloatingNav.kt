@@ -120,12 +120,12 @@ fun AmberDockNavigationBar(
                 .height(68.dp)
                 .shadow(
                     elevation = 10.dp,
-                    shape = RoundedCornerShape(22.dp),
+                    shape = CircleShape,
                     ambientColor = Color(0x30000000),
                     spotColor = Color(0x40000000)
                 )
-                .background(containerColor, shape = RoundedCornerShape(22.dp))
-                .border(width = 1.dp, color = amberBorderColor, shape = RoundedCornerShape(22.dp))
+                .background(containerColor, shape = CircleShape)
+                .border(width = 1.dp, color = amberBorderColor, shape = CircleShape)
                 .padding(horizontal = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
@@ -299,7 +299,7 @@ fun FloatingGlassNavigationBar(
 ) {
     val isDark = pureBlack || MaterialTheme.colorScheme.surface.luminance() < 0.5f
 
-    val glassShape = RoundedCornerShape(26.dp)
+    val glassShape = CircleShape
 
     val glassBaseColor = when {
         pureBlack -> Color(0xB8090A0D)
