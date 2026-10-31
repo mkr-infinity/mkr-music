@@ -75,7 +75,7 @@ object AppModule {
         databaseProvider: DatabaseProvider,
     ): SimpleCache {
         val disableSongCache = context.dataStore[DisableSongCacheKey] ?: false
-        val cacheSize = if (disableSongCache) 0 else (context.dataStore[MaxSongCacheSizeKey] ?: 500)
+        val cacheSize = if (disableSongCache) 0 else (context.dataStore[MaxSongCacheSizeKey] ?: 1024)
         return SimpleCache(
             context.filesDir.resolve("exoplayer"),
             when (cacheSize) {
