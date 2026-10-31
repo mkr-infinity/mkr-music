@@ -1,77 +1,66 @@
 # Changelog
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/banner.png" alt="MKR Music Banner" width="100%" />
+  <img src="https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/releases/mkr-music-v1.1.0-poster.png" alt="MKR Music v1.1.0 Release Poster" width="100%" />
 </p>
 
 ---
 
-## [v1.1.0] - 2026-10-30
+## [v1.1.0] - 2026-10-31
 
-Milestone release featuring complete UI redesigns for Album, Artist, and Playlist views, universal letter-by-letter lyrics animation, an overhauled App Icon Selector with deferred switching, and architectural consolidation into a single unified application.
-
----
-
-### 1. Album, Artist & Online Playlist UI Redesigns
-- **Distinctive Visual Hierarchy**: Each screen features its own tailored visual layout and button aesthetics while sharing a unified, modern, and polished design language.
-- **Album Screen**:
-  - Elevated album artwork hero presentation with dynamic color extraction.
-  - Redesigned header layout displaying release year, track count, total runtime, and record label details.
-  - Prominent primary action capsule (Play All, Shuffle) with secondary quick-action buttons (Download, Favorite, Share).
-  - Clean tracklist layout with clear track numbers, duration timestamps, explicit badges, and contextual track menus.
-- **Artist Screen**:
-  - Full-width artist banner and avatar header with follower stats and artist metadata.
-  - Top songs spotlight section with quick play controls.
-  - Categorized discography carousels separating studio albums, singles, EPs, and appearances.
-  - Dedicated "Similar Artists" recommendations strip.
-- **Online Playlist Screen**:
-  - Expressive playlist header card with creator attribution, track count, and duration summary.
-  - Floating action capsule with tactile spring physics for Play All, Shuffle, and Download.
-  - Responsive layout optimized for seamless interaction across both compact and large screen form factors.
+Milestone release delivering instant audio streaming, intelligent background caching, complete UI redesigns for Album, Artist, and Playlist views, universal letter-by-letter synchronized lyrics animation, an overhauled App Icon gallery with deferred switching, and architectural consolidation into a single Universal Release APK.
 
 ---
 
-### 2. Universal Letter-by-Letter Lyrics Animation
-- **Progressive Character Reveal**: Smooth letter-by-letter text animation reveals lyrics in real time according to song tempo and vocal timing.
-- **Enabled by Default**: Character-level animation is active by default across all songs and all supported lyrics providers.
-- **Resilient Playback Synchronization**:
-  - Recalculates character progress instantaneously during seeking without flickering or desync.
-  - Automatically pauses and resumes animation cleanly when playback pauses or resumes.
-  - Prevents stale character carryover when skipping tracks or switching queues.
-- **Configurable Lyrics Settings**: Dedicated toggle under Lyrics Settings to switch between letter-by-letter reveal, line-by-line sync, or standard text display.
+### 🚀 Added
+- **11 Launcher Icon Styles:** Complete gallery of high-resolution launcher icons including *Default*, *Monochrome*, *Retro*, *Neon*, *Gold*, *Creative Cracked Record Cover*, *Creative Vinyl Forest*, *Creative Moonlit Cherry Blossom*, *Creative Neon Wisteria*, *Creative Autumn Glow*, and *Creative Cyberpunk Neon*.
+- **Deferred Launcher Icon Switching:** Safe queued launcher icon application that applies the chosen icon when the app is sent to the background (`MainActivity.onStop()`) or on cold startup, eliminating sudden process terminations and launcher restart stuttering.
+- **Creator Attribution in Icon Gallery:** Description-style attribution badges displaying creator usernames (`@kaif-coder`, `@mkr-infinity`) and GitHub platform badges for all 11 launcher icons.
+- **Configurable Background Cache Delay:** Dedicated slider under Storage & Cache settings (5s–90s, default 10s) ensuring only actively listened tracks are cached to device storage.
+- **Watch-Inspired History Navigation:** Dedicated timepiece action capsule on the Home screen providing immediate one-tap navigation to listening history and playback events.
+- **Multi-Density Adaptive Launcher Assets:** Full set of `anydpi-v26` adaptive XML, round XML, and 5 legacy density buckets (`mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`) for all launcher icon styles.
 
 ---
 
-### 3. App Icon Selector & Deferred Switching
-- **Overhauled Icon Selector**:
-  - Redesigned gallery grid showcasing high-resolution launcher icon artwork.
-  - Displays icon titles, creator handles (`@username`), and platform badges with clean description-style layouts.
-  - Adaptive grid columns that dynamically adjust between portrait, landscape, and large displays.
-- **Deferred Icon Switching**:
-  - Queues launcher icon changes and applies them seamlessly when the application exits or is sent to the background.
-  - Eliminates abrupt process terminations and launcher restart stuttering while preserving user selection across restarts.
-- **Expanded Icon Collection**:
-  - Added *Wisteria Glow*, *Sakura Dusk*, and *Forest Glow* icons alongside existing collection for 10 unique launcher styles.
+### 🌟 Improved
+- **Instant Audio Playback Pipeline:** Starts audio streaming immediately upon selection by bypassing initial cache write buffer lag, delivering near-instant online playback.
+- **Redesigned Album Screen:** Elevated album artwork hero presentation with dynamic color extraction, release year, track count, total runtime, record label details, and prominent primary action capsules (Play All, Shuffle, Download, Favorite, Share).
+- **Redesigned Artist Screen:** Full-width header banner with artist avatar, subscriber count stats, top songs spotlight, and categorized discography carousels separating studio albums, singles, EPs, and appearances.
+- **Redesigned Online Playlist Screen:** Expressive header card with creator attribution, track count, and duration summary, accompanied by tactile floating action controls.
+- **Universal Letter-by-Letter Lyrics Animation:** Character-level progressive reveal active across all songs and providers with smooth offscreen Canvas clipping (`BlendMode.DstIn`) and zero layout shifts.
+- **Settings Discovery & Deep Search:** Pre-tokenized keyword search indexing all configuration items, toggles, and descriptions with instant relevance ranking and direct target highlighting.
+- **Account-Aware Header Navigation:** Dynamic avatar button on the Home screen that displays current account authentication status with smooth transitions.
 
 ---
 
-### 4. Settings Wireup & Search Enhancements
-- **Complete Reference Wiring**: Fixed unresolved configuration references and aligned Appearance and Lyrics options.
-- **Deep Search Indexing**: Granular keyword matching across all settings categories with direct highlighting of target options upon search selection.
+### 🛠️ Fixed
+- **Settings Reference Wiring:** Resolved broken, missing, or unmapped configuration references across Appearance, Lyrics, and Storage settings screens.
+- **Lyrics Seeking Synchronization:** Fixed character desync during seek operations, pausing animations cleanly on pause and preventing stale character carryover when switching tracks.
+- **System Window Insets & Overlaps:** Resolved navigation bar, status bar, and mini-player clipping across all 18 primary screens using `LocalPlayerAwareWindowInsets` and `WindowInsets.ime`.
+- **App Icon Grid Sizing:** Hardened dialog layout constraints with `heightIn(max = 420.dp)` and adaptive column sizing (`minSize = 135.dp`) preventing title truncation on compact screens.
+- **Queue Duplicate Track Suppression:** Fixed duplicate track insertion across all queue entry paths, keeping playback queues clean.
+- **Offline Cache Indexing:** Resolved caching edge cases ensuring downloaded songs and cached tracks are properly recognized across History, Library, and offline playback modes.
 
 ---
 
-### 5. Architectural Consolidation & Source Cleanup
-- **Single Main Application**:
-  - Consolidated build flavors into a single unified main application target (`:app`).
-  - Google Cast functionality and dependencies integrated directly into the main application.
-  - Standardized release build workflow to generate a single Universal Release APK (`:app:assembleUniversalRelease`).
-- **Comprehensive Source Cleanup**:
-  - Purged obsolete native C++ code, build actions, and unused microphone hardware permissions (`RECORD_AUDIO`).
-  - Cleaned up orphaned database queries and unused string resources across all 19 supported languages.
-  - Preserved Room database schema compatibility at version 34 to ensure 100% data integrity for existing installations.
-- **Universal Multi-ABI Support**:
-  - Retained full multi-architecture native library inclusion across `arm64-v8a`, `armeabi-v7a`, `x86`, and `x86_64`.
+### ⚡ Performance
+- **Low-Priority Cache IO Threads:** Background song caching runs on dedicated IO coroutine dispatchers with automatic cancellation if a track is skipped or paused early, preventing playback stutter.
+- **Offscreen Lyrics Rendering:** High-performance Canvas shader rendering that minimizes recompositions during word-by-word karaoke animations.
+- **Optimized Room Database Queries:** Preserved Room schema at version 34 (`19aa47f2...`) with indexed foreign keys and atomic auto-migrations for fast local library loading.
+
+---
+
+### 🎨 UI/UX
+- **Material 3 Expressive Refinements:** Edge-to-edge layouts, tactile spring physics on interactive buttons, subtle borders on action cards, and coherent dark mode themes.
+- **Lyrics Customization Panel:** Dedicated toggles under Lyrics Settings allowing users to easily choose between character-level animation, line-by-line sync, or static text.
+- **Refined Navigation Bar:** Streamlined bottom navigation and player bar docking with adaptive gesture padding.
+
+---
+
+### 🛡️ Reliability & Architecture
+- **Single Unified Application Architecture:** Consolidated build variants into a single production `:app` target producing a Universal Release APK with full multi-ABI support (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`).
+- **Complete Elimination of Dead Code:** Safely eradicated legacy Shazam/recognition remnants, C++ CMake FFTW actions, unused microphone permissions (`RECORD_AUDIO`), and orphaned string resources.
+- **Fail-Safe Release Workflow:** Automated GitHub Actions workflow targeting `:app:assembleUniversalRelease` with SHA-256 generation, APK integrity validation, and release notes automation.
 
 ---
 

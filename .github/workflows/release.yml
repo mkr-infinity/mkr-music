@@ -298,48 +298,45 @@ jobs:
           import os
 
           version_name = os.environ.get('VERSION_NAME', '')
-          banner_url = "https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/banner.png"
+          poster_url = f"https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/releases/mkr-music-v{version_name}-poster.png"
 
           body = f"""<p align="center">
-            <img src="{banner_url}" alt="MKR Music Banner" width="100%" />
+            <img src="{poster_url}" alt="MKR Music v{version_name} Release Poster" width="100%" />
           </p>
 
           # MKR Music v{version_name}
 
           > ### Release Highlights
+          >
           > This milestone update delivers instant audio playback streaming, intelligent delayed background caching, expressive Material 3 UI refinements, reliable update previews, watch-inspired listening history navigation, and streamlined settings discovery.
 
           ---
 
-          ### Low-Latency Streaming & Smart Caching
-          - **Instant Audio Playback**: Bypasses initial cache write buffer lag to start track streaming immediately upon click.
-          - **Configurable Cache Delay**: Added a dedicated slider under Storage & Cache (5s–90s, default 10s) to cache only songs you actually listen to.
-          - **Zero Playback Lag**: Background caching runs on low-priority IO threads with automatic cancellation if a track is skipped or paused early.
+          ### 🎵 Streaming & Smart Caching
+          - **Instant Audio Playback:** Starts streaming music immediately upon tap without waiting for cache writes.
+          - **Smart Background Caching:** Intelligently caches eligible songs after a configurable listening delay (5s–90s) to keep storage free of skipped tracks.
 
-          ### Visual Polish & Expressive Design
-          - **Watch-Inspired Listening History**: Dedicated timepiece action capsule with quick navigation to history.
-          - **Account-Aware Navigation**: Reactive avatar button displaying authenticated account status.
-          - **Chainsaw Spikes Action Button**: Smooth animated moving teeth border on the Donate & Support button.
-          - **Overhauled Contribution Sheet**: Rapid-copy UPI card with tactile spring click feedback, app badges, and rotating gratitude toasts.
-          - **Balanced Onboarding Hero**: Centered MKR Music brand logo with structured layout and responsive viewport across all aspect ratios.
-          - **Refined Accents**: Subtle borders applied to developer links and the home screen settings dropdown button.
+          ### 🎨 UI & Experience
+          - **Redesigned Album, Artist & Playlist Views:** Fresh, modern visual layouts with dynamic hero artwork, categorized discographies, and tactile action capsules.
+          - **Letter-by-Letter Synced Lyrics:** Smooth progressive character reveal synchronized to song tempo and vocal timing across all providers.
+          - **App Icon Gallery & Deferred Switching:** Choose from 11 unique launcher icon styles with creator attribution, applying seamlessly in the background without app disruption.
+          - **Watch-Inspired History Navigation:** Dedicated timepiece action capsule offering instant one-tap access to your recent playback history.
+          - **Expressive Material 3 Polish:** Edge-to-edge layouts, account status avatar, and safe window insets that eliminate bottom navigation overlap.
 
-          ### Settings Discovery & Direct Updates
-          - **In-App Update Detection**: Safe GitHub release preview with version code validation and direct APK download.
-          - **Granular Keyword Search**: Search across sub-options directly (e.g., searching "hide" brings up all hide toggles) with automatic deduplication.
-          - **Simplified Update Guidance**: Direct repository releases with step-by-step backup instructions before updating.
-          - **Clutter-Free Headers**: Cleaned up the settings toolbar by removing redundant action capsules.
+          ### ⚡ Performance & Discovery
+          - **Granular Settings Search:** Search directly across all settings toggles and sub-options with fast keyword matching.
+          - **Seamless Queue Management:** Optimized queue operations with automatic duplicate track suppression across all playback entry points.
 
-          ### Storage Integrity & Protection
-          - **Protected Downloads**: Explicit downloads and local library tracks are strictly safeguarded against LRU cache eviction.
-          - **Size-Based Storage Caps**: Pure storage capacity limits (MB/GB) with zero song-count caps, preserving all cached audio smoothly.
+          ### 🛠️ Bug Fixes & Improvements
+          - **Playback & Navigation Reliability:** Resolved offline cache indexing, persistent playback lifecycle handlers, and activity alias launch stability.
 
           ---
 
-          ### Support Development
-          MKR Music is 100% free and open-source. If you enjoy using the app, consider supporting continued development:
-          - ☕ **Buy Me a Coffee**: https://buymeacoffee.com/mkr_infinity
-          - 💸 **UPI**: `mkr-infinity@ybl`
+          ### 📖 Want to know more?
+
+          This release includes additional refinements and fixes.
+
+          **[Read the complete MKR Music v{version_name} Changelog](https://github.com/mkr-infinity/mkr-music/blob/main/CHANGELOG.md)**
           """
 
           with open("release_notes.txt", "w", encoding="utf-8") as f:
