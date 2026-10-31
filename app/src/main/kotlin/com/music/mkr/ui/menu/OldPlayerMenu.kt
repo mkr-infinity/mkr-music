@@ -60,6 +60,7 @@ import com.music.mkr.listentogether.RoomRole
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.ExoDownloadService
 import com.music.mkr.ui.component.BottomSheetState
+import com.music.mkr.ui.component.EqualizerDialog
 import com.music.mkr.ui.component.ListDialog
 import com.music.mkr.ui.component.Material3MenuGroup
 import com.music.mkr.ui.component.Material3MenuItemData
@@ -116,6 +117,16 @@ fun OldPlayerMenu(
     var showListenTogetherDialog by rememberSaveable { mutableStateOf(false) }
     var showSelectArtistDialog by rememberSaveable { mutableStateOf(false) }
     var showPitchTempoDialog by rememberSaveable { mutableStateOf(false) }
+    var showEqualizerDialog by rememberSaveable { mutableStateOf(false) }
+
+    if (showEqualizerDialog) {
+        EqualizerDialog(
+            onDismiss = {
+                showEqualizerDialog = false
+                onDismiss()
+            }
+        )
+    }
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
@@ -625,8 +636,7 @@ fun OldPlayerMenu(
                                 )
                             },
                             onClick = {
-                                com.music.mkr.utils.openSystemEqualizer(context, playerConnection.player.audioSessionId)
-                                onDismiss()
+                                showEqualizerDialog = true
                             }
                         )
                     )

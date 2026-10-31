@@ -169,6 +169,7 @@ import com.music.mkr.di.PlayerCache
 import com.music.mkr.eq.EqualizerService
 import com.music.mkr.eq.audio.CustomEqualizerAudioProcessor
 import com.music.mkr.eq.data.EQProfileRepository
+import com.music.mkr.playback.equalizer.EqualizerController
 import com.music.mkr.extensions.SilentHandler
 import com.music.mkr.extensions.collect
 import com.music.mkr.extensions.collectLatest
@@ -266,6 +267,9 @@ class MusicService :
 
     @Inject
     lateinit var eqProfileRepository: EQProfileRepository
+
+    @Inject
+    lateinit var equalizerController: EqualizerController
 
     @Inject
     lateinit var widgetManager: mkrMusicWidgetManager
@@ -416,6 +420,7 @@ class MusicService :
     private val instantSilenceSkipEnabled = MutableStateFlow(false)
 
     private var isAudioEffectSessionOpened = false
+    private var openedAudioSessionId: Int? = null
     private var loudnessEnhancer: LoudnessEnhancer? = null
 
     private var discordRpc: DiscordRPC? = null
@@ -2430,12 +2435,23 @@ class MusicService :
     }
 
     private fun openAudioEffectSession() {
-        if (isAudioEffectSessionOpened) return
+        val sessionId = player.audioSessionId
+        if (isAudioEffectSessionOpened) {
+            if (sessionId > 0 && sessionId != openedAudioSessionId) {
+                openedAudioSessionId = sessionId
+                setupLoudnessEnhancer()
+                runCatching { equalizerController.attachSession(sessionId) }
+            }
+            return
+        }
+        if (sessionId <= 0) return
         isAudioEffectSessionOpened = true
+        openedAudioSessionId = sessionId
         setupLoudnessEnhancer()
+        runCatching { equalizerController.attachSession(sessionId) }
         sendBroadcast(
             Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION).apply {
-                putExtra(AudioEffect.EXTRA_AUDIO_SESSION, player.audioSessionId)
+                putExtra(AudioEffect.EXTRA_AUDIO_SESSION, sessionId)
                 putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
                 putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC)
             },
@@ -2445,13 +2461,18 @@ class MusicService :
     private fun closeAudioEffectSession() {
         if (!isAudioEffectSessionOpened) return
         isAudioEffectSessionOpened = false
+        val sessionId = openedAudioSessionId ?: player.audioSessionId
+        openedAudioSessionId = null
         releaseLoudnessEnhancer()
-        sendBroadcast(
-            Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION).apply {
-                putExtra(AudioEffect.EXTRA_AUDIO_SESSION, player.audioSessionId)
-                putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
-            },
-        )
+        runCatching { equalizerController.detachSession() }
+        if (sessionId > 0) {
+            sendBroadcast(
+                Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION).apply {
+                    putExtra(AudioEffect.EXTRA_AUDIO_SESSION, sessionId)
+                    putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
+                },
+            )
+        }
     }
 
     private var previousMediaItemIndex = C.INDEX_UNSET
@@ -2727,7 +2748,8 @@ class MusicService :
     ) {
         if (events.containsAny(
                 Player.EVENT_PLAYBACK_STATE_CHANGED,
-                Player.EVENT_PLAY_WHEN_READY_CHANGED
+                Player.EVENT_PLAY_WHEN_READY_CHANGED,
+                Player.EVENT_AUDIO_SESSION_ID
             )
         ) {
             scheduleCrossfade()
@@ -3974,6 +3996,7 @@ class MusicService :
         connectivityObserver.unregister()
         abandonAudioFocus()
         releaseLoudnessEnhancer()
+        runCatching { equalizerController.release() }
         mediaSession.release()
         player.removeListener(this)
         player.removeListener(sleepTimer)

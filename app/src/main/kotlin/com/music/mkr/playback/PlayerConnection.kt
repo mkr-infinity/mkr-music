@@ -75,6 +75,9 @@ class PlayerConnection(
     val player: ExoPlayer
         get() = getPlayerSafe()
 
+    val equalizerController: com.music.mkr.playback.equalizer.EqualizerController
+        get() = service.equalizerController
+
     /** Tracks whether player initialization completed successfully */
     private val isPlayerInitialized = MutableStateFlow(service.isPlayerReady.value)
 
