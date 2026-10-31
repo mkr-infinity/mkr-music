@@ -637,10 +637,6 @@
     <string name="save_album">Gravar</string>
     <string name="about_album">Sobre</string>
     <string name="about_playlist">Sobre</string>
-    <string name="show_artist_video">Mostrar o vídeo da tela do artista</string>
-    <string name="show_artist_video_desc">Mostrar um vídeo ao lado do nome do artista na página do artista</string>
-    <string name="show_artist_background_video">Mostrar o vídeo de fundo do artista</string>
-    <string name="show_artist_background_video_desc">Mostrar um vídeo de arte de movimento em looping por trás da imagem do artista</string>
     <string name="show_player_thumbnail_shadow">Sombra de miniaturas do tocador</string>
     <string name="show_player_thumbnail_shadow_desc">Mostrar sombra em torno da imagem de miniatura do tocador</string>
     <string name="player_thumbnail_shadow_depth">Profundidade da Sombra</string>
@@ -901,10 +897,6 @@
     <string name="data_saver">Protetor de dados</string>
     <string name="data_saver_desc">Desliga vídeos de tela e de fundo, e carrega imagens de baixa qualidade para salvar dados e bateria</string>
     <string name="data_saver_turns_off_header">Desligar quando estiver ativo</string>
-    <string name="data_saver_player_canvas">Animação da tela do tocador</string>
-    <string name="data_saver_artist_video">Vídeo de tela do artista</string>
-    <string name="data_saver_artist_bg_video">Vídeo de fundo do artista</string>
-    <string name="data_saver_album_canvas">Canvas de álbum</string>
     <string name="data_saver_high_quality_images">Imagens de alta qualidade</string>
     <string name="tab_recommended">Recomendado</string>
     <string name="tab_all_services">Todos os serviços</string>

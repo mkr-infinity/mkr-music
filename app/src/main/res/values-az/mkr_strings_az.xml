@@ -70,10 +70,6 @@
     <string name="show_artist_description">İfaçı təsvirini göstər</string>
     <string name="show_artist_subscriber_count">Abunəçi sayını göstər</string>
     <string name="show_artist_monthly_listeners">Aylıq dinləyici sayını göstər</string>
-    <string name="show_artist_video">İfaçı Canvas videosunu göstər</string>
-    <string name="show_artist_video_desc">Göstər bir looping video növbəti -a ifaçı ad on ifaçı səhifə</string>
-    <string name="show_artist_background_video">Göstər ifaçı arxa fon video</string>
-    <string name="show_artist_background_video_desc">Göstər bir looping motion art video behind ifaçı şəkil</string>
     <string name="download_playlist_desc">Oflayn oxutmaq üçün bütün mahnıları yüklə</string>
     <string name="remove_download_playlist_desc">Sil bütün yüklənmiş mahnılar -dan bu pleylist</string>
     <string name="download_in_progress_desc">Yüklə dır in progress</string>
@@ -132,7 +128,6 @@
     <string name="gradient">Qradiyent</string>
     <string name="glow_animated">Parıltı animasiyası</string>
     <string name="live_mesh">Canlı şəbəkə</string>
-    <string name="classic_player">Apple pleyer</string>
     <string name="player_design">Pleyer</string>
     <string name="use_expressive_album_design">Expressive albom design</string>
     <string name="use_expressive_album_design_desc">Minimal list olmadan thumbnails</string>
@@ -899,10 +894,6 @@
     <string name="data_saver">Data Yadda saxlar</string>
     <string name="data_saver_desc">Turns off canvas və arxa fon videolar, və loads aşağı-keyfiyyət şəkillər -a yadda saxla data və batareya</string>
     <string name="data_saver_turns_off_header">Aktiv ediləndə sönür</string>
-    <string name="data_saver_player_canvas">Pleyer canvas animation</string>
-    <string name="data_saver_artist_video">İfaçı canvas video</string>
-    <string name="data_saver_artist_bg_video">İfaçı arxa fon video</string>
-    <string name="data_saver_album_canvas">Albom canvas</string>
     <string name="data_saver_high_quality_images">Yüksək-keyfiyyət şəkillər</string>
     <string name="tab_recommended">Tövsiyə olunur</string>
     <string name="tab_all_services">Hamısı services</string>
