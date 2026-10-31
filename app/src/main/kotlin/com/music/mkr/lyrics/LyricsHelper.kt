@@ -30,6 +30,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -268,24 +269,29 @@ constructor(
             return
         }
 
-        val allResult = mutableListOf<LyricsResult>()
+        val allResult = java.util.Collections.synchronizedList(mutableListOf<LyricsResult>())
         val providers = resolveLyricsProviders()
-        currentLyricsJob = CoroutineScope(SupervisorJob()).launch {
-            providers.forEach { provider ->
+        currentLyricsJob = CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
+            val jobs = providers.mapNotNull { provider ->
                 if (provider.isEnabled(context)) {
-                    try {
-                        provider.getAllLyrics(mediaId, songTitle, songArtists, duration, album) { lyrics ->
-                            val result = LyricsResult(provider.name, lyrics)
-                            allResult += result
-                            callback(result)
+                    launch(Dispatchers.IO) {
+                        try {
+                            provider.getAllLyrics(mediaId, songTitle, songArtists, duration, album) { lyrics ->
+                                if (lyrics.isNotBlank() && lyrics != LYRICS_NOT_FOUND) {
+                                    val result = LyricsResult(provider.name, lyrics)
+                                    allResult += result
+                                    callback(result)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // Catch network-related exceptions like UnresolvedAddressException
+                            reportException(e)
                         }
-                    } catch (e: Exception) {
-                        // Catch network-related exceptions like UnresolvedAddressException
-                        reportException(e)
                     }
-                }
+                } else null
             }
-            cache.put(cacheKey, allResult)
+            jobs.joinAll()
+            cache.put(cacheKey, allResult.toList())
         }
 
         currentLyricsJob?.join()

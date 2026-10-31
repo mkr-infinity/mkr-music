@@ -221,7 +221,7 @@ fun PlayerSettings(
     )
     val (historyDuration, onHistoryDurationChange) = rememberPreference(
         HistoryDuration,
-        defaultValue = 30f
+        defaultValue = 5f
     )
     val (sponsorBlockEnabled, _) = rememberPreference(
         EnableSponsorBlockKey,
