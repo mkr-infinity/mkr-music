@@ -530,6 +530,14 @@ fun StatsScreen(
                         contentDescription = stringResource(R.string.listening_summary),
                     )
                 }
+                IconButton(
+                    onClick = { navController.navigate("wrapped") }
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.sparks),
+                        contentDescription = "Wrapped",
+                    )
+                }
             }
         )
     }

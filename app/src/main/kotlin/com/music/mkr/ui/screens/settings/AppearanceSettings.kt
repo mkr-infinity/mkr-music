@@ -77,7 +77,6 @@ import com.music.mkr.constants.HidePlayerThumbnailKey
 import com.music.mkr.constants.ShowPlayerThumbnailShadowKey
 import com.music.mkr.constants.PlayerThumbnailShadowElevationKey
 import com.music.mkr.constants.LibraryFilter
-import com.music.mkr.constants.ListenTogetherInTopBarKey
 import com.music.mkr.constants.ShowListenTogetherHomeShortcutKey
 import com.music.mkr.constants.LyricsAnimationStyle
 import com.music.mkr.constants.LyricsAnimationStyleKey
@@ -352,11 +351,6 @@ fun AppearanceSettings(
         }
         showRestartDialog = true
     }
-
-    val (listenTogetherInTopBar, onListenTogetherInTopBarChange) = rememberPreference(
-        ListenTogetherInTopBarKey,
-        defaultValue = true
-    )
 
     val (showListenTogetherHomeShortcut, onShowListenTogetherHomeShortcutChange) = rememberPreference(
         ShowListenTogetherHomeShortcutKey,
@@ -2010,27 +2004,6 @@ fun AppearanceSettings(
                         )
                     },
                     onClick = { onShowListenTogetherHomeShortcutChange(!showListenTogetherHomeShortcut) }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.link),
-                    title = { Text("Show Listen Together in Top Bar") },
-                    description = { Text("Display quick access in the top navigation bar") },
-                    trailingContent = {
-                        Switch(
-                            checked = listenTogetherInTopBar,
-                            onCheckedChange = onListenTogetherInTopBarChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (listenTogetherInTopBar) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onListenTogetherInTopBarChange(!listenTogetherInTopBar) }
                 )
             )
         )

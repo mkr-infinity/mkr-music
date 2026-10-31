@@ -58,15 +58,19 @@ class WrappedAudioService(
     }
 
     suspend fun prepareTrack(songId: String?) {
+        val songUri = getSongUri(songId) ?: return
         initPlayer()
-        val songUri = getSongUri(songId)
         withContext(Dispatchers.Main) {
-            val mediaItem = MediaItem.Builder()
-                .setUri(songUri)
-                .setMediaId(songId ?: "fallback")
-                .build()
-            player?.setMediaItem(mediaItem)
-            player?.prepare()
+            try {
+                val mediaItem = MediaItem.Builder()
+                    .setUri(songUri)
+                    .setMediaId(songId ?: "fallback")
+                    .build()
+                player?.setMediaItem(mediaItem)
+                player?.prepare()
+            } catch (e: Exception) {
+                Timber.tag("WrappedAudioService").e(e, "Error setting media item")
+            }
         }
     }
 
@@ -96,10 +100,14 @@ class WrappedAudioService(
         }
     }
 
-    private suspend fun getSongUri(songId: String?): Uri {
-        val fallbackUri = "android.resource://${context.packageName}/${R.raw.wrapped_theme}".toUri()
-        if (songId == null) {
-            Timber.tag("WrappedAudio").i("No song ID provided, using fallback audio.")
+    private suspend fun getSongUri(songId: String?): Uri? {
+        val hasRawTheme = runCatching {
+            context.resources.openRawResource(R.raw.wrapped_theme).use { it.available() > 0 }
+        }.getOrDefault(false)
+        val fallbackUri = if (hasRawTheme) "android.resource://${context.packageName}/${R.raw.wrapped_theme}".toUri() else null
+
+        if (songId.isNullOrBlank()) {
+            Timber.tag("WrappedAudio").i("No song ID provided, fallback: $fallbackUri")
             return fallbackUri
         }
 
