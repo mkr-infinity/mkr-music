@@ -33,16 +33,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -50,6 +49,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -60,7 +60,15 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
 import com.music.mkr.ui.theme.mkrMusicTheme
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
@@ -331,109 +339,12 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
     val pages = listOf(
         OnboardingPageInfo(
             content = { _ ->
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .verticalScroll(rememberScrollState())
-                            .padding(horizontal = 24.dp, vertical = 20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // App Logo at Centre in structured elevated container
-                        Surface(
-                            shape = RoundedCornerShape(32.dp),
-                            color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            shadowElevation = 8.dp,
-                            border = BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f))
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.icon),
-                                contentDescription = "MKR Music Logo",
-                                modifier = Modifier
-                                    .size(112.dp)
-                                    .clip(RoundedCornerShape(32.dp)),
-                                contentScale = ContentScale.Crop
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(28.dp))
-
-                        // App Brand Name & Welcome Message below logo
-                        Text(
-                            text = "MKR Music",
-                            style = thinHeaderStyle.copy(
-                                fontSize = 42.sp,
-                                fontWeight = FontWeight.Bold,
-                                letterSpacing = (-0.5).sp
-                            ),
-                            color = MaterialTheme.colorScheme.primary,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = "Welcome to the world of music",
-                            style = MaterialTheme.typography.titleLarge.copy(
-                                fontFamily = GoogleSansFlex,
-                                fontWeight = FontWeight.SemiBold,
-                                letterSpacing = (-0.2).sp
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Text(
-                            text = "Stream, discover, and enjoy your favorite tracks with crystal-clear playback and zero interruptions.",
-                            style = MaterialTheme.typography.bodyMedium.copy(
-                                fontFamily = GoogleSansFlex
-                            ),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.padding(horizontal = 16.dp)
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
-
-                        // Small beautiful "by Mohammad Kaif Raja" below the message
-                        AssistChip(
-                            onClick = {},
-                            label = {
-                                Text(
-                                    text = "by ${com.music.mkr.github.GitHubConfig.DEV_NAME}",
-                                    fontFamily = GoogleSansFlex,
-                                    fontWeight = FontWeight.Medium,
-                                    fontSize = 13.sp
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    painter = painterResource(id = R.drawable.person),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(AssistChipDefaults.IconSize),
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            },
-                            shape = CircleShape,
-                            colors = AssistChipDefaults.assistChipColors(
-                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                                labelColor = MaterialTheme.colorScheme.onSurface,
-                                leadingIconContentColor = MaterialTheme.colorScheme.primary
-                            ),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
-                        )
-
-                        Spacer(modifier = Modifier.height(24.dp))
+                WelcomePageContent(
+                    thinHeaderStyle = thinHeaderStyle,
+                    onOpenUrl = { url ->
+                        uriHandler.safeOpenUri(context, url)
                     }
-                }
+                )
             }
         ),
         OnboardingPageInfo(
@@ -442,7 +353,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(80.dp))
+                    Spacer(modifier = Modifier.height(40.dp))
 
                     Text(
                         text = stringResource(com.music.mkr.R.string.perm_required),
@@ -539,7 +450,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Spacer(modifier = Modifier.height(80.dp))
+                    Spacer(modifier = Modifier.height(40.dp))
 
                     Text(
                         text = "Join our",
@@ -1165,6 +1076,382 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
             )
         }
     }
+}
+
+@Composable
+private fun WelcomePageContent(
+    thinHeaderStyle: TextStyle,
+    onOpenUrl: (String) -> Unit
+) {
+    BoxWithConstraints(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        val isWide = maxWidth >= 600.dp
+        val isCompactHeight = maxHeight < 540.dp
+
+        if (isWide) {
+            // Adaptive Two-Column Layout for Tablets, Foldables & Landscape
+            Row(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(36.dp)
+            ) {
+                // Left Column: Wavy Acoustic Hero Visual
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    WavySoundwaveHero(
+                        modifier = Modifier.fillMaxWidth(),
+                        compact = false
+                    )
+                }
+
+                // Right Column: Branding, Minimal Typography, Feature Badges & Developer Attribution
+                Column(
+                    modifier = Modifier
+                        .weight(1.2f)
+                        .then(if (isCompactHeight) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+                        .padding(vertical = 12.dp),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Version / Brand Badge
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                    ) {
+                        Text(
+                            text = com.music.mkr.github.GitHubConfig.VERSION_LABEL,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontFamily = GoogleSansFlex,
+                                fontWeight = FontWeight.SemiBold
+                            ),
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "MKR Music",
+                        style = thinHeaderStyle.copy(
+                            fontSize = 44.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.5).sp
+                        ),
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    Text(
+                        text = "Your Music. Your Mood. Your World.",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.SemiBold,
+                            letterSpacing = (-0.2).sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Stream and discover your favorite tracks with pure sound and zero interruptions.",
+                        style = MaterialTheme.typography.bodyMedium.copy(
+                            fontFamily = GoogleSansFlex
+                        ),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Start
+                    )
+
+                    Spacer(modifier = Modifier.height(18.dp))
+
+                    // Wavy musical feature chips
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        WelcomeFeatureBadge(icon = R.drawable.music_note, label = "Lossless Sound")
+                        WelcomeFeatureBadge(icon = R.drawable.sparks, label = "Zero Ads")
+                        WelcomeFeatureBadge(icon = R.drawable.equalizer, label = "Pure Focus")
+                    }
+
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    // Developer attribution chip linking to profile
+                    WelcomeDeveloperChip(
+                        onClick = { onOpenUrl(com.music.mkr.github.GitHubConfig.DEV_GITHUB_URL) }
+                    )
+                }
+            }
+        } else {
+            // Adaptive Single-Column Layout for Phones (Portrait & Compact)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (isCompactHeight) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Wavy Acoustic Hero Visual
+                WavySoundwaveHero(
+                    modifier = Modifier.fillMaxWidth(),
+                    compact = isCompactHeight
+                )
+
+                Spacer(modifier = Modifier.height(if (isCompactHeight) 10.dp else 18.dp))
+
+                // Brand Name
+                Text(
+                    text = "MKR Music",
+                    style = thinHeaderStyle.copy(
+                        fontSize = if (isCompactHeight) 34.sp else 42.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = (-0.5).sp
+                    ),
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                // Punchy Tagline
+                Text(
+                    text = "Your Music. Your Mood. Your World.",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.SemiBold,
+                        letterSpacing = (-0.2).sp
+                    ),
+                    color = MaterialTheme.colorScheme.onBackground,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(6.dp))
+
+                Text(
+                    text = "Stream and discover your favorite tracks with pure sound and zero interruptions.",
+                    style = MaterialTheme.typography.bodySmall.copy(
+                        fontFamily = GoogleSansFlex
+                    ),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 12.dp)
+                )
+
+                Spacer(modifier = Modifier.height(if (isCompactHeight) 12.dp else 18.dp))
+
+                // Wavy musical feature chips
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    WelcomeFeatureBadge(icon = R.drawable.music_note, label = "Lossless")
+                    WelcomeFeatureBadge(icon = R.drawable.sparks, label = "Ad-Free")
+                    WelcomeFeatureBadge(icon = R.drawable.equalizer, label = "Open Source")
+                }
+
+                Spacer(modifier = Modifier.height(if (isCompactHeight) 12.dp else 20.dp))
+
+                // Developer attribution chip linking to profile
+                WelcomeDeveloperChip(
+                    onClick = { onOpenUrl(com.music.mkr.github.GitHubConfig.DEV_GITHUB_URL) }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun WavySoundwaveHero(
+    modifier: Modifier = Modifier,
+    compact: Boolean = false
+) {
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val tertiaryColor = MaterialTheme.colorScheme.tertiary
+    val surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh
+
+    val heroSize = if (compact) 92.dp else 120.dp
+    val canvasHeight = if (compact) 160.dp else 220.dp
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(canvasHeight),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(canvasHeight)
+        ) {
+            val width = size.width
+            val height = size.height
+            val midY = height * 0.52f
+
+            // Wavy Path 1: Harmonic crest (Primary gradient)
+            val path1 = Path().apply {
+                moveTo(0f, midY + height * 0.12f)
+                cubicTo(
+                    width * 0.22f, midY - height * 0.28f,
+                    width * 0.42f, midY + height * 0.32f,
+                    width * 0.65f, midY - height * 0.20f
+                )
+                cubicTo(
+                    width * 0.82f, midY - height * 0.45f,
+                    width * 0.92f, midY + height * 0.15f,
+                    width, midY - height * 0.05f
+                )
+            }
+            drawPath(
+                path = path1,
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        primaryColor.copy(alpha = 0.05f),
+                        primaryColor.copy(alpha = 0.65f),
+                        tertiaryColor.copy(alpha = 0.55f),
+                        primaryColor.copy(alpha = 0.08f)
+                    )
+                ),
+                style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+            )
+
+            // Wavy Path 2: Harmonic counter-wave (Tertiary gradient)
+            val path2 = Path().apply {
+                moveTo(0f, midY - height * 0.08f)
+                cubicTo(
+                    width * 0.18f, midY + height * 0.25f,
+                    width * 0.38f, midY - height * 0.30f,
+                    width * 0.58f, midY + height * 0.18f
+                )
+                cubicTo(
+                    width * 0.76f, midY + height * 0.38f,
+                    width * 0.88f, midY - height * 0.22f,
+                    width, midY + height * 0.04f
+                )
+            }
+            drawPath(
+                path = path2,
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        tertiaryColor.copy(alpha = 0.04f),
+                        tertiaryColor.copy(alpha = 0.50f),
+                        primaryColor.copy(alpha = 0.45f),
+                        tertiaryColor.copy(alpha = 0.06f)
+                    )
+                ),
+                style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
+            )
+
+            // Central ambient radial glow
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        primaryColor.copy(alpha = 0.22f),
+                        tertiaryColor.copy(alpha = 0.08f),
+                        Color.Transparent
+                    ),
+                    center = Offset(width * 0.5f, midY),
+                    radius = (heroSize.toPx() * 1.4f)
+                ),
+                radius = heroSize.toPx() * 1.4f,
+                center = Offset(width * 0.5f, midY)
+            )
+        }
+
+        // Layered elevated emblem with wavy/squircle contour
+        Surface(
+            shape = RoundedCornerShape(32.dp),
+            color = surfaceColor,
+            shadowElevation = 12.dp,
+            border = BorderStroke(1.5.dp, primaryColor.copy(alpha = 0.40f)),
+            modifier = Modifier.size(heroSize)
+        ) {
+            Image(
+                painter = painterResource(id = R.drawable.icon),
+                contentDescription = "MKR Music Logo",
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clip(RoundedCornerShape(32.dp)),
+                contentScale = ContentScale.Crop
+            )
+        }
+    }
+}
+
+@Composable
+private fun WelcomeFeatureBadge(
+    icon: Int,
+    label: String
+) {
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f),
+        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(5.dp)
+        ) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(13.dp)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontFamily = GoogleSansFlex,
+                    fontWeight = FontWeight.Medium
+                ),
+                color = MaterialTheme.colorScheme.onSurface
+            )
+        }
+    }
+}
+
+@Composable
+private fun WelcomeDeveloperChip(
+    onClick: () -> Unit
+) {
+    AssistChip(
+        onClick = onClick,
+        label = {
+            Text(
+                text = "by ${com.music.mkr.github.GitHubConfig.DEV_NAME}",
+                fontFamily = GoogleSansFlex,
+                fontWeight = FontWeight.Medium,
+                fontSize = 12.5.sp
+            )
+        },
+        leadingIcon = {
+            Icon(
+                painter = painterResource(id = R.drawable.github),
+                contentDescription = "GitHub Developer Profile",
+                modifier = Modifier.size(AssistChipDefaults.IconSize),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        },
+        shape = CircleShape,
+        colors = AssistChipDefaults.assistChipColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            labelColor = MaterialTheme.colorScheme.onSurface,
+            leadingIconContentColor = MaterialTheme.colorScheme.primary
+        ),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+    )
 }
 
 @Composable
