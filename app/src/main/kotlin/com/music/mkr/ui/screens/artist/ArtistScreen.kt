@@ -701,7 +701,7 @@ fun ArtistScreen(
                 }
             },
             navigationIcon = {
-                IconButton(
+                com.music.mkr.ui.component.IconButton(
                     onClick = navController::navigateUp,
                     onLongClick = navController::backToMain,
                 ) {

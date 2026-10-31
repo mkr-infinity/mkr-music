@@ -549,7 +549,7 @@ fun AlbumScreen(
                 }
             },
             navigationIcon = {
-                IconButton(
+                com.music.mkr.ui.component.IconButton(
                     onClick = {
                         if (selection) {
                             selection = false
