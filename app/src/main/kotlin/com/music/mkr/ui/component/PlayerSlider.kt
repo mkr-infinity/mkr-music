@@ -44,7 +44,7 @@ fun PlayerSliderTrack(
     trackHeight: Dp = 10.dp,
     isPlaying: Boolean = true,
 ) {
-    val sliderStyle by rememberEnumPreference(SliderStyleKey, defaultValue = SliderStyle.SLIM)
+    val sliderStyle by rememberEnumPreference(SliderStyleKey, defaultValue = SliderStyle.WAVY)
     val squigglySlider by rememberPreference(SquigglySliderKey, defaultValue = false)
     val safeValue = if (value.isNaN()) valueRange.start else value.coerceIn(valueRange.start, valueRange.endInclusive)
 

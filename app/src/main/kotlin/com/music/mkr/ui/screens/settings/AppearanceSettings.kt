@@ -295,7 +295,7 @@ fun AppearanceSettings(
 
     val (sliderStyle, onSliderStyleChange) = rememberEnumPreference(
         SliderStyleKey,
-        defaultValue = SliderStyle.SLIM
+        defaultValue = SliderStyle.WAVY
     )
     val (squigglySlider, onSquigglySliderChange) = rememberPreference(
         SquigglySliderKey,
