@@ -77,10 +77,6 @@
     <string name="show_artist_description">Visa artistbeskrivning</string>
     <string name="show_artist_subscriber_count">Visa antal följare</string>
     <string name="show_artist_monthly_listeners">Visa månatliga lyssnare</string>
-    <string name="show_artist_video">Visa artistens canvasvideo</string>
-    <string name="show_artist_video_desc">Visa en loopande video bredvid artistnamnet på artistsidan</string>
-    <string name="show_artist_background_video">Visa artistens bakgrundsvideo</string>
-    <string name="show_artist_background_video_desc">Visa en loopande bakgrundsvideo bakom artistbilden</string>
 
     <!-- Menu descriptions -->
     <string name="download_playlist_desc">Ladda ner alla låtar för offline‑lyssning</string>
@@ -148,7 +144,6 @@
     <string name="gradient">Gradient</string>
     <string name="glow_animated">Glow‑animation</string>
     <string name="live_mesh">Live Mesh</string>
-    <string name="classic_player">Apple‑spelare</string>
     <string name="player_design">Spelare</string>
     <string name="use_expressive_album_design">Expressiv albumdesign</string>
     <string name="use_expressive_album_design_desc">Minimal lista utan miniatyrer</string>
@@ -1049,10 +1044,6 @@
     <string name="data_saver">Data‑sparare</string>
     <string name="data_saver_desc">Stänger av canvas och bakgrundsvideor samt laddar lågkvalitativa bilder för att spara data och batteri</string>
     <string name="data_saver_turns_off_header">Stängs av när aktiverad</string>
-    <string name="data_saver_player_canvas">Spelarens canvasanimation</string>
-    <string name="data_saver_artist_video">Artistens canvasvideo</string>
-    <string name="data_saver_artist_bg_video">Artistens bakgrundsvideo</string>
-    <string name="data_saver_album_canvas">Albumcanvas</string>
     <string name="data_saver_high_quality_images">Högkvalitativa bilder</string>
 
     <string name="tab_recommended">Rekommenderat</string>

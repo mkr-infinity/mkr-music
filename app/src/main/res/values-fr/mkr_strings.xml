@@ -76,10 +76,6 @@
     <string name="show_artist_description">Afficher la description de l\'artiste</string>
     <string name="show_artist_subscriber_count">Afficher le nombre d\'abonnés</string>
     <string name="show_artist_monthly_listeners">Afficher les auditeurs mensuels</string>
-    <string name="show_artist_video">Afficher la vidéo de l\'artiste sur toile</string>
-    <string name="show_artist_video_desc">Afficher une vidéo en boucle à côté du nom de l\'artiste sur la page de l\'artiste</string>
-	<string name="show_artist_background_video">Afficher la vidéo de présentation de l\'artiste</string>
-    <string name="show_artist_background_video_desc">Afficher une vidéo d\'art en boucle derrière l\'image de l\'artiste</string>
 
     <!-- Menu descriptions -->
     <string name="download_playlist_desc">Télécharger tous les titres pour les écouter hors ligne</string>
@@ -147,7 +143,6 @@
     <string name="gradient">Dégradé</string>
     <string name="glow_animated">Mouvement lumineux</string>
 	<string name="live_mesh">Live Mesh</string>
-    <string name="classic_player">Lecteur Apple</string>
     <string name="player_design">Lecteur</string>
 	<string name="use_expressive_album_design">Conception d\'album expressive</string>
     <string name="use_expressive_album_design_desc">Liste minimale sans pochette</string>
@@ -1046,10 +1041,6 @@ est irréversible.
     <string name="data_saver">Économiseur de données</string>
     <string name="data_saver_desc">Désactive les vidéos en arrière-plan et celles affichées sur le « canvas », et charge des images de faible qualité afin d\'économiser les données mobiles et la batterie</string>
     <string name="data_saver_turns_off_header">Se désactive lorsqu\'il est activé</string>
-    <string name="data_saver_player_canvas">Animation du lecteur sur la toile</string>
-    <string name="data_saver_artist_video">Vidéo sur la toile d\'artiste</string>
-    <string name="data_saver_artist_bg_video">Vidéo présentant le parcours de l\'artiste</string>
-    <string name="data_saver_album_canvas">Toile d\'album</string>
 	<string name="data_saver_high_quality_images">Des images de haute qualité</string>
 
     <string name="tab_recommended">Recommandé</string>
