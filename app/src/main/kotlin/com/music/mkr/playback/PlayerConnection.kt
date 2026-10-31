@@ -44,7 +44,7 @@ class PlayerConnection(
     context: Context,
     binder: MusicBinder,
     val database: MusicDatabase,
-    scope: CoroutineScope,
+    val scope: CoroutineScope,
 ) : Player.Listener {
     private companion object {
         private const val TAG = "PlayerConnection"

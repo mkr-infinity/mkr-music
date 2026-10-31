@@ -2303,28 +2303,33 @@ class MusicService :
     fun toggleLike(targetMetadata: com.music.mkr.models.MediaMetadata? = null) {
         val currentItem = player.currentMediaItem
         val currentItemId = currentItem?.mediaId
-        val mediaMetadata = targetMetadata
+        val initialMetadata = targetMetadata
             ?: (if (currentItemId != null && currentMediaMetadata.value?.id == currentItemId) currentMediaMetadata.value else null)
             ?: (if (currentItemId != null && player.currentMetadata?.id == currentItemId) player.currentMetadata else null)
             ?: (if (currentItemId != null) currentItem?.metadata else null)
-            ?: currentItemId?.takeIf { it.isNotBlank() }?.let { id ->
-                val fromDb = synchronized(database) { database.getSongByIdBlocking(id) }
-                fromDb?.toMediaMetadata() ?: com.music.mkr.models.MediaMetadata(
-                    id = id,
-                    title = currentItem?.mediaMetadata?.title?.toString() ?: "Unknown",
-                    artists = (currentItem?.mediaMetadata?.artist ?: currentItem?.mediaMetadata?.subtitle)?.toString()?.let {
-                        listOf(com.music.mkr.models.MediaMetadata.Artist(id = null, name = it))
-                    } ?: emptyList(),
-                    duration = (player.duration.coerceAtLeast(0) / 1000).toInt(),
-                    thumbnailUrl = currentItem?.mediaMetadata?.artworkUri?.toString()
-                )
-            }
             ?: currentMediaMetadata.value
             ?: player.currentMetadata
-            ?: return
+
+        val fallbackTitle = currentItem?.mediaMetadata?.title?.toString() ?: "Unknown"
+        val fallbackArtist = (currentItem?.mediaMetadata?.artist ?: currentItem?.mediaMetadata?.subtitle)?.toString()
+        val fallbackDuration = (player.duration.coerceAtLeast(0) / 1000).toInt()
+        val fallbackThumb = currentItem?.mediaMetadata?.artworkUri?.toString()
 
         scope.launch(Dispatchers.IO) {
             try {
+                val mediaMetadata = initialMetadata
+                    ?: currentItemId?.takeIf { it.isNotBlank() }?.let { id ->
+                        val fromDb = synchronized(database) { database.getSongByIdBlocking(id) }
+                        fromDb?.toMediaMetadata() ?: com.music.mkr.models.MediaMetadata(
+                            id = id,
+                            title = fallbackTitle,
+                            artists = fallbackArtist?.let { listOf(com.music.mkr.models.MediaMetadata.Artist(id = null, name = it)) } ?: emptyList(),
+                            duration = fallbackDuration,
+                            thumbnailUrl = fallbackThumb
+                        )
+                    }
+                    ?: return@launch
+
                 var currentSongEntity = synchronized(database) { database.getSongByIdBlocking(mediaMetadata.id) }
                 if (currentSongEntity == null) {
                     synchronized(database) {
