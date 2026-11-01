@@ -13,6 +13,7 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🚀 Added
+- **Original Online Playlist Discovery Experience:** Rebuilt the Online Playlist screen featuring an adaptive two-column layout for tablets and landscape displays with a sticky editorial sidebar, an elevated vinyl artwork presentation with a floating playback pulse indicator, rich typography and curator attributions, a comprehensive command deck (Play All, Shuffle, Bookmark, Search, Share), and detailed track rows with live audio visualizer bars.
 - **Complete Search & Discovery Redesign:** Overhauled search experience featuring a bespoke Music Search Dock, integrated Cloud vs. Local Library switcher pill, responsive 10-preset Genre & Mood exploration grid (Pop, Hip-Hop, Rock, Lo-Fi, R&B, Indie, etc.), Top Result spotlight hero cards, and compact recent search chip trays.
 - **Default Floating Glass Navigation:** Default floating frosted glass navigation bar featuring fluid pill-shaped buttons, active gradient glows, and tactile spring press animations.
 - **Audio Output Equalizer Quick-Access:** Dedicated Equalizer button integrated into the Audio Output sheet for immediate sound customization without leaving playback.
@@ -31,6 +32,7 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🌟 Improved
+- **Online Playlist Layout & Responsiveness:** Replaced standard single-column list with responsive dual-pane tablet architecture, refined category badges, collapsible description panels, and interactive in-playlist search filtering.
 - **Data Saver Artwork Scaling:** Proportional aspect ratio image resolution scaling for low-bandwidth environments across Home, Quick Picks, Search, and Library.
 - **Search Header & Focus Transitions:** Eliminated full-screen takeover modal flicker with unified in-place header morphing and tactile spring press feedback.
 - **Instantaneous Like & Favorite Response:** Optimistic UI updating on like button interactions across all player layouts and the mini-player for zero-latency feedback.
