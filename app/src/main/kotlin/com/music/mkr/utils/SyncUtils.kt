@@ -24,6 +24,7 @@ import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.ArtistEntity
 import com.music.mkr.db.entities.PlaylistEntity
 import com.music.mkr.db.entities.PlaylistSongMap
+import com.music.mkr.db.entities.Song
 import com.music.mkr.db.entities.SongEntity
 import com.music.mkr.extensions.collectLatest
 import com.music.mkr.extensions.isInternetConnected
@@ -53,6 +54,7 @@ import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -470,35 +472,94 @@ class SyncUtils @Inject constructor(
         }.onSuccess { result ->
             result.onSuccess { page ->
                 try {
-                    val remoteSongs = page.songs
-                    val remoteIds = remoteSongs.map { it.id }.toSet()
-                    val localSongs = database.likedSongsByNameAsc().first()
+                    val remoteSongs = page.songs.distinctBy { it.id }
+                    val existingLikedSongs = database.likedSongsByNameAsc().first()
+                    val localLibrarySongs = database.songsByNameAsc().first()
+                    val allLocalCandidates = (existingLikedSongs + localLibrarySongs).distinctBy { it.id }
+                    val candidateById = allLocalCandidates.associateBy { it.id }
+                    val matchedCandidateIds = mutableSetOf<String>()
 
-                    // Remove likes from songs not in remote
-                    localSongs.filterNot { it.id in remoteIds }.forEach { song ->
-                        try {
-                            database.update(song.song.localToggleLike())
-                            delay(DB_OPERATION_DELAY_MS)
-                        } catch (e: Exception) {
-                            Timber.e(e, "Failed to update song: ${song.id}")
-                        }
-                    }
-
-                    // Add/update songs from remote
                     val now = LocalDateTime.now()
                     remoteSongs.forEachIndexed { index, song ->
                         try {
-                            val dbSong = database.song(song.id).firstOrNull()
                             val timestamp = now.minusSeconds(index.toLong())
                             val isVideoSong = song.isVideoSong
 
-                            database.transaction {
-                                if (dbSong == null) {
-                                    insert(song.toMediaMetadata()) {
-                                        it.copy(liked = true, likedDate = timestamp, isVideo = isVideoSong)
+                            // 1. Direct provider ID match
+                            val existingMatch = candidateById[song.id] ?: database.getSongById(song.id)
+
+                            database.withTransaction {
+                                if (existingMatch != null) {
+                                    matchedCandidateIds.add(existingMatch.id)
+                                    val existingSong = existingMatch.song
+                                    val targetLikedDate = if (existingSong.liked && existingSong.likedDate != null) {
+                                        existingSong.likedDate
+                                    } else {
+                                        existingSong.likedDate ?: timestamp
                                     }
-                                } else if (!dbSong.song.liked || dbSong.song.likedDate != timestamp || dbSong.song.isVideo != isVideoSong) {
-                                    update(dbSong.song.copy(liked = true, likedDate = timestamp, isVideo = isVideoSong))
+                                    val targetInLibrary = existingSong.inLibrary ?: timestamp
+
+                                    val needsUpdate = !existingSong.liked ||
+                                        existingSong.likedDate != targetLikedDate ||
+                                        existingSong.inLibrary != targetInLibrary ||
+                                        existingSong.isVideo != isVideoSong ||
+                                        (existingSong.title.isBlank() && song.title.isNotBlank())
+
+                                    if (needsUpdate) {
+                                        update(
+                                            existingSong.copy(
+                                                liked = true,
+                                                likedDate = targetLikedDate,
+                                                inLibrary = targetInLibrary,
+                                                isVideo = if (isVideoSong) true else existingSong.isVideo,
+                                                title = existingSong.title.ifBlank { song.title },
+                                                duration = if (existingSong.duration > 0) existingSong.duration else (song.duration ?: -1),
+                                                thumbnailUrl = existingSong.thumbnailUrl ?: song.thumbnail,
+                                                albumId = existingSong.albumId ?: song.album?.id,
+                                                albumName = existingSong.albumName ?: song.album?.name
+                                            )
+                                        )
+                                    }
+                                } else {
+                                    // 2. Track metadata match with existing local songs to prevent duplicate entries
+                                    val metadataMatch = allLocalCandidates.firstOrNull { candidate ->
+                                        candidate.id !in matchedCandidateIds && isMetadataMatch(candidate, song)
+                                    }
+
+                                    if (metadataMatch != null) {
+                                        matchedCandidateIds.add(metadataMatch.id)
+                                        val localSong = metadataMatch.song
+                                        val targetLikedDate = if (localSong.liked && localSong.likedDate != null) {
+                                            localSong.likedDate
+                                        } else {
+                                            localSong.likedDate ?: timestamp
+                                        }
+                                        val targetInLibrary = localSong.inLibrary ?: timestamp
+
+                                        val needsUpdate = !localSong.liked ||
+                                            localSong.likedDate != targetLikedDate ||
+                                            localSong.inLibrary != targetInLibrary
+
+                                        if (needsUpdate) {
+                                            update(
+                                                localSong.copy(
+                                                    liked = true,
+                                                    likedDate = targetLikedDate,
+                                                    inLibrary = targetInLibrary
+                                                )
+                                            )
+                                        }
+                                    } else {
+                                        // 3. New remote track — insert unified entry
+                                        insert(song.toMediaMetadata()) {
+                                            it.copy(
+                                                liked = true,
+                                                likedDate = timestamp,
+                                                inLibrary = it.inLibrary ?: timestamp,
+                                                isVideo = isVideoSong
+                                            )
+                                        }
+                                    }
                                 }
                             }
                             delay(DB_OPERATION_DELAY_MS)
@@ -523,6 +584,53 @@ class SyncUtils @Inject constructor(
         }
     }
 
+    private fun isMetadataMatch(candidate: Song, remoteSong: SongItem): Boolean {
+        val normCandidateTitle = normalizeTrackTitle(candidate.song.title)
+        val normRemoteTitle = normalizeTrackTitle(remoteSong.title)
+        if (normCandidateTitle.isBlank() || normRemoteTitle.isBlank()) return false
+
+        val titleMatches = normCandidateTitle == normRemoteTitle ||
+            (normCandidateTitle.length >= 5 && normRemoteTitle.length >= 5 &&
+                (normCandidateTitle.startsWith(normRemoteTitle) || normRemoteTitle.startsWith(normCandidateTitle)))
+
+        if (!titleMatches) return false
+
+        val candidateArtist = candidate.artists.firstOrNull()?.name?.let { normalizeTrackArtist(it) }.orEmpty()
+        val remoteArtist = remoteSong.artists.firstOrNull()?.name?.let { normalizeTrackArtist(it) }.orEmpty()
+
+        val artistMatches = candidateArtist.isNotBlank() && remoteArtist.isNotBlank() &&
+            (candidateArtist == remoteArtist || candidateArtist.contains(remoteArtist) || remoteArtist.contains(candidateArtist))
+
+        if (!artistMatches) return false
+
+        val candDur = candidate.song.duration
+        val remoteDur = remoteSong.duration ?: -1
+        return if (candDur > 0 && remoteDur > 0) {
+            kotlin.math.abs(candDur - remoteDur) <= 8
+        } else {
+            true
+        }
+    }
+
+    private fun normalizeTrackTitle(title: String): String {
+        return title.lowercase(Locale.ROOT)
+            .replace(Regex("""(?i)\s*[\(\[]?\s*feat(?:\.|uring)?\s+[^)\]]+[\)\]]?"""), "")
+            .replace(Regex("""(?i)\s*[\(\[]?\s*ft(?:\.|uring)?\s+[^)\]]+[\)\]]?"""), "")
+            .replace(Regex("""(?i)\s*[\(\[].*?(official|video|audio|lyrics?|visualizer|remaster|hd|4k|version|edit).*?[\)\]]"""), "")
+            .replace(Regex("""\s*[\(\[][^)\]]*[\)\]]"""), "")
+            .replace(Regex("""(?i)\s*[-–—]\s*.*(official|video|audio|lyrics?|remaster|remix).*"""), "")
+            .replace(Regex("""[^\p{L}\p{N}\s]"""), " ")
+            .replace(Regex("""\s+"""), " ")
+            .trim()
+    }
+
+    private fun normalizeTrackArtist(artist: String): String {
+        return artist.lowercase(Locale.ROOT)
+            .replace(Regex("""[^\p{L}\p{N}\s]"""), " ")
+            .replace(Regex("""\s+"""), " ")
+            .trim()
+    }
+
     private suspend fun executeSyncLibrarySongs() = withContext(Dispatchers.IO) {
         if (!isLoggedIn()) {
             Timber.w("Skipping syncLibrarySongs - user not logged in")
@@ -537,26 +645,15 @@ class SyncUtils @Inject constructor(
             result.onSuccess { page ->
                 try {
                     val remoteSongs = page.items.filterIsInstance<SongItem>().reversed()
-                    val remoteIds = remoteSongs.map { it.id }.toSet()
-                    val localSongs = database.songsByNameAsc().first()
-
-                    localSongs.filterNot { it.id in remoteIds }.forEach { song ->
-                        try {
-                            database.update(song.song.toggleLibrary())
-                            delay(DB_OPERATION_DELAY_MS)
-                        } catch (e: Exception) {
-                            Timber.e(e, "Failed to update song: ${song.id}")
-                        }
-                    }
 
                     remoteSongs.forEach { song ->
                         try {
                             val dbSong = database.song(song.id).firstOrNull()
                             database.transaction {
                                 if (dbSong == null) {
-                                    insert(song.toMediaMetadata()) { it.toggleLibrary() }
+                                    insert(song.toMediaMetadata()) { it.copy(inLibrary = LocalDateTime.now()) }
                                 } else if (dbSong.song.inLibrary == null) {
-                                    update(dbSong.song.toggleLibrary())
+                                    update(dbSong.song.copy(inLibrary = LocalDateTime.now()))
                                 }
                             }
                             delay(DB_OPERATION_DELAY_MS)
@@ -942,15 +1039,9 @@ class SyncUtils @Inject constructor(
 
         try {
             database.withTransaction {
-                // Clear liked songs
-                val likedSongs = database.likedSongsByNameAsc().first()
-                likedSongs.forEach {
-                    database.update(it.song.copy(liked = false, likedDate = null))
-                }
-
-                // Clear library songs
+                // Clear library songs not marked liked (preserve liked songs in persistent unified collection)
                 val librarySongs = database.songsByNameAsc().first()
-                librarySongs.forEach {
+                librarySongs.filterNot { it.song.liked }.forEach {
                     if (it.song.inLibrary != null) {
                         database.update(it.song.copy(inLibrary = null))
                     }
