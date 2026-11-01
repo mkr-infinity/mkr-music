@@ -13,6 +13,7 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🚀 Added
+- **Complete Search & Discovery Redesign:** Overhauled search experience featuring a bespoke Music Search Dock, integrated Cloud vs. Local Library switcher pill, responsive 10-preset Genre & Mood exploration grid (Pop, Hip-Hop, Rock, Lo-Fi, R&B, Indie, etc.), Top Result spotlight hero cards, and compact recent search chip trays.
 - **Default Floating Glass Navigation:** Default floating frosted glass navigation bar featuring fluid pill-shaped buttons, active gradient glows, and tactile spring press animations.
 - **Audio Output Equalizer Quick-Access:** Dedicated Equalizer button integrated into the Audio Output sheet for immediate sound customization without leaving playback.
 - **Hardware Equalizer Presets:** High-precision built-in acoustic presets including *Flat*, *Bass Boost*, *Pure Clarity*, *MKR Signature*, *Electronic*, and *Rock*.
@@ -30,6 +31,8 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🌟 Improved
+- **Data Saver Artwork Scaling:** Proportional aspect ratio image resolution scaling for low-bandwidth environments across Home, Quick Picks, Search, and Library.
+- **Search Header & Focus Transitions:** Eliminated full-screen takeover modal flicker with unified in-place header morphing and tactile spring press feedback.
 - **Instantaneous Like & Favorite Response:** Optimistic UI updating on like button interactions across all player layouts and the mini-player for zero-latency feedback.
 - **Equalizer Session Card Styling:** Displays the active track title directly on the equalizer session card with clean typography, zero raw identifiers, and zero bullet dots.
 - **Instant Audio Playback Pipeline:** Starts audio streaming immediately upon selection by bypassing initial cache write buffer lag, delivering near-instant online playback.
@@ -45,6 +48,7 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🛠️ Fixed
+- **Notification Media Seekbar & Progress Sync:** Restored persistent media progress slider visibility across playing, paused, and buffering states via ForwardingPlayer duration fallback and immediate session synchronization.
 - **Tablet Playback & Track Transition Stability:** Shifted metadata Room database lookups inside ExoPlayer media item transitions from the Main Thread to background IO coroutines (`Dispatchers.IO`), eliminating Room main-thread database access exceptions when starting playback on tablets and mobile devices.
 - **Recursive Crash Screen Loop Prevention:** Hardened `CrashHandler` with active process-name inspection to immediately terminate recursive crashes originating from the `:crash` process without re-triggering `CrashActivity`, and switched `CrashActivity` to self-contained MaterialTheme to eliminate cross-process DataStore collisions.
 - **Tablet Landscape Scaffold Layout:** Wrapped the tablet navigation rail and bottom player bar within a dedicated bounded `Box` layout in `MainActivity`, preventing measure constraint mismatches and unboxed child crashes.

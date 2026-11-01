@@ -25,7 +25,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -35,8 +37,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SearchBar
-import androidx.compose.material3.SearchBarDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -82,6 +82,7 @@ import com.music.mkr.constants.MiniPlayerBottomSpacing
 import com.music.mkr.constants.MiniPlayerHeight
 import com.music.mkr.constants.NavigationBarHeight
 import com.music.mkr.constants.PauseSearchHistoryKey
+import com.music.mkr.constants.SearchSource
 import com.music.mkr.db.entities.SearchHistory
 import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.playback.queues.YouTubeQueue
@@ -129,20 +130,8 @@ fun OnlineSearchResult(
 
     val pauseSearchHistory by rememberPreference(PauseSearchHistoryKey, defaultValue = false)
 
-    // Whether the SearchBar is in its "active/expanded" state (showing suggestions)
+    // Whether the search dock is in active suggestion mode
     var searchActive by rememberSaveable { mutableStateOf(false) }
-
-    // Same animated padding as SearchScreen — pill expands edge-to-edge on activation
-    val searchBarHorizontalPadding by animateDpAsState(
-        targetValue = if (searchActive) 0.dp else 16.dp,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "SearchBarHorizontalPadding"
-    )
-    val searchBarVerticalPadding by animateDpAsState(
-        targetValue = if (searchActive) 0.dp else 8.dp,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "SearchBarVerticalPadding"
-    )
 
     // Extract query from navigation arguments
     val encodedQuery = navController.currentBackStackEntry?.arguments?.getString("query") ?: ""
@@ -304,10 +293,17 @@ fun OnlineSearchResult(
 
     Scaffold(
         topBar = {
-            SearchBar(
-                    query = query.text,
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(WindowInsets.statusBars)
+                    .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
+            ) {
+                Spacer(modifier = Modifier.height(6.dp))
+                MusicSearchHeader(
+                    query = query,
                     onQueryChange = { newText ->
-                        query = TextFieldValue(newText, TextRange(newText.length))
+                        query = newText
                     },
                     onSearch = { searchQuery ->
                         onSearch(searchQuery)
@@ -315,93 +311,44 @@ fun OnlineSearchResult(
                     },
                     active = searchActive,
                     onActiveChange = { searchActive = it },
-                    placeholder = {
-                        Text(
-                            text = stringResource(R.string.search_yt_music),
-                            style = MaterialTheme.typography.bodyLarge,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
-                    leadingIcon = {
-                        IconButton(
-                            onClick = {
-                                if (searchActive) {
-                                    searchActive = false
-                                } else {
-                                    searchActive = true
-                                }
-                            }
-                        ) {
-                            Icon(
-                                painter = painterResource(
-                                    if (searchActive) R.drawable.arrow_back else R.drawable.search
-                                ),
-                                contentDescription = if (searchActive) stringResource(R.string.dismiss) else null,
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    },
-                    trailingIcon = {
-                        if (query.text.isNotEmpty()) {
-                            IconButton(
-                                onClick = { query = TextFieldValue("") }
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.close),
-                                    contentDescription = stringResource(R.string.clear),
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-                    },
-                    colors = SearchBarDefaults.colors(
-                        containerColor = if (pureBlack)
-                            Color(0xFF16171B)
-                        else
-                            MaterialTheme.colorScheme.surfaceContainerHigh,
-                        dividerColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.12f),
-                        inputFieldColors = androidx.compose.material3.TextFieldDefaults.colors(
-                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                            focusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            unfocusedPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            cursorColor = MaterialTheme.colorScheme.primary,
-                            focusedLeadingIconColor = MaterialTheme.colorScheme.primary,
-                            unfocusedLeadingIconColor = MaterialTheme.colorScheme.primary,
-                            focusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                            unfocusedTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = searchBarHorizontalPadding)
-                        .padding(vertical = searchBarVerticalPadding)
-                ) {
-                    // Content shown inside the SearchBar when active (expanded):
-                    // reuses the same OnlineSearchScreen suggestion list
-                    OnlineSearchScreen(
-                        query = query.text,
-                        onQueryChange = { query = it },
-                        navController = navController,
-                        onSearch = { searchQuery ->
-                            onSearch(searchQuery)
+                    searchSource = SearchSource.ONLINE,
+                    onSearchSourceChange = {},
+                    pureBlack = pureBlack,
+                    showBackButton = true,
+                    onBackClick = {
+                        if (searchActive) {
                             searchActive = false
-                        },
-                        onDismiss = { searchActive = false },
-                        pureBlack = pureBlack
-                    )
-                }
+                        } else {
+                            navController.popBackStack()
+                        }
+                    }
+                )
+            }
         },
         containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.background
     ) { paddingValues ->
-        Column(
+        Box(
             modifier = Modifier
                 .padding(top = paddingValues.calculateTopPadding())
                 .fillMaxSize()
         ) {
-            Spacer(modifier = Modifier.height(10.dp))
+            if (searchActive) {
+                OnlineSearchScreen(
+                    query = query.text,
+                    onQueryChange = { query = it },
+                    navController = navController,
+                    onSearch = { searchQuery ->
+                        onSearch(searchQuery)
+                        searchActive = false
+                    },
+                    onDismiss = { searchActive = false },
+                    pureBlack = pureBlack
+                )
+            } else {
+                Column(modifier = Modifier.fillMaxSize()) {
+                    Spacer(modifier = Modifier.height(6.dp))
 
-            ChipsRow(
+                    ChipsRow(
                 chips = listOf(
                     null to stringResource(R.string.filter_all),
                     FILTER_SONG to stringResource(R.string.filter_songs),
@@ -504,4 +451,5 @@ fun OnlineSearchResult(
             }
         }
     }
+}
 }

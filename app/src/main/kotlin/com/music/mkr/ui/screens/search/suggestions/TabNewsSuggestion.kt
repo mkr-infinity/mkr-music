@@ -71,7 +71,8 @@ import com.music.mkr.ui.screens.NetworkReload
 fun SuggestionsTabContent(
     navController: NavController,
     viewModel: SuggestionsViewModel = LocalActivity.current?.let { hiltViewModel(it as ViewModelStoreOwner) } ?: hiltViewModel(),
-    contentPadding: PaddingValues = PaddingValues(0.dp)
+    contentPadding: PaddingValues = PaddingValues(0.dp),
+    headerContent: (@Composable () -> Unit)? = null
 ) {
     val suggestionTracks by viewModel.suggestionTracks.collectAsState()
     val suggestionArtists by viewModel.suggestionArtists.collectAsState()
@@ -116,6 +117,11 @@ fun SuggestionsTabContent(
             modifier = Modifier.fillMaxSize(),
             contentPadding = contentPadding
         ) {
+            if (headerContent != null) {
+                item(key = "search_discovery_header") {
+                    headerContent()
+                }
+            }
         if ((isLoading && !isManualLoading) || (suggestionTracks == null && suggestionArtists == null && suggestionAlbums == null && suggestionVideos == null && youtubeNewReleases == null)) {
             item {
                 SkeletonSuggestions()
