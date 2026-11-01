@@ -858,28 +858,31 @@ fun HomeScreen(
 
         if (explorePage?.moodAndGenres?.isNotEmpty() == true) list.add(HomeSection.MoodAndGenres)
 
+        val isYtQuickPicks: (HomeSection) -> Boolean = {
+            it is HomeSection.HomePageSection && homePage?.sections?.getOrNull(it.index)?.title?.contains("Quick picks", ignoreCase = true) == true
+        }
+
         val sortedList = if (randomizeHomeOrder) {
             list.sortedByDescending { section ->
                 val sectionRandom = Random(randomSeed + section.id.hashCode())
-                val base = when (section) {
-                    HomeSection.QuickPicks -> 700
-                    HomeSection.SpeedDial,
-                    HomeSection.DailyDiscover -> 500
-                    HomeSection.KeepListening,
-                    HomeSection.AccountPlaylists,
-                    HomeSection.ForgottenFavorites,
-                    HomeSection.FromTheCommunity -> 300
+                val base = when {
+                    section == HomeSection.QuickPicks || isYtQuickPicks(section) -> 700
+                    section == HomeSection.SpeedDial || section == HomeSection.DailyDiscover -> 500
+                    section == HomeSection.KeepListening ||
+                    section == HomeSection.AccountPlaylists ||
+                    section == HomeSection.ForgottenFavorites ||
+                    section == HomeSection.FromTheCommunity -> 300
                     else -> 100
                 }
-                val modifier = when (section) {
-                    HomeSection.QuickPicks -> 0
-                    HomeSection.SpeedDial,
-                    HomeSection.CoversAndRemixes,
-                    HomeSection.DailyDiscover -> sectionRandom.nextInt(-200, 400)
-                    HomeSection.KeepListening,
-                    HomeSection.AccountPlaylists,
-                    HomeSection.ForgottenFavorites,
-                    HomeSection.FromTheCommunity -> sectionRandom.nextInt(-100, 400)
+                val modifier = when {
+                    section == HomeSection.QuickPicks || isYtQuickPicks(section) -> 0
+                    section == HomeSection.SpeedDial ||
+                    section == HomeSection.CoversAndRemixes ||
+                    section == HomeSection.DailyDiscover -> sectionRandom.nextInt(-200, 400)
+                    section == HomeSection.KeepListening ||
+                    section == HomeSection.AccountPlaylists ||
+                    section == HomeSection.ForgottenFavorites ||
+                    section == HomeSection.FromTheCommunity -> sectionRandom.nextInt(-100, 400)
                     else -> sectionRandom.nextInt(-50, 50)
                 }
                 base + modifier
@@ -898,33 +901,35 @@ fun HomeScreen(
             )
 
             list.sortedByDescending { section ->
-                when(section) {
-                    is HomeSection.SimilarRecommendation -> 30 - section.index
-                    is HomeSection.HomePageSection -> 20 - section.index
+                when {
+                    isYtQuickPicks(section) -> 110
+                    section is HomeSection.SimilarRecommendation -> 30 - section.index
+                    section is HomeSection.HomePageSection -> 20 - section.index
                     else -> defaultOrder[section] ?: 0
                 }
             }
         }
 
-        // If logged in, YouTube provides its own personalized "Quick picks" section. 
-        // If logged out as guest, we suppress YouTube's generic guest quick picks and use
-        // our local personalized Quick Picks crafted from the user's taste, recent plays & mood.
-        val hasYouTubeQuickPicks = isLoggedIn && sortedList.any { 
-            it is HomeSection.HomePageSection && homePage?.sections?.getOrNull(it.index)?.title?.equals("Quick picks", ignoreCase = true) == true 
-        }
+        val hasLocalQuickPicks = quickPicks?.isNotEmpty() == true
+        val hasYouTubeQuickPicks = sortedList.any(isYtQuickPicks)
 
-        val deduplicatedList = if (hasYouTubeQuickPicks) {
-            sortedList.filterNot { it == HomeSection.QuickPicks } // Hide local if remote authenticated exists
-        } else {
-            // When guest/logged out, hide YouTube's generic trending "Quick picks" so the user's personalized Quick Picks always shines
-            sortedList.filterNot { 
-                it is HomeSection.HomePageSection && homePage?.sections?.getOrNull(it.index)?.title?.equals("Quick picks", ignoreCase = true) == true 
+        // Deduplication: ensure only one Quick Picks section shows, prioritizing whichever is most relevant
+        val deduplicatedList = when {
+            hasYouTubeQuickPicks && hasLocalQuickPicks -> {
+                // When both exist: if logged in, YouTube's account Quick picks takes precedence; if guest, local personalized Quick picks takes precedence
+                if (isLoggedIn) {
+                    sortedList.filterNot { it == HomeSection.QuickPicks }
+                } else {
+                    sortedList.filterNot(isYtQuickPicks)
+                }
             }
+            // If only one exists (or local is empty), preserve the existing one so Quick Picks is ALWAYS visible
+            else -> sortedList
         }
 
-        // Always pin the surviving QuickPicks to the very top regardless of sort order
+        // Always pin the surviving Quick Picks to the very top section on Home
         val isQuickPicksSection: (HomeSection) -> Boolean = {
-            it == HomeSection.QuickPicks || (it is HomeSection.HomePageSection && homePage?.sections?.getOrNull(it.index)?.title?.equals("Quick picks", ignoreCase = true) == true)
+            it == HomeSection.QuickPicks || isYtQuickPicks(it)
         }
         val qpItems = deduplicatedList.filter(isQuickPicksSection)
         if (qpItems.isNotEmpty()) qpItems + deduplicatedList.filterNot(isQuickPicksSection)
@@ -1956,7 +1961,7 @@ fun HomeScreen(
                                     )
                                 }
 
-                                if (sectionData.title.equals("Quick picks", ignoreCase = true)) {
+                                if (sectionData.title.contains("Quick picks", ignoreCase = true)) {
                                     // Quick Picks Card Carousel for YouTube Quick picks
                                     item(key = "home_section_cards_${section.index}") {
                                         val distinctSongs = sectionSongs.filterNot { it.id in dismissedQuickPicks }.distinctBy { it.id }

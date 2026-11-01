@@ -61,6 +61,7 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🛠️ Fixed
+- **Quick Picks Top Section Placement & Universal Visibility:** Resolved an issue where guest deduplication filtering inadvertently removed YouTube's Quick picks section when local history was empty. Restored seamless fallback and pinned Quick Picks as the top section on the Home screen across both local personalized and remote catalog sources.
 - **System Media Notification Artwork Thumbnail Display:** Aligned `MkrNotificationProvider` directly with the source-code reference implementation by removing solid background color overrides (`setColor` and `setColorized(true)`). Android SystemUI and MediaStyle now prioritize the high-resolution album artwork thumbnail as the prominent notification backdrop, with `setColorized(false)` correctly maintained on Android 16 Status Chips (Live Updates).
 - **Top 3-Dot Menu Visibility Across All Player Styles:** Replaced the empty top-right spacer in `MaterialExtendedPlayer` with the standard 3-dot overflow menu (`more_vert`), ensuring that every player style provides consistent top-bar access to the song options menu.
 - **Permanent "Not Interested" Quick Picks Filtering & Local Storage:** Guaranteed songs marked as "Not interested" are permanently excluded from Quick Picks across app launches and manual refreshes, storing exclusion sets locally in DataStore so they automatically reset on app data clear or settings reset.
