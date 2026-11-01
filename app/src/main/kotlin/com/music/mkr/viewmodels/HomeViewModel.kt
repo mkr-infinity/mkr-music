@@ -398,7 +398,7 @@ class HomeViewModel @Inject constructor(
      * without replacing or bypassing official recommendation algorithms or YouTube endpoints.
      * Falls back to standard shuffle for new users (< 5 plays) or when history is sparse.
      */
-    private suspend fun personalizeQuickPicks(candidates: List<Song>): List<Song> {
+    private suspend fun personalizeQuickPicks(candidates: List<Song>, isRefresh: Boolean = false): List<Song> {
         if (candidates.isEmpty()) return emptyList()
 
         val uniqueCandidates = candidates
@@ -499,14 +499,14 @@ class HomeViewModel @Inject constructor(
             }
 
             // Slight random jitter so recommendations feel fresh on each refresh
-            val jitter = Random.nextFloat() * 0.8
+            val jitter = if (isRefresh) Random.nextFloat() * 1.5 else Random.nextFloat() * 0.8
             Pair(song, score + jitter)
         }
 
         // Partition into Familiar (affinity score > 2.5) and Discovery pools
         val familiarPool = scoredCandidates
             .filter { it.second > 2.5 }
-            .sortedByDescending { it.second }
+            .let { list -> if (isRefresh) list.shuffled().sortedByDescending { it.second } else list.sortedByDescending { it.second } }
             .map { it.first }
             .toMutableList()
 
@@ -542,9 +542,9 @@ class HomeViewModel @Inject constructor(
      * Phase 1 quick picks: purely local DB, zero network calls.
      * Publishes immediately so the UI always has something to show on launch.
      */
-    private suspend fun getQuickPicksLocal() {
+    private suspend fun getQuickPicksLocal(isRefresh: Boolean = false) {
         val t0 = System.currentTimeMillis()
-        android.util.Log.d("QP_TIMING", "[Phase1] getQuickPicksLocal() START")
+        android.util.Log.d("QP_TIMING", "[Phase1] getQuickPicksLocal(isRefresh=$isRefresh) START")
 
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
         android.util.Log.d("QP_TIMING", "[Phase1] prefs read in ${System.currentTimeMillis() - t0}ms")
@@ -556,11 +556,17 @@ class HomeViewModel @Inject constructor(
                 android.util.Log.d("QP_TIMING", "[Phase1] quickPicks DB query: ${System.currentTimeMillis() - tRelated}ms | count=${relatedSongs.size}")
 
                 val tForgotten = System.currentTimeMillis()
-                val forgotten = database.forgottenFavorites().first().filterVideoSongs(hideVideoSongs).take(8)
+                val forgotten = database.forgottenFavorites().first().filterVideoSongs(hideVideoSongs)
                 android.util.Log.d("QP_TIMING", "[Phase1] forgottenFavorites DB query: ${System.currentTimeMillis() - tForgotten}ms | count=${forgotten.size}")
 
-                // Only local sources — no network calls here
-                var rawCandidates = (relatedSongs + forgotten).distinctBy { it.id }
+                val recentPlays = database.events().first().take(25).mapNotNull { it.song }.filterVideoSongs(hideVideoSongs)
+
+                // On refresh, sample diverse candidates across related, recent history, and forgotten
+                val rawCandidates = if (isRefresh) {
+                    (relatedSongs.shuffled().take(25) + recentPlays.shuffled().take(15) + forgotten.shuffled().take(8)).distinctBy { it.id }.toMutableList()
+                } else {
+                    (relatedSongs + forgotten.take(8)).distinctBy { it.id }.toMutableList()
+                }
 
                 // ── Fallback Tier 1: liked songs ──────────────────────────────────────
                 if (rawCandidates.isEmpty()) {
@@ -568,7 +574,7 @@ class HomeViewModel @Inject constructor(
                     val likedSongs = database.likedSongsByCreateDateAsc().first()
                         .filterVideoSongs(hideVideoSongs)
                     android.util.Log.d("QP_TIMING", "[Phase1][FALLBACK-1] liked songs: ${System.currentTimeMillis() - tLiked}ms | count=${likedSongs.size}")
-                    rawCandidates = likedSongs
+                    rawCandidates.addAll(if (isRefresh) likedSongs.shuffled() else likedSongs)
                 }
 
                 // ── Fallback Tier 2: most-played songs (any time window) ───────────────
@@ -578,7 +584,7 @@ class HomeViewModel @Inject constructor(
                     val mostPlayed = database.mostPlayedSongs(fromTimeStamp, limit = 40).first()
                         .filterVideoSongs(hideVideoSongs)
                     android.util.Log.d("QP_TIMING", "[Phase1][FALLBACK-2] mostPlayed songs: ${System.currentTimeMillis() - tPlayed}ms | count=${mostPlayed.size}")
-                    rawCandidates = mostPlayed
+                    rawCandidates.addAll(if (isRefresh) mostPlayed.shuffled() else mostPlayed)
                 }
 
                 // ── Fallback Tier 3: any song in library ─────────────────────────────
@@ -587,35 +593,42 @@ class HomeViewModel @Inject constructor(
                     val librarySongs = database.songsByCreateDateAsc().first()
                         .filterVideoSongs(hideVideoSongs)
                     android.util.Log.d("QP_TIMING", "[Phase1][FALLBACK-3] library songs: ${System.currentTimeMillis() - tLib}ms | count=${librarySongs.size}")
-                    rawCandidates = librarySongs
+                    rawCandidates.addAll(if (isRefresh) librarySongs.shuffled() else librarySongs)
                 }
 
                 // ── Fallback Tier 4: recent playback events ─────────────────────────
                 if (rawCandidates.isEmpty()) {
-                    rawCandidates = database.events().first().take(30)
+                    val eventSongs = database.events().first().take(30)
                         .mapNotNull { it.song }
                         .filterVideoSongs(hideVideoSongs)
+                    rawCandidates.addAll(if (isRefresh) eventSongs.shuffled() else eventSongs)
                 }
 
                 android.util.Log.d("QP_TIMING", "[Phase1] final source for candidates: ${rawCandidates.size} songs")
 
                 if (rawCandidates.isNotEmpty()) {
-                    val personalized = personalizeQuickPicks(rawCandidates)
-                    quickPicks.value = personalized.ifEmpty { rawCandidates.shuffled().take(20) }
+                    val personalized = personalizeQuickPicks(rawCandidates, isRefresh)
+                    val newPicks = personalized.ifEmpty { rawCandidates.shuffled().take(20) }
+                    if (newPicks.isNotEmpty()) {
+                        quickPicks.value = newPicks
+                    }
                 }
                 android.util.Log.d("QP_TIMING", "[Phase1] quickPicks.value SET with ${quickPicks.value?.size} items — total elapsed ${System.currentTimeMillis() - t0}ms")
             }
             QuickPicks.LAST_LISTEN -> {
                 val tEvent = System.currentTimeMillis()
-                val song = database.events().first().firstOrNull()?.song
+                val recentEvents = database.events().first()
+                val song = (if (isRefresh) recentEvents.take(5).shuffled().firstOrNull() else recentEvents.firstOrNull())?.song
                 android.util.Log.d("QP_TIMING", "[Phase1][LAST_LISTEN] events query: ${System.currentTimeMillis() - tEvent}ms | recentSong=${song?.id}")
 
                 val related = if (song != null && database.hasRelatedSongs(song.id)) {
-                    database.getRelatedSongs(song.id).first().filterVideoSongs(hideVideoSongs)
+                    val relatedList = database.getRelatedSongs(song.id).first().filterVideoSongs(hideVideoSongs)
+                    if (isRefresh) relatedList.shuffled() else relatedList
                 } else if (song != null) {
                     val artistId = song.artists.firstOrNull()?.id.orEmpty()
                     if (artistId.isNotEmpty()) {
-                        database.artistSongsByCreateDateAsc(artistId).first().filterVideoSongs(hideVideoSongs)
+                        val artistList = database.artistSongsByCreateDateAsc(artistId).first().filterVideoSongs(hideVideoSongs)
+                        if (isRefresh) artistList.shuffled() else artistList
                     } else {
                         emptyList()
                     }
@@ -628,16 +641,20 @@ class HomeViewModel @Inject constructor(
                 } else {
                     val liked = database.likedSongsByCreateDateAsc().first().filterVideoSongs(hideVideoSongs)
                     if (liked.isNotEmpty()) {
-                        liked
+                        if (isRefresh) liked.shuffled() else liked
                     } else {
-                        database.mostPlayedSongs(System.currentTimeMillis() - 86400000L * 30, limit = 20)
+                        val mostPlayed = database.mostPlayedSongs(System.currentTimeMillis() - 86400000L * 30, limit = 20)
                             .first().filterVideoSongs(hideVideoSongs)
+                        if (isRefresh) mostPlayed.shuffled() else mostPlayed
                     }
                 }
 
                 if (candidates.isNotEmpty()) {
-                    val personalized = personalizeQuickPicks(candidates)
-                    quickPicks.value = personalized.ifEmpty { candidates.shuffled().take(20) }
+                    val personalized = personalizeQuickPicks(candidates, isRefresh)
+                    val newPicks = personalized.ifEmpty { candidates.shuffled().take(20) }
+                    if (newPicks.isNotEmpty()) {
+                        quickPicks.value = newPicks
+                    }
                 }
             }
         }
@@ -648,9 +665,9 @@ class HomeViewModel @Inject constructor(
      * Phase 2 quick picks enrichment: fetches YouTube-similar songs and merges
      * them into the already-displayed local quick picks list, silently in background.
      */
-    private suspend fun enrichQuickPicksFromNetwork() {
+    private suspend fun enrichQuickPicksFromNetwork(isRefresh: Boolean = false) {
         val t0 = System.currentTimeMillis()
-        android.util.Log.d("QP_TIMING", "[Phase2] enrichQuickPicksFromNetwork() START — quickPicks already has ${quickPicks.value?.size} items")
+        android.util.Log.d("QP_TIMING", "[Phase2] enrichQuickPicksFromNetwork(isRefresh=$isRefresh) START — quickPicks already has ${quickPicks.value?.size} items")
 
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
         if (quickPicksEnum.first() != QuickPicks.QUICK_PICKS) {
@@ -658,10 +675,12 @@ class HomeViewModel @Inject constructor(
             return
         }
 
-        val recentEvents = database.events().first().take(3)
-        val seedSongs = recentEvents.mapNotNull { it.song }.distinctBy { it.id }.ifEmpty {
-            database.mostPlayedSongs(System.currentTimeMillis() - 86400000L * 7, limit = 5).first().take(1)
-        }
+        val recentEvents = database.events().first().take(10)
+        val seedSongs = recentEvents.mapNotNull { it.song }.distinctBy { it.id }
+            .let { if (isRefresh) it.shuffled().take(3) else it.take(3) }
+            .ifEmpty {
+                database.mostPlayedSongs(System.currentTimeMillis() - 86400000L * 7, limit = 10).first().shuffled().take(2)
+            }
 
         val ytSimilarSongs = mutableListOf<Song>()
         if (seedSongs.isNotEmpty()) {
@@ -707,38 +726,11 @@ class HomeViewModel @Inject constructor(
             }
         }
 
-        // If candidates are still low (< 5), fallback to YouTube Home native Quick Picks
-        if (ytSimilarSongs.size < 5) {
-            try {
-                YouTube.home().getOrNull()?.let { homePage ->
-                    val quickPickShelf = homePage.sections.firstOrNull {
-                        it.title.contains("Quick picks", ignoreCase = true) ||
-                        it.title.contains("Listen again", ignoreCase = true)
-                    }
-                    quickPickShelf?.items?.filterIsInstance<SongItem>()?.take(15)?.forEach { ytSong ->
-                        var localSong = database.song(ytSong.id).first()
-                        if (localSong == null) {
-                            try {
-                                val mediaMetadata = ytSong.toMediaMetadata()
-                                database.insert(mediaMetadata)
-                                localSong = database.song(ytSong.id).first()
-                            } catch (_: Exception) {}
-                        }
-                        localSong?.let {
-                            if (!hideVideoSongs || !it.song.isVideo) {
-                                ytSimilarSongs.add(it)
-                            }
-                        }
-                    }
-                }
-            } catch (_: Exception) {}
-        }
-
         if (ytSimilarSongs.isNotEmpty()) {
             // Merge enriched network songs into the already-visible local list
             val existing = quickPicks.value.orEmpty()
             val merged = (existing + ytSimilarSongs).distinctBy { it.id }
-            val personalized = personalizeQuickPicks(merged)
+            val personalized = personalizeQuickPicks(merged, isRefresh)
             quickPicks.value = personalized.ifEmpty { merged.shuffled().take(20) }
             android.util.Log.d("QP_TIMING", "[Phase2] quickPicks enriched → ${quickPicks.value?.size} items total")
         } else {
@@ -837,19 +829,22 @@ class HomeViewModel @Inject constructor(
      * Phase 1: Reads all local DB data and immediately drops the loading indicator.
      * Guarantees the UI shows real content before any network call is made.
      */
-    private suspend fun loadLocalDataPhase() {
+    private suspend fun loadLocalDataPhase(isRefresh: Boolean = false) {
         val t0 = System.currentTimeMillis()
-        android.util.Log.d("QP_TIMING", "[Phase1] loadLocalDataPhase() START")
+        android.util.Log.d("QP_TIMING", "[Phase1] loadLocalDataPhase(isRefresh=$isRefresh) START")
 
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
 
         // DB-only — no network, publishes quickPicks instantly
-        getQuickPicksLocal()
+        getQuickPicksLocal(isRefresh)
         android.util.Log.d("QP_TIMING", "[Phase1] getQuickPicksLocal() returned at ${System.currentTimeMillis() - t0}ms — quickPicks=${quickPicks.value?.size} items")
 
         val tForgotten = System.currentTimeMillis()
-        forgottenFavorites.value = database.forgottenFavorites().first()
+        val forgotten = database.forgottenFavorites().first()
             .filterVideoSongs(hideVideoSongs).shuffled().take(20)
+        if (forgotten.isNotEmpty() || forgottenFavorites.value.isNullOrEmpty()) {
+            forgottenFavorites.value = forgotten
+        }
         android.util.Log.d("QP_TIMING", "[Phase1] forgottenFavorites loaded in ${System.currentTimeMillis() - tForgotten}ms")
 
         val fromTimeStamp = System.currentTimeMillis() - 86400000L * 7 * 2
@@ -860,7 +855,10 @@ class HomeViewModel @Inject constructor(
             .filter { it.album.thumbnailUrl != null }.shuffled().take(5)
         val keepListeningArtists = database.mostPlayedArtists(fromTimeStamp).first()
             .filter { it.artist.isYouTubeArtist && it.artist.thumbnailUrl != null }.shuffled().take(5)
-        keepListening.value = (keepListeningSongs + keepListeningAlbums + keepListeningArtists).shuffled()
+        val newKeepListening = (keepListeningSongs + keepListeningAlbums + keepListeningArtists).shuffled()
+        if (newKeepListening.isNotEmpty() || keepListening.value.isNullOrEmpty()) {
+            keepListening.value = newKeepListening
+        }
         android.util.Log.d("QP_TIMING", "[Phase1] keepListening loaded in ${System.currentTimeMillis() - tKeep}ms")
 
         allLocalItems.value = (quickPicks.value.orEmpty() + forgottenFavorites.value.orEmpty() + keepListening.value.orEmpty())
@@ -976,7 +974,7 @@ class HomeViewModel @Inject constructor(
      * Because isLoading is already false, each section streams into the UI
      * as its data arrives — no spinner blocking the user.
      */
-    private suspend fun loadNetworkDataPhase() {
+    private suspend fun loadNetworkDataPhase(isRefresh: Boolean = false) {
         val hideExplicit = context.dataStore.get(HideExplicitKey, false)
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
         val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
@@ -984,7 +982,7 @@ class HomeViewModel @Inject constructor(
         coroutineScope {
             // Enrich Quick Picks with network-similar songs in background
             // (local picks are already visible from Phase 1)
-            launch(Dispatchers.IO) { enrichQuickPicksFromNetwork() }
+            launch(Dispatchers.IO) { enrichQuickPicksFromNetwork(isRefresh) }
             launch(Dispatchers.IO) { getDailyDiscover() }
             launch(Dispatchers.IO) { getCommunityPlaylists() }
             launch(Dispatchers.IO) { loadSimilarRecommendations() }
@@ -1042,21 +1040,23 @@ class HomeViewModel @Inject constructor(
                 homePage.value?.sections?.flatMap { it.items }.orEmpty()
     }
 
-    private suspend fun load() {
+    private suspend fun load(isRefresh: Boolean = false) {
         val t0 = System.currentTimeMillis()
         android.util.Log.d("QP_TIMING", "========================================")
-        android.util.Log.d("QP_TIMING", "load() START — isLoading=true")
+        android.util.Log.d("QP_TIMING", "load(isRefresh=$isRefresh) START")
 
-        isLoading.value = true
+        if (!isRefresh && quickPicks.value.isNullOrEmpty() && homePage.value == null) {
+            isLoading.value = true
+        }
 
         // Phase 1: Local DB only — UI renders immediately after this
-        loadLocalDataPhase()
+        loadLocalDataPhase(isRefresh)
         isLoading.value = false
         android.util.Log.d("QP_TIMING", "load() Phase1 complete at ${System.currentTimeMillis() - t0}ms — isLoading=false — quickPicks=${quickPicks.value?.size} items")
         android.util.Log.d("QP_TIMING", ">>> UI should now show Quick Picks at this point <<<")
 
         // Phase 2: All network sections in parallel — streams in progressively
-        loadNetworkDataPhase()
+        loadNetworkDataPhase(isRefresh)
         android.util.Log.d("QP_TIMING", "load() Phase2 complete at ${System.currentTimeMillis() - t0}ms — total load done")
         android.util.Log.d("QP_TIMING", "========================================")
     }
@@ -1165,7 +1165,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 isRefreshing.value = true
-                load()
+                load(isRefresh = true)
             } finally {
                 isRefreshing.value = false
             }
