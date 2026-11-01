@@ -5,7 +5,6 @@ import android.content.Context
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.OptIn
-import androidx.compose.ui.graphics.toArgb
 import androidx.media3.common.C
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
@@ -15,26 +14,16 @@ import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
 import com.google.common.collect.ImmutableList
 import com.music.mkr.R
-import com.music.mkr.ui.theme.PlayerColorExtractor
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import timber.log.Timber
 import java.util.Locale
 
 /**
- * Custom MediaNotification.Provider for MKR Music:
- * - Adapts notification colors dynamically to the current track's artwork palette.
- * - Handles asynchronous artwork loading without blocking or freezing playback.
- * - Automatically clears previous track colors and applies contrast-safe fallbacks.
- * - Works consistently in both playing and paused states.
- * - Adds Android 16 Status Chips (Live Updates) support on API 36+.
+ * A custom MediaNotification.Provider that delegates to DefaultMediaNotificationProvider
+ * and adds Android 16 Status Chips (Live Updates) support.
+ * Ensures the track artwork/thumbnail remains the first priority on the media notification.
  */
 @OptIn(UnstableApi::class)
 class MkrNotificationProvider(
     private val context: Context,
-    private val scope: CoroutineScope,
     notificationIdProvider: DefaultMediaNotificationProvider.NotificationIdProvider,
     channelId: String,
     channelNameResourceId: Int,
@@ -61,6 +50,7 @@ class MkrNotificationProvider(
         actionFactory: MediaNotification.ActionFactory,
         onNotificationChangedCallback: MediaNotification.Provider.Callback,
     ): MediaNotification {
+        // Get the default notification built by Media3
         val mediaNotification = defaultProvider.createNotification(
             mediaSession,
             customLayout,
@@ -68,122 +58,92 @@ class MkrNotificationProvider(
             onNotificationChangedCallback
         )
 
-        return try {
+        // Android 16 Status Chips implementation (API 36 or "Baklava")
+        val isAndroid16 = Build.VERSION.SDK_INT >= 36 || Build.VERSION.CODENAME == "Baklava"
+
+        if (isAndroid16) {
             val player = mediaSession.player
             val isPlaying = player.playWhenReady && player.playbackState == Player.STATE_READY
-            val currentMediaItem = player.currentMediaItem
-            val mediaMetadata = currentMediaItem?.mediaMetadata
-            val mediaId = currentMediaItem?.mediaId
-            val artworkUri = mediaMetadata?.artworkUri?.toString()
-                ?: mediaMetadata?.extras?.getString("artwork_uri")
 
-            // Look up cached palette for active track
-            val cacheKey = mediaId?.takeIf { it.isNotBlank() } ?: artworkUri?.takeIf { it.isNotBlank() }
-            val cachedPalette = cacheKey?.let { PlayerColorExtractor.getCachedPalette(it) }
+            val durationMs = player.duration
+            val currentPosMs = player.currentPosition
 
-            // Asynchronously resolve palette if not yet available in cache
-            if (cachedPalette == null && !artworkUri.isNullOrBlank()) {
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        val palette = PlayerColorExtractor.extractPalette(context, artworkUri, mediaId)
-                        withContext(Dispatchers.Main) {
-                            val activeItem = mediaSession.player.currentMediaItem
-                            if (activeItem?.mediaId == mediaId) {
-                                val asyncBuilder = Notification.Builder.recoverBuilder(context, mediaNotification.notification)
-                                val dynamicColor = palette.primaryAccent.toArgb()
-                                asyncBuilder.setColor(dynamicColor)
-                                asyncBuilder.setColorized(true)
-                                asyncBuilder.setSmallIcon(R.drawable.mkrmusicnotification)
-                                asyncBuilder.setOngoing(mediaSession.player.playWhenReady && mediaSession.player.playbackState == Player.STATE_READY)
-
-                                val updatedNotif = asyncBuilder.build()
-                                reattachMediaSessionToken(mediaNotification.notification, updatedNotif)
-                                onNotificationChangedCallback.onNotificationChanged(
-                                    MediaNotification(mediaNotification.notificationId, updatedNotif)
-                                )
-                            }
-                        }
-                    } catch (e: Exception) {
-                        Timber.tag("MkrNotificationProvider").w(e, "Failed to asynchronously extract artwork color")
-                    }
-                }
+            // Format duration for the chip (e.g., "5:20")
+            val formattedTime = if (durationMs != C.TIME_UNSET && durationMs > 0) {
+                val totalSeconds = durationMs / 1000
+                val minutes = totalSeconds / 60
+                val seconds = totalSeconds % 60
+                String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
+            } else {
+                null
             }
 
-            // Derive dynamic color: extracted primary accent or brand warm amber fallback
-            val accentColor = cachedPalette?.primaryAccent?.toArgb() ?: PlayerColorExtractor.WarmAmber.toArgb()
-
+            // Use platform Builder to recover and modify the notification
             val notification = mediaNotification.notification
             val builder = Notification.Builder.recoverBuilder(context, notification)
 
-            // Dynamic color appearance synchronized with artwork
-            builder.setColor(accentColor)
-            builder.setColorized(true)
+            // Essential for Android 16 Status Chips (Live Updates)
+            builder.setOngoing(true)
+            builder.setCategory(Notification.CATEGORY_TRANSPORT)
+
+            // Keep colorized false so SystemUI highlights the artwork thumbnail
+            builder.setColorized(false)
+
+            // Ensure we have a small icon (required for chip)
             builder.setSmallIcon(R.drawable.mkrmusicnotification)
-            builder.setOngoing(isPlaying)
 
-            // Android 16 Status Chips implementation (API 36 or "Baklava")
-            val isAndroid16 = Build.VERSION.SDK_INT >= 36 || Build.VERSION.CODENAME == "Baklava"
-            if (isAndroid16) {
-                val durationMs = player.duration
-                val currentPosMs = player.currentPosition
+            // Promote to Live Update
+            setRequestPromotedOngoingSafely(builder, true)
 
-                val formattedTime = if (durationMs != C.TIME_UNSET && durationMs > 0) {
-                    val totalSeconds = durationMs / 1000
-                    val minutes = totalSeconds / 60
-                    val seconds = totalSeconds % 60
-                    String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
+            // Fallback: also set via extras just in case reflection fails
+            builder.extras.putBoolean("android.requestPromotedOngoing", true)
+
+            if (isPlaying) {
+                // Set the chip text (e.g., the track duration)
+                setShortCriticalTextSafely(builder, formattedTime ?: context.getString(R.string.playing_status))
+
+                if (durationMs != C.TIME_UNSET && durationMs > 0) {
+                    // Set 'when' to the completion time of the track for a live countdown
+                    val remainingMs = durationMs - currentPosMs
+                    val endTime = System.currentTimeMillis() + remainingMs
+                    builder.setWhen(endTime)
+                    builder.setUsesChronometer(true)
+                    setChronometerCountDownSafely(builder, true)
                 } else {
-                    null
+                    builder.setWhen(System.currentTimeMillis())
+                    builder.setShowWhen(true)
                 }
-
-                builder.setCategory(Notification.CATEGORY_TRANSPORT)
-                setRequestPromotedOngoingSafely(builder, true)
-                builder.extras.putBoolean("android.requestPromotedOngoing", true)
-
-                if (isPlaying) {
-                    setShortCriticalTextSafely(builder, formattedTime ?: context.getString(R.string.playing_status))
-                    if (durationMs != C.TIME_UNSET && durationMs > 0) {
-                        val remainingMs = durationMs - currentPosMs
-                        val endTime = System.currentTimeMillis() + remainingMs
-                        builder.setWhen(endTime)
-                        builder.setUsesChronometer(true)
-                        setChronometerCountDownSafely(builder, true)
-                    } else {
-                        builder.setWhen(System.currentTimeMillis())
-                        builder.setShowWhen(true)
-                    }
-                } else {
-                    setShortCriticalTextSafely(builder, formattedTime ?: context.getString(R.string.paused_status))
-                    builder.setShowWhen(false)
-                    builder.setUsesChronometer(false)
-                }
+            } else {
+                // When paused, show "Paused" or static duration in the chip
+                setShortCriticalTextSafely(builder, formattedTime ?: context.getString(R.string.paused_status))
+                builder.setShowWhen(false)
+                builder.setUsesChronometer(false)
             }
 
+            // Re-build the notification
             val updatedNotification = builder.build()
-            reattachMediaSessionToken(mediaNotification.notification, updatedNotification)
-            MediaNotification(mediaNotification.notificationId, updatedNotification)
-        } catch (e: Exception) {
-            Timber.tag("MkrNotificationProvider").e(e, "Error decorating media notification")
-            mediaNotification
-        }
-    }
 
-    private fun reattachMediaSessionToken(source: Notification, target: Notification) {
-        if (Build.VERSION.SDK_INT >= 33) {
-            source.extras.getParcelable(
-                Notification.EXTRA_MEDIA_SESSION,
-                android.media.session.MediaSession.Token::class.java
-            )?.let {
-                target.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, it)
+            // Re-attach the media session token if it was lost during build()
+            if (Build.VERSION.SDK_INT >= 33) {
+                mediaNotification.notification.extras.getParcelable(
+                    Notification.EXTRA_MEDIA_SESSION,
+                    android.media.session.MediaSession.Token::class.java
+                )?.let {
+                    updatedNotification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, it)
+                }
+            } else {
+                @Suppress("DEPRECATION")
+                mediaNotification.notification.extras.getParcelable<android.media.session.MediaSession.Token>(
+                    Notification.EXTRA_MEDIA_SESSION
+                )?.let {
+                    updatedNotification.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, it)
+                }
             }
-        } else {
-            @Suppress("DEPRECATION")
-            source.extras.getParcelable<android.media.session.MediaSession.Token>(
-                Notification.EXTRA_MEDIA_SESSION
-            )?.let {
-                target.extras.putParcelable(Notification.EXTRA_MEDIA_SESSION, it)
-            }
+
+            return MediaNotification(mediaNotification.notificationId, updatedNotification)
         }
+
+        return mediaNotification
     }
 
     override fun handleCustomCommand(session: MediaSession, action: String, extras: Bundle): Boolean =

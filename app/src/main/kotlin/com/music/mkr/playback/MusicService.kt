@@ -624,7 +624,6 @@ class MusicService :
         setMediaNotificationProvider(
             MkrNotificationProvider(
                 this,
-                scope,
                 { NOTIFICATION_ID },
                 CHANNEL_ID,
                 R.string.music_player
@@ -1442,6 +1441,13 @@ class MusicService :
     private fun updateNotification() {
         mediaSession.setCustomLayout(
             listOf(
+                CommandButton
+                    .Builder()
+                    .setDisplayName(getString(R.string.action_skip_next))
+                    .setIconResId(R.drawable.skip_next)
+                    .setPlayerCommand(Player.COMMAND_SEEK_TO_NEXT)
+                    .setEnabled(player.hasNextMediaItem())
+                    .build(),
                 CommandButton
                     .Builder()
                     .setDisplayName(

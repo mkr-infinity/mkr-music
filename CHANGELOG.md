@@ -36,6 +36,7 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🌟 Improved
+- **Media Notification Next Track Action:** Added a dedicated **Next** button before the **Like** button in the system media notification custom layout (`COMMAND_SEEK_TO_NEXT`), allowing listeners to quickly skip to the next track directly from notification controls.
 - **Personalized Home Experience for Guest / Logged-Out Listeners:** Suppressed generic unauthenticated YouTube guest recommendations when not logged in, ensuring the Home screen prioritizes local personalized Quick Picks tailored to the user's taste, recent playback sessions, and active moods.
 - **Streamlined Queue Controls:** Removed the redundant audio device speaker pill situated between the delete button and track info text in the playback queue header.
 - **Adaptive Player Layout Sizing Across All Architectures:** Integrated dynamic height-and-width constrained scaling (`BoxWithConstraints`) across all 9 player styles (`Classic`, `Modern`, `Cinematic`, `Minimal`, `Editorial`, `Material Extended`, `Immersive`, `Immersive Extended`, `Apple`), guaranteeing album artwork smoothly scales to available screen height without compressing or pushing playback controls into each other.
@@ -60,6 +61,8 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🛠️ Fixed
+- **System Media Notification Artwork Thumbnail Display:** Aligned `MkrNotificationProvider` directly with the source-code reference implementation by removing solid background color overrides (`setColor` and `setColorized(true)`). Android SystemUI and MediaStyle now prioritize the high-resolution album artwork thumbnail as the prominent notification backdrop, with `setColorized(false)` correctly maintained on Android 16 Status Chips (Live Updates).
+- **Top 3-Dot Menu Visibility Across All Player Styles:** Replaced the empty top-right spacer in `MaterialExtendedPlayer` with the standard 3-dot overflow menu (`more_vert`), ensuring that every player style provides consistent top-bar access to the song options menu.
 - **Permanent "Not Interested" Quick Picks Filtering & Local Storage:** Guaranteed songs marked as "Not interested" are permanently excluded from Quick Picks across app launches and manual refreshes, storing exclusion sets locally in DataStore so they automatically reset on app data clear or settings reset.
 - **Universal Player Layout & Navigation Bar Overlap Prevention:** Double-checked all 9 player styles and inner layout containers to ensure dynamic inset calculation (`QueuePeekHeight + insets.calculateBottomPadding() + 8.dp`) and responsive artwork bounds (`BoxWithConstraints`) prevent buttons, volume sliders, or timestamps from overlapping or getting hidden across any device or navigation mode.
 - **Player Controls & Navigation Bar Overlaps:** Resolved layout overlaps across all navigation modes (3-button, 2-button, gesture, and immersive) by computing dynamic system bar insets and anchoring bottom playback controls, volume sliders, and secondary rows safely above the Queue peek sheet (`QueuePeekHeight + insets.calculateBottomPadding() + 8.dp`).

@@ -180,7 +180,13 @@ fun MaterialExtendedPlayer(
                 )
             }
 
-            Spacer(Modifier.size(40.dp))
+            IconButton(onClick = onShowMenu) {
+                Icon(
+                    painter = painterResource(R.drawable.more_vert),
+                    contentDescription = stringResource(R.string.more_label),
+                    tint = textBackgroundColor
+                )
+            }
         }
 
         Spacer(Modifier.height(14.dp))

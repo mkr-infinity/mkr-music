@@ -250,6 +250,7 @@
     <string name="error_unknown">Unknown error</string>
 
     <!-- Player action -->
+    <string name="action_skip_next">Next</string>
     <string name="action_like">Like</string>
     <string name="action_like_all">Like all</string>
     <string name="action_remove_like">Remove like</string>
