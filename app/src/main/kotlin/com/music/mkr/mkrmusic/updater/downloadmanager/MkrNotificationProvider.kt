@@ -19,7 +19,6 @@ import java.util.Locale
 /**
  * A custom MediaNotification.Provider that delegates to DefaultMediaNotificationProvider
  * and adds Android 16 Status Chips (Live Updates) support.
- * Ensures the track artwork/thumbnail remains the first priority on the media notification.
  */
 @OptIn(UnstableApi::class)
 class MkrNotificationProvider(
@@ -73,7 +72,7 @@ class MkrNotificationProvider(
                 val totalSeconds = durationMs / 1000
                 val minutes = totalSeconds / 60
                 val seconds = totalSeconds % 60
-                String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
+                String.Companion.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
             } else {
                 null
             }
@@ -86,7 +85,8 @@ class MkrNotificationProvider(
             builder.setOngoing(true)
             builder.setCategory(Notification.CATEGORY_TRANSPORT)
 
-            // Keep colorized false so SystemUI highlights the artwork thumbnail
+            // Research suggests colorized should be false for promoted notifications in some cases
+            // but for music it might be okay. Let's try false first for better promotion.
             builder.setColorized(false)
 
             // Ensure we have a small icon (required for chip)
@@ -96,7 +96,7 @@ class MkrNotificationProvider(
             setRequestPromotedOngoingSafely(builder, true)
 
             // Fallback: also set via extras just in case reflection fails
-            builder.extras.putBoolean("android.requestPromotedOngoing", true)
+            builder.getExtras().putBoolean("android.requestPromotedOngoing", true)
 
             if (isPlaying) {
                 // Set the chip text (e.g., the track duration)
@@ -154,7 +154,7 @@ class MkrNotificationProvider(
             val method = Notification.Builder::class.java.getMethod("setShortCriticalText", CharSequence::class.java)
             method.invoke(builder, text)
         } catch (e: Exception) {
-            builder.extras.putCharSequence("android.shortCriticalText", text)
+            builder.getExtras().putCharSequence("android.shortCriticalText", text)
         }
     }
 
@@ -166,17 +166,20 @@ class MkrNotificationProvider(
             )
             method.invoke(builder, countDown)
         } catch (e: Exception) {
-            builder.extras.putBoolean("android.chronometerCountDown", countDown)
+            builder.getExtras().putBoolean("android.chronometerCountDown", countDown)
         }
     }
 
     private fun setRequestPromotedOngoingSafely(builder: Notification.Builder, promoted: Boolean) {
         try {
+            // Try different possible method names from various previews
             val methodNames = arrayOf("setRequestPromotedOngoing", "setPromotedOngoing", "setOngoingActivity")
+            var success = false
             for (name in methodNames) {
                 try {
                     val method = Notification.Builder::class.java.getMethod(name, Boolean::class.javaPrimitiveType)
                     method.invoke(builder, promoted)
+                    success = true
                     break
                 } catch (e: Exception) {}
             }

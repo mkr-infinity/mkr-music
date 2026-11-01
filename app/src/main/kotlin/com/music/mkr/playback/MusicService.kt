@@ -33,7 +33,6 @@ import androidx.datastore.preferences.core.edit
 import com.music.mkr.constants.StopMusicOnTaskClearKey
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
-import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
@@ -71,8 +70,6 @@ import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
-import com.music.mkr.mkrmusic.updater.downloadmanager.MkrNotificationProvider
-import com.music.mkr.ui.theme.PlayerColorExtractor
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
@@ -340,65 +337,6 @@ class MusicService :
             get() = this@MusicService
     }
 
-    private inner class MusicForwardingPlayer(player: Player) : ForwardingPlayer(player) {
-        override fun getDuration(): Long {
-            val d = super.getDuration()
-            if (d > 0 && d != C.TIME_UNSET) {
-                return d
-            }
-            val metaSec = currentMediaMetadata.value?.duration ?: -1
-            if (metaSec > 0) {
-                return metaSec * 1000L
-            }
-            val extraDuration = currentMediaItem?.mediaMetadata?.extras?.getLong("duration")?.takeIf { it > 0 }
-                ?: currentMediaItem?.mediaMetadata?.extras?.getLong("android.media.metadata.DURATION")?.takeIf { it > 0 }
-                ?: 0L
-            if (extraDuration > 0) {
-                return extraDuration
-            }
-            return d
-        }
-
-        override fun isCurrentMediaItemSeekable(): Boolean {
-            if (super.isCurrentMediaItemSeekable()) {
-                return true
-            }
-            return getDuration() > 0 && getDuration() != C.TIME_UNSET && !super.isCurrentMediaItemLive()
-        }
-
-        override fun isCurrentMediaItemLive(): Boolean {
-            val d = getDuration()
-            if (d > 0 && d != C.TIME_UNSET) {
-                return false
-            }
-            return super.isCurrentMediaItemLive()
-        }
-
-        override fun isCurrentMediaItemDynamic(): Boolean {
-            val d = getDuration()
-            if (d > 0 && d != C.TIME_UNSET) {
-                return false
-            }
-            return super.isCurrentMediaItemDynamic()
-        }
-
-        override fun getAvailableCommands(): Player.Commands {
-            val commands = super.getAvailableCommands()
-            val d = getDuration()
-            return if (d > 0 && d != C.TIME_UNSET && !super.isCurrentMediaItemLive()) {
-                commands.buildUpon()
-                    .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
-                    .add(Player.COMMAND_SEEK_TO_MEDIA_ITEM)
-                    .build()
-            } else {
-                commands
-            }
-        }
-
-        override fun isCommandAvailable(command: Int): Boolean {
-            return availableCommands.contains(command)
-        }
-    }
 
     private lateinit var connectivityManager: ConnectivityManager
     lateinit var connectivityObserver: NetworkConnectivityObserver
@@ -622,12 +560,15 @@ class MusicService :
         }
 
         setMediaNotificationProvider(
-            MkrNotificationProvider(
+            DefaultMediaNotificationProvider(
                 this,
                 { NOTIFICATION_ID },
                 CHANNEL_ID,
                 R.string.music_player
-            ).setSmallIcon(R.drawable.mkrmusicnotification)
+            )
+                .apply {
+                    setSmallIcon(R.drawable.mkrmusicnotification)
+                },
         )
         player = createExoPlayer()
         player.addListener(this@MusicService)
@@ -651,7 +592,7 @@ class MusicService :
         }
         mediaSession =
             MediaLibrarySession
-                .Builder(this, MusicForwardingPlayer(player), mediaLibrarySessionCallback)
+                .Builder(this, player, mediaLibrarySessionCallback)
                 .setSessionActivity(
                     PendingIntent.getActivity(
                         this,
@@ -4749,7 +4690,7 @@ class MusicService :
         _playerFlow.value = player
         secondaryPlayer = null
         try {
-            (mediaSession as MediaSession).player = MusicForwardingPlayer(player)
+            (mediaSession as MediaSession).player = player
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to swap player in MediaSession")
         }
