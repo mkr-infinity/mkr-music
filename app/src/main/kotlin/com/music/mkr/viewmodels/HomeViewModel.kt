@@ -28,6 +28,7 @@ import com.music.innertube.utils.completed
 import com.music.innertube.utils.parseCookieString
 import com.music.mkr.mkrmusic.updater.GitHubUpdateManager
 import com.music.mkr.mkrmusic.updater.ReleasePreviewState
+import com.music.mkr.constants.DismissedQuickPicksKey
 import com.music.mkr.constants.HideExplicitKey
 import com.music.mkr.constants.HideVideoSongsKey
 import com.music.mkr.constants.HideYoutubeShortsKey
@@ -106,6 +107,31 @@ class HomeViewModel @Inject constructor(
     private val quickPicksEnum = context.dataStore.data.map {
         it[QuickPicksKey].toEnum(QuickPicks.QUICK_PICKS)
     }.distinctUntilChanged()
+
+    val dismissedQuickPicks = context.dataStore.data.map {
+        it[DismissedQuickPicksKey] ?: emptySet()
+    }.distinctUntilChanged()
+
+    fun dismissQuickPick(songId: String) {
+        quickPicks.value = quickPicks.value?.filterNot { it.id == songId }
+        homePage.value = homePage.value?.let { page ->
+            page.copy(
+                sections = page.sections.map { section ->
+                    if (section.title.equals("Quick picks", ignoreCase = true)) {
+                        section.copy(items = section.items.filterNot { it.id == songId })
+                    } else {
+                        section
+                    }
+                }
+            )
+        }
+        viewModelScope.launch(Dispatchers.IO) {
+            context.dataStore.edit { preferences ->
+                val current = preferences[DismissedQuickPicksKey] ?: emptySet()
+                preferences[DismissedQuickPicksKey] = current + songId
+            }
+        }
+    }
 
     val quickPicks = MutableStateFlow<List<Song>?>(null)
     val dailyDiscover = MutableStateFlow<List<DailyDiscoverItem>?>(null)
@@ -547,6 +573,7 @@ class HomeViewModel @Inject constructor(
         android.util.Log.d("QP_TIMING", "[Phase1] getQuickPicksLocal(isRefresh=$isRefresh) START")
 
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
+        val dismissedIds = context.dataStore.get(DismissedQuickPicksKey, emptySet())
         android.util.Log.d("QP_TIMING", "[Phase1] prefs read in ${System.currentTimeMillis() - t0}ms")
 
         when (quickPicksEnum.first()) {
@@ -604,11 +631,13 @@ class HomeViewModel @Inject constructor(
                     rawCandidates.addAll(if (isRefresh) eventSongs.shuffled() else eventSongs)
                 }
 
+                rawCandidates.removeAll { it.id in dismissedIds }
+
                 android.util.Log.d("QP_TIMING", "[Phase1] final source for candidates: ${rawCandidates.size} songs")
 
                 if (rawCandidates.isNotEmpty()) {
                     val personalized = personalizeQuickPicks(rawCandidates, isRefresh)
-                    val newPicks = personalized.ifEmpty { rawCandidates.shuffled().take(20) }
+                    val newPicks = personalized.filter { it.id !in dismissedIds }.ifEmpty { rawCandidates.shuffled().take(20) }
                     if (newPicks.isNotEmpty()) {
                         quickPicks.value = newPicks
                     }
@@ -647,11 +676,16 @@ class HomeViewModel @Inject constructor(
                             .first().filterVideoSongs(hideVideoSongs)
                         if (isRefresh) mostPlayed.shuffled() else mostPlayed
                     }
-                }
+                }.filter { it.id !in dismissedIds }
 
                 if (candidates.isNotEmpty()) {
                     val personalized = personalizeQuickPicks(candidates, isRefresh)
-                    val newPicks = personalized.ifEmpty { candidates.shuffled().take(20) }
+                    val newPicks = personalized.filter { it.id !in dismissedIds }.ifEmpty { candidates.shuffled().take(20) }
+                    if (newPicks.isNotEmpty()) {
+                        quickPicks.value = newPicks
+                    }
+                }
+            }
                     if (newPicks.isNotEmpty()) {
                         quickPicks.value = newPicks
                     }
@@ -670,16 +704,18 @@ class HomeViewModel @Inject constructor(
         android.util.Log.d("QP_TIMING", "[Phase2] enrichQuickPicksFromNetwork(isRefresh=$isRefresh) START — quickPicks already has ${quickPicks.value?.size} items")
 
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
+        val dismissedIds = context.dataStore.get(DismissedQuickPicksKey, emptySet())
         if (quickPicksEnum.first() != QuickPicks.QUICK_PICKS) {
             android.util.Log.d("QP_TIMING", "[Phase2] skipped — mode is not QUICK_PICKS")
             return
         }
 
         val recentEvents = database.events().first().take(10)
-        val seedSongs = recentEvents.mapNotNull { it.song }.distinctBy { it.id }
+        val seedSongs = recentEvents.mapNotNull { it.song }.filter { it.id !in dismissedIds }.distinctBy { it.id }
             .let { if (isRefresh) it.shuffled().take(3) else it.take(3) }
             .ifEmpty {
-                database.mostPlayedSongs(System.currentTimeMillis() - 86400000L * 7, limit = 10).first().shuffled().take(2)
+                database.mostPlayedSongs(System.currentTimeMillis() - 86400000L * 7, limit = 10).first()
+                    .filter { it.id !in dismissedIds }.shuffled().take(2)
             }
 
         val ytSimilarSongs = mutableListOf<Song>()
@@ -708,7 +744,7 @@ class HomeViewModel @Inject constructor(
                     }
                 }
 
-                candidateSongs.distinctBy { it.id }.forEach { ytSong ->
+                candidateSongs.filter { it.id !in dismissedIds }.distinctBy { it.id }.forEach { ytSong ->
                     var localSong = database.song(ytSong.id).first()
                     if (localSong == null) {
                         try {
@@ -726,12 +762,14 @@ class HomeViewModel @Inject constructor(
             }
         }
 
+        ytSimilarSongs.removeAll { it.id in dismissedIds }
+
         if (ytSimilarSongs.isNotEmpty()) {
             // Merge enriched network songs into the already-visible local list
-            val existing = quickPicks.value.orEmpty()
+            val existing = quickPicks.value.orEmpty().filter { it.id !in dismissedIds }
             val merged = (existing + ytSimilarSongs).distinctBy { it.id }
             val personalized = personalizeQuickPicks(merged, isRefresh)
-            quickPicks.value = personalized.ifEmpty { merged.shuffled().take(20) }
+            quickPicks.value = personalized.filter { it.id !in dismissedIds }.ifEmpty { merged.shuffled().take(20) }
             android.util.Log.d("QP_TIMING", "[Phase2] quickPicks enriched → ${quickPicks.value?.size} items total")
         } else {
             android.util.Log.w("QP_TIMING", "[Phase2] no new local matches from YT results — quickPicks unchanged")
@@ -978,6 +1016,7 @@ class HomeViewModel @Inject constructor(
         val hideExplicit = context.dataStore.get(HideExplicitKey, false)
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
         val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
+        val dismissedIds = context.dataStore.get(DismissedQuickPicksKey, emptySet())
 
         coroutineScope {
             // Enrich Quick Picks with network-similar songs in background
@@ -1004,10 +1043,15 @@ class HomeViewModel @Inject constructor(
                     homePage.value = page.copy(
                         sections = page.sections.mapNotNull { section ->
                             if (section == cnrSection) return@mapNotNull null
-                            val filteredItems = section.items
+                            val rawItems = section.items
                                 .filterExplicit(hideExplicit)
                                 .filterVideoSongs(hideVideoSongs)
                                 .filterYoutubeShorts(hideYoutubeShorts)
+                            val filteredItems = if (section.title.contains("Quick picks", ignoreCase = true)) {
+                                rawItems.filterNot { it.id in dismissedIds }
+                            } else {
+                                rawItems
+                            }
                             if (filteredItems.isEmpty()) null else section.copy(items = filteredItems)
                         }
                     )
@@ -1198,6 +1242,34 @@ class HomeViewModel @Inject constructor(
         }
 
         // Prepare wrapped data in background
+        viewModelScope.launch(Dispatchers.IO) {
+            dismissedQuickPicks.collect { dismissedIds ->
+                if (dismissedIds.isNotEmpty()) {
+                    quickPicks.value?.let { current ->
+                        if (current.any { it.id in dismissedIds }) {
+                            quickPicks.value = current.filterNot { it.id in dismissedIds }
+                        }
+                    }
+                    homePage.value?.let { page ->
+                        val hasDismissed = page.sections.any { s ->
+                            s.title.contains("Quick picks", ignoreCase = true) && s.items.any { it.id in dismissedIds }
+                        }
+                        if (hasDismissed) {
+                            homePage.value = page.copy(
+                                sections = page.sections.map { section ->
+                                    if (section.title.contains("Quick picks", ignoreCase = true)) {
+                                        section.copy(items = section.items.filterNot { it.id in dismissedIds })
+                                    } else {
+                                        section
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+        }
+
         viewModelScope.launch(Dispatchers.IO) {
             showWrappedCard.collect { shouldShow ->
                 if (shouldShow && !wrappedManager.state.value.isDataReady) {

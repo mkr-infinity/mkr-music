@@ -1437,7 +1437,7 @@ fun HomeScreen(
                                                         shape = CircleShape,
                                                         tonalElevation = 2.dp,
                                                         modifier = Modifier
-                                                            .align(Alignment.TopEnd)
+                                                            .align(Alignment.TopStart)
                                                             .padding(14.dp)
                                                             .size(36.dp)
                                                     ) {
@@ -1449,6 +1449,27 @@ fun HomeScreen(
                                                             )
                                                         }
                                                     }
+                                                }
+
+                                                IconButton(
+                                                    onClick = {
+                                                        viewModel.dismissQuickPick(originalSong.id)
+                                                    },
+                                                    modifier = Modifier
+                                                        .align(Alignment.TopEnd)
+                                                        .padding(14.dp)
+                                                        .size(36.dp)
+                                                        .background(
+                                                            color = Color.Black.copy(alpha = 0.5f),
+                                                            shape = CircleShape
+                                                        )
+                                                ) {
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.close),
+                                                        contentDescription = stringResource(R.string.dismiss),
+                                                        tint = Color.White,
+                                                        modifier = Modifier.size(18.dp)
+                                                    )
                                                 }
 
                                                 Column(
@@ -2044,7 +2065,7 @@ fun HomeScreen(
                                                             shape = CircleShape,
                                                             tonalElevation = 2.dp,
                                                             modifier = Modifier
-                                                                .align(Alignment.TopEnd)
+                                                                .align(Alignment.TopStart)
                                                                 .padding(14.dp)
                                                                 .size(36.dp)
                                                         ) {
@@ -2056,6 +2077,27 @@ fun HomeScreen(
                                                                 )
                                                             }
                                                         }
+                                                    }
+
+                                                    IconButton(
+                                                        onClick = {
+                                                            viewModel.dismissQuickPick(song.id)
+                                                        },
+                                                        modifier = Modifier
+                                                            .align(Alignment.TopEnd)
+                                                            .padding(14.dp)
+                                                            .size(36.dp)
+                                                            .background(
+                                                                color = Color.Black.copy(alpha = 0.5f),
+                                                                shape = CircleShape
+                                                            )
+                                                    ) {
+                                                        Icon(
+                                                            painter = painterResource(R.drawable.close),
+                                                            contentDescription = stringResource(R.string.dismiss),
+                                                            tint = Color.White,
+                                                            modifier = Modifier.size(18.dp)
+                                                        )
                                                     }
 
                                                     Column(
