@@ -1384,13 +1384,6 @@ class MusicService :
             listOf(
                 CommandButton
                     .Builder()
-                    .setDisplayName(getString(R.string.action_skip_next))
-                    .setIconResId(R.drawable.skip_next)
-                    .setPlayerCommand(Player.COMMAND_SEEK_TO_NEXT)
-                    .setEnabled(player.hasNextMediaItem())
-                    .build(),
-                CommandButton
-                    .Builder()
                     .setDisplayName(
                         getString(
                             if (currentSong.value?.song?.liked ==
@@ -1411,16 +1404,18 @@ class MusicService :
                     .setDisplayName(
                         getString(
                             when (player.repeatMode) {
+                                REPEAT_MODE_OFF -> R.string.repeat_mode_off
                                 REPEAT_MODE_ONE -> R.string.repeat_mode_one
                                 REPEAT_MODE_ALL -> R.string.repeat_mode_all
-                                else -> R.string.repeat_mode_off
+                                else -> throw IllegalStateException()
                             },
                         ),
                     ).setIconResId(
                         when (player.repeatMode) {
+                            REPEAT_MODE_OFF -> R.drawable.repeat
                             REPEAT_MODE_ONE -> R.drawable.repeat_one_on
                             REPEAT_MODE_ALL -> R.drawable.repeat_on
-                            else -> R.drawable.repeat
+                            else -> throw IllegalStateException()
                         },
                     ).setSessionCommand(CommandToggleRepeatMode)
                     .build(),

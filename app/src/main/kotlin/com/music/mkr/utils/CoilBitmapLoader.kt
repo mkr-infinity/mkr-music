@@ -29,7 +29,8 @@ class CoilBitmapLoader(
     private val scope: CoroutineScope,
 ) : BitmapLoader {
     
-    override fun supportsMimeType(mimeType: String): Boolean = mimeType.startsWith("image/")
+    override fun supportsMimeType(mimeType: String): Boolean =
+        mimeType.startsWith("image/") || mimeType.isEmpty() || mimeType == "*/*"
 
     private fun createFallbackBitmap(): Bitmap =
         createBitmap(64, 64)
@@ -60,7 +61,7 @@ class CoilBitmapLoader(
     override fun loadBitmap(uri: Uri): ListenableFuture<Bitmap> =
         scope.future(Dispatchers.IO) {
             val request = ImageRequest.Builder(context)
-                .data(uri)
+                .data(uri.toString())
                 .allowHardware(false)
                 .memoryCachePolicy(CachePolicy.ENABLED)
                 .diskCachePolicy(CachePolicy.ENABLED)
@@ -70,6 +71,7 @@ class CoilBitmapLoader(
 
             when (result) {
                 is ErrorResult -> {
+                    Timber.tag("CoilBitmapLoader").w(result.throwable, "Failed to load bitmap from uri: $uri")
                     createFallbackBitmap()
                 }
                 is SuccessResult -> {

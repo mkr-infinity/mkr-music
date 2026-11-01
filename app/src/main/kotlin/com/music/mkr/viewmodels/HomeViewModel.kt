@@ -217,6 +217,76 @@ class HomeViewModel @Inject constructor(
             artists = listOf(MediaMetadata.Artist(id = "Glass Animals", name = "Glass Animals")),
             duration = 238,
             thumbnailUrl = "https://i.ytimg.com/vi/mRD0-GxqHVo/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "ic8j13piAhQ",
+            title = "Cruel Summer",
+            artists = listOf(MediaMetadata.Artist(id = "Taylor Swift", name = "Taylor Swift")),
+            duration = 178,
+            thumbnailUrl = "https://i.ytimg.com/vi/ic8j13piAhQ/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "dyRsYk0LyA8",
+            title = "bad guy",
+            artists = listOf(MediaMetadata.Artist(id = "Billie Eilish", name = "Billie Eilish")),
+            duration = 194,
+            thumbnailUrl = "https://i.ytimg.com/vi/dyRsYk0LyA8/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "ZmDBbnmKpqQ",
+            title = "drivers license",
+            artists = listOf(MediaMetadata.Artist(id = "Olivia Rodrigo", name = "Olivia Rodrigo")),
+            duration = 242,
+            thumbnailUrl = "https://i.ytimg.com/vi/ZmDBbnmKpqQ/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "Pkh8UtuejGw",
+            title = "Señorita",
+            artists = listOf(MediaMetadata.Artist(id = "Shawn Mendes", name = "Shawn Mendes"), MediaMetadata.Artist(id = "Camila Cabello", name = "Camila Cabello")),
+            duration = 191,
+            thumbnailUrl = "https://i.ytimg.com/vi/Pkh8UtuejGw/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "dvgZkm1xWPE",
+            title = "Viva La Vida",
+            artists = listOf(MediaMetadata.Artist(id = "Coldplay", name = "Coldplay")),
+            duration = 242,
+            thumbnailUrl = "https://i.ytimg.com/vi/dvgZkm1xWPE/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "hT_nvWreIhg",
+            title = "Counting Stars",
+            artists = listOf(MediaMetadata.Artist(id = "OneRepublic", name = "OneRepublic")),
+            duration = 257,
+            thumbnailUrl = "https://i.ytimg.com/vi/hT_nvWreIhg/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "PT2_F-1esPk",
+            title = "Closer",
+            artists = listOf(MediaMetadata.Artist(id = "The Chainsmokers", name = "The Chainsmokers"), MediaMetadata.Artist(id = "Halsey", name = "Halsey")),
+            duration = 245,
+            thumbnailUrl = "https://i.ytimg.com/vi/PT2_F-1esPk/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "U3ASj1L6_sY",
+            title = "Easy On Me",
+            artists = listOf(MediaMetadata.Artist(id = "Adele", name = "Adele")),
+            duration = 224,
+            thumbnailUrl = "https://i.ytimg.com/vi/U3ASj1L6_sY/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "tvTRZJ-4EyI",
+            title = "HUMBLE.",
+            artists = listOf(MediaMetadata.Artist(id = "Kendrick Lamar", name = "Kendrick Lamar")),
+            duration = 177,
+            thumbnailUrl = "https://i.ytimg.com/vi/tvTRZJ-4EyI/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "xpVfcZ0ZcFM",
+            title = "God's Plan",
+            artists = listOf(MediaMetadata.Artist(id = "Drake", name = "Drake")),
+            duration = 199,
+            thumbnailUrl = "https://i.ytimg.com/vi/xpVfcZ0ZcFM/hqdefault.jpg"
         )
     )
 
