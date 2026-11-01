@@ -51,6 +51,7 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🛠️ Fixed
+- **Music Notification Artwork Colors & Playback State Synchronization:** Wired `MkrNotificationProvider` in `MusicService` to dynamically extract and apply the active track's artwork palette color (`setColor(accentColor).setColorized(true)`), eagerly clear previous track colors upon track transition, gracefully fall back to brand warm amber for missing or offline artwork, and preserve synchronized play/pause, seekbar progress, and dismissal states.
 - **Notification Media Seekbar & Progress Sync:** Restored persistent media progress slider visibility across playing, paused, and buffering states via ForwardingPlayer duration fallback and immediate session synchronization.
 - **Tablet Playback & Track Transition Stability:** Shifted metadata Room database lookups inside ExoPlayer media item transitions from the Main Thread to background IO coroutines (`Dispatchers.IO`), eliminating Room main-thread database access exceptions when starting playback on tablets and mobile devices.
 - **Recursive Crash Screen Loop Prevention:** Hardened `CrashHandler` with active process-name inspection to immediately terminate recursive crashes originating from the `:crash` process without re-triggering `CrashActivity`, and switched `CrashActivity` to self-contained MaterialTheme to eliminate cross-process DataStore collisions.

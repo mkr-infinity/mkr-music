@@ -71,6 +71,8 @@ import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
+import com.music.mkr.mkrmusic.updater.downloadmanager.MkrNotificationProvider
+import com.music.mkr.ui.theme.PlayerColorExtractor
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
@@ -620,15 +622,13 @@ class MusicService :
         }
 
         setMediaNotificationProvider(
-            DefaultMediaNotificationProvider(
+            MkrNotificationProvider(
                 this,
+                scope,
                 { NOTIFICATION_ID },
                 CHANNEL_ID,
                 R.string.music_player
-            )
-                .apply {
-                    setSmallIcon(R.drawable.mkrmusicnotification)
-                },
+            ).setSmallIcon(R.drawable.mkrmusicnotification)
         )
         player = createExoPlayer()
         player.addListener(this@MusicService)
@@ -2577,6 +2577,19 @@ class MusicService :
         currentMediaMetadata.value = rawMeta
         updateNotification()
         if (rawMeta != null) {
+            val thumbUrl = rawMeta.thumbnailUrl
+            if (!thumbUrl.isNullOrBlank()) {
+                scope.launch(Dispatchers.IO) {
+                    try {
+                        PlayerColorExtractor.extractPalette(this@MusicService, thumbUrl, rawMeta.id)
+                        withContext(Dispatchers.Main) {
+                            if (currentMediaMetadata.value?.id == rawMeta.id) {
+                                updateNotification()
+                            }
+                        }
+                    } catch (_: Exception) {}
+                }
+            }
             scope.launch(Dispatchers.IO) {
                 try {
                     val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
