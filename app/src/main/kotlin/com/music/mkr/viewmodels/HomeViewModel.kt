@@ -42,6 +42,7 @@ import com.music.mkr.db.entities.Album
 import com.music.mkr.db.entities.LocalItem
 import com.music.mkr.db.entities.Song
 import com.music.mkr.db.entities.SpeedDialItem
+import com.music.mkr.extensions.filterExplicit as filterSongExplicit
 import com.music.mkr.extensions.filterVideoSongs
 import com.music.mkr.extensions.toEnum
 import com.music.mkr.models.SimilarRecommendation
@@ -79,6 +80,13 @@ data class DailyDiscoverItem(
 data class CommunityPlaylistItem(
     val playlist: PlaylistItem,
     val songs: List<SongItem>
+)
+
+private data class RecommendationSettingsSnapshot(
+    val mode: QuickPicks,
+    val hideExplicit: Boolean,
+    val hideVideoSongs: Boolean,
+    val hideYoutubeShorts: Boolean
 )
 
 @HiltViewModel
@@ -572,6 +580,7 @@ class HomeViewModel @Inject constructor(
         val t0 = System.currentTimeMillis()
         android.util.Log.d("QP_TIMING", "[Phase1] getQuickPicksLocal(isRefresh=$isRefresh) START")
 
+        val hideExplicit = context.dataStore.get(HideExplicitKey, false)
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
         val dismissedIds = context.dataStore.get(DismissedQuickPicksKey, emptySet())
         android.util.Log.d("QP_TIMING", "[Phase1] prefs read in ${System.currentTimeMillis() - t0}ms")
@@ -579,14 +588,20 @@ class HomeViewModel @Inject constructor(
         when (quickPicksEnum.first()) {
             QuickPicks.QUICK_PICKS -> {
                 val tRelated = System.currentTimeMillis()
-                val relatedSongs = database.quickPicks().first().filterVideoSongs(hideVideoSongs)
+                val relatedSongs = database.quickPicks().first()
+                    .filterSongExplicit(hideExplicit)
+                    .filterVideoSongs(hideVideoSongs)
                 android.util.Log.d("QP_TIMING", "[Phase1] quickPicks DB query: ${System.currentTimeMillis() - tRelated}ms | count=${relatedSongs.size}")
 
                 val tForgotten = System.currentTimeMillis()
-                val forgotten = database.forgottenFavorites().first().filterVideoSongs(hideVideoSongs)
+                val forgotten = database.forgottenFavorites().first()
+                    .filterSongExplicit(hideExplicit)
+                    .filterVideoSongs(hideVideoSongs)
                 android.util.Log.d("QP_TIMING", "[Phase1] forgottenFavorites DB query: ${System.currentTimeMillis() - tForgotten}ms | count=${forgotten.size}")
 
-                val recentPlays = database.events().first().take(25).mapNotNull { it.song }.filterVideoSongs(hideVideoSongs)
+                val recentPlays = database.events().first().take(25).mapNotNull { it.song }
+                    .filterSongExplicit(hideExplicit)
+                    .filterVideoSongs(hideVideoSongs)
 
                 // On refresh, sample diverse candidates across related, recent history, and forgotten
                 val rawCandidates = if (isRefresh) {
@@ -599,6 +614,7 @@ class HomeViewModel @Inject constructor(
                 if (rawCandidates.isEmpty()) {
                     val tLiked = System.currentTimeMillis()
                     val likedSongs = database.likedSongsByCreateDateAsc().first()
+                        .filterSongExplicit(hideExplicit)
                         .filterVideoSongs(hideVideoSongs)
                     android.util.Log.d("QP_TIMING", "[Phase1][FALLBACK-1] liked songs: ${System.currentTimeMillis() - tLiked}ms | count=${likedSongs.size}")
                     rawCandidates.addAll(if (isRefresh) likedSongs.shuffled() else likedSongs)
@@ -609,6 +625,7 @@ class HomeViewModel @Inject constructor(
                     val tPlayed = System.currentTimeMillis()
                     val fromTimeStamp = System.currentTimeMillis() - 86400000L * 365 // past year
                     val mostPlayed = database.mostPlayedSongs(fromTimeStamp, limit = 40).first()
+                        .filterSongExplicit(hideExplicit)
                         .filterVideoSongs(hideVideoSongs)
                     android.util.Log.d("QP_TIMING", "[Phase1][FALLBACK-2] mostPlayed songs: ${System.currentTimeMillis() - tPlayed}ms | count=${mostPlayed.size}")
                     rawCandidates.addAll(if (isRefresh) mostPlayed.shuffled() else mostPlayed)
@@ -618,6 +635,7 @@ class HomeViewModel @Inject constructor(
                 if (rawCandidates.isEmpty()) {
                     val tLib = System.currentTimeMillis()
                     val librarySongs = database.songsByCreateDateAsc().first()
+                        .filterSongExplicit(hideExplicit)
                         .filterVideoSongs(hideVideoSongs)
                     android.util.Log.d("QP_TIMING", "[Phase1][FALLBACK-3] library songs: ${System.currentTimeMillis() - tLib}ms | count=${librarySongs.size}")
                     rawCandidates.addAll(if (isRefresh) librarySongs.shuffled() else librarySongs)
@@ -627,6 +645,7 @@ class HomeViewModel @Inject constructor(
                 if (rawCandidates.isEmpty()) {
                     val eventSongs = database.events().first().take(30)
                         .mapNotNull { it.song }
+                        .filterSongExplicit(hideExplicit)
                         .filterVideoSongs(hideVideoSongs)
                     rawCandidates.addAll(if (isRefresh) eventSongs.shuffled() else eventSongs)
                 }
@@ -651,12 +670,16 @@ class HomeViewModel @Inject constructor(
                 android.util.Log.d("QP_TIMING", "[Phase1][LAST_LISTEN] events query: ${System.currentTimeMillis() - tEvent}ms | recentSong=${song?.id}")
 
                 val related = if (song != null && database.hasRelatedSongs(song.id)) {
-                    val relatedList = database.getRelatedSongs(song.id).first().filterVideoSongs(hideVideoSongs)
+                    val relatedList = database.getRelatedSongs(song.id).first()
+                        .filterSongExplicit(hideExplicit)
+                        .filterVideoSongs(hideVideoSongs)
                     if (isRefresh) relatedList.shuffled() else relatedList
                 } else if (song != null) {
                     val artistId = song.artists.firstOrNull()?.id.orEmpty()
                     if (artistId.isNotEmpty()) {
-                        val artistList = database.artistSongsByCreateDateAsc(artistId).first().filterVideoSongs(hideVideoSongs)
+                        val artistList = database.artistSongsByCreateDateAsc(artistId).first()
+                            .filterSongExplicit(hideExplicit)
+                            .filterVideoSongs(hideVideoSongs)
                         if (isRefresh) artistList.shuffled() else artistList
                     } else {
                         emptyList()
@@ -668,12 +691,16 @@ class HomeViewModel @Inject constructor(
                 val candidates = if (related.isNotEmpty()) {
                     related
                 } else {
-                    val liked = database.likedSongsByCreateDateAsc().first().filterVideoSongs(hideVideoSongs)
+                    val liked = database.likedSongsByCreateDateAsc().first()
+                        .filterSongExplicit(hideExplicit)
+                        .filterVideoSongs(hideVideoSongs)
                     if (liked.isNotEmpty()) {
                         if (isRefresh) liked.shuffled() else liked
                     } else {
                         val mostPlayed = database.mostPlayedSongs(System.currentTimeMillis() - 86400000L * 30, limit = 20)
-                            .first().filterVideoSongs(hideVideoSongs)
+                            .first()
+                            .filterSongExplicit(hideExplicit)
+                            .filterVideoSongs(hideVideoSongs)
                         if (isRefresh) mostPlayed.shuffled() else mostPlayed
                     }
                 }.filter { it.id !in dismissedIds }
@@ -703,6 +730,7 @@ class HomeViewModel @Inject constructor(
         val t0 = System.currentTimeMillis()
         android.util.Log.d("QP_TIMING", "[Phase2] enrichQuickPicksFromNetwork(isRefresh=$isRefresh) START — quickPicks already has ${quickPicks.value?.size} items")
 
+        val hideExplicit = context.dataStore.get(HideExplicitKey, false)
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
         val dismissedIds = context.dataStore.get(DismissedQuickPicksKey, emptySet())
         if (quickPicksEnum.first() != QuickPicks.QUICK_PICKS) {
@@ -711,10 +739,16 @@ class HomeViewModel @Inject constructor(
         }
 
         val recentEvents = database.events().first().take(10)
-        val seedSongs = recentEvents.mapNotNull { it.song }.filter { it.id !in dismissedIds }.distinctBy { it.id }
+        val seedSongs = recentEvents.mapNotNull { it.song }
+            .filterSongExplicit(hideExplicit)
+            .filterVideoSongs(hideVideoSongs)
+            .filter { it.id !in dismissedIds }
+            .distinctBy { it.id }
             .let { if (isRefresh) it.shuffled().take(3) else it.take(3) }
             .ifEmpty {
                 database.mostPlayedSongs(System.currentTimeMillis() - 86400000L * 7, limit = 10).first()
+                    .filterSongExplicit(hideExplicit)
+                    .filterVideoSongs(hideVideoSongs)
                     .filter { it.id !in dismissedIds }.shuffled().take(2)
             }
 
@@ -744,7 +778,7 @@ class HomeViewModel @Inject constructor(
                     }
                 }
 
-                candidateSongs.filter { it.id !in dismissedIds }.distinctBy { it.id }.forEach { ytSong ->
+                candidateSongs.filterExplicit(hideExplicit).filter { it.id !in dismissedIds }.distinctBy { it.id }.forEach { ytSong ->
                     var localSong = database.song(ytSong.id).first()
                     if (localSong == null) {
                         try {
@@ -754,7 +788,7 @@ class HomeViewModel @Inject constructor(
                         } catch (_: Exception) {}
                     }
                     localSong?.let {
-                        if (!hideVideoSongs || !it.song.isVideo) {
+                        if ((!hideExplicit || !it.song.explicit) && (!hideVideoSongs || !it.song.isVideo)) {
                             ytSimilarSongs.add(it)
                         }
                     }
@@ -766,10 +800,17 @@ class HomeViewModel @Inject constructor(
 
         if (ytSimilarSongs.isNotEmpty()) {
             // Merge enriched network songs into the already-visible local list
-            val existing = quickPicks.value.orEmpty().filter { it.id !in dismissedIds }
+            val existing = quickPicks.value.orEmpty()
+                .filterSongExplicit(hideExplicit)
+                .filterVideoSongs(hideVideoSongs)
+                .filter { it.id !in dismissedIds }
             val merged = (existing + ytSimilarSongs).distinctBy { it.id }
             val personalized = personalizeQuickPicks(merged, isRefresh)
-            quickPicks.value = personalized.filter { it.id !in dismissedIds }.ifEmpty { merged.shuffled().take(20) }
+            quickPicks.value = personalized
+                .filterSongExplicit(hideExplicit)
+                .filterVideoSongs(hideVideoSongs)
+                .filter { it.id !in dismissedIds }
+                .ifEmpty { merged.shuffled().take(20) }
             android.util.Log.d("QP_TIMING", "[Phase2] quickPicks enriched → ${quickPicks.value?.size} items total")
         } else {
             android.util.Log.w("QP_TIMING", "[Phase2] no new local matches from YT results — quickPicks unchanged")
@@ -1135,6 +1176,7 @@ class HomeViewModel @Inject constructor(
         val hideExplicit = context.dataStore.get(HideExplicitKey, false)
         val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
         val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
+        val dismissedIds = context.dataStore.get(DismissedQuickPicksKey, emptySet())
 
         viewModelScope.launch(Dispatchers.IO) {
             _isLoadingMore.value = true
@@ -1157,7 +1199,10 @@ class HomeViewModel @Inject constructor(
                 chips = homePage.value?.chips,
                 sections = (homePage.value?.sections.orEmpty() + nextSections.sections).mapNotNull { section ->
                     if (section == cnrSection) return@mapNotNull null
-                    val filteredItems = section.items.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs).filterYoutubeShorts(hideYoutubeShorts)
+                    val rawItems = section.items.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs).filterYoutubeShorts(hideYoutubeShorts)
+                    val filteredItems = if (section.title.contains("Quick picks", ignoreCase = true)) {
+                        rawItems.filterNot { it.id in dismissedIds }
+                    } else rawItems
                     if (filteredItems.isEmpty()) null else section.copy(items = filteredItems)
                 }
             )
@@ -1181,12 +1226,17 @@ class HomeViewModel @Inject constructor(
             val hideExplicit = context.dataStore.get(HideExplicitKey, false)
             val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
             val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
+            val dismissedIds = context.dataStore.get(DismissedQuickPicksKey, emptySet())
             val nextSections = YouTube.home(params = chip.endpoint?.params).getOrNull() ?: return@launch
 
             homePage.value = nextSections.copy(
                 chips = homePage.value?.chips,
                 sections = nextSections.sections.map { section ->
-                    section.copy(items = section.items.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs).filterYoutubeShorts(hideYoutubeShorts))
+                    val rawItems = section.items.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs).filterYoutubeShorts(hideYoutubeShorts)
+                    val filteredItems = if (section.title.contains("Quick picks", ignoreCase = true)) {
+                        rawItems.filterNot { it.id in dismissedIds }
+                    } else rawItems
+                    section.copy(items = filteredItems)
                 }
             )
             selectedChip.value = chip
@@ -1266,6 +1316,50 @@ class HomeViewModel @Inject constructor(
                             )
                         }
                     }
+                }
+            }
+        }
+
+        // React immediately to changes in recommendation preferences and content filters
+        viewModelScope.launch(Dispatchers.IO) {
+            combine(
+                quickPicksEnum,
+                context.dataStore.data.map { it[HideExplicitKey] ?: false }.distinctUntilChanged(),
+                context.dataStore.data.map { it[HideVideoSongsKey] ?: false }.distinctUntilChanged(),
+                context.dataStore.data.map { it[HideYoutubeShortsKey] ?: false }.distinctUntilChanged()
+            ) { mode, hideExplicit, hideVideoSongs, hideYoutubeShorts ->
+                RecommendationSettingsSnapshot(mode, hideExplicit, hideVideoSongs, hideYoutubeShorts)
+            }.distinctUntilChanged()
+            .drop(1)
+            .collect { snapshot ->
+                val dismissed = context.dataStore.get(DismissedQuickPicksKey, emptySet())
+                quickPicks.value?.let { current ->
+                    val purged = current
+                        .filterSongExplicit(snapshot.hideExplicit)
+                        .filterVideoSongs(snapshot.hideVideoSongs)
+                        .filter { it.id !in dismissed }
+                    if (purged.size != current.size) {
+                        quickPicks.value = purged
+                    }
+                }
+                homePage.value?.let { page ->
+                    homePage.value = page.copy(
+                        sections = page.sections.mapNotNull { section ->
+                            val rawItems = section.items
+                                .filterExplicit(snapshot.hideExplicit)
+                                .filterVideoSongs(snapshot.hideVideoSongs)
+                                .filterYoutubeShorts(snapshot.hideYoutubeShorts)
+                            val filteredItems = if (section.title.contains("Quick picks", ignoreCase = true)) {
+                                rawItems.filterNot { it.id in dismissed }
+                            } else rawItems
+                            if (filteredItems.isEmpty()) null else section.copy(items = filteredItems)
+                        }
+                    )
+                }
+
+                getQuickPicksLocal()
+                if (snapshot.mode == QuickPicks.QUICK_PICKS) {
+                    enrichQuickPicksFromNetwork()
                 }
             }
         }
