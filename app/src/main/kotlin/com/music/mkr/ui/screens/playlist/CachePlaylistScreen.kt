@@ -70,6 +70,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -82,6 +83,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.util.fastSumBy
 import androidx.core.net.toUri
@@ -106,6 +108,7 @@ import com.music.mkr.ui.component.DraggableScrollbar
 import com.music.mkr.ui.component.EmptyPlaceholder
 import com.music.mkr.ui.component.ExpandableText
 import com.music.mkr.ui.component.IconButton
+import com.music.mkr.ui.component.LibraryTrackRow
 import com.music.mkr.ui.component.LocalMenuState
 import com.music.mkr.ui.component.SongListItem
 import com.music.mkr.ui.component.SortHeader
@@ -278,63 +281,63 @@ fun CachePlaylistScreen(
                         }
                     }
 
-                    SongListItem(
+                    LibraryTrackRow(
+                        index = index,
                         song = song,
                         isActive = song.id == mediaMetadata?.id,
                         isPlaying = isPlaying,
-                        showInLibraryIcon = true,
-                        shape = listItemShape(index, filteredSongs.size),
-                        trailingContent = {
+                        isSelected = song.id in selection,
+                        inSelectMode = inSelectMode,
+                        onCheckedChange = onCheckedChange,
+                        onClick = {
                             if (inSelectMode) {
-                                Checkbox(
-                                    checked = song.id in selection,
-                                    onCheckedChange = onCheckedChange
-                                )
+                                onCheckedChange(song.id !in selection)
+                            } else if (song.id == mediaMetadata?.id) {
+                                playerConnection.togglePlayPause()
                             } else {
-                                IconButton(onClick = {
-                                    menuState.show {
-                                        SongMenu(
-                                            originalSong = song,
-                                            navController = navController,
-                                            onDismiss = menuState::dismiss,
-                                            isFromCache = true,
-                                        )
-                                    }
-                                }) {
+                                playerConnection.playQueue(
+                                    ListQueue(
+                                        title = context.getString(R.string.cached_playlist),
+                                        items = filteredSongs.map { it.toMediaItem() },
+                                        startIndex = filteredSongs.indexOfFirst { it.id == song.id }
+                                    )
+                                )
+                            }
+                        },
+                        onLongClick = {
+                            if (!inSelectMode) {
+                                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                                inSelectMode = true
+                                onCheckedChange(true)
+                            }
+                        },
+                        trailingContent = {
+                            if (!inSelectMode) {
+                                IconButton(
+                                    onClick = {
+                                        menuState.show {
+                                            SongMenu(
+                                                originalSong = song,
+                                                navController = navController,
+                                                onDismiss = menuState::dismiss,
+                                                isFromCache = true,
+                                            )
+                                        }
+                                    },
+                                    modifier = Modifier.size(36.dp)
+                                ) {
                                     Icon(
                                         painter = painterResource(R.drawable.more_vert),
-                                        contentDescription = null
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
+                                        modifier = Modifier.size(18.dp)
                                     )
                                 }
                             }
                         },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .animateItem()
-                            .combinedClickable(
-                                onClick = {
-                                    if (inSelectMode) {
-                                        onCheckedChange(song.id !in selection)
-                                    } else if (song.id == mediaMetadata?.id) {
-                                        playerConnection.togglePlayPause()
-                                    } else {
-                                        playerConnection.playQueue(
-                                            ListQueue(
-                                                title = context.getString(R.string.cached_playlist),
-                                                items = filteredSongs.map { it.toMediaItem() },
-                                                startIndex = filteredSongs.indexOfFirst { it.id == song.id }
-                                            )
-                                        )
-                                    }
-                                },
-                                onLongClick = {
-                                    if (!inSelectMode) {
-                                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                                        inSelectMode = true
-                                        onCheckedChange(true)
-                                    }
-                                }
-                            )
+                            .padding(horizontal = 16.dp, vertical = 3.dp)
                             .animateItem()
                     )
                 }
@@ -514,13 +517,33 @@ private fun CachePlaylistHeader(
                         .clip(RoundedCornerShape(20.dp))
                         .background(MaterialTheme.colorScheme.surfaceVariant)
                 ) {
-                    val coverUrl = songs.firstOrNull { it.thumbnailUrl != null }?.thumbnailUrl
-                    if (coverUrl != null) {
+                    val distinctThumbnails = remember(songs) {
+                        songs.mapNotNull { it.thumbnailUrl }.distinct().take(4)
+                    }
+                    if (distinctThumbnails.size >= 4) {
+                        Box(modifier = Modifier.fillMaxSize()) {
+                            listOf(
+                                Alignment.TopStart,
+                                Alignment.TopEnd,
+                                Alignment.BottomStart,
+                                Alignment.BottomEnd
+                            ).fastForEachIndexed { index, alignment ->
+                                AsyncImage(
+                                    model = distinctThumbnails[index],
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .align(alignment)
+                                        .fillMaxSize(0.5f)
+                                )
+                            }
+                        }
+                    } else if (distinctThumbnails.isNotEmpty()) {
                         AsyncImage(
-                            model = coverUrl,
+                            model = distinctThumbnails[0],
                             contentDescription = null,
                             modifier = Modifier.fillMaxSize(),
-                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                            contentScale = ContentScale.Crop
                         )
                     } else {
                         Box(
