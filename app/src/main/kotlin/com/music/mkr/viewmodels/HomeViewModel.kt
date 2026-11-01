@@ -1253,7 +1253,7 @@ class HomeViewModel @Inject constructor(
 
                     if (quickPicks.value.isNullOrEmpty()) {
                         val candidateSongItems = page.sections.flatMap { it.items.filterIsInstance<SongItem>() }
-                            .filterNot { it.id in dismissed }
+                            .filterNot { it.id in dismissedIds }
                             .distinctBy { it.id }
                             .take(20)
                         if (candidateSongItems.isNotEmpty()) {
