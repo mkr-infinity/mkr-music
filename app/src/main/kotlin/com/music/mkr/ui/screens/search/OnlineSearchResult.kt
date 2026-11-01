@@ -14,8 +14,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
@@ -25,8 +27,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyItemScope
@@ -454,6 +458,7 @@ fun OnlineSearchResult(
     }
 }
 }
+}
 
 /**
  * Bespoke search result card providing immediate visual differentiation
@@ -496,9 +501,9 @@ private fun SearchResultCard(
 
     val typeLabel = when (item) {
         is ArtistItem -> stringResource(R.string.artist)
-        is AlbumItem -> stringResource(R.string.album)
-        is PlaylistItem -> stringResource(R.string.playlist)
-        is SongItem -> stringResource(R.string.song)
+        is AlbumItem -> stringResource(R.string.album_label)
+        is PlaylistItem -> stringResource(R.string.filter_community_playlists)
+        is SongItem -> stringResource(R.string.filter_songs)
     }
 
     val containerColor = if (isActive) {
@@ -534,6 +539,7 @@ private fun SearchResultCard(
         ) {
             // Artwork: Circular for Artists, Squircle for Songs/Albums/Playlists
             val thumbnailShape = if (isArtist) CircleShape else RoundedCornerShape(12.dp)
+            val thumbUrl = item.thumbnail
             Surface(
                 modifier = Modifier.size(48.dp),
                 shape = thumbnailShape,
@@ -541,10 +547,10 @@ private fun SearchResultCard(
                 border = if (isArtist) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else null
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
-                    if (!item.thumbnail.isNullOrEmpty()) {
+                    if (!thumbUrl.isNullOrEmpty()) {
                         AsyncImage(
                             model = ImageRequest.Builder(LocalContext.current)
-                                .data(item.thumbnail.resize(120, 120))
+                                .data(thumbUrl.resize(120, 120))
                                 .crossfade(true)
                                 .build(),
                             contentDescription = null,

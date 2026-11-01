@@ -713,11 +713,6 @@ class HomeViewModel @Inject constructor(
                     }
                 }
             }
-                    if (newPicks.isNotEmpty()) {
-                        quickPicks.value = newPicks
-                    }
-                }
-            }
         }
         android.util.Log.d("QP_TIMING", "[Phase1] getQuickPicksLocal() END — total ${System.currentTimeMillis() - t0}ms")
     }
