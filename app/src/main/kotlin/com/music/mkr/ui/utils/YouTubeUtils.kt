@@ -40,66 +40,59 @@ fun String.resize(
  * Uses generic regex to locate parameters, ensuring robustness.
  */
 private fun String.resizeGoogleCdn(width: Int?, height: Int?, isDataSaverEnabled: Boolean): String {
-    val maxDim = if (isDataSaverEnabled) {
+    if (isDataSaverEnabled) {
         val req = maxOf(width ?: 544, height ?: 544)
-        when {
+        val maxDim = when {
             req >= 600 -> 300
             req > 200 -> 200
             else -> 120
         }
+        val (w, h) = if (width != null && height != null && width > 0 && height > 0) {
+            val scale = maxDim.toFloat() / maxOf(width, height)
+            val scaledW = (width * scale).toInt().coerceAtLeast(60)
+            val scaledH = (height * scale).toInt().coerceAtLeast(60)
+            scaledW to scaledH
+        } else {
+            maxDim to maxDim
+        }
+
+        if (this.contains(Regex("w\\d+-h\\d+"))) {
+            return this.replace(Regex("w\\d+-h\\d+"), "w$w-h$h")
+        }
+        if (this.contains(Regex("=s\\d+"))) {
+            return this.replace(Regex("=s\\d+"), if (w == h) "=s$w" else "=w$w-h$h")
+        }
+        val baseUrl = this.split(Regex("=[wshd]"), limit = 2)[0]
+        return "$baseUrl=w$w-h$h-p-l80-rj"
     } else {
-        maxOf(width ?: 1200, height ?: 1200).coerceAtLeast(544)
+        // Data Saver disabled: normal uncompressed quality without lossy tags
+        val w = (width ?: height ?: 1200).coerceAtLeast(544)
+        val h = (height ?: width ?: 1200).coerceAtLeast(544)
+        if (this.contains(Regex("w\\d+-h\\d+"))) {
+            return this.replace(Regex("w\\d+-h\\d+"), "w$w-h$h")
+        }
+        if (this.contains(Regex("=s\\d+"))) {
+            return this.replace(Regex("=s\\d+"), if (w == h) "=s$w" else "=w$w-h$h")
+        }
+        val baseUrl = this.split(Regex("=[wshd]"), limit = 2)[0]
+        return "$baseUrl=w$w-h$h"
     }
-
-    val (w, h) = if (width != null && height != null && width > 0 && height > 0) {
-        val scale = maxDim.toFloat() / maxOf(width, height)
-        val scaledW = (width * scale).toInt().coerceAtLeast(60)
-        val scaledH = (height * scale).toInt().coerceAtLeast(60)
-        scaledW to scaledH
-    } else {
-        maxDim to maxDim
-    }
-
-    // Handle wNNN-hNNN path segment style parameters
-    if (this.contains(Regex("w\\d+-h\\d+"))) {
-        return this.replace(Regex("w\\d+-h\\d+"), "w$w-h$h")
-    }
-
-    // Handle =sNNN style parameters
-    if (this.contains(Regex("=s\\d+"))) {
-        return this.replace(Regex("=s\\d+"), if (w == h) "=s$w" else "=w$w-h$h")
-    }
-
-    // Safely extract base URL by stripping any parameters like =w120, =s120, =h120, etc.
-    val baseUrl = this.split(Regex("=[wshd]"), limit = 2)[0]
-    val quality = if (isDataSaverEnabled) "l80" else "l90"
-    return "$baseUrl=w$w-h$h-p-$quality-rj"
 }
 
 /**
- * Rewrites a YouTube thumbnail URL to request the highest **reliably available** quality tier.
- *
- * Quality ladder (highest → lowest, all guaranteed to exist for every video):
- *   w >= 1200 → maxresdefault.webp (1280×720, only for HD uploads — used ultra HD path)
- *   w >= 800  → hqdefault.webp    (480×360,  ALWAYS available — primary player quality)
- *   w >= 320  → mqdefault.webp    (320×180,  list items / data-saver hero cards)
- *   w <  320  → default.webp      (120×90,   small icons / data-saver list items)
- *
- * Note: maxresdefault.webp returns 404 for videos without a Full HD upload.
- * hqdefault.webp is guaranteed to exist for every YouTube video, so it is used
- * as the primary player thumbnail to avoid blank images in MiniPlayer / Player.
+ * Rewrites a YouTube thumbnail URL to request the appropriate quality tier.
+ * When Data Saver is ON, compresses and uses less data via compact WebP thumbnails.
+ * When Data Saver is OFF, uses full standard uncompressed artwork (maxresdefault/hqdefault JPG).
  */
 private fun String.resizeYtimg(width: Int?, height: Int?, isDataSaverEnabled: Boolean): String {
-    // Extract video ID using regex that matches any standard YouTube thumbnail path
     val videoId = Regex("/vi(?:_webp)?/([^/]+)/").find(this)?.groupValues?.get(1)
     if (videoId == null) {
         Timber.w("[Thumbnail] resizeYtimg: could not extract videoId from: $this")
         return this
     }
 
-    val w = width ?: height ?: if (isDataSaverEnabled) 300 else 1200
-
     if (isDataSaverEnabled) {
+        val w = width ?: height ?: 300
         val result = when {
             w >= 600 -> "https://i.ytimg.com/vi_webp/$videoId/mqdefault.webp"
             else     -> "https://i.ytimg.com/vi_webp/$videoId/default.webp"
@@ -108,12 +101,14 @@ private fun String.resizeYtimg(width: Int?, height: Int?, isDataSaverEnabled: Bo
         return result
     }
 
+    // Normal full quality (uncompressed JPG without forced downsampling)
+    val w = width ?: height ?: 1200
     val result = when {
-        w >= 800  -> "https://i.ytimg.com/vi_webp/$videoId/hqdefault.webp"  // Always available for every video
-        w >= 320  -> "https://i.ytimg.com/vi_webp/$videoId/mqdefault.webp"
-        else      -> "https://i.ytimg.com/vi_webp/$videoId/default.webp"
+        w >= 800  -> "https://i.ytimg.com/vi/$videoId/maxresdefault.jpg"
+        w >= 320  -> "https://i.ytimg.com/vi/$videoId/hqdefault.jpg"
+        else      -> "https://i.ytimg.com/vi/$videoId/mqdefault.jpg"
     }
-    Timber.d("[Thumbnail] resizeYtimg: id=$videoId w=$w → $result")
+    Timber.d("[Thumbnail] resizeYtimg (normal): id=$videoId w=$w → $result")
     return result
 }
 

@@ -85,6 +85,9 @@ import com.music.mkr.ui.utils.ShowMediaInfo
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.joinByBullet
 import com.music.mkr.utils.makeTimeString
+import androidx.datastore.preferences.core.edit
+import com.music.mkr.constants.DismissedQuickPicksKey
+import com.music.mkr.utils.dataStore
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -96,7 +99,8 @@ fun YouTubeSongMenu(
     song: SongItem,
     navController: NavController,
     onDismiss: () -> Unit,
-    onHistoryRemoved: () -> Unit = {}
+    onHistoryRemoved: () -> Unit = {},
+    onNotInterested: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val database = LocalDatabase.current
@@ -474,6 +478,36 @@ fun YouTubeSongMenu(
                         )
                     )
                 }
+            )
+        }
+
+        item { Spacer(modifier = Modifier.height(12.dp)) }
+
+        item {
+            Material3MenuGroup(
+                expressive = true,
+                items = listOf(
+                    Material3MenuItemData(
+                        title = { Text(text = stringResource(R.string.not_interested)) },
+                        description = { Text(text = stringResource(R.string.not_interested_desc)) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.remove),
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = {
+                            onDismiss()
+                            onNotInterested?.invoke()
+                            coroutineScope.launch(Dispatchers.IO) {
+                                context.dataStore.edit { preferences ->
+                                    val current = preferences[DismissedQuickPicksKey] ?: emptySet()
+                                    preferences[DismissedQuickPicksKey] = current + song.id
+                                }
+                            }
+                        }
+                    )
+                )
             )
         }
 

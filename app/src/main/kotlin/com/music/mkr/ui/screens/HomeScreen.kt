@@ -571,6 +571,7 @@ fun HomeScreen(
     val dataSaver by rememberPreference(DataSaverKey, defaultValue = false)
 
     val quickPicks by viewModel.quickPicks.collectAsState()
+    val dismissedQuickPicks by viewModel.dismissedQuickPicks.collectAsState(initial = emptySet())
     val forgottenFavorites by viewModel.forgottenFavorites.collectAsState()
     val keepListening by viewModel.keepListening.collectAsState()
     val similarRecommendations by viewModel.similarRecommendations.collectAsState()
@@ -905,16 +906,20 @@ fun HomeScreen(
             }
         }
 
-        // If logged in, YouTube provides its own superior "Quick picks" section. 
-        // If logged out as guest, we use our local app-generated Quick Picks.
-        val hasYouTubeQuickPicks = sortedList.any { 
+        // If logged in, YouTube provides its own personalized "Quick picks" section. 
+        // If logged out as guest, we suppress YouTube's generic guest quick picks and use
+        // our local personalized Quick Picks crafted from the user's taste, recent plays & mood.
+        val hasYouTubeQuickPicks = isLoggedIn && sortedList.any { 
             it is HomeSection.HomePageSection && homePage?.sections?.getOrNull(it.index)?.title?.equals("Quick picks", ignoreCase = true) == true 
         }
 
         val deduplicatedList = if (hasYouTubeQuickPicks) {
-            sortedList.filterNot { it == HomeSection.QuickPicks } // Hide local if remote exists
+            sortedList.filterNot { it == HomeSection.QuickPicks } // Hide local if remote authenticated exists
         } else {
-            sortedList
+            // When guest/logged out, hide YouTube's generic trending "Quick picks" so the user's personalized Quick Picks always shines
+            sortedList.filterNot { 
+                it is HomeSection.HomePageSection && homePage?.sections?.getOrNull(it.index)?.title?.equals("Quick picks", ignoreCase = true) == true 
+            }
         }
 
         // Always pin the surviving QuickPicks to the very top regardless of sort order
@@ -1322,7 +1327,7 @@ fun HomeScreen(
                         }
                         HomeSection.QuickPicks -> {
                             quickPicks?.takeIf { it.isNotEmpty() }?.let { qpList ->
-                                val distinctQuickPicks = qpList.distinctBy { it.id }
+                                val distinctQuickPicks = qpList.filterNot { it.id in dismissedQuickPicks }.distinctBy { it.id }
                                 item(key = "quick_picks_title") {
                                     val quickPicksTitle = stringResource(R.string.quick_picks)
                                     NavigationTitle(
@@ -1394,6 +1399,7 @@ fun HomeScreen(
                                                                 SongMenu(
                                                                     originalSong = currentSong,
                                                                     navController = navController,
+                                                                    onNotInterested = { viewModel.dismissQuickPick(currentSong.id) },
                                                                     onDismiss = menuState::dismiss
                                                                 )
                                                             }
@@ -1440,7 +1446,7 @@ fun HomeScreen(
                                                         shape = CircleShape,
                                                         tonalElevation = 2.dp,
                                                         modifier = Modifier
-                                                            .align(Alignment.TopStart)
+                                                            .align(Alignment.TopEnd)
                                                             .padding(14.dp)
                                                             .size(36.dp)
                                                     ) {
@@ -1452,27 +1458,6 @@ fun HomeScreen(
                                                             )
                                                         }
                                                     }
-                                                }
-
-                                                IconButton(
-                                                    onClick = {
-                                                        viewModel.dismissQuickPick(originalSong.id)
-                                                    },
-                                                    modifier = Modifier
-                                                        .align(Alignment.TopEnd)
-                                                        .padding(14.dp)
-                                                        .size(36.dp)
-                                                        .background(
-                                                            color = Color.Black.copy(alpha = 0.5f),
-                                                            shape = CircleShape
-                                                        )
-                                                ) {
-                                                    Icon(
-                                                        painter = painterResource(R.drawable.close),
-                                                        contentDescription = stringResource(R.string.dismiss),
-                                                        tint = Color.White,
-                                                        modifier = Modifier.size(18.dp)
-                                                    )
                                                 }
 
                                                 Column(
@@ -1974,7 +1959,7 @@ fun HomeScreen(
                                 if (sectionData.title.equals("Quick picks", ignoreCase = true)) {
                                     // Quick Picks Card Carousel for YouTube Quick picks
                                     item(key = "home_section_cards_${section.index}") {
-                                        val distinctSongs = sectionSongs.distinctBy { it.id }
+                                        val distinctSongs = sectionSongs.filterNot { it.id in dismissedQuickPicks }.distinctBy { it.id }
                                         BoxWithConstraints(
                                             modifier = Modifier
                                                 .fillMaxWidth()
@@ -2022,6 +2007,7 @@ fun HomeScreen(
                                                                     YouTubeSongMenu(
                                                                         song = song,
                                                                         navController = navController,
+                                                                        onNotInterested = { viewModel.dismissQuickPick(song.id) },
                                                                         onDismiss = menuState::dismiss
                                                                     )
                                                                 }
@@ -2068,7 +2054,7 @@ fun HomeScreen(
                                                             shape = CircleShape,
                                                             tonalElevation = 2.dp,
                                                             modifier = Modifier
-                                                                .align(Alignment.TopStart)
+                                                                .align(Alignment.TopEnd)
                                                                 .padding(14.dp)
                                                                 .size(36.dp)
                                                         ) {
@@ -2080,27 +2066,6 @@ fun HomeScreen(
                                                                 )
                                                             }
                                                         }
-                                                    }
-
-                                                    IconButton(
-                                                        onClick = {
-                                                            viewModel.dismissQuickPick(song.id)
-                                                        },
-                                                        modifier = Modifier
-                                                            .align(Alignment.TopEnd)
-                                                            .padding(14.dp)
-                                                            .size(36.dp)
-                                                            .background(
-                                                                color = Color.Black.copy(alpha = 0.5f),
-                                                                shape = CircleShape
-                                                            )
-                                                    ) {
-                                                        Icon(
-                                                            painter = painterResource(R.drawable.close),
-                                                            contentDescription = stringResource(R.string.dismiss),
-                                                            tint = Color.White,
-                                                            modifier = Modifier.size(18.dp)
-                                                        )
                                                     }
 
                                                     Column(
@@ -2160,6 +2125,7 @@ fun HomeScreen(
                                                                     YouTubeSongMenu(
                                                                         song = song,
                                                                         navController = navController,
+                                                                        onNotInterested = { viewModel.dismissQuickPick(song.id) },
                                                                         onDismiss = menuState::dismiss
                                                                     )
                                                                 }
@@ -2189,6 +2155,7 @@ fun HomeScreen(
                                                                     YouTubeSongMenu(
                                                                         song = song,
                                                                         navController = navController,
+                                                                        onNotInterested = { viewModel.dismissQuickPick(song.id) },
                                                                         onDismiss = menuState::dismiss
                                                                     )
                                                                 }

@@ -385,9 +385,9 @@ fun SettingsScreen(
                     ),
                     Material3SettingsItem(
                         key = "privacy_discord_rpc",
-                        icon = painterResource(R.drawable.discord),
-                        title = { Text("Discord Rich Presence") },
-                        description = { Text("Display live playing track and album art on Discord") },
+                        icon = painterResource(R.drawable.integration),
+                        title = { Text(stringResource(R.string.integrations)) },
+                        description = { Text("Discord, Last.fm, Listen Together, Spotify & YouTube Music") },
                         onClick = { navController.navigate("settings/integrations") }
                     )
                 )

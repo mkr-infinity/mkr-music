@@ -4212,8 +4212,8 @@ class MusicService :
     override fun onBind(intent: Intent?) = super.onBind(intent) ?: binder
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        super.onTaskRemoved(rootIntent)
-        if (dataStore.get(StopMusicOnTaskClearKey, false)) {
+        val stopOnTaskClear = dataStore.get(StopMusicOnTaskClearKey, false)
+        if (stopOnTaskClear) {
             Timber.d("Task cleared with stopMusicOnTaskClear enabled - stopping music and tearing down service cleanly")
             try {
                 abandonAudioFocus()
@@ -4227,6 +4227,8 @@ class MusicService :
                 Timber.e(e, "Error stopping player on task clear")
             }
             stopSelf()
+        } else {
+            Timber.d("Task cleared with stopMusicOnTaskClear disabled - keeping playback and service active in background")
         }
     }
 
@@ -4258,7 +4260,8 @@ class MusicService :
             }
         }
 
-        return super.onStartCommand(intent, flags, startId)
+        super.onStartCommand(intent, flags, startId)
+        return START_STICKY
     }
 
     /**

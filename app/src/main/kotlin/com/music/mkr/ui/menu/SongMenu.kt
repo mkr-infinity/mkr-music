@@ -58,6 +58,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.datastore.preferences.core.edit
+import com.music.mkr.constants.DismissedQuickPicksKey
+import com.music.mkr.utils.dataStore
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -109,6 +114,7 @@ fun SongMenu(
     playlistBrowseId: String? = null,
     onDismiss: () -> Unit,
     isFromCache: Boolean = false,
+    onNotInterested: (() -> Unit)? = null,
 ) {
     val context = LocalContext.current
     val database = LocalDatabase.current
@@ -631,6 +637,36 @@ fun SongMenu(
                         )
                     }
                 }
+            )
+        }
+
+        item { Spacer(modifier = Modifier.height(12.dp)) }
+
+        item {
+            Material3MenuGroup(
+                expressive = true,
+                items = listOf(
+                    Material3MenuItemData(
+                        title = { Text(text = stringResource(R.string.not_interested)) },
+                        description = { Text(text = stringResource(R.string.not_interested_desc)) },
+                        icon = {
+                            Icon(
+                                painter = painterResource(R.drawable.remove),
+                                contentDescription = null,
+                            )
+                        },
+                        onClick = {
+                            onDismiss()
+                            onNotInterested?.invoke()
+                            coroutineScope.launch(Dispatchers.IO) {
+                                context.dataStore.edit { preferences ->
+                                    val current = preferences[DismissedQuickPicksKey] ?: emptySet()
+                                    preferences[DismissedQuickPicksKey] = current + song.id
+                                }
+                            }
+                        }
+                    )
+                )
             )
         }
 

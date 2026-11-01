@@ -15,16 +15,24 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import com.music.mkr.constants.QueuePeekHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -118,12 +126,18 @@ fun MaterialExtendedPlayer(
         label = "materialArtworkScale"
     )
 
+    val insets = WindowInsets.systemBars.asPaddingValues()
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp)
-            .padding(top = 12.dp, bottom = 68.dp)
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
+            .padding(
+                top = insets.calculateTopPadding() + 8.dp,
+                bottom = QueuePeekHeight + insets.calculateBottomPadding() + 8.dp,
+                start = 20.dp,
+                end = 20.dp
+            )
     ) {
         // V9 Header Bar (Collapse, Title context, Lyrics, Queue)
         Row(
@@ -172,19 +186,19 @@ fun MaterialExtendedPlayer(
         Spacer(Modifier.height(14.dp))
 
         // Large 1:1 Album Artwork Squircle
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
+            val size = minOf(maxWidth * 0.88f, maxHeight * 0.95f)
             Surface(
                 shape = RoundedCornerShape(32.dp),
                 shadowElevation = if (isPlaying) 16.dp else 8.dp,
                 color = MaterialTheme.colorScheme.surfaceVariant,
                 modifier = Modifier
-                    .fillMaxWidth(0.92f)
-                    .aspectRatio(1f)
+                    .size(size)
                     .scale(artworkScale)
             ) {
                 AsyncImage(
@@ -284,7 +298,7 @@ fun MaterialExtendedPlayer(
             )
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(10.dp))
 
         // Material Expressive Playback Controls Strip (Tactile zero-bounce spring feedback)
         PlayerTransportRow(
@@ -317,7 +331,7 @@ fun MaterialExtendedPlayer(
             haptic = haptic
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(10.dp))
 
         // Secondary controls: Shuffle, Repeat, Menu
         Row(

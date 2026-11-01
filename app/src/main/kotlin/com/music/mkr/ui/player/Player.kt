@@ -1212,7 +1212,7 @@ fun BottomSheetPlayer(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top))
+                        .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
                         Row(

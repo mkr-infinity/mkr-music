@@ -14,15 +14,20 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import com.music.mkr.constants.QueuePeekHeight
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
@@ -161,13 +166,18 @@ fun ImmersiveExtendedPlayer(
                 )
         )
 
+        val insets = WindowInsets.systemBars.asPaddingValues()
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier
                 .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.statusBars)
-                .padding(horizontal = 24.dp, vertical = 12.dp)
-                .padding(bottom = 68.dp)
+                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
+                .padding(
+                    top = insets.calculateTopPadding() + 8.dp,
+                    bottom = QueuePeekHeight + insets.calculateBottomPadding() + 8.dp,
+                    start = 20.dp,
+                    end = 20.dp
+                )
         ) {
             // Header Top Bar with Context Subtitle
             Row(
@@ -417,7 +427,7 @@ fun ImmersiveExtendedPlayer(
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(4.dp))
         }
     }
 }

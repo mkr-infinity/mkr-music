@@ -331,11 +331,15 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // On Android 12+, we can't start foreground services from background
-        // Use BIND_AUTO_CREATE which will create the service if needed
-        // The service will call startForeground() in onCreate() when bound
+        // Start and bind service so it remains active in background when task is detached
+        val serviceIntent = Intent(this, MusicService::class.java)
+        try {
+            startService(serviceIntent)
+        } catch (e: Exception) {
+            Timber.e(e, "Could not startService directly from Activity")
+        }
         isServiceBound = bindService(
-            Intent(this, MusicService::class.java),
+            serviceIntent,
             serviceConnection,
             BIND_AUTO_CREATE
         )

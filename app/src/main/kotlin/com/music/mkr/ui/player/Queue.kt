@@ -763,37 +763,6 @@ fun Queue(
                         }
                     }
 
-                    // Audio Output Switcher (MKR Parity)
-                    Surface(
-                        onClick = {
-                            showAudioDeviceBottomSheet = true
-                        },
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
-                        modifier = Modifier.height(34.dp),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                        ) {
-                            Icon(
-                                painter = painterResource(audioDevice.type.iconRes),
-                                contentDescription = audioDevice.name,
-                                modifier = Modifier.size(16.dp),
-                                tint = MaterialTheme.colorScheme.primary,
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = audioDevice.name,
-                                style = MaterialTheme.typography.labelSmall,
-                                fontWeight = FontWeight.SemiBold,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                            )
-                        }
-                    }
-
                     Text(
                         text = pluralStringResource(R.plurals.n_song, queueWindows.size, queueWindows.size) + "  •  " + makeTimeString(queueLength * 1000L),
                         style = MaterialTheme.typography.labelMedium,

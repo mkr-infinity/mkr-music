@@ -13,16 +13,24 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.windowInsetsPadding
+import com.music.mkr.constants.QueuePeekHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
@@ -111,28 +119,32 @@ fun MinimalPlayer(
         label = "minimalArtworkScale"
     )
 
+    val insets = WindowInsets.systemBars.asPaddingValues()
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
             .fillMaxSize()
-            .padding(horizontal = 24.dp)
-            .padding(top = 12.dp, bottom = 68.dp)
+            .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
+            .padding(
+                top = insets.calculateTopPadding() + 8.dp,
+                bottom = QueuePeekHeight + insets.calculateBottomPadding() + 8.dp,
+                start = 20.dp,
+                end = 20.dp
+            )
     ) {
-        Spacer(Modifier.height(12.dp))
-
         // Clean Artwork with sharp minimal corners
-        Box(
+        BoxWithConstraints(
             modifier = Modifier
                 .weight(1f)
                 .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
+            val size = minOf(maxWidth * 0.85f, maxHeight * 0.95f)
             Surface(
                 shape = RoundedCornerShape(18.dp),
                 shadowElevation = if (isPlaying) 10.dp else 4.dp,
                 modifier = Modifier
-                    .fillMaxWidth(0.85f)
-                    .aspectRatio(1f)
+                    .size(size)
                     .scale(artworkScale)
             ) {
                 AsyncImage(
@@ -208,7 +220,7 @@ fun MinimalPlayer(
             }
         }
 
-        Spacer(Modifier.height(14.dp))
+        Spacer(Modifier.height(10.dp))
 
         // Minimal Slider
         PlayerSliderTrack(
@@ -238,7 +250,7 @@ fun MinimalPlayer(
             )
         }
 
-        Spacer(Modifier.height(18.dp))
+        Spacer(Modifier.height(10.dp))
 
         // Minimal Controls Row with Tactile Spring Motion
         PlayerTransportRow(
