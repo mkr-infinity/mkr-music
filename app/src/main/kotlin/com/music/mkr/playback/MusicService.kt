@@ -70,7 +70,6 @@ import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
-import com.music.mkr.ui.theme.PlayerColorExtractor
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
@@ -1475,14 +1474,6 @@ class MusicService :
                 }
             }
         }
-        if (currentMediaMetadata.value?.id == mediaId && (currentMediaMetadata.value?.duration ?: -1) <= 0 && duration > 0) {
-            withContext(Dispatchers.Main) {
-                if (currentMediaMetadata.value?.id == mediaId) {
-                    currentMediaMetadata.value = currentMediaMetadata.value?.copy(duration = duration)
-                    updateNotification()
-                }
-            }
-        }
         if (!database.hasRelatedSongs(mediaId)) {
             val relatedEndpoint =
                 YouTube.next(WatchEndpoint(videoId = mediaId)).getOrNull()?.relatedEndpoint
@@ -2516,50 +2507,14 @@ class MusicService :
         mediaItem: MediaItem?,
         reason: Int,
     ) {
-        val rawMeta = mediaItem?.metadata ?: player.currentMetadata
-        currentMediaMetadata.value = rawMeta
-        updateNotification()
-        if (rawMeta != null) {
-            val thumbUrl = rawMeta.thumbnailUrl
-            if (!thumbUrl.isNullOrBlank()) {
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        PlayerColorExtractor.extractPalette(this@MusicService, thumbUrl, rawMeta.id)
-                        withContext(Dispatchers.Main) {
-                            if (currentMediaMetadata.value?.id == rawMeta.id) {
-                                updateNotification()
-                            }
-                        }
-                    } catch (_: Exception) {}
-                }
-            }
-            scope.launch(Dispatchers.IO) {
-                try {
-                    val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
-                    if (dbSong != null && currentMediaMetadata.value?.id == rawMeta.id) {
-                        withContext(Dispatchers.Main) {
-                            if (currentMediaMetadata.value?.id == rawMeta.id) {
-                                currentMediaMetadata.value = rawMeta.copy(
-                                    liked = dbSong.song.liked,
-                                    likedDate = dbSong.song.likedDate,
-                                    inLibrary = dbSong.song.inLibrary,
-                                    duration = if (rawMeta.duration > 0) rawMeta.duration else dbSong.song.duration
-                                )
-                                updateNotification()
-                            }
-                        }
-                    }
-                } catch (_: Exception) {}
-            }
-        }
         cancelPendingDelayedCacheTimer()
         cancelPendingDelayedHistoryTimer()
         currentRecordedHistoryMediaId = null
-        if (mediaItem != null) {
+        if (player.isPlaying && mediaItem != null) {
             scheduleDelayedCache(mediaItem.mediaId)
-            scheduleDelayedHistory(mediaItem.mediaId)
         }
         if (mediaItem != null) {
+            scheduleDelayedHistory(mediaItem.mediaId)
             loadMoodRecommendations(mediaItem.mediaId)
         }
         // Force Repeat One if the player ignored it and auto-advanced
@@ -2843,17 +2798,7 @@ class MusicService :
             }
         }
         if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
-            val newMeta = player.currentMetadata
-            if (newMeta != null && (currentMediaMetadata.value?.id != newMeta.id || ((currentMediaMetadata.value?.duration ?: 0) <= 0 && newMeta.duration > 0))) {
-                currentMediaMetadata.value = newMeta
-                updateNotification()
-            }
-        }
-        if (events.containsAny(Player.EVENT_PLAYBACK_STATE_CHANGED) && player.playbackState == Player.STATE_READY) {
-            if (currentMediaMetadata.value != null && (currentMediaMetadata.value?.duration ?: 0) <= 0 && player.duration > 0) {
-                currentMediaMetadata.value = currentMediaMetadata.value?.copy(duration = (player.duration / 1000).toInt())
-                updateNotification()
-            }
+            currentMediaMetadata.value = player.currentMetadata
         }
 
         // Widget and Discord RPC updates
@@ -4689,31 +4634,6 @@ class MusicService :
             (mediaSession as MediaSession).player = player
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to swap player in MediaSession")
-        }
-
-        // Immediately sync currentMediaMetadata and notification for the newly active song on nextPlayer
-        val nextMeta = nextPlayer.currentMetadata
-        if (nextMeta != null) {
-            currentMediaMetadata.value = nextMeta
-            updateNotification()
-            scope.launch(Dispatchers.IO) {
-                try {
-                    val dbSong = synchronized(database) { database.getSongByIdBlocking(nextMeta.id) }
-                    if (dbSong != null && currentMediaMetadata.value?.id == nextMeta.id) {
-                        withContext(Dispatchers.Main) {
-                            if (currentMediaMetadata.value?.id == nextMeta.id) {
-                                currentMediaMetadata.value = nextMeta.copy(
-                                    liked = dbSong.song.liked,
-                                    likedDate = dbSong.song.likedDate,
-                                    inLibrary = dbSong.song.inLibrary,
-                                    duration = if (nextMeta.duration > 0) nextMeta.duration else dbSong.song.duration
-                                )
-                                updateNotification()
-                            }
-                        }
-                    }
-                } catch (_: Exception) {}
-            }
         }
 
         fadingPlayer?.removeListener(this)
