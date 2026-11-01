@@ -171,10 +171,10 @@ fun AppearanceSettings(
     )
     val (selectedThemeColorInt) = rememberPreference(
         SelectedThemeColorKey,
-        defaultValue = DefaultThemeColor.toArgb()
+        defaultValue = Color.Transparent.toArgb()
     )
     // Check if user has selected a custom color (not the default/dynamic color)
-    val isUsingCustomColor = selectedThemeColorInt != DefaultThemeColor.toArgb()
+    val isUsingCustomColor = selectedThemeColorInt != DefaultThemeColor.toArgb() && selectedThemeColorInt != Color.Transparent.toArgb()
     val coroutineScope = rememberCoroutineScope()
 
     val (selectedAppIconKey, onSelectedAppIconKeyChange) = rememberPreference(

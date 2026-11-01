@@ -93,8 +93,8 @@ data class ThemePalette(
 )
 
 val PaletteColors = listOf(
-    ThemePalette(R.string.palette_grey, DefaultThemeColor),
     ThemePalette(R.string.palette_dynamic, Color.Transparent), // Sentinel for System/Dynamic colors
+    ThemePalette(R.string.palette_grey, DefaultThemeColor),
     ThemePalette(R.string.palette_crimson, Color(0xFFED5564)),
     ThemePalette(R.string.palette_rose, Color(0xFFD81B60)),
     ThemePalette(R.string.palette_purple, Color(0xFF8E24AA)),
@@ -134,7 +134,7 @@ fun ThemeScreen(
     }
     val (selectedThemeColorInt, onSelectedThemeColorChange) = rememberPreference(
         SelectedThemeColorKey,
-        DefaultThemeColor.toArgb()
+        Color.Transparent.toArgb()
     )
     val (_, onDynamicThemeChange) = rememberPreference(DynamicThemeKey, defaultValue = true)
 
@@ -434,7 +434,7 @@ fun ThemeControls(
                         text = if (selectedThemeColor == DefaultThemeColor || selectedThemeColor == Color.Transparent) {
                             "Dynamic Artwork Theme active: app accents adapt smoothly to currently playing album art (fallback: Grey)."
                         } else {
-                            "Static palette active. Select 'Grey' or 'Dynamic' above to restore artwork-adaptive theming."
+                            "Static palette active. Select 'Dynamic' or 'Grey' above to restore artwork-adaptive theming."
                         },
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant

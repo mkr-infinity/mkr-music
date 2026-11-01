@@ -871,16 +871,6 @@ fun LocalPlaylistScreen(
                             contentDescription = null
                         )
                     }
-                } else if (!isSearching) {
-                    // Only search button remains in TopAppBar
-                    IconButton(
-                        onClick = { isSearching = true }
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.search),
-                            contentDescription = stringResource(R.string.search)
-                        )
-                    }
                 }
             }
         )

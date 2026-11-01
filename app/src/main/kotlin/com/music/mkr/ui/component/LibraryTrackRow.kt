@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
@@ -231,10 +232,10 @@ fun LibraryTrackRow(
                 }
             }
 
-            // 4. Duration Pill
+            // 4. Half-circle Stadium Capsule Duration Pill
             if (song.song.duration > 0) {
                 Surface(
-                    shape = RoundedCornerShape(8.dp),
+                    shape = CircleShape,
                     color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
                     modifier = Modifier.padding(start = 4.dp, end = 2.dp)
                 ) {
@@ -245,7 +246,7 @@ fun LibraryTrackRow(
                             fontSize = 11.sp
                         ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
             }

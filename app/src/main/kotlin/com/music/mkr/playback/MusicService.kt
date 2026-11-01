@@ -2507,6 +2507,9 @@ class MusicService :
         mediaItem: MediaItem?,
         reason: Int,
     ) {
+        val nextMeta = mediaItem?.metadata ?: player.currentMetadata
+        currentMediaMetadata.value = nextMeta
+        updateNotification()
         cancelPendingDelayedCacheTimer()
         cancelPendingDelayedHistoryTimer()
         currentRecordedHistoryMediaId = null
@@ -2797,8 +2800,9 @@ class MusicService :
                 closeAudioEffectSession()
             }
         }
-        if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
+        if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY, Player.EVENT_MEDIA_ITEM_TRANSITION)) {
             currentMediaMetadata.value = player.currentMetadata
+            updateNotification()
         }
 
         // Widget and Discord RPC updates

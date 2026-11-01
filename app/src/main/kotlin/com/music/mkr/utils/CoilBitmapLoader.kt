@@ -29,10 +29,17 @@ class CoilBitmapLoader(
     private val scope: CoroutineScope,
 ) : BitmapLoader {
     
-    override fun supportsMimeType(mimeType: String): Boolean = mimeType.startsWith("image/")
+    override fun supportsMimeType(mimeType: String): Boolean =
+        mimeType.startsWith("image/") || mimeType.isEmpty() || mimeType == "*/*"
 
     private fun createFallbackBitmap(): Bitmap =
-        createBitmap(64, 64)
+        try {
+            BitmapFactory.decodeResource(context.resources, com.music.mkr.R.drawable.icon)?.let { bmp ->
+                if (bmp.isRecycled) createBitmap(64, 64) else bmp.copy(Bitmap.Config.ARGB_8888, false) ?: createBitmap(64, 64)
+            } ?: createBitmap(64, 64)
+        } catch (_: Exception) {
+            createBitmap(64, 64)
+        }
 
     private fun Bitmap.copyIfNeeded(): Bitmap {
         return if (isRecycled) {
@@ -59,17 +66,24 @@ class CoilBitmapLoader(
 
     override fun loadBitmap(uri: Uri): ListenableFuture<Bitmap> =
         scope.future(Dispatchers.IO) {
+            val uriString = uri.toString()
             val request = ImageRequest.Builder(context)
-                .data(uri)
+                .data(if (uri.scheme == "http" || uri.scheme == "https") uriString else uri)
                 .allowHardware(false)
                 .memoryCachePolicy(CachePolicy.ENABLED)
                 .diskCachePolicy(CachePolicy.ENABLED)
                 .build()
 
-            val result = context.imageLoader.execute(request)
+            val result = try {
+                context.imageLoader.execute(request)
+            } catch (e: Exception) {
+                Timber.tag("CoilBitmapLoader").w(e, "Exception executing image request for $uri")
+                null
+            }
 
             when (result) {
                 is ErrorResult -> {
+                    Timber.tag("CoilBitmapLoader").w(result.throwable, "Failed to load bitmap from uri: $uri")
                     createFallbackBitmap()
                 }
                 is SuccessResult -> {
@@ -81,6 +95,19 @@ class CoilBitmapLoader(
                         createFallbackBitmap()
                     }
                 }
+                null -> createFallbackBitmap()
             }
         }
+
+    override fun loadBitmapFromMetadata(metadata: androidx.media3.common.MediaMetadata): ListenableFuture<Bitmap>? {
+        if (metadata.artworkData != null) {
+            return decodeBitmap(metadata.artworkData!!)
+        }
+        val artworkUri = metadata.artworkUri
+            ?: metadata.extras?.getString("artwork_uri")?.let { Uri.parse(it) }
+        if (artworkUri != null) {
+            return loadBitmap(artworkUri)
+        }
+        return scope.future(Dispatchers.IO) { createFallbackBitmap() }
+    }
 }

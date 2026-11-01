@@ -585,7 +585,7 @@ class MainActivity : ComponentActivity() {
             pureBlackEnabled && useDarkTheme
         }
 
-        val (selectedThemeColorInt) = rememberPreference(SelectedThemeColorKey, defaultValue = DefaultThemeColor.toArgb())
+        val (selectedThemeColorInt) = rememberPreference(SelectedThemeColorKey, defaultValue = Color.Transparent.toArgb())
         val selectedThemeColor = Color(selectedThemeColorInt)
 
         var themeColor by rememberSaveable(stateSaver = ColorSaver) {
