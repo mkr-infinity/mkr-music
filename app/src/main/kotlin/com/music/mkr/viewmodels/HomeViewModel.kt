@@ -16,6 +16,7 @@ import com.music.innertube.models.ArtistItem
 import com.music.innertube.models.PlaylistItem
 import com.music.innertube.models.SongItem
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.drop
 import com.music.innertube.models.WatchEndpoint
 import com.music.innertube.models.BrowseEndpoint
 import com.music.innertube.models.YTItem
@@ -1322,11 +1323,11 @@ class HomeViewModel @Inject constructor(
                 context.dataStore.data.map { it[HideExplicitKey] ?: false }.distinctUntilChanged(),
                 context.dataStore.data.map { it[HideVideoSongsKey] ?: false }.distinctUntilChanged(),
                 context.dataStore.data.map { it[HideYoutubeShortsKey] ?: false }.distinctUntilChanged()
-            ) { mode, hideExplicit, hideVideoSongs, hideYoutubeShorts ->
+            ) { mode: QuickPicks, hideExplicit: Boolean, hideVideoSongs: Boolean, hideYoutubeShorts: Boolean ->
                 RecommendationSettingsSnapshot(mode, hideExplicit, hideVideoSongs, hideYoutubeShorts)
             }.distinctUntilChanged()
             .drop(1)
-            .collect { snapshot ->
+            .collect { snapshot: RecommendationSettingsSnapshot ->
                 val dismissed = context.dataStore.get(DismissedQuickPicksKey, emptySet())
                 quickPicks.value?.let { current ->
                     val purged = current

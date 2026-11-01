@@ -257,8 +257,9 @@ fun SearchScreen(
                                         },
                                         onClearAll = {
                                             coroutineScope.launch(Dispatchers.IO) {
+                                                val items = database.searchHistory().first()
                                                 database.query {
-                                                    database.searchHistory().first().forEach(::delete)
+                                                    items.forEach(::delete)
                                                 }
                                             }
                                         }

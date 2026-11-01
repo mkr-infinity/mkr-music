@@ -9,7 +9,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -366,7 +369,7 @@ fun OnlineSearchScreen(
                 }
             }
 
-            val handleItemClick = {
+            val handleItemClick: () -> Unit = {
                 when (item) {
                     is SongItem -> {
                         if (item.id == mediaMetadata?.id) {
@@ -546,7 +549,7 @@ fun SearchSpotlightCard(
                     val subtitle = when (item) {
                         is SongItem -> item.artists.joinToString { it.name }
                         is AlbumItem -> item.artists?.joinToString { it.name } ?: item.year?.toString() ?: ""
-                        is ArtistItem -> item.subscribers ?: ""
+                        is ArtistItem -> item.subtext ?: ""
                         is PlaylistItem -> item.author?.name ?: ""
                         else -> ""
                     }
