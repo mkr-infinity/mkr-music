@@ -22,7 +22,9 @@ val MediaItem.metadata: MediaMetadata?
         val artistStr = (mediaMetadata.artist ?: mediaMetadata.subtitle)?.toString() ?: ""
         val artworkUriStr = mediaMetadata.artworkUri?.toString()
             ?: mediaMetadata.extras?.getString("artwork_uri")
-        val durationMs = mediaMetadata.extras?.getLong("duration") ?: 0L
+        val durationMs = mediaMetadata.extras?.getLong("duration")?.takeIf { it > 0 }
+            ?: mediaMetadata.extras?.getLong("android.media.metadata.DURATION")?.takeIf { it > 0 }
+            ?: 0L
         MediaMetadata(
             id = mediaId,
             title = titleStr,
@@ -54,6 +56,10 @@ fun Song.toMediaItem() = MediaItem.Builder()
             .setIsPlayable(true)
             .setExtras(Bundle().apply {
                 putString("artwork_uri", song.thumbnailUrl)
+                if (song.duration > 0) {
+                    putLong("duration", song.duration * 1000L)
+                    putLong("android.media.metadata.DURATION", song.duration * 1000L)
+                }
             })
             .build()
     )
@@ -78,6 +84,12 @@ fun SongItem.toMediaItem() = MediaItem.Builder()
             .setIsPlayable(true)
             .setExtras(Bundle().apply {
                 putString("artwork_uri", thumbnail.resize(1200, 1200))
+                duration?.let {
+                    if (it > 0) {
+                        putLong("duration", it * 1000L)
+                        putLong("android.media.metadata.DURATION", it * 1000L)
+                    }
+                }
             })
             .build()
     )
@@ -102,6 +114,10 @@ fun MediaMetadata.toMediaItem() = MediaItem.Builder()
             .setIsPlayable(true)
             .setExtras(Bundle().apply {
                 thumbnailUrl?.let { putString("artwork_uri", it) }
+                if (duration > 0) {
+                    putLong("duration", duration * 1000L)
+                    putLong("android.media.metadata.DURATION", duration * 1000L)
+                }
             })
             .build()
     )

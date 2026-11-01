@@ -33,6 +33,7 @@ import androidx.datastore.preferences.core.edit
 import com.music.mkr.constants.StopMusicOnTaskClearKey
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.ForwardingPlayer
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.PlaybackParameters
@@ -337,6 +338,66 @@ class MusicService :
             get() = this@MusicService
     }
 
+    private inner class MusicForwardingPlayer(player: Player) : ForwardingPlayer(player) {
+        override fun getDuration(): Long {
+            val d = super.getDuration()
+            if (d > 0 && d != C.TIME_UNSET) {
+                return d
+            }
+            val metaSec = currentMediaMetadata.value?.duration ?: -1
+            if (metaSec > 0) {
+                return metaSec * 1000L
+            }
+            val extraDuration = currentMediaItem?.mediaMetadata?.extras?.getLong("duration")?.takeIf { it > 0 }
+                ?: currentMediaItem?.mediaMetadata?.extras?.getLong("android.media.metadata.DURATION")?.takeIf { it > 0 }
+                ?: 0L
+            if (extraDuration > 0) {
+                return extraDuration
+            }
+            return d
+        }
+
+        override fun isCurrentMediaItemSeekable(): Boolean {
+            if (super.isCurrentMediaItemSeekable()) {
+                return true
+            }
+            return getDuration() > 0 && getDuration() != C.TIME_UNSET && !super.isCurrentMediaItemLive()
+        }
+
+        override fun isCurrentMediaItemLive(): Boolean {
+            val d = getDuration()
+            if (d > 0 && d != C.TIME_UNSET) {
+                return false
+            }
+            return super.isCurrentMediaItemLive()
+        }
+
+        override fun isCurrentMediaItemDynamic(): Boolean {
+            val d = getDuration()
+            if (d > 0 && d != C.TIME_UNSET) {
+                return false
+            }
+            return super.isCurrentMediaItemDynamic()
+        }
+
+        override fun getAvailableCommands(): Player.Commands {
+            val commands = super.getAvailableCommands()
+            val d = getDuration()
+            return if (d > 0 && d != C.TIME_UNSET && !super.isCurrentMediaItemLive()) {
+                commands.buildUpon()
+                    .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
+                    .add(Player.COMMAND_SEEK_TO_MEDIA_ITEM)
+                    .build()
+            } else {
+                commands
+            }
+        }
+
+        override fun isCommandAvailable(command: Int): Boolean {
+            return availableCommands.contains(command)
+        }
+    }
+
     private lateinit var connectivityManager: ConnectivityManager
     lateinit var connectivityObserver: NetworkConnectivityObserver
     val waitingForNetworkConnection = MutableStateFlow(false)
@@ -591,7 +652,7 @@ class MusicService :
         }
         mediaSession =
             MediaLibrarySession
-                .Builder(this, player, mediaLibrarySessionCallback)
+                .Builder(this, MusicForwardingPlayer(player), mediaLibrarySessionCallback)
                 .setSessionActivity(
                     PendingIntent.getActivity(
                         this,
@@ -1403,18 +1464,16 @@ class MusicService :
                     .setDisplayName(
                         getString(
                             when (player.repeatMode) {
-                                REPEAT_MODE_OFF -> R.string.repeat_mode_off
                                 REPEAT_MODE_ONE -> R.string.repeat_mode_one
                                 REPEAT_MODE_ALL -> R.string.repeat_mode_all
-                                else -> throw IllegalStateException()
+                                else -> R.string.repeat_mode_off
                             },
                         ),
                     ).setIconResId(
                         when (player.repeatMode) {
-                            REPEAT_MODE_OFF -> R.drawable.repeat
                             REPEAT_MODE_ONE -> R.drawable.repeat_one_on
                             REPEAT_MODE_ALL -> R.drawable.repeat_on
-                            else -> throw IllegalStateException()
+                            else -> R.drawable.repeat
                         },
                     ).setSessionCommand(CommandToggleRepeatMode)
                     .build(),
@@ -1470,6 +1529,14 @@ class MusicService :
                 }
                 if (updatedSong != latestSong.song) {
                     update(updatedSong)
+                }
+            }
+        }
+        if (currentMediaMetadata.value?.id == mediaId && (currentMediaMetadata.value?.duration ?: -1) <= 0 && duration > 0) {
+            withContext(Dispatchers.Main) {
+                if (currentMediaMetadata.value?.id == mediaId) {
+                    currentMediaMetadata.value = currentMediaMetadata.value?.copy(duration = duration)
+                    updateNotification()
                 }
             }
         }
@@ -2508,6 +2575,7 @@ class MusicService :
     ) {
         val rawMeta = mediaItem?.metadata ?: player.currentMetadata
         currentMediaMetadata.value = rawMeta
+        updateNotification()
         if (rawMeta != null) {
             scope.launch(Dispatchers.IO) {
                 try {
@@ -2518,7 +2586,8 @@ class MusicService :
                                 currentMediaMetadata.value = rawMeta.copy(
                                     liked = dbSong.song.liked,
                                     likedDate = dbSong.song.likedDate,
-                                    inLibrary = dbSong.song.inLibrary
+                                    inLibrary = dbSong.song.inLibrary,
+                                    duration = if (rawMeta.duration > 0) rawMeta.duration else dbSong.song.duration
                                 )
                                 updateNotification()
                             }
@@ -2818,7 +2887,17 @@ class MusicService :
             }
         }
         if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
-            currentMediaMetadata.value = player.currentMetadata
+            val newMeta = player.currentMetadata
+            if (newMeta != null && (currentMediaMetadata.value?.id != newMeta.id || ((currentMediaMetadata.value?.duration ?: 0) <= 0 && newMeta.duration > 0))) {
+                currentMediaMetadata.value = newMeta
+                updateNotification()
+            }
+        }
+        if (events.containsAny(Player.EVENT_PLAYBACK_STATE_CHANGED) && player.playbackState == Player.STATE_READY) {
+            if (currentMediaMetadata.value != null && (currentMediaMetadata.value?.duration ?: 0) <= 0 && player.duration > 0) {
+                currentMediaMetadata.value = currentMediaMetadata.value?.copy(duration = (player.duration / 1000).toInt())
+                updateNotification()
+            }
         }
 
         // Widget and Discord RPC updates
@@ -4647,6 +4726,11 @@ class MusicService :
         player = nextPlayer
         _playerFlow.value = player
         secondaryPlayer = null
+        try {
+            (mediaSession as MediaSession).player = MusicForwardingPlayer(player)
+        } catch (e: Exception) {
+            Timber.tag(TAG).e(e, "Failed to swap player in MediaSession")
+        }
 
         // Immediately sync currentMediaMetadata and notification for the newly active song on nextPlayer
         val nextMeta = nextPlayer.currentMetadata
@@ -4662,7 +4746,8 @@ class MusicService :
                                 currentMediaMetadata.value = nextMeta.copy(
                                     liked = dbSong.song.liked,
                                     likedDate = dbSong.song.likedDate,
-                                    inLibrary = dbSong.song.inLibrary
+                                    inLibrary = dbSong.song.inLibrary,
+                                    duration = if (nextMeta.duration > 0) nextMeta.duration else dbSong.song.duration
                                 )
                                 updateNotification()
                             }
@@ -4695,12 +4780,6 @@ class MusicService :
         nextPlayer.addListener(sleepTimer)
 
         sleepTimer.player = player
-
-        try {
-            (mediaSession as MediaSession).player = player
-        } catch (e: Exception) {
-            timber.log.Timber.e(e, "Failed to swap player in MediaSession")
-        }
 
         crossfadeJob = scope.launch {
             val duration = crossfadeDuration.toLong()

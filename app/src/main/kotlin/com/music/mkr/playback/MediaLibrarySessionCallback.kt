@@ -912,6 +912,12 @@ constructor(
         ).build()
 
     private fun Song.toMediaItem(path: String, isPlayable: Boolean = true, isBrowsable: Boolean = false): MediaItem {
+        val extras = playableMediaItemExtras().apply {
+            if (song.duration > 0) {
+                putLong("duration", song.duration * 1000L)
+                putLong("android.media.metadata.DURATION", song.duration * 1000L)
+            }
+        }
         return MediaItem
             .Builder()
             .setMediaId("$path/$id")
@@ -925,26 +931,36 @@ constructor(
                     .setIsPlayable(isPlayable)
                     .setIsBrowsable(isBrowsable)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
-                    .setExtras(playableMediaItemExtras())
+                    .setExtras(extras)
                     .build(),
             ).build()
     }
 
-    private fun SongItem.toMediaItem(path: String) = MediaItem.Builder()
-        .setMediaId("$path/$id")
-        .setMediaMetadata(
-            MediaMetadata.Builder()
-                .setTitle(title)
-                .setSubtitle(artists.joinToString(", ") { it.name })
-                .setArtist(artists.joinToString(", ") { it.name })
-                .setArtworkUri(thumbnail.toUri())
-                .setIsPlayable(true)
-                .setIsBrowsable(false)
-                .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
-                .setExtras(playableMediaItemExtras())
-                .build()
-        )
-        .build()
+    private fun SongItem.toMediaItem(path: String): MediaItem {
+        val extras = playableMediaItemExtras().apply {
+            duration?.let {
+                if (it > 0) {
+                    putLong("duration", it * 1000L)
+                    putLong("android.media.metadata.DURATION", it * 1000L)
+                }
+            }
+        }
+        return MediaItem.Builder()
+            .setMediaId("$path/$id")
+            .setMediaMetadata(
+                MediaMetadata.Builder()
+                    .setTitle(title)
+                    .setSubtitle(artists.joinToString(", ") { it.name })
+                    .setArtist(artists.joinToString(", ") { it.name })
+                    .setArtworkUri(thumbnail.toUri())
+                    .setIsPlayable(true)
+                    .setIsBrowsable(false)
+                    .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
+                    .setExtras(extras)
+                    .build()
+            )
+            .build()
+    }
 
     private fun MediaLibraryService.LibraryParams?.withContentStyleHints(): MediaLibraryService.LibraryParams {
         val extras = Bundle(this?.extras ?: Bundle()).apply {
