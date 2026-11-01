@@ -1252,11 +1252,12 @@ fun BottomSheetPlayer(
                             }
                             IconButton(
                                 onClick = {
+                                    val metadata = mediaMetadata ?: return@IconButton
                                     menuState.show {
                                         LyricsMenu(
                                             lyricsProvider = { currentLyrics },
                                             songProvider = { currentSong?.song },
-                                            mediaMetadataProvider = { mediaMetadata ?: return@LyricsMenu },
+                                            mediaMetadataProvider = { metadata },
                                             onDismiss = menuState::dismiss,
                                             onShowOffsetDialog = {
                                                 bottomSheetPageState.show {

@@ -61,8 +61,6 @@ import androidx.compose.ui.unit.dp
 import androidx.datastore.preferences.core.edit
 import com.music.mkr.constants.DismissedQuickPicksKey
 import com.music.mkr.utils.dataStore
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
