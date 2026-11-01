@@ -6,116 +6,74 @@
 
 ---
 
-## [v1.1.0] - 2026-10-31
+## [v1.1.0] - 2026-11-01
 
-Milestone release delivering instant audio streaming, intelligent background caching, complete UI redesigns for Album, Artist, and Playlist views, universal synchronized lyrics animation with dynamic provider selection, hardware equalizer integration with fine-tuned presets, default floating glass capsule navigation, an overhauled App Icon gallery with deferred switching, and architectural consolidation into a single Universal Release APK.
+Milestone release delivering unified Material 3 Expressive library views, strengthened taste-based song recommendations, instant audio streaming, intelligent background caching, synchronized notification artwork, and universal lyrics animations.
 
 ---
 
 ### 🚀 Added
-- **Material 3 Expressive Library Redesign (Liked, Offline, Cached, and Local):** Completely redesigned the Cached, Offline/Downloaded, Liked Songs, and Local Files screens into a unified, consistent Material 3 Expressive architecture featuring asymmetric Hero Cards with squircle artwork and category badges, overline category tags, metadata stat pill capsules (song count, duration, and formatted storage footprint), and an Expressive Action Deck (Play All, Shuffle, Search, and More Options).
-- **First-Time Quick Picks Starter Recommendations & Guest Personalization:** Ensured Quick Picks is always populated and visible at the top of the Home feed even on clean initial app installs with 0 playback history through curated starter hit recommendations, seamlessly transitioning to deep local taste, mood, and listening history personalization as tracks are played. For guest/logged-out users without history, YouTube's native picks display automatically as previously.
-- **Material 3 Expressive Lyrics Control Deck & Top 3-Dot Menu:** Integrated a 3-dot action button in the top bar of the lyrics screen that opens a bespoke Material 3 Expressive control deck featuring a track header with current lyrics provider badge, a 2x2 quick-action deck for Lyrics Offset (+/- timing), Manual Lyrics Editing, Online Refetch, and Multi-Provider Search, along with toggles for AI translation and phonetic romanization.
-- **Integrations Hub with Spotify & YouTube Music Shortcuts:** Re-categorized Discord Rich Presence under Settings as "Integrations" and introduced unified shortcuts for Discord, Last.fm, Listen Together, Spotify (playlist & library import), and YouTube Music (account sync & login).
-- **Material Expressive App Icon Capsule Gallery:** Replaced the grid-based icon picker with an alternating left-and-right capsule presentation featuring real-time sinusoidal wavy animated borders around the launcher icons, bold titles, and interactive creator attribution chips that dynamically scale across any device display.
-- **"Not Interested" Song Exclusion Option:** Added a dedicated "Not interested" option inside `SongMenu` and `YouTubeSongMenu` positioned immediately after library actions and before downloads, persisting user exclusions in DataStore and instantly dismissing the track from Quick Picks.
-- **Original Online Playlist Discovery Experience:** Rebuilt the Online Playlist screen featuring an adaptive two-column layout for tablets and landscape displays with a sticky editorial sidebar, an elevated vinyl artwork presentation with a floating playback pulse indicator, rich typography and curator attributions, a comprehensive command deck (Play All, Shuffle, Bookmark, Search, Share), and detailed track rows with live audio visualizer bars.
-- **Complete Search & Discovery Redesign:** Overhauled search experience featuring a bespoke Music Search Dock, integrated Cloud vs. Local Library switcher pill, responsive 10-preset Genre & Mood exploration grid (Pop, Hip-Hop, Rock, Lo-Fi, R&B, Indie, etc.), Top Result spotlight hero cards, and compact recent search chip trays.
-- **Default Floating Glass Navigation:** Default floating frosted glass navigation bar featuring fluid pill-shaped buttons, active gradient glows, and tactile spring press animations.
-- **Audio Output Equalizer Quick-Access:** Dedicated Equalizer button integrated into the Audio Output sheet for immediate sound customization without leaving playback.
-- **Hardware Equalizer Presets:** High-precision built-in acoustic presets including *Flat*, *Bass Boost*, *Pure Clarity*, *MKR Signature*, *Electronic*, and *Rock*.
-- **Dynamic Lyrics Provider Switching:** Real-time provider switcher chip in the lyrics view allowing listeners to seamlessly swap between available lyric sources on the fly with custom source logos.
-- **Lyrics Phonetics & Romanization Toggle:** Quick-access toggle on the lyrics screen providing instantaneous romanization without navigating to settings.
-- **Dynamic Onboarding Ambient Effects:** Fluid animated pulse wave behind the welcome logo and real-time color-morphing ambient backdrops on the features onboarding carousel that adapt to each feature theme.
-- **Comprehensive Listening Breakdown:** Rich stats summary displaying total listening duration, active listening days, and daily listening averages.
-- **11 Launcher Icon Styles:** Complete gallery of high-resolution launcher icons including *Default*, *Monochrome*, *Retro*, *Neon*, *Gold*, *Creative Cracked Record Cover*, *Creative Vinyl Forest*, *Creative Moonlit Cherry Blossom*, *Creative Neon Wisteria*, *Creative Autumn Glow*, and *Creative Cyberpunk Neon*.
-- **Deferred Launcher Icon Switching:** Safe queued launcher icon application that applies the chosen icon when the app is sent to the background (`MainActivity.onStop()`) or on cold startup, eliminating sudden process terminations and launcher restart stuttering.
-- **Creator Attribution in Icon Gallery:** Description-style attribution badges displaying creator usernames (`@kaif-coder`, `@mkr-infinity`) and GitHub platform badges for all 11 launcher icons.
-- **Configurable Background Cache Delay:** Dedicated slider under Storage & Cache settings (5s–90s, default 5s) ensuring only actively listened tracks are cached to device storage.
-- **Watch-Inspired History Navigation:** Dedicated timepiece action capsule on the Home screen providing immediate one-tap navigation to listening history and playback events.
-- **Multi-Density Adaptive Launcher Assets:** Full set of `anydpi-v26` adaptive XML, round XML, and 5 legacy density buckets (`mdpi`, `hdpi`, `xhdpi`, `xxhdpi`, `xxxhdpi`) for all launcher icon styles.
+- **Material 3 Expressive Library Redesign:** Redesigned Liked, Offline, Cached, and Local Files screens with asymmetric hero cards, 2x2 collage artwork, and action decks.
+- **Numbered Library Track Rows:** Added left-side numbering (`01`, `02`...), live playing visualizers, squircle thumbnails, duration capsules, and reorder drag handles.
+- **Always-Visible Quick Picks:** Pinned Quick Picks to the top of Home with popular chart hits on fresh installs so the section is never empty.
+- **Persistent "Not Interested" Exclusion:** Added song context-menu option to permanently exclude unwanted tracks from recommendations and Quick Picks.
+- **Expressive Lyrics Control Deck:** Added top 3-dot lyrics deck with timing offset adjustment, manual lyrics editing, multi-provider search, and romanization toggles.
+- **Integrations Hub:** Consolidated Spotify library import, YouTube Music sync, Discord RPC, and Last.fm scrobbling under Settings.
+- **Animated App Icon Capsule Gallery:** Replaced static icon grid with dynamic sinusoidal-wave capsule cards and background switching.
+- **Audio Output Equalizer Shortcut:** Added instant equalizer access from the Audio Output bottom sheet with custom acoustic presets.
+- **Dynamic Lyrics Provider Switching:** Real-time provider switcher chip in lyrics view with source logos and phonetic romanization toggles.
+- **Watch-Inspired History Navigation:** Added dedicated timepiece action capsule on Home for one-tap listening history access.
+- **Configurable Background Cache Delay:** Added slider under Storage settings (5s–90s) ensuring only actively listened tracks are cached.
+- **11 Launcher Icon Styles:** Complete gallery of adaptive launcher icons with creator attribution badges.
 
 ---
 
 ### 🌟 Improved
-- **Modern Player Style & Follow Theme Default:** Established `PlayerStyle.MODERN` as the primary default playback architecture and `PlayerBackgroundStyle.DEFAULT` ("Follow Theme") as the default player background style across the app.
-- **Media Notification Next Track Action:** Added a dedicated **Next** button before the **Like** button in the system media notification custom layout (`COMMAND_SEEK_TO_NEXT`), allowing listeners to quickly skip to the next track directly from notification controls.
-- **Personalized Home Experience for Guest / Logged-Out Listeners:** Suppressed generic unauthenticated YouTube guest recommendations when not logged in, ensuring the Home screen prioritizes local personalized Quick Picks tailored to the user's taste, recent playback sessions, and active moods.
-- **Streamlined Queue Controls:** Removed the redundant audio device speaker pill situated between the delete button and track info text in the playback queue header.
-- **Adaptive Player Layout Sizing Across All Architectures:** Integrated dynamic height-and-width constrained scaling (`BoxWithConstraints`) across all 9 player styles (`Classic`, `Modern`, `Cinematic`, `Minimal`, `Editorial`, `Material Extended`, `Immersive`, `Immersive Extended`, `Apple`), guaranteeing album artwork smoothly scales to available screen height without compressing or pushing playback controls into each other.
-- **Data Saver Thumbnail Quality Fidelity:** Ensured image and thumbnail downscaling and compression only execute when Data Saver is actively turned on; when Data Saver is disabled, full original uncompressed images (including high-resolution maxresdefault JPGs and clean Google CDN assets) are delivered without lossy compression tags.
-- **Clean Quick Picks Card Interaction:** Removed the intrusive top-right cross button from Quick Picks music cards in favor of the standard long-press "Not interested" context menu action.
-- **Search Results Visual Differentiation:** Introduced custom `SearchResultCard` with distinct visual identities across Songs, Albums, Artists, and Playlists (circular artist avatars, album and playlist type tags, duration indicators, and active playback visualizer bars).
-- **Online Playlist Layout & Responsiveness:** Replaced standard single-column list with responsive dual-pane tablet architecture, refined category badges, collapsible description panels, and interactive in-playlist search filtering.
-- **Data Saver Artwork Scaling:** Proportional aspect ratio image resolution scaling for low-bandwidth environments across Home, Quick Picks, Search, and Library.
-- **Search Header & Focus Transitions:** Eliminated full-screen takeover modal flicker with unified in-place header morphing and tactile spring press feedback.
-- **Instantaneous Like & Favorite Response:** Optimistic UI updating on like button interactions across all player layouts and the mini-player for zero-latency feedback.
-- **Equalizer Session Card Styling:** Displays the active track title directly on the equalizer session card with clean typography, zero raw identifiers, and zero bullet dots.
-- **Instant Audio Playback Pipeline:** Starts audio streaming immediately upon selection by bypassing initial cache write buffer lag, delivering near-instant online playback.
-- **Redesigned Album Screen:** Elevated album artwork hero presentation with dynamic color extraction, release year, track count, total runtime, record label details, and prominent primary action capsules (Play All, Shuffle, Download, Favorite, Share).
-- **Redesigned Artist Screen:** Full-width header banner with artist avatar, subscriber count stats, top songs spotlight, and categorized discography carousels separating studio albums, singles, EPs, and appearances.
-- **Redesigned Online Playlist Screen:** Expressive header card with creator attribution, track count, and duration summary, accompanied by tactile floating action controls.
-- **Universal Letter-by-Letter Lyrics Animation:** Character-level progressive reveal active across all songs and providers with smooth offscreen Canvas clipping (`BlendMode.DstIn`) and zero layout shifts.
-- **Word-by-Word Lyrics Precision:** Refined word sync algorithm to ensure smooth progression without unexpected line-end jumping.
-- **Notification Media Controls:** Restored media seekbar slider seeking directly in the system media notification.
-- **Settings Discovery & Deep Search:** Pre-tokenized keyword search indexing all configuration items, toggles, and descriptions with instant relevance ranking and direct target highlighting.
-- **Account-Aware Header Navigation:** Dynamic avatar button on the Home screen that displays current account authentication status with smooth transitions.
+- **Strengthened Taste-Based Song Suggestions:** Reinforced recommendation engine to deeply adapt Quick Picks and radios to listening habits, recent tracks, and active moods.
+- **Default Modern Player & Follow Theme:** Set Modern player style and dynamic "Follow Theme" background as the default app experience.
+- **Notification Artwork & Dynamic Theming:** Restored album art backdrops, dynamic theme palette matching, seekbar progress, and added Next button before Like.
+- **Adaptive Player Scaling Across All Styles:** Added dynamic constraint scaling (`BoxWithConstraints`) across all 9 player styles to prevent button and artwork overlap.
+- **Full-Fidelity Artwork Quality:** Disabled lossy thumbnail compression when Data Saver is off for uncompressed album art delivery.
+- **Instant Audio Streaming Pipeline:** Starts audio playback immediately upon tap by bypassing initial cache write buffers.
+- **Responsive Online Playlist Screen:** Built adaptive two-column tablet layout with sticky sidebar and visualizer track rows.
+- **Letter-by-Letter Synced Lyrics:** Smooth progressive character reveal across all lyric providers with zero layout shifts.
+- **Search & Discovery Grid:** Overhauled search with integrated Music Search Dock, Cloud vs. Local filter, and 10-preset genre exploration grid.
+- **Instantaneous Like & Favorite Response:** Optimistic UI updating on like button interactions across all player layouts and mini-player.
 
 ---
 
 ### 🛠️ Fixed
-- **Quick Picks Top Section Placement & Universal Visibility:** Resolved an issue where guest deduplication filtering inadvertently removed YouTube's Quick picks section when local history was empty. Restored seamless fallback and pinned Quick Picks as the top section on the Home screen across both local personalized and remote catalog sources.
-- **System Media Notification Artwork Thumbnail & Dynamic Theme Alignment:** Restored exact notification and artwork logic from the reference implementation using native `DefaultMediaNotificationProvider` and direct `MediaLibrarySession` player binding with `CoilBitmapLoader`. This ensures Android SystemUI displays the album artwork thumbnail as the prominent notification backdrop with automatic artwork-derived dynamic theme colors and seekbar progress, without logo modifications.
-- **Top 3-Dot Menu Visibility Across All Player Styles:** Replaced the empty top-right spacer in `MaterialExtendedPlayer` with the standard 3-dot overflow menu (`more_vert`), ensuring that every player style provides consistent top-bar access to the song options menu.
-- **Permanent "Not Interested" Quick Picks Filtering & Local Storage:** Guaranteed songs marked as "Not interested" are permanently excluded from Quick Picks across app launches and manual refreshes, storing exclusion sets locally in DataStore so they automatically reset on app data clear or settings reset.
-- **Universal Player Layout & Navigation Bar Overlap Prevention:** Double-checked all 9 player styles and inner layout containers to ensure dynamic inset calculation (`QueuePeekHeight + insets.calculateBottomPadding() + 8.dp`) and responsive artwork bounds (`BoxWithConstraints`) prevent buttons, volume sliders, or timestamps from overlapping or getting hidden across any device or navigation mode.
-- **Player Controls & Navigation Bar Overlaps:** Resolved layout overlaps across all navigation modes (3-button, 2-button, gesture, and immersive) by computing dynamic system bar insets and anchoring bottom playback controls, volume sliders, and secondary rows safely above the Queue peek sheet (`QueuePeekHeight + insets.calculateBottomPadding() + 8.dp`).
-- **Status Bar & Camera Cutout Collisions in Player Styles:** Added status bar and horizontal cutout insets to all player styles, protecting top bar controls (collapse, lyrics, queue, more) and album art from colliding with system clocks, icons, and notches.
-- **Background Music Stopped on Recents Clear:** Fixed playback unexpectedly terminating when swiping the app away from recent tasks with "Stop music on task clear" disabled. Explicitly bound and started `MusicService` as an independent started service (`START_STICKY`), and suppressed premature service destruction in `onTaskRemoved` when the toggle is off.
-- **Music Notification Artwork Colors & Playback State Synchronization:** Wired `MkrNotificationProvider` in `MusicService` to dynamically extract and apply the active track's artwork palette color (`setColor(accentColor).setColorized(true)`), eagerly clear previous track colors upon track transition, gracefully fall back to brand warm amber for missing or offline artwork, and preserve synchronized play/pause, seekbar progress, and dismissal states.
-- **Notification Media Seekbar & Progress Sync:** Restored persistent media progress slider visibility across playing, paused, and buffering states via ForwardingPlayer duration fallback and immediate session synchronization.
-- **Tablet Playback & Track Transition Stability:** Shifted metadata Room database lookups inside ExoPlayer media item transitions from the Main Thread to background IO coroutines (`Dispatchers.IO`), eliminating Room main-thread database access exceptions when starting playback on tablets and mobile devices.
-- **Recursive Crash Screen Loop Prevention:** Hardened `CrashHandler` with active process-name inspection to immediately terminate recursive crashes originating from the `:crash` process without re-triggering `CrashActivity`, and switched `CrashActivity` to self-contained MaterialTheme to eliminate cross-process DataStore collisions.
-- **Tablet Landscape Scaffold Layout:** Wrapped the tablet navigation rail and bottom player bar within a dedicated bounded `Box` layout in `MainActivity`, preventing measure constraint mismatches and unboxed child crashes.
-- **Task Clear & Cold Startup Crash (`CrashActivity`):** Resolved root cause crashes occurring when clearing the app from Recents after playing a track by adding `ContextCompat.RECEIVER_EXPORTED` flags across all audio, volume, bluetooth, and screen broadcast receivers for Android 14+ (targetSdk 37) compatibility, guarding `PlayerConnection` playback property initialization against uninitialized ExoPlayer state, and pointing all launcher activity aliases directly to `MainActivity`.
-- **Second-Launch Startup Crash:** Resolved window and splash screen collision on second launch after onboarding completion, ensuring smooth immediate entry into the main application.
-- **Consecutive Skip & Like Synchronization:** Fixed desynchronization when skipping tracks and liking songs consecutively by propagating active metadata during ExoPlayer crossfade swaps, resolving the active track's like state from the Room database upon media item transitions, and synchronizing player state flows eagerly.
-- **Local Liked Songs Library Updates:** Fixed Room database liked song persistence without login, guaranteeing that every liked song is immediately saved and instantly reflected in the Liked Songs playlist.
-- **Reliable Song Liking Pipeline:** Fixed desync between UI state, Room database entities, and synchronization tasks, ensuring likes persist reliably across all menus, players, and views.
-- **Stats Top-Right Navigation & Wrapped Stability:** Resolved crashes and infinite loops in Wrapped recap, adding safe bounds checking for smaller libraries and eliminating pre-composition auto-advances.
-- **Wrapped Display & Layout Freezes:** Clamped text measurement while loops in recap screens to prevent freezes across varying screen aspect ratios and tablets.
-- **Appearance Settings Clean-up:** Removed redundant duplicate top bar quick-access setting from Auto Playlists while preserving the home screen shortcut.
-- **Strict Clean Typography Policy:** Enforced complete elimination of unwanted bullet dots and separator symbols across all song info and status strings.
-- **Unused Translation Cleanup:** Removed 35 obsolete unused translations to ensure clean multi-locale builds.
-- **Settings Reference Wiring:** Resolved broken, missing, or unmapped configuration references across Appearance, Lyrics, and Storage settings screens.
-- **Lyrics Seeking Synchronization:** Fixed character desync during seek operations, pausing animations cleanly on pause and preventing stale character carryover when switching tracks.
-- **System Window Insets & Overlaps:** Resolved navigation bar, status bar, and mini-player clipping across all primary screens using `LocalPlayerAwareWindowInsets` and `WindowInsets.ime`.
-- **App Icon Grid Sizing:** Hardened dialog layout constraints with `heightIn(max = 420.dp)` and adaptive column sizing (`minSize = 135.dp`) preventing title truncation on compact screens.
-- **Queue Duplicate Track Suppression:** Fixed duplicate track insertion across all queue entry paths, keeping playback queues clean.
-- **Offline Cache Indexing:** Resolved caching edge cases ensuring downloaded songs and cached tracks are properly recognized across History, Library, and offline playback modes.
+- **Notification Artwork & Lifecycle Synchronization:** Restored exact `CoilBitmapLoader` and Media3 session binding to fix missing notification artwork.
+- **Quick Picks Discovery on Guest Accounts:** Fixed guest deduplication filter ensuring unauthenticated users receive curated picks without dropouts.
+- **Top 3-Dot Menu Across All Player Styles:** Added missing options menu in `MaterialExtendedPlayer` for uniform top-bar controls.
+- **Background Playback On Task Clear:** Kept `MusicService` playing when swiping app from recents if "Stop music on task clear" is disabled.
+- **System Inset & Navigation Overlaps:** Resolved navigation bar, status bar, and camera cutout collisions across all player styles.
+- **Consecutive Skip & Like Synchronization:** Fixed race condition when liking and skipping tracks rapidly by resolving state on background IO threads.
+- **Room Database Main-Thread Access:** Moved metadata lookups off main thread to background IO coroutines during track transitions.
+- **Recursive Crash Screen Loop Prevention:** Hardened crash handler to terminate recursive crashes originating from the crash process.
+- **Task Clear & Cold Startup Broadcasts:** Added `RECEIVER_EXPORTED` flags across broadcast receivers for Android 14+ compatibility.
 
 ---
 
 ### ⚡ Performance
-- **Low-Priority Cache IO Threads:** Background song caching runs on dedicated IO coroutine dispatchers with automatic cancellation if a track is skipped or paused early, preventing playback stutter.
+- **Low-Priority Cache IO Threads:** Background song caching runs on dedicated IO coroutine dispatchers with automatic cancellation if skipped or paused early.
 - **Offscreen Lyrics Rendering:** High-performance Canvas shader rendering that minimizes recompositions during word-by-word karaoke animations.
-- **Optimized Room Database Queries:** Preserved Room schema at version 34 (`19aa47f2...`) with indexed foreign keys and atomic auto-migrations for fast local library loading.
+- **Optimized Room Database Queries:** Indexed foreign keys and atomic auto-migrations for fast local library loading.
 
 ---
 
 ### 🎨 UI/UX
 - **Material 3 Expressive Refinements:** Edge-to-edge layouts, tactile spring physics on interactive buttons, subtle borders on action cards, and coherent dark mode themes.
-- **Floating Navigation Bar Tablet Adaptability:** Added responsive width constraints (`widthIn(max = 500.dp)`) to the floating glass navigation bar and amber dock navigation to prevent over-stretching across tablet and large-screen devices, and removed top specular flare indicators for a clean, unified pill shape.
-- **Dynamic Onboarding Ambient Wave:** Replaced isolated top button visual emblems with a living, harmonic acoustic wave background across all onboarding pages, adapting responsively for both mobile and tablet two-column layouts.
-- **Lyrics Customization Panel:** Dedicated toggles under Lyrics Settings allowing users to easily choose between character-level animation, line-by-line sync, or static text.
-- **Refined Navigation Bar:** Streamlined bottom navigation and player bar docking with adaptive gesture padding.
+- **Floating Navigation Bar Tablet Adaptability:** Added responsive width constraints (`widthIn(max = 500.dp)`) to the floating glass navigation bar.
+- **Dynamic Onboarding Ambient Wave:** Harmonic acoustic wave background across all onboarding pages for both mobile and tablet layouts.
+- **Lyrics Customization Panel:** Dedicated toggles under Lyrics Settings for character-level animation, line-by-line sync, or static text.
 
 ---
 
 ### 🛡️ Reliability & Architecture
 - **Single Unified Application Architecture:** Consolidated build variants into a single production `:app` target producing a Universal Release APK with full multi-ABI support (`arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64`).
-- **Complete Elimination of Dead Code:** Safely eradicated legacy Shazam/recognition remnants, C++ CMake FFTW actions, unused microphone permissions (`RECORD_AUDIO`), and orphaned string resources.
-- **Fail-Safe Release Workflow:** Automated GitHub Actions workflow targeting `:app:assembleUniversalRelease` with SHA-256 generation, APK integrity validation, and release notes automation.
+- **Complete Elimination of Dead Code:** Eradicated legacy recognition remnants, unused microphone permissions (`RECORD_AUDIO`), and orphaned string resources.
+- **Fail-Safe Release Workflow:** Automated GitHub Actions workflow with SHA-256 verification and automated release notes publishing.
 
 ---
 

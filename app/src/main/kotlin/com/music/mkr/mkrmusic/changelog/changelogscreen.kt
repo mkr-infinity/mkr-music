@@ -470,11 +470,14 @@ private fun getDefaultReleaseNotes(): String {
     return """
 ## What's New in MKR Music
 
-- **Instant Playback Start**: Direct low-latency audio streaming without pre-caching buffer lag.
-- **Delayed Song Caching**: Automatically starts background caching only after listening for your configured duration (5s–90s).
-- **Adaptive Sound Quality**: Dynamic bitrate reporting with exact kbps indicator in the player.
-- **Granular Settings Search**: Search any keyword directly to quickly find specific options with zero duplicates.
-- **Manual Update Workflow**: Seamless GitHub release updates with built-in backup instructions.
-- **Visual Refinements**: Beautiful streamlined UI with responsive banners and smooth transitions.
+- **Material 3 Expressive Library**: Redesigned Liked, Offline, Cached, and Local Views with hero cards and 2x2 collage artwork.
+- **Numbered Track Rows**: Clean two-digit track numbers (01, 02...), live playing visualizers, and duration capsules.
+- **Strengthened Taste-Based Suggestions**: Supercharged recommendation engine adapting to your listening history and moods.
+- **Always-On Quick Picks**: Pinned at top of Home with popular starter tracks for new users and guest fallback.
+- **Default Modern Player & Theme**: Modern player architecture with dynamic "Follow Theme" ambient background.
+- **Synced Notification Artwork**: Dynamic album artwork background and playback controls matching reference.
+- **Instant Playback Streaming**: Starts streaming music immediately without cache buffering lag.
+
+For full details, check the [CHANGELOG.md](https://github.com/mkr-infinity/mkr-music/blob/main/CHANGELOG.md) file.
     """.trimIndent()
 }

@@ -311,35 +311,33 @@ jobs:
 
           > ### Release Highlights
           >
-          > This milestone update delivers instant audio playback streaming, intelligent delayed background caching, expressive Material 3 UI refinements, reliable update previews, watch-inspired listening history navigation, and streamlined settings discovery.
+          > Milestone release featuring unified Material 3 Expressive library views, strengthened personalized song suggestions, instant audio playback, and notification artwork styling matching source.
 
           ---
 
-          ### 🎵 Streaming & Smart Caching
-          - **Instant Audio Playback:** Starts streaming music immediately upon tap without waiting for cache writes.
-          - **Smart Background Caching:** Intelligently caches eligible songs after a configurable listening delay (5s–90s) to keep storage free of skipped tracks.
+          ### 🎵 Smart Recommendations & Playback
+          - **Strengthened Taste-Based Song Suggestions:** Deeply personalizes Quick Picks and radio queues to your listening history, favorite artists, and active moods.
+          - **Always-On Quick Picks:** Pinned at top of Home with popular chart starters for new users and seamless guest fallback.
+          - **Instant Audio Streaming:** Streams tracks immediately upon tap with low-latency buffering.
+          - **Persistent "Not Interested" Filter:** Easily hide unwanted songs permanently from your recommendations.
 
-          ### 🎨 UI & Experience
-          - **Redesigned Album, Artist & Playlist Views:** Fresh, modern visual layouts with dynamic hero artwork, categorized discographies, and tactile action capsules.
-          - **Letter-by-Letter Synced Lyrics:** Smooth progressive character reveal synchronized to song tempo and vocal timing across all providers.
-          - **App Icon Gallery & Deferred Switching:** Choose from 11 unique launcher icon styles with creator attribution, applying seamlessly in the background without app disruption.
-          - **Watch-Inspired History Navigation:** Dedicated timepiece action capsule offering instant one-tap access to your recent playback history.
-          - **Expressive Material 3 Polish:** Edge-to-edge layouts, account status avatar, and safe window insets that eliminate bottom navigation overlap.
+          ### 🎨 UI & Library Experience
+          - **Material 3 Expressive Library:** Unified Liked, Offline, Cached, and Local views with hero cards, 2x2 collage artwork, and stats pills.
+          - **Numbered Track Rows:** Clean left-side track numbering, live playing visualizers, squircle thumbnails, and duration capsules.
+          - **Default Modern Player & Follow Theme:** Clean modern player layout with dynamic background following current theme.
+          - **Synced Notification Artwork:** Exact media notification style with dynamic album artwork colors and skip controls.
+          - **Letter-by-Letter Lyrics Animation:** Smooth word and character synchronization across multiple providers.
 
-          ### ⚡ Performance & Discovery
-          - **Granular Settings Search:** Search directly across all settings toggles and sub-options with fast keyword matching.
-          - **Seamless Queue Management:** Optimized queue operations with automatic duplicate track suppression across all playback entry points.
-
-          ### 🛠️ Bug Fixes & Improvements
-          - **Playback & Navigation Reliability:** Resolved offline cache indexing, persistent playback lifecycle handlers, and activity alias launch stability.
+          ### 🛠️ Reliability & Performance
+          - **Background Playback Lifecycle:** Resilient audio playback service that stays alive when clearing recents.
+          - **Zero Inset Overlaps:** Protected player controls and navigation bars against system cutout and gesture collisions.
+          - **Universal APK:** Single consolidated release build supporting all Android device architectures.
 
           ---
 
-          ### 📖 Want to know more?
+          ### 📖 Full Changelog
 
-          This release includes additional refinements and fixes.
-
-          **[Read the complete MKR Music v{version_name} Changelog](https://github.com/mkr-infinity/mkr-music/blob/main/CHANGELOG.md)**
+          For the full list of changes and detailed breakdown, check the [CHANGELOG.md](https://github.com/mkr-infinity/mkr-music/blob/main/CHANGELOG.md) file.
           """
 
           with open("release_notes.txt", "w", encoding="utf-8") as f:
