@@ -13,6 +13,7 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🚀 Added
+- **Material 3 Expressive Lyrics Control Deck & Top 3-Dot Menu:** Integrated a 3-dot action button in the top bar of the lyrics screen that opens a bespoke Material 3 Expressive control deck featuring a track header with current lyrics provider badge, a 2x2 quick-action deck for Lyrics Offset (+/- timing), Manual Lyrics Editing, Online Refetch, and Multi-Provider Search, along with toggles for AI translation and phonetic romanization.
 - **Integrations Hub with Spotify & YouTube Music Shortcuts:** Re-categorized Discord Rich Presence under Settings as "Integrations" and introduced unified shortcuts for Discord, Last.fm, Listen Together, Spotify (playlist & library import), and YouTube Music (account sync & login).
 - **Material Expressive App Icon Capsule Gallery:** Replaced the grid-based icon picker with an alternating left-and-right capsule presentation featuring real-time sinusoidal wavy animated borders around the launcher icons, bold titles, and interactive creator attribution chips that dynamically scale across any device display.
 - **"Not Interested" Song Exclusion Option:** Added a dedicated "Not interested" option inside `SongMenu` and `YouTubeSongMenu` positioned immediately after library actions and before downloads, persisting user exclusions in DataStore and instantly dismissing the track from Quick Picks.

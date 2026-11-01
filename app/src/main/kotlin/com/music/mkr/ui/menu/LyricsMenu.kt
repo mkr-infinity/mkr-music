@@ -10,6 +10,9 @@ import android.content.Intent
 import android.content.res.Configuration
 import android.widget.Toast
 import androidx.compose.animation.animateContentSize
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -28,6 +31,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
+import com.music.mkr.lyrics.LyricsProviderRegistry
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -69,8 +77,6 @@ import com.music.mkr.ui.component.DefaultDialog
 import com.music.mkr.ui.component.ListDialog
 import com.music.mkr.ui.component.Material3MenuGroup
 import com.music.mkr.ui.component.Material3MenuItemData
-import com.music.mkr.ui.component.NewAction
-import com.music.mkr.ui.component.NewActionGrid
 import com.music.mkr.ui.component.TextFieldDialog
 import com.music.mkr.viewmodels.LyricsMenuViewModel
 import com.music.mkr.constants.OpenRouterApiKey
@@ -390,57 +396,139 @@ fun LyricsMenu(
             bottom = 8.dp + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding(),
         ),
     ) {
+        // Expressive Track Header
         item {
-            NewActionGrid(
-                actions = listOf(
-                    NewAction(
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.edit),
-                                contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+            val metadata = mediaMetadataProvider()
+            val providerName = lyricsProvider()?.provider
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.45f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    AsyncImage(
+                        model = metadata.thumbnailUrl,
+                        contentDescription = metadata.title,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(52.dp)
+                            .clip(RoundedCornerShape(14.dp))
+                    )
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = metadata.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.basicMarquee()
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = metadata.artists.joinToString { it.name },
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+
+                    if (!providerName.isNullOrBlank()) {
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(10.dp),
+                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                        ) {
+                            Text(
+                                text = LyricsProviderRegistry.getDisplayName(providerName),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                             )
+                        }
+                    }
+                }
+            }
+        }
+
+        // Expressive 4-Action Deck (Offset, Edit, Refetch, Search)
+        item {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 6.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    LyricsActionCard(
+                        icon = R.drawable.fast_forward,
+                        title = stringResource(R.string.lyrics_offset),
+                        subtitle = "${if (lyricsOffset >= 0) "+" else ""}${lyricsOffset}ms • Sync timing",
+                        tint = MaterialTheme.colorScheme.primary,
+                        onClick = {
+                            onDismiss()
+                            onShowOffsetDialog()
                         },
-                        text = stringResource(R.string.edit),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    LyricsActionCard(
+                        icon = R.drawable.edit,
+                        title = stringResource(R.string.edit),
+                        subtitle = "Custom text & sync",
+                        tint = MaterialTheme.colorScheme.secondary,
                         onClick = {
                             showEditDialog = true
-                        }
-                    ),
-                    NewAction(
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.cached),
-                                contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                         },
-                        text = stringResource(R.string.refetch),
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    LyricsActionCard(
+                        icon = R.drawable.cached,
+                        title = stringResource(R.string.refetch),
+                        subtitle = "Reload from server",
+                        tint = MaterialTheme.colorScheme.tertiary,
                         onClick = {
                             onDismiss()
                             viewModel.refetchLyrics(mediaMetadataProvider(), lyricsProvider())
-                        }
-                    ),
-                    NewAction(
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.search),
-                                contentDescription = null,
-                                modifier = Modifier.size(28.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
                         },
-                        text = stringResource(R.string.search),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    LyricsActionCard(
+                        icon = R.drawable.search,
+                        title = stringResource(R.string.search),
+                        subtitle = "Find across providers",
+                        tint = MaterialTheme.colorScheme.primary,
                         onClick = {
                             showSearchDialog = true
-                        }
+                        },
+                        modifier = Modifier.weight(1f)
                     )
-                ),
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 16.dp)
-            )
+                }
+            }
         }
 
+        // Settings & Toggles Group
         item {
             Material3MenuGroup(
                 expressive = true,
@@ -464,7 +552,6 @@ fun LyricsMenu(
                                             database.query {
                                                 upsert(clearedLyrics)
                                             }
-                                            // Resets hasActiveTranslations and clears in-memory translations
                                             LyricsTranslationHelper.triggerClearTranslations()
                                         }
                                     } else {
@@ -477,10 +564,8 @@ fun LyricsMenu(
                                         checked = hasTranslations,
                                         onCheckedChange = { newCheckedState ->
                                             if (newCheckedState) {
-                                                // Enable translations – hasActiveTranslations updates when done
                                                 LyricsTranslationHelper.triggerManualTranslation()
                                             } else {
-                                                // Disable translations – triggerClearTranslations resets hasActiveTranslations
                                                 lyricsProvider()?.let { lyrics ->
                                                     val clearedLyrics = LyricsTranslationHelper.clearTranslations(lyrics)
                                                     database.query {
@@ -504,30 +589,7 @@ fun LyricsMenu(
                             )
                         )
                     }
-                    
-                    add(
-                        Material3MenuItemData(
-                            title = { Text(stringResource(R.string.lyrics_offset)) },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.fast_forward),
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = {
-                                onDismiss()
-                                onShowOffsetDialog()
-                            },
-                            trailingContent = {
-                                Text(
-                                    text = "${if (lyricsOffset >= 0) "+" else ""}${lyricsOffset}ms",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        )
-                    )
-                    
+
                     add(
                         Material3MenuItemData(
                             title = { Text(text = stringResource(R.string.romanize_current_track)) },
@@ -573,50 +635,68 @@ fun LyricsMenu(
             )
         }
     }
-    
-    /* if (showRomanizationDialog) {
-        var isChecked by remember { mutableStateOf(songProvider()?.romanizeLyrics ?: true) }
+}
 
-        // Sync with song changes
-        LaunchedEffect(songProvider()) {
-            isChecked = songProvider()?.romanizeLyrics ?: true
-        }
-
-        DefaultDialog(
-            onDismiss = { showRomanizationDialog = false },
-            title = { Text(stringResource(R.string.romanization)) }
+/**
+ * Expressive action card component for Lyrics Menu
+ */
+@Composable
+private fun LyricsActionCard(
+    icon: Int,
+    title: String,
+    subtitle: String,
+    tint: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+        modifier = modifier
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(14.dp),
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Row(
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable {
-                        // Toggle isChecked when the row is clicked
-                        isChecked = !isChecked
-                        songProvider()?.let { song ->
-                            database.query {
-                                upsert(song.copy(romanizeLyrics = isChecked))
-                            }
-                        }
-                    }
-                    .padding(vertical = 8.dp, horizontal = 16.dp),
-                verticalAlignment = Alignment.CenterVertically
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(tint.copy(alpha = 0.14f)),
+                contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = stringResource(R.string.romanize_current_track),
-                    modifier = Modifier.weight(1f)
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = title,
+                    tint = tint,
+                    modifier = Modifier.size(22.dp)
                 )
-                Switch(
-                    checked = isChecked,
-                    onCheckedChange = { newCheckedState ->
-                        isChecked = newCheckedState
-                        songProvider()?.let { song ->
-                            database.query {
-                                upsert(song.copy(romanizeLyrics = newCheckedState))
-                            }
-                        }
-                    }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Column {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }
-    } */
+    }
 }

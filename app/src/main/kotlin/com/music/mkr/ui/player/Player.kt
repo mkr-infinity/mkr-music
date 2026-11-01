@@ -216,6 +216,7 @@ import com.music.mkr.ui.component.ResizableIconButton
 import com.music.mkr.ui.component.SquigglySlider
 import com.music.mkr.ui.component.WavySlider
 import com.music.mkr.ui.component.rememberBottomSheetState
+import com.music.mkr.ui.menu.LyricsMenu
 import com.music.mkr.ui.menu.OldPlayerMenu
 import com.music.mkr.ui.menu.PlayerMenu
 import com.music.mkr.ui.component.VolumeSlider
@@ -338,6 +339,7 @@ fun BottomSheetPlayer(
     val playbackState by playerConnection.playbackState.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val currentSong by playerConnection.currentSong.collectAsState(initial = null)
+    val currentLyrics by playerConnection.currentLyrics.collectAsState(initial = null)
     val currentFormat by playerConnection.currentFormat.collectAsState(initial = null)
     val automix by playerConnection.service.automixItems.collectAsState()
     val repeatMode by playerConnection.repeatMode.collectAsState()
@@ -1248,7 +1250,31 @@ fun BottomSheetPlayer(
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                            Spacer(modifier = Modifier.size(48.dp))
+                            IconButton(
+                                onClick = {
+                                    menuState.show {
+                                        LyricsMenu(
+                                            lyricsProvider = { currentLyrics },
+                                            songProvider = { currentSong?.song },
+                                            mediaMetadataProvider = { mediaMetadata ?: return@LyricsMenu },
+                                            onDismiss = menuState::dismiss,
+                                            onShowOffsetDialog = {
+                                                bottomSheetPageState.show {
+                                                    ShowOffsetDialog(
+                                                        songProvider = { currentSong?.song }
+                                                    )
+                                                }
+                                            }
+                                        )
+                                    }
+                                }
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.more_vert),
+                                    contentDescription = stringResource(R.string.more_label),
+                                    tint = MaterialTheme.colorScheme.onSurface
+                                )
+                            }
                         }
 
                         InlineLyricsView(
