@@ -753,7 +753,7 @@ private fun AutoPlaylistHeader(
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.schedule),
+                                        painter = painterResource(R.drawable.timer),
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(12.dp)

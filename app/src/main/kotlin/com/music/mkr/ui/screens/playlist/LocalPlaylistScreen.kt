@@ -1072,6 +1072,12 @@ fun LocalPlaylistHeader(
             }
         }
 
+        val songCount = if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null) {
+            playlist.playlist.remoteSongCount
+        } else {
+            playlist.songCount
+        }
+
         // Expressive Hero Card
         Card(
             shape = RoundedCornerShape(26.dp),
@@ -1253,12 +1259,6 @@ fun LocalPlaylistHeader(
                 Spacer(Modifier.width(16.dp))
 
                 // Metadata Column
-                val songCount = if (playlist.songCount == 0 && playlist.playlist.remoteSongCount != null) {
-                    playlist.playlist.remoteSongCount
-                } else {
-                    playlist.songCount
-                }
-
                 Column(
                     modifier = Modifier.weight(1f),
                     verticalArrangement = Arrangement.Center
@@ -1325,7 +1325,7 @@ fun LocalPlaylistHeader(
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                                 ) {
                                     Icon(
-                                        painter = painterResource(R.drawable.schedule),
+                                        painter = painterResource(R.drawable.timer),
                                         contentDescription = null,
                                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.size(12.dp)

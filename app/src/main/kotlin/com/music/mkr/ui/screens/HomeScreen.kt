@@ -817,6 +817,8 @@ fun HomeScreen(
         )
     }
 
+    val hasListeningHistory by viewModel.hasListeningHistory.collectAsState()
+
     val homeSections = remember(
         randomizeHomeOrder,
         hideSpeedDial,
@@ -832,7 +834,8 @@ fun HomeScreen(
         similarRecommendations,
         coversAndRemixes,
         homePage?.sections,
-        explorePage?.moodAndGenres
+        explorePage?.moodAndGenres,
+        hasListeningHistory
     ) {
         val list = mutableListOf<HomeSection>()
         val chipActive = selectedChip != null
@@ -910,7 +913,6 @@ fun HomeScreen(
             }
         }
 
-        val hasListeningHistory by viewModel.hasListeningHistory.collectAsState()
         val hasLocalQuickPicks = quickPicks?.isNotEmpty() == true
         val hasYouTubeQuickPicks = sortedList.any(isYtQuickPicks)
 
