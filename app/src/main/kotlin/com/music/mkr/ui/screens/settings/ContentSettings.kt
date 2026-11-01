@@ -118,6 +118,7 @@ import java.net.Proxy
 import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.launch
 import com.music.mkr.utils.dataStore
+import coil3.SingletonImageLoader
 import com.music.mkr.constants.DataSaverKey
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -135,6 +136,7 @@ fun ContentSettings(
             context.dataStore.edit { prefs ->
                 prefs[DataSaverKey] = enable
             }
+            SingletonImageLoader.get(context).memoryCache?.clear()
         }
     }
 

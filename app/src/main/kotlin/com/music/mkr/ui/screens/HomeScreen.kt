@@ -128,6 +128,7 @@ import com.music.innertube.models.YTItem
 import com.music.innertube.utils.completed
 import com.music.innertube.utils.parseCookieString
 import com.music.innertube.YouTube
+import com.music.mkr.constants.DataSaverKey
 import com.music.mkr.constants.GridItemSize
 import com.music.mkr.constants.GridItemsSizeKey
 import com.music.mkr.constants.GridThumbnailHeight
@@ -452,7 +453,8 @@ fun DailyDiscoverCard(
         shape = RoundedCornerShape(18.dp)
     ) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
-            var currentThumbnailUrl by remember(dailyDiscover.recommendation.thumbnail) {
+            val dataSaver by rememberPreference(DataSaverKey, defaultValue = false)
+            var currentThumbnailUrl by remember(dailyDiscover.recommendation.thumbnail, dataSaver) {
                 mutableStateOf(dailyDiscover.recommendation.thumbnail?.resize(1200, 1200))
             }
             
@@ -566,6 +568,7 @@ fun HomeScreen(
 
     val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
+    val dataSaver by rememberPreference(DataSaverKey, defaultValue = false)
 
     val quickPicks by viewModel.quickPicks.collectAsState()
     val forgottenFavorites by viewModel.forgottenFavorites.collectAsState()
@@ -1397,7 +1400,7 @@ fun HomeScreen(
                                                         }
                                                     )
                                             ) {
-                                                var currentThumbnailUrl by remember(currentSong.song.thumbnailUrl) {
+                                                var currentThumbnailUrl by remember(currentSong.song.thumbnailUrl, dataSaver) {
                                                     mutableStateOf(currentSong.song.thumbnailUrl?.resize(1200, 1200))
                                                 }
 
@@ -2025,7 +2028,7 @@ fun HomeScreen(
                                                             }
                                                         )
                                                 ) {
-                                                    var currentThumbnailUrl by remember(song.thumbnail) {
+                                                    var currentThumbnailUrl by remember(song.thumbnail, dataSaver) {
                                                         mutableStateOf(song.thumbnail.resize(1200, 1200))
                                                     }
 
