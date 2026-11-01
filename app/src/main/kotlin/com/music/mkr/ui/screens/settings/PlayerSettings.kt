@@ -256,10 +256,10 @@ fun PlayerSettings(
 
     val (rawPlayerStyle, onPlayerStyleChange) = rememberEnumPreference(
         PlayerStyleKey,
-        defaultValue = PlayerStyle.MODERN
+        defaultValue = PlayerStyle.CINEMATIC
     )
     val playerStyle = remember(rawPlayerStyle) {
-        if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.MODERN else rawPlayerStyle
+        if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.CINEMATIC else rawPlayerStyle
     }
     val (useAppleMiniPlayer, onUseAppleMiniPlayerChange) = rememberPreference(
         UseAppleMiniPlayerKey,

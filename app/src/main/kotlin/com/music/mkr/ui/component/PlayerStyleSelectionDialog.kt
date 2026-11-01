@@ -366,23 +366,6 @@ private fun StylePreviewBadge(
                     Box(Modifier.size(width = 26.dp, height = 2.dp).clip(RoundedCornerShape(1.dp)).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.primary))
                 }
             }
-            PlayerStyle.EDITORIAL -> {
-                // Editorial typography layout with die-cut frame
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .border(1.dp, if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.primary, RoundedCornerShape(4.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "E",
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 16.sp,
-                        color = if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
         }
     }
 }

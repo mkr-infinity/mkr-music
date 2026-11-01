@@ -162,8 +162,6 @@
     <string name="player_style_immersive_extended_desc">Extended ambient backdrop with integrated volume bar and queue peek</string>
     <string name="player_style_material_extended">Material Extended</string>
     <string name="player_style_material_extended_desc">Material 3 expressive player with animated spring controls and wavy progress</string>
-    <string name="player_style_editorial">Editorial</string>
-    <string name="player_style_editorial_desc">High-contrast two-tone layout with bold serif typography and die-cut art</string>
     <!-- Library 5-Category Cards -->
     <string name="library_liked_songs">Liked songs</string>
     <string name="library_liked_songs_desc">Your favorite tracks</string>

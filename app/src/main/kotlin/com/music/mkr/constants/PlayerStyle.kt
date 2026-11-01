@@ -47,19 +47,15 @@ enum class PlayerStyle(
     MATERIAL_EXTENDED(
         titleRes = R.string.player_style_material_extended,
         descriptionRes = R.string.player_style_material_extended_desc
-    ),
-    EDITORIAL(
-        titleRes = R.string.player_style_editorial,
-        descriptionRes = R.string.player_style_editorial_desc
     );
 
     companion object {
-        val DEFAULT = MODERN
+        val DEFAULT = CINEMATIC
         val selectableStyles: List<PlayerStyle> = entries.filter { it != APPLE }
 
         fun fromString(name: String?): PlayerStyle {
-            val style = entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: MODERN
-            return if (style == APPLE) MODERN else style
+            val style = entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: CINEMATIC
+            return if (style == APPLE) CINEMATIC else style
         }
     }
 }

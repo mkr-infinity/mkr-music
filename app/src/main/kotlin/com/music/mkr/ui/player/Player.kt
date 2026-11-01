@@ -186,7 +186,6 @@ import com.music.mkr.ui.player.styles.ApplePlayer
 import com.music.mkr.ui.player.styles.ImmersivePlayer
 import com.music.mkr.ui.player.styles.ImmersiveExtendedPlayer
 import com.music.mkr.ui.player.styles.MaterialExtendedPlayer
-import com.music.mkr.ui.player.styles.EditorialPlayer
 import com.music.mkr.constants.QueuePeekHeight
 import com.music.mkr.constants.SliderStyle
 import com.music.mkr.constants.SliderStyleKey
@@ -1177,9 +1176,9 @@ fun BottomSheetPlayer(
             )
         },
     ) {
-        val rawPlayerStyle by rememberEnumPreference(PlayerStyleKey, defaultValue = PlayerStyle.MODERN)
+        val rawPlayerStyle by rememberEnumPreference(PlayerStyleKey, defaultValue = PlayerStyle.CINEMATIC)
         val playerStyle = remember(rawPlayerStyle) {
-            if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.MODERN else rawPlayerStyle
+            if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.CINEMATIC else rawPlayerStyle
         }
         val isLoading = playbackState == androidx.media3.common.Player.STATE_BUFFERING
 
@@ -1525,35 +1524,6 @@ fun BottomSheetPlayer(
                             iconButtonColor = iconButtonColor,
                             sideButtonContainerColor = sideButtonContainerColor,
                             sideButtonContentColor = sideButtonContentColor,
-                            textBackgroundColor = TextBackgroundColor,
-                            onSliderValueChange = { sliderPosition = it },
-                            onSliderValueChangeFinished = {
-                                sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                sliderPosition = null
-                            },
-                            onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                            onShowQueue = { queueSheetState.expandSoft() },
-                            onShowMenu = { onOpenMenu(metadata) },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        PlayerStyle.EDITORIAL -> EditorialPlayer(
-                            mediaMetadata = metadata,
-                            playbackState = playbackState,
-                            isPlaying = isPlaying,
-                            isLoading = isLoading,
-                            canSkipPrevious = canSkipPrevious,
-                            canSkipNext = canSkipNext,
-                            sliderPosition = sliderPosition,
-                            position = effectivePosition,
-                            duration = duration,
-                            repeatMode = repeatMode,
-                            shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
-                            isLiked = isCurrentTrackLiked,
-                            playerConnection = playerConnection,
-                            navController = navController,
-                            state = state,
-                            textButtonColor = textButtonColor,
-                            iconButtonColor = iconButtonColor,
                             textBackgroundColor = TextBackgroundColor,
                             onSliderValueChange = { sliderPosition = it },
                             onSliderValueChangeFinished = {
