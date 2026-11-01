@@ -220,7 +220,7 @@ fun LibraryTrackRow(
                     }
 
                     Text(
-                        text = song.artists.joinToString { it.name }.ifEmpty { song.album?.name ?: "" },
+                        text = song.artists.joinToString { it.name }.ifEmpty { song.album?.title ?: "" },
                         style = MaterialTheme.typography.bodySmall.copy(
                             fontSize = 12.sp
                         ),
