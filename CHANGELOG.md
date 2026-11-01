@@ -32,6 +32,7 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🌟 Improved
+- **Search Results Visual Differentiation:** Introduced custom `SearchResultCard` with distinct visual identities across Songs, Albums, Artists, and Playlists (circular artist avatars, album and playlist type tags, duration indicators, and active playback visualizer bars).
 - **Online Playlist Layout & Responsiveness:** Replaced standard single-column list with responsive dual-pane tablet architecture, refined category badges, collapsible description panels, and interactive in-playlist search filtering.
 - **Data Saver Artwork Scaling:** Proportional aspect ratio image resolution scaling for low-bandwidth environments across Home, Quick Picks, Search, and Library.
 - **Search Header & Focus Transitions:** Eliminated full-screen takeover modal flicker with unified in-place header morphing and tactile spring press feedback.

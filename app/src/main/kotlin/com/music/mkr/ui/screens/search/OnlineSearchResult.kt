@@ -103,6 +103,21 @@ import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import java.net.URLEncoder
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.music.mkr.ui.component.PlayingIndicator
+import com.music.mkr.ui.component.mkrPressFeedback
+import com.music.mkr.ui.utils.resize
+import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.dataStore
 import androidx.datastore.preferences.core.edit
 import com.music.mkr.constants.SearchListenHistoryKey
@@ -231,63 +246,49 @@ fun OnlineSearchResult(
                 }
             }
         }
-        YouTubeListItem(
+
+        SearchResultCard(
             item = item,
-            isActive =
-            when (item) {
+            isActive = when (item) {
                 is SongItem -> mediaMetadata?.id == item.id
                 is AlbumItem -> mediaMetadata?.album?.id == item.id
                 else -> false
             },
             isPlaying = isPlaying,
-            shape = listItemShape(index, size),
-            trailingContent = {
-                IconButton(
-                    onClick = longClick,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.more_vert),
-                        contentDescription = stringResource(R.string.more),
-                    )
-                }
-            },
-            modifier =
-            Modifier
-                .combinedClickable(
-                    onClick = {
-                        when (item) {
-                            is SongItem -> {
-                                if (item.id == mediaMetadata?.id) {
-                                    playerConnection?.togglePlayPause()
-                                } else {
-                                    playerConnection?.playQueue(
-                                        YouTubeQueue(
-                                            WatchEndpoint(videoId = item.id),
-                                            item.toMediaMetadata()
-                                        )
-                                    )
-                                    coroutineScope.launch(Dispatchers.IO) {
-                                        val metadata = item.toMediaMetadata()
-                                        database.query {
-                                            insert(metadata)
-                                        }
-                                        context.dataStore.edit { prefs ->
-                                            val current = prefs[SearchListenHistoryKey]?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
-                                            val newList = (listOf(item.id) + current.filter { it != item.id }).take(9)
-                                            prefs[SearchListenHistoryKey] = newList.joinToString(",")
-                                        }
-                                    }
+            onClick = {
+                when (item) {
+                    is SongItem -> {
+                        if (item.id == mediaMetadata?.id) {
+                            playerConnection?.togglePlayPause()
+                        } else {
+                            playerConnection?.playQueue(
+                                YouTubeQueue(
+                                    WatchEndpoint(videoId = item.id),
+                                    item.toMediaMetadata()
+                                )
+                            )
+                            coroutineScope.launch(Dispatchers.IO) {
+                                val metadata = item.toMediaMetadata()
+                                database.query {
+                                    insert(metadata)
+                                }
+                                context.dataStore.edit { prefs ->
+                                    val current = prefs[SearchListenHistoryKey]?.split(",")?.filter { it.isNotEmpty() } ?: emptyList()
+                                    val newList = (listOf(item.id) + current.filter { it != item.id }).take(9)
+                                    prefs[SearchListenHistoryKey] = newList.joinToString(",")
                                 }
                             }
-
-                            is AlbumItem -> navController.navigate("album/${item.id}")
-                            is ArtistItem -> navController.navigate("artist/${item.id}")
-                            is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
                         }
-                    },
-                    onLongClick = longClick,
-                )
-                .animateItem(),
+                    }
+
+                    is AlbumItem -> navController.navigate("album/${item.id}")
+                    is ArtistItem -> navController.navigate("artist/${item.id}")
+                    is PlaylistItem -> navController.navigate("online_playlist/${item.id}")
+                }
+            },
+            onLongClick = longClick,
+            onMenuClick = longClick,
+            modifier = Modifier.animateItem()
         )
     }
 
@@ -452,4 +453,224 @@ fun OnlineSearchResult(
         }
     }
 }
+}
+
+/**
+ * Bespoke search result card providing immediate visual differentiation
+ * across Songs, Albums, Artists, and Playlists.
+ */
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun SearchResultCard(
+    item: YTItem,
+    isActive: Boolean,
+    isPlaying: Boolean,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
+    onMenuClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val isArtist = item is ArtistItem
+    val isAlbum = item is AlbumItem
+    val isPlaylist = item is PlaylistItem
+    val isSong = item is SongItem
+
+    val subtitle = when (item) {
+        is SongItem -> {
+            val artistStr = item.artists.joinToString { it.name }.ifEmpty { item.album?.name ?: "" }
+            val dur = item.duration?.let { makeTimeString(it * 1000L) }
+            if (dur != null) "$artistStr • $dur" else artistStr
+        }
+        is AlbumItem -> {
+            val artistStr = item.artists?.joinToString { it.name } ?: ""
+            val yearStr = item.year?.toString()
+            listOfNotNull(artistStr.takeIf { it.isNotBlank() }, yearStr).joinToString(" • ")
+        }
+        is ArtistItem -> item.subtext ?: stringResource(R.string.artist)
+        is PlaylistItem -> {
+            val authorStr = item.author?.name ?: ""
+            val countStr = item.songCountText ?: ""
+            listOfNotNull(authorStr.takeIf { it.isNotBlank() }, countStr.takeIf { it.isNotBlank() }).joinToString(" • ")
+        }
+    }
+
+    val typeLabel = when (item) {
+        is ArtistItem -> stringResource(R.string.artist)
+        is AlbumItem -> stringResource(R.string.album)
+        is PlaylistItem -> stringResource(R.string.playlist)
+        is SongItem -> stringResource(R.string.song)
+    }
+
+    val containerColor = if (isActive) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerLow
+    }
+
+    val borderColor = if (isActive) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.45f)
+    } else {
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f)
+    }
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 14.dp, vertical = 3.dp)
+            .mkrPressFeedback()
+            .combinedClickable(
+                onClick = onClick,
+                onLongClick = onLongClick
+            ),
+        shape = RoundedCornerShape(16.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Artwork: Circular for Artists, Squircle for Songs/Albums/Playlists
+            val thumbnailShape = if (isArtist) CircleShape else RoundedCornerShape(12.dp)
+            Surface(
+                modifier = Modifier.size(48.dp),
+                shape = thumbnailShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = if (isArtist) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)) else null
+            ) {
+                Box(modifier = Modifier.fillMaxSize()) {
+                    if (!item.thumbnail.isNullOrEmpty()) {
+                        AsyncImage(
+                            model = ImageRequest.Builder(LocalContext.current)
+                                .data(item.thumbnail.resize(120, 120))
+                                .crossfade(true)
+                                .build(),
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(
+                                    when {
+                                        isArtist -> R.drawable.artist_screen
+                                        isAlbum -> R.drawable.album
+                                        isPlaylist -> R.drawable.playlist_play
+                                        else -> R.drawable.music_note
+                                    }
+                                ),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
+
+                    if (isActive && isPlaying) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Color.Black.copy(alpha = 0.45f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            PlayingIndicator(
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            // Metadata column
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = item.title,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontWeight = if (isActive) FontWeight.ExtraBold else FontWeight.SemiBold,
+                        fontSize = 14.5.sp
+                    ),
+                    color = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(3.dp))
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    // Type Badge: "Artist", "Album", "Playlist", "Song"
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = when {
+                            isArtist -> MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.6f)
+                            isAlbum -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f)
+                            isPlaylist -> MaterialTheme.colorScheme.surfaceContainerHighest
+                            else -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+                        }
+                    ) {
+                        Text(
+                            text = typeLabel,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 10.sp
+                            ),
+                            color = when {
+                                isArtist -> MaterialTheme.colorScheme.onTertiaryContainer
+                                isAlbum -> MaterialTheme.colorScheme.onSecondaryContainer
+                                isPlaylist -> MaterialTheme.colorScheme.onSurfaceVariant
+                                else -> MaterialTheme.colorScheme.onPrimaryContainer
+                            },
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 1.dp)
+                        )
+                    }
+
+                    if (item.explicit) {
+                        Icon(
+                            painter = painterResource(R.drawable.explicit),
+                            contentDescription = null,
+                            modifier = Modifier.size(13.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                        )
+                    }
+
+                    if (subtitle.isNotBlank()) {
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
+                    }
+                }
+            }
+
+            // More Options Button
+            IconButton(
+                onClick = onMenuClick,
+                modifier = Modifier.size(36.dp)
+            ) {
+                Icon(
+                    painter = painterResource(R.drawable.more_vert),
+                    contentDescription = stringResource(R.string.more_options),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.75f),
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+        }
+    }
 }
