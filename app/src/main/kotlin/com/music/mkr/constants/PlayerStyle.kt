@@ -54,12 +54,12 @@ enum class PlayerStyle(
     );
 
     companion object {
-        val DEFAULT = IMMERSIVE_EXTENDED
+        val DEFAULT = MODERN
         val selectableStyles: List<PlayerStyle> = entries.filter { it != APPLE }
 
         fun fromString(name: String?): PlayerStyle {
-            val style = entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: IMMERSIVE_EXTENDED
-            return if (style == APPLE) IMMERSIVE_EXTENDED else style
+            val style = entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: MODERN
+            return if (style == APPLE) MODERN else style
         }
     }
 }

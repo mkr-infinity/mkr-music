@@ -13,6 +13,8 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🚀 Added
+- **Material 3 Expressive Library Redesign (Liked, Offline, Cached, and Local):** Completely redesigned the Cached, Offline/Downloaded, Liked Songs, and Local Files screens into a unified, consistent Material 3 Expressive architecture featuring asymmetric Hero Cards with squircle artwork and category badges, overline category tags, metadata stat pill capsules (song count, duration, and formatted storage footprint), and an Expressive Action Deck (Play All, Shuffle, Search, and More Options).
+- **First-Time Quick Picks Starter Recommendations & Guest Personalization:** Ensured Quick Picks is always populated and visible at the top of the Home feed even on clean initial app installs with 0 playback history through curated starter hit recommendations, seamlessly transitioning to deep local taste, mood, and listening history personalization as tracks are played. For guest/logged-out users without history, YouTube's native picks display automatically as previously.
 - **Material 3 Expressive Lyrics Control Deck & Top 3-Dot Menu:** Integrated a 3-dot action button in the top bar of the lyrics screen that opens a bespoke Material 3 Expressive control deck featuring a track header with current lyrics provider badge, a 2x2 quick-action deck for Lyrics Offset (+/- timing), Manual Lyrics Editing, Online Refetch, and Multi-Provider Search, along with toggles for AI translation and phonetic romanization.
 - **Integrations Hub with Spotify & YouTube Music Shortcuts:** Re-categorized Discord Rich Presence under Settings as "Integrations" and introduced unified shortcuts for Discord, Last.fm, Listen Together, Spotify (playlist & library import), and YouTube Music (account sync & login).
 - **Material Expressive App Icon Capsule Gallery:** Replaced the grid-based icon picker with an alternating left-and-right capsule presentation featuring real-time sinusoidal wavy animated borders around the launcher icons, bold titles, and interactive creator attribution chips that dynamically scale across any device display.
@@ -36,6 +38,7 @@ Milestone release delivering instant audio streaming, intelligent background cac
 ---
 
 ### 🌟 Improved
+- **Modern Player Style & Follow Theme Default:** Established `PlayerStyle.MODERN` as the primary default playback architecture and `PlayerBackgroundStyle.DEFAULT` ("Follow Theme") as the default player background style across the app.
 - **Media Notification Next Track Action:** Added a dedicated **Next** button before the **Like** button in the system media notification custom layout (`COMMAND_SEEK_TO_NEXT`), allowing listeners to quickly skip to the next track directly from notification controls.
 - **Personalized Home Experience for Guest / Logged-Out Listeners:** Suppressed generic unauthenticated YouTube guest recommendations when not logged in, ensuring the Home screen prioritizes local personalized Quick Picks tailored to the user's taste, recent playback sessions, and active moods.
 - **Streamlined Queue Controls:** Removed the redundant audio device speaker pill situated between the delete button and track info text in the playback queue header.

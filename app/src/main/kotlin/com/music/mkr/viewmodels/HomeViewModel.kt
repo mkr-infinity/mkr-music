@@ -46,6 +46,7 @@ import com.music.mkr.db.entities.SpeedDialItem
 import com.music.mkr.extensions.filterExplicit as filterSongExplicit
 import com.music.mkr.extensions.filterVideoSongs
 import com.music.mkr.extensions.toEnum
+import com.music.mkr.models.MediaMetadata
 import com.music.mkr.models.SimilarRecommendation
 import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.ui.screens.wrapped.WrappedAudioService
@@ -141,6 +142,83 @@ class HomeViewModel @Inject constructor(
             }
         }
     }
+
+    val hasListeningHistory: StateFlow<Boolean> = database.events()
+        .map { it.isNotEmpty() }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    private val starterPicks = listOf(
+        MediaMetadata(
+            id = "4NRXx6U8ABQ",
+            title = "Blinding Lights",
+            artists = listOf(MediaMetadata.Artist(id = "The Weeknd", name = "The Weeknd")),
+            duration = 200,
+            thumbnailUrl = "https://i.ytimg.com/vi/4NRXx6U8ABQ/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "0Vw-PZ3Z_8U",
+            title = "Starboy",
+            artists = listOf(MediaMetadata.Artist(id = "The Weeknd", name = "The Weeknd"), MediaMetadata.Artist(id = "Daft Punk", name = "Daft Punk")),
+            duration = 230,
+            thumbnailUrl = "https://i.ytimg.com/vi/0Vw-PZ3Z_8U/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "kTJczUoc268",
+            title = "STAY",
+            artists = listOf(MediaMetadata.Artist(id = "The Kid LAROI", name = "The Kid LAROI"), MediaMetadata.Artist(id = "Justin Bieber", name = "Justin Bieber")),
+            duration = 141,
+            thumbnailUrl = "https://i.ytimg.com/vi/kTJczUoc268/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "JGwWNGJdvx8",
+            title = "Shape of You",
+            artists = listOf(MediaMetadata.Artist(id = "Ed Sheeran", name = "Ed Sheeran")),
+            duration = 233,
+            thumbnailUrl = "https://i.ytimg.com/vi/JGwWNGJdvx8/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "DkeiKbqa02g",
+            title = "Levitating",
+            artists = listOf(MediaMetadata.Artist(id = "Dua Lipa", name = "Dua Lipa")),
+            duration = 203,
+            thumbnailUrl = "https://i.ytimg.com/vi/DkeiKbqa02g/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "H5v3kku4y6Q",
+            title = "As It Was",
+            artists = listOf(MediaMetadata.Artist(id = "Harry Styles", name = "Harry Styles")),
+            duration = 167,
+            thumbnailUrl = "https://i.ytimg.com/vi/H5v3kku4y6Q/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "7wtfhZwyrcc",
+            title = "Believer",
+            artists = listOf(MediaMetadata.Artist(id = "Imagine Dragons", name = "Imagine Dragons")),
+            duration = 204,
+            thumbnailUrl = "https://i.ytimg.com/vi/7wtfhZwyrcc/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "b1kbLwvqugk",
+            title = "Someone You Loved",
+            artists = listOf(MediaMetadata.Artist(id = "Lewis Capaldi", name = "Lewis Capaldi")),
+            duration = 182,
+            thumbnailUrl = "https://i.ytimg.com/vi/b1kbLwvqugk/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "ApXoWvfEYVU",
+            title = "Sunflower",
+            artists = listOf(MediaMetadata.Artist(id = "Post Malone", name = "Post Malone"), MediaMetadata.Artist(id = "Swae Lee", name = "Swae Lee")),
+            duration = 158,
+            thumbnailUrl = "https://i.ytimg.com/vi/ApXoWvfEYVU/hqdefault.jpg"
+        ),
+        MediaMetadata(
+            id = "mRD0-GxqHVo",
+            title = "Heat Waves",
+            artists = listOf(MediaMetadata.Artist(id = "Glass Animals", name = "Glass Animals")),
+            duration = 238,
+            thumbnailUrl = "https://i.ytimg.com/vi/mRD0-GxqHVo/hqdefault.jpg"
+        )
+    )
 
     val quickPicks = MutableStateFlow<List<Song>?>(null)
     val dailyDiscover = MutableStateFlow<List<DailyDiscoverItem>?>(null)
@@ -651,6 +729,16 @@ class HomeViewModel @Inject constructor(
                     rawCandidates.addAll(if (isRefresh) eventSongs.shuffled() else eventSongs)
                 }
 
+                // ── Fallback Tier 5: Starter recommendations for first-time downloads ──
+                if (rawCandidates.isEmpty()) {
+                    starterPicks.forEach { metadata ->
+                        try {
+                            database.insert(metadata)
+                            database.song(metadata.id).first()?.let { rawCandidates.add(it) }
+                        } catch (_: Exception) {}
+                    }
+                }
+
                 rawCandidates.removeAll { it.id in dismissedIds }
 
                 android.util.Log.d("QP_TIMING", "[Phase1] final source for candidates: ${rawCandidates.size} songs")
@@ -1092,6 +1180,24 @@ class HomeViewModel @Inject constructor(
                             if (filteredItems.isEmpty()) null else section.copy(items = filteredItems)
                         }
                     )
+
+                    if (quickPicks.value.isNullOrEmpty()) {
+                        val candidateSongItems = page.sections.flatMap { it.items.filterIsInstance<SongItem>() }
+                            .filterNot { it.id in dismissedIds }
+                            .distinctBy { it.id }
+                            .take(20)
+                        if (candidateSongItems.isNotEmpty()) {
+                            val convertedSongs = candidateSongItems.mapNotNull { ytSong ->
+                                try {
+                                    database.insert(ytSong.toMediaMetadata())
+                                    database.song(ytSong.id).first()
+                                } catch (_: Exception) { null }
+                            }
+                            if (convertedSongs.isNotEmpty()) {
+                                quickPicks.value = convertedSongs
+                            }
+                        }
+                    }
                 }.onFailure { reportException(it) }
             }
             launch(Dispatchers.IO) {
@@ -1351,6 +1457,24 @@ class HomeViewModel @Inject constructor(
                             if (filteredItems.isEmpty()) null else section.copy(items = filteredItems)
                         }
                     )
+
+                    if (quickPicks.value.isNullOrEmpty()) {
+                        val candidateSongItems = page.sections.flatMap { it.items.filterIsInstance<SongItem>() }
+                            .filterNot { it.id in dismissedIds }
+                            .distinctBy { it.id }
+                            .take(20)
+                        if (candidateSongItems.isNotEmpty()) {
+                            val convertedSongs = candidateSongItems.mapNotNull { ytSong ->
+                                try {
+                                    database.insert(ytSong.toMediaMetadata())
+                                    database.song(ytSong.id).first()
+                                } catch (_: Exception) { null }
+                            }
+                            if (convertedSongs.isNotEmpty()) {
+                                quickPicks.value = convertedSongs
+                            }
+                        }
+                    }
                 }
 
                 getQuickPicksLocal()

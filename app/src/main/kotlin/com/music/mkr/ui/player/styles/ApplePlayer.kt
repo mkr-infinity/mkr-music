@@ -162,7 +162,7 @@ fun ApplePlayer(
     val showPlayerThumbnailShadow by rememberPreference(ShowPlayerThumbnailShadowKey, defaultValue = false)
     val playerThumbnailShadowElevation by rememberPreference(PlayerThumbnailShadowElevationKey, defaultValue = 8f)
     val showAudioQualityBadge by rememberPreference(ShowAudioQualityBadgeKey, defaultValue = false)
-    val playerBackground by rememberEnumPreference(PlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.GRADIENT)
+    val playerBackground by rememberEnumPreference(PlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.DEFAULT)
 
     // Volume management
     val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }

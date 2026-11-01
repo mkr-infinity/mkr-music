@@ -5,12 +5,16 @@
 
 package com.music.mkr.ui.screens.playlist
 
+import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
@@ -27,10 +31,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -71,6 +81,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEachReversed
 import androidx.compose.ui.util.fastSumBy
 import androidx.core.net.toUri
@@ -225,6 +236,7 @@ fun CachePlaylistScreen(
                             songs = filteredSongs,
                             context = context,
                             menuState = menuState,
+                            onStartSearch = { isSearching = true },
                             modifier = Modifier.animateItem()
                         )
                     }
@@ -462,83 +474,208 @@ private fun CachePlaylistHeader(
     songs: List<Song>,
     context: android.content.Context,
     menuState: com.music.mkr.ui.component.MenuState,
+    onStartSearch: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val cacheLength = remember(songs) { songs.fastSumBy { it.song.duration ?: 0 } }
+    val totalBytes = remember(songs) { songs.sumOf { it.format?.contentLength ?: 0L } }
+    val cacheSizeStr = remember(totalBytes) {
+        if (totalBytes > 0) Formatter.formatFileSize(context, totalBytes) else null
+    }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 16.dp, bottom = 24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(bottom = 12.dp)
     ) {
-        // Thumbnail - Centered with aspect ratio 1:1 and rounded corners
-        Box(
+        // Expressive Hero Card
+        Card(
+            shape = RoundedCornerShape(26.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
+            ),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
             modifier = Modifier
-                .padding(horizontal = 48.dp)
-                .padding(bottom = 24.dp)
                 .fillMaxWidth()
-                .aspectRatio(1f)
-                .clip(RoundedCornerShape(8.dp))
+                .padding(horizontal = 16.dp, vertical = 6.dp)
         ) {
-            AsyncImage(
-                model = songs.firstOrNull()?.thumbnailUrl,
-                contentDescription = null,
-                contentScale = androidx.compose.ui.layout.ContentScale.Crop,
-                modifier = Modifier.fillMaxSize()
-            )
-        }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                // Artwork Squircle with corner category pill badge
+                Box(
+                    modifier = Modifier
+                        .size(112.dp)
+                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(20.dp))
+                        .clip(RoundedCornerShape(20.dp))
+                        .background(MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    val coverUrl = songs.firstOrNull { it.thumbnailUrl != null }?.thumbnailUrl
+                    if (coverUrl != null) {
+                        AsyncImage(
+                            model = coverUrl,
+                            contentDescription = null,
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = androidx.compose.ui.layout.ContentScale.Crop
+                        )
+                    } else {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.cached),
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
 
-        // Title with Icon
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(horizontal = 24.dp)
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.cached),
-                contentDescription = null,
-                modifier = Modifier.size(28.dp),
-                tint = MaterialTheme.colorScheme.primary
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = stringResource(R.string.cached_playlist),
-                style = MaterialTheme.typography.headlineMedium,
-                fontWeight = FontWeight.Bold,
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-
-        Spacer(Modifier.height(8.dp))
-
-        // Metadata - Song Count • Duration
-        Text(
-            text = buildString {
-                append(pluralStringResource(R.plurals.n_song, songs.size, songs.size))
-                if (cacheLength > 0) {
-                    append(" • ")
-                    append(makeTimeString(cacheLength * 1000L))
+                    // Pinned Category Badge
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primaryContainer,
+                        tonalElevation = 3.dp,
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(6.dp)
+                            .size(28.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                painter = painterResource(R.drawable.cached),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
                 }
-            },
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
 
-        Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.width(16.dp))
 
-        // Action Buttons Row
+                // Metadata Column
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "CACHED MUSIC",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.1.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+
+                    Spacer(Modifier.height(4.dp))
+
+                    Text(
+                        text = stringResource(R.string.cached_playlist),
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.ExtraBold,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+
+                    Spacer(Modifier.height(8.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            modifier = Modifier.height(24.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.music_note),
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(12.dp)
+                                )
+                                Text(
+                                    text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+
+                        if (cacheLength > 0) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                modifier = Modifier.height(24.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.schedule),
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.size(12.dp)
+                                    )
+                                    Text(
+                                        text = makeTimeString(cacheLength * 1000L),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                            }
+                        }
+
+                        if (cacheSizeStr != null) {
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
+                                modifier = Modifier.height(24.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                ) {
+                                    Text(
+                                        text = cacheSizeStr,
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Expressive Action Deck
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 20.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                .padding(horizontal = 16.dp, vertical = 6.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Play Button
-            TextButton(
+            Button(
                 onClick = {
                     playerConnection.playQueue(
                         ListQueue(
@@ -547,30 +684,36 @@ private fun CachePlaylistHeader(
                         )
                     )
                 },
-                modifier = Modifier
-                    .weight(1f)
-                    .height(48.dp),
-                shape = androidx.compose.foundation.shape.CircleShape,
-                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
+                shape = CircleShape,
+                colors = ButtonDefaults.buttonColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
-                )
+                ),
+                contentPadding = PaddingValues(horizontal = 14.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp)
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.play),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.play),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.play),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.play),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             // Shuffle Button
-            TextButton(
+            FilledTonalButton(
                 onClick = {
                     playerConnection.playQueue(
                         ListQueue(
@@ -579,29 +722,52 @@ private fun CachePlaylistHeader(
                         )
                     )
                 },
+                shape = CircleShape,
+                colors = ButtonDefaults.filledTonalButtonColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
+                contentPadding = PaddingValues(horizontal = 14.dp),
                 modifier = Modifier
                     .weight(1f)
-                    .height(48.dp),
-                shape = androidx.compose.foundation.shape.CircleShape,
-                colors = androidx.compose.material3.ButtonDefaults.textButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                    .height(48.dp)
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.shuffle),
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = stringResource(R.string.shuffle),
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.shuffle),
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(R.string.shuffle),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
-            // More Options
+            // Search Auxiliary Button
+            Surface(
+                onClick = onStartSearch,
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                modifier = Modifier.size(48.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = painterResource(R.drawable.search),
+                        contentDescription = stringResource(R.string.search),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            // Menu Auxiliary Button
             Surface(
                 onClick = {
                     menuState.show {
@@ -631,14 +797,11 @@ private fun CachePlaylistHeader(
                         )
                     }
                 },
-                shape = androidx.compose.foundation.shape.CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant,
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceContainerHighest,
                 modifier = Modifier.size(48.dp)
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(contentAlignment = Alignment.Center) {
                     Icon(
                         painter = painterResource(R.drawable.more_vert),
                         contentDescription = null,
@@ -647,36 +810,6 @@ private fun CachePlaylistHeader(
                     )
                 }
             }
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        val staticDescription = remember(songs.size, cacheLength) {
-            val name = context.getString(R.string.cached_playlist)
-            val trackCountText = context.resources.getQuantityString(R.plurals.n_song, songs.size, songs.size)
-            "$name is your local collection of cached tracks, featuring $trackCountText.${
-                if (cacheLength > 0) " Combined duration is ${makeTimeString(cacheLength * 1000L)}." else ""
-            } These songs are stored on your device for quick access."
-        }
-
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 20.dp)
-        ) {
-            Text(
-                text = stringResource(R.string.about_album),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            ExpandableText(
-                text = staticDescription,
-                runs = null,
-                collapsedMaxLines = 3
-            )
         }
     }
 }

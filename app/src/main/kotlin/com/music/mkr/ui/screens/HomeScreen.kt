@@ -910,17 +910,22 @@ fun HomeScreen(
             }
         }
 
+        val hasListeningHistory by viewModel.hasListeningHistory.collectAsState()
         val hasLocalQuickPicks = quickPicks?.isNotEmpty() == true
         val hasYouTubeQuickPicks = sortedList.any(isYtQuickPicks)
 
         // Deduplication: ensure only one Quick Picks section shows, prioritizing whichever is most relevant
         val deduplicatedList = when {
             hasYouTubeQuickPicks && hasLocalQuickPicks -> {
-                // When both exist: if logged in, YouTube's account Quick picks takes precedence; if guest, local personalized Quick picks takes precedence
+                // When both exist: if logged in, YouTube's account Quick picks takes precedence;
+                // If guest with listening history, local personalized Quick picks takes precedence;
+                // If brand new user / first launch without history, show YouTube's Quick picks as it was previously
                 if (isLoggedIn) {
                     sortedList.filterNot { it == HomeSection.QuickPicks }
-                } else {
+                } else if (hasListeningHistory) {
                     sortedList.filterNot(isYtQuickPicks)
+                } else {
+                    sortedList.filterNot { it == HomeSection.QuickPicks }
                 }
             }
             // If only one exists (or local is empty), preserve the existing one so Quick Picks is ALWAYS visible

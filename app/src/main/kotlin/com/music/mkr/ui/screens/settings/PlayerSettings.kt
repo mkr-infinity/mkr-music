@@ -256,10 +256,10 @@ fun PlayerSettings(
 
     val (rawPlayerStyle, onPlayerStyleChange) = rememberEnumPreference(
         PlayerStyleKey,
-        defaultValue = PlayerStyle.IMMERSIVE
+        defaultValue = PlayerStyle.MODERN
     )
     val playerStyle = remember(rawPlayerStyle) {
-        if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.IMMERSIVE else rawPlayerStyle
+        if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.MODERN else rawPlayerStyle
     }
     val (useAppleMiniPlayer, onUseAppleMiniPlayerChange) = rememberPreference(
         UseAppleMiniPlayerKey,
@@ -275,7 +275,7 @@ fun PlayerSettings(
     )
     val (playerBackground, onPlayerBackgroundChange) = rememberEnumPreference(
         PlayerBackgroundStyleKey,
-        defaultValue = PlayerBackgroundStyle.GRADIENT
+        defaultValue = PlayerBackgroundStyle.DEFAULT
     )
 
     val (pureBlackMiniPlayer, onPureBlackMiniPlayerChange) = rememberPreference(

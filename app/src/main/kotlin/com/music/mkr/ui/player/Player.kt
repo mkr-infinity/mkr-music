@@ -271,7 +271,7 @@ fun BottomSheetPlayer(
     val cropAlbumArt by rememberPreference(CropAlbumArtKey, false)
     val playerBackground by rememberEnumPreference(
         key = PlayerBackgroundStyleKey,
-        defaultValue = PlayerBackgroundStyle.GRADIENT
+        defaultValue = PlayerBackgroundStyle.DEFAULT
     )
     val playerButtonsStyle by rememberEnumPreference(
         key = PlayerButtonsStyleKey,
@@ -1177,9 +1177,9 @@ fun BottomSheetPlayer(
             )
         },
     ) {
-        val rawPlayerStyle by rememberEnumPreference(PlayerStyleKey, defaultValue = PlayerStyle.IMMERSIVE)
+        val rawPlayerStyle by rememberEnumPreference(PlayerStyleKey, defaultValue = PlayerStyle.MODERN)
         val playerStyle = remember(rawPlayerStyle) {
-            if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.IMMERSIVE else rawPlayerStyle
+            if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.MODERN else rawPlayerStyle
         }
         val isLoading = playbackState == androidx.media3.common.Player.STATE_BUFFERING
 
