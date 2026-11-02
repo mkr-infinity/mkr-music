@@ -183,37 +183,26 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "Building single Universal APK variant (including all supported ABIs)..."
+          echo "Building single Universal APK variant directly signed by Gradle with persistent release keystore..."
           ./gradlew :app:assembleUniversalRelease \
             --no-configuration-cache --console=plain --warning-mode summary -x lint
-
-      - name: Sign Universal APK with Persistent Release Keystore
-        id: sign_universal
-        uses: ilharp/sign-android-release@v2.0.0
-        with:
-          releaseDir: app/build/outputs/apk/universal/release/
-          signingKey: ${{ secrets.KEYSTORE }}
-          keyAlias: ${{ secrets.KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.KEY_PASSWORD }}
-          buildToolsVersion: 35.0.0
 
       - name: Prepare, Validate & Provenance Universal APK
         id: prepare_assets
         run: |
           mkdir -p release_assets
 
-          UNIVERSAL_SRC="${{ steps.sign_universal.outputs.signedFile }}"
-          echo "Signed APK output from signing action: '$UNIVERSAL_SRC'"
+          GRADLE_APK="app/build/outputs/apk/universal/release/app-universal-release.apk"
+          echo "Expected Gradle Universal Release APK: '$GRADLE_APK'"
 
-          # Strictly require the signing action's output without arbitrary fallback
-          if [ -z "$UNIVERSAL_SRC" ] || [ ! -f "$UNIVERSAL_SRC" ]; then
-            echo "::error::Signing action failed to produce signed output! 'steps.sign_universal.outputs.signedFile' is missing or not found on disk."
+          # Strictly require the exact Gradle-generated Universal Release APK output without arbitrary fallback
+          if [ ! -f "$GRADLE_APK" ]; then
+            echo "::error::Exact Gradle Universal Release APK not found at '$GRADLE_APK'! Failing workflow."
             exit 1
           fi
 
-          # Copy and rename to exact mandatory filename
-          cp "$UNIVERSAL_SRC" release_assets/mkr-music-universal.apk
+          # Copy exact Gradle output to mandatory release asset filename
+          cp "$GRADLE_APK" release_assets/mkr-music-universal.apk
 
           echo "=== Generating Release Metadata (version.json) ==="
           python3 -c "
@@ -292,15 +281,23 @@ jobs:
           LIB_ENTRIES=$(unzip -l "$apk_path" | grep "lib/" || true)
           echo "$LIB_ENTRIES" | head -n 25 || true
 
-          # Verify multi-ABI inclusion (ensures it is not an architecture-specific build)
+          # Verify multi-ABI inclusion for all supported architectures
           HAS_ARM64=$(echo "$LIB_ENTRIES" | grep -c "lib/arm64-v8a/" || true)
           HAS_ARMV7=$(echo "$LIB_ENTRIES" | grep -c "lib/armeabi-v7a/" || true)
+          HAS_X86=$(echo "$LIB_ENTRIES" | grep -c "lib/x86/" || true)
+          HAS_X86_64=$(echo "$LIB_ENTRIES" | grep -c "lib/x86_64/" || true)
 
-          if [ "$HAS_ARM64" -eq 0 ] || [ "$HAS_ARMV7" -eq 0 ]; then
-            echo "::error::Universal APK missing required native ABIs! arm64: $HAS_ARM64, armeabi-v7a: $HAS_ARMV7"
+          echo "Architecture native libraries detected:"
+          echo " - arm64-v8a:   $HAS_ARM64"
+          echo " - armeabi-v7a: $HAS_ARMV7"
+          echo " - x86:         $HAS_X86"
+          echo " - x86_64:      $HAS_X86_64"
+
+          if [ "$HAS_ARM64" -eq 0 ] || [ "$HAS_ARMV7" -eq 0 ] || [ "$HAS_X86" -eq 0 ] || [ "$HAS_X86_64" -eq 0 ]; then
+            echo "::error::Universal APK missing required native ABIs! Expected all 4 supported architectures (arm64-v8a, armeabi-v7a, x86, x86_64)."
             exit 1
           fi
-          echo "✓ Confirmed genuine universal APK: includes arm64-v8a ($HAS_ARM64 libs) and armeabi-v7a ($HAS_ARMV7 libs)"
+          echo "✓ Confirmed genuine universal APK: includes all 4 supported architectures (arm64-v8a: $HAS_ARM64, armeabi-v7a: $HAS_ARMV7, x86: $HAS_X86, x86_64: $HAS_X86_64 libs)"
 
           echo "=== Mandatory Release Signature & Certificate Fingerprint Verification ==="
           APKSIGNER=$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -name "apksigner" -type f 2>/dev/null | sort -V | tail -n 1)
