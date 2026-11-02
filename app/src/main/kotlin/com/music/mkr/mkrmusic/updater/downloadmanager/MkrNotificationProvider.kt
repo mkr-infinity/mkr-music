@@ -2,6 +2,7 @@ package com.music.mkr.mkrmusic.updater.downloadmanager
 
 import android.app.Notification
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -97,9 +98,9 @@ class MkrNotificationProvider(
             val bitmapFuture = mediaSession.bitmapLoader.loadBitmap(artworkUri)
             Futures.addCallback(
                 bitmapFuture,
-                object : FutureCallback<android.graphics.Bitmap> {
-                    override fun onSuccess(result: android.graphics.Bitmap?) {
-                        if (result != null && !result.isRecycled) {
+                object : FutureCallback<Bitmap> {
+                    override fun onSuccess(result: Bitmap) {
+                        if (!result.isRecycled) {
                             val playerMediaId = mediaSession.player.currentMediaItem?.mediaId
                             if (activeMediaId == currentMediaId && playerMediaId == currentMediaId) {
                                 val updated = decorateNotification(mediaSession, baseNotification, currentMediaId)
