@@ -1,9 +1,6 @@
 name: Production Release Build
 
 'on':
-  push:
-    branches:
-      - main
   workflow_dispatch:
     inputs:
       publish_release:
@@ -380,6 +377,10 @@ jobs:
           </p>
 
           # MKR Music v{version_name}
+
+          > [!IMPORTANT]
+          > **Clean Installation Required:**
+          > Please **delete/uninstall any previous version of MKR Music** from your device before installing this update. MKR Music has transitioned to the official package ID (`com.kaif.music`) and permanent release signing key. Deleting the previous app ensures a clean install without signature conflicts. All future updates can then be installed seamlessly without deleting the app.
 
           > ### Release Highlights
           >
