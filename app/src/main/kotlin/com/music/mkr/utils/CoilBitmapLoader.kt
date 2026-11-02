@@ -58,11 +58,14 @@ class CoilBitmapLoader(
 
     private fun createFallbackBitmap(): Bitmap =
         try {
-            BitmapFactory.decodeResource(context.resources, com.music.mkr.R.drawable.icon)?.let { bmp ->
-                if (bmp.isRecycled) createBitmap(64, 64) else bmp.copy(Bitmap.Config.ARGB_8888, false) ?: createBitmap(64, 64)
-            } ?: createBitmap(64, 64)
+            val bmp = BitmapFactory.decodeResource(context.resources, com.music.mkr.R.drawable.icon)
+            if (bmp != null && !bmp.isRecycled) {
+                bmp.copy(Bitmap.Config.ARGB_8888, false) ?: bmp
+            } else {
+                createBitmap(128, 128, Bitmap.Config.ARGB_8888)
+            }
         } catch (_: Exception) {
-            createBitmap(64, 64)
+            createBitmap(128, 128, Bitmap.Config.ARGB_8888)
         }
 
     private fun Bitmap.copyIfNeeded(): Bitmap {

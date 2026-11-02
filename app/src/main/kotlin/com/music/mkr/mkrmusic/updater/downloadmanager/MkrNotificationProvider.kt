@@ -2,6 +2,7 @@ package com.music.mkr.mkrmusic.updater.downloadmanager
 
 import android.app.Notification
 import android.content.Context
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.OptIn
@@ -14,22 +15,22 @@ import androidx.media3.session.DefaultMediaNotificationProvider
 import androidx.media3.session.MediaNotification
 import androidx.media3.session.MediaSession
 import com.google.common.collect.ImmutableList
+import com.google.common.util.concurrent.FutureCallback
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.MoreExecutors
 import com.music.mkr.R
 import com.music.mkr.ui.theme.PlayerColorExtractor
 import com.music.mkr.utils.CoilBitmapLoader
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.util.Locale
 
 /**
  * Custom MediaNotification.Provider for MKR Music:
- * - Adapts notification colors dynamically to the current track's artwork palette.
- * - Handles asynchronous artwork loading without blocking or freezing playback.
- * - Automatically clears previous track colors and applies contrast-safe fallbacks.
- * - Works consistently in both playing and paused states.
+ * - Continuously reflects the currently playing track's artwork and dynamic palette.
+ * - Synchronously decorates cached artwork and safely intercepts asynchronous artwork loads.
+ * - Guards against race conditions and stale async results across rapid track transitions.
+ * - Extracts dynamic colors directly from the active track's artwork palette.
  * - Adds Android 16 Status Chips (Live Updates) support on API 36+.
  */
 @OptIn(UnstableApi::class)
@@ -65,13 +66,15 @@ class MkrNotificationProvider(
         actionFactory: MediaNotification.ActionFactory,
         onNotificationChangedCallback: MediaNotification.Provider.Callback,
     ): MediaNotification {
-        val currentMediaId = mediaSession.player.currentMediaItem?.mediaId
+        val currentMediaItem = mediaSession.player.currentMediaItem
+        val currentMediaId = currentMediaItem?.mediaId
         activeMediaId = currentMediaId
 
-        // Intercept asynchronous notification changes from defaultProvider
+        // Intercept asynchronous notification updates from defaultProvider
         val interceptingCallback = MediaNotification.Provider.Callback { updatedMediaNotification ->
-            if (activeMediaId == currentMediaId && mediaSession.player.currentMediaItem?.mediaId == currentMediaId) {
-                val decorated = decorateNotification(mediaSession, updatedMediaNotification, onNotificationChangedCallback, currentMediaId)
+            val playerMediaId = mediaSession.player.currentMediaItem?.mediaId
+            if (activeMediaId == currentMediaId && playerMediaId == currentMediaId) {
+                val decorated = decorateNotification(mediaSession, updatedMediaNotification, currentMediaId)
                 onNotificationChangedCallback.onNotificationChanged(decorated)
             }
         }
@@ -83,13 +86,42 @@ class MkrNotificationProvider(
             interceptingCallback
         )
 
-        return decorateNotification(mediaSession, baseNotification, onNotificationChangedCallback, currentMediaId)
+        val decoratedBase = decorateNotification(mediaSession, baseNotification, currentMediaId)
+
+        // If artwork bitmap is not yet in memory, attach directly to the bitmap loader future
+        // so the notification is guaranteed to update immediately once the bitmap resolves.
+        val artworkUri = currentMediaItem?.mediaMetadata?.artworkUri
+            ?: currentMediaItem?.mediaMetadata?.extras?.getString("artwork_uri")?.let { Uri.parse(it) }
+        val uriString = artworkUri?.toString()
+        if (!uriString.isNullOrBlank() && CoilBitmapLoader.getCachedBitmap(uriString) == null) {
+            val bitmapFuture = mediaSession.bitmapLoader.loadBitmap(artworkUri)
+            Futures.addCallback(
+                bitmapFuture,
+                object : FutureCallback<android.graphics.Bitmap> {
+                    override fun onSuccess(result: android.graphics.Bitmap?) {
+                        if (result != null && !result.isRecycled) {
+                            val playerMediaId = mediaSession.player.currentMediaItem?.mediaId
+                            if (activeMediaId == currentMediaId && playerMediaId == currentMediaId) {
+                                val updated = decorateNotification(mediaSession, baseNotification, currentMediaId)
+                                onNotificationChangedCallback.onNotificationChanged(updated)
+                            }
+                        }
+                    }
+
+                    override fun onFailure(t: Throwable) {
+                        Timber.tag("MkrNotificationProvider").w(t, "Bitmap load failed for $uriString")
+                    }
+                },
+                MoreExecutors.directExecutor()
+            )
+        }
+
+        return decoratedBase
     }
 
     private fun decorateNotification(
         mediaSession: MediaSession,
         mediaNotification: MediaNotification,
-        onNotificationChangedCallback: MediaNotification.Provider.Callback,
         expectedMediaId: String?,
     ): MediaNotification {
         return try {
@@ -101,53 +133,35 @@ class MkrNotificationProvider(
             val artworkUri = mediaMetadata.artworkUri?.toString()
                 ?: mediaMetadata.extras?.getString("artwork_uri")
 
-            val cacheKey = mediaId?.takeIf { it.isNotBlank() } ?: artworkUri?.takeIf { it.isNotBlank() }
-            var cachedPalette = cacheKey?.let { PlayerColorExtractor.getCachedPalette(it) }
+            // Look up cached bitmap from CoilBitmapLoader
+            val cachedBmp = artworkUri?.let { CoilBitmapLoader.getCachedBitmap(it) }
 
-            // If not cached yet, check if CoilBitmapLoader has cached bitmap
-            if (cachedPalette == null && artworkUri != null) {
-                val cachedBmp = CoilBitmapLoader.getCachedBitmap(artworkUri)
-                if (cachedBmp != null) {
+            // Extract or look up dynamic palette
+            val cachedPalette = (artworkUri?.let { PlayerColorExtractor.getCachedPalette(it) }
+                ?: mediaId?.let { PlayerColorExtractor.getCachedPalette(it) }
+                ?: cachedBmp?.let { bmp ->
                     try {
-                        val extracted = PlayerColorExtractor.extractFromBitmap(cachedBmp)
-                        PlayerColorExtractor.putCachedPalette(cacheKey ?: artworkUri, extracted)
-                        cachedPalette = extracted
-                    } catch (_: Exception) {}
-                }
-            }
-
-            // If still not available and artworkUri is present, asynchronously extract and update
-            if (cachedPalette == null && !artworkUri.isNullOrBlank()) {
-                scope.launch(Dispatchers.IO) {
-                    try {
-                        val palette = PlayerColorExtractor.extractPalette(context, artworkUri, mediaId)
-                        withContext(Dispatchers.Main) {
-                            if (activeMediaId == expectedMediaId && mediaSession.player.currentMediaItem?.mediaId == expectedMediaId) {
-                                val asyncBuilder = Notification.Builder.recoverBuilder(context, mediaNotification.notification)
-                                asyncBuilder.setColor(palette.primaryAccent.toArgb())
-                                asyncBuilder.setColorized(true)
-                                asyncBuilder.setSmallIcon(R.drawable.mkrmusicnotification)
-                                asyncBuilder.setOngoing(mediaSession.player.playWhenReady && mediaSession.player.playbackState == Player.STATE_READY)
-                                val updatedNotif = asyncBuilder.build()
-                                reattachMediaSessionToken(mediaNotification.notification, updatedNotif)
-                                onNotificationChangedCallback.onNotificationChanged(
-                                    MediaNotification(mediaNotification.notificationId, updatedNotif)
-                                )
-                            }
+                        PlayerColorExtractor.extractFromBitmap(bmp).also { pal ->
+                            if (!artworkUri.isNullOrBlank()) PlayerColorExtractor.putCachedPalette(artworkUri, pal)
+                            if (!mediaId.isNullOrBlank()) PlayerColorExtractor.putCachedPalette(mediaId, pal)
                         }
-                    } catch (e: Exception) {
-                        Timber.tag("MkrNotificationProvider").w(e, "Async palette extraction error for $artworkUri")
+                    } catch (_: Exception) {
+                        null
                     }
-                }
-            }
+                })
 
-            // Derive dynamic color: extracted primary accent or brand warm amber fallback
+            // Derive dynamic accent color or fall back to signature WarmAmber
             val accentColor = cachedPalette?.primaryAccent?.toArgb() ?: PlayerColorExtractor.WarmAmber.toArgb()
 
             val notification = mediaNotification.notification
             val builder = Notification.Builder.recoverBuilder(context, notification)
 
-            // Dynamic color appearance synchronized with artwork
+            // Explicitly set largeIcon from the cached bitmap to guarantee it is NEVER lost or stripped
+            if (cachedBmp != null && !cachedBmp.isRecycled) {
+                builder.setLargeIcon(cachedBmp)
+            }
+
+            // Apply dynamic colors
             builder.setColor(accentColor)
             builder.setColorized(true)
             builder.setSmallIcon(R.drawable.mkrmusicnotification)
@@ -159,7 +173,6 @@ class MkrNotificationProvider(
                 val durationMs = player.duration
                 val currentPosMs = player.currentPosition
 
-                // Format duration for the chip (e.g., "5:20")
                 val formattedTime = if (durationMs != C.TIME_UNSET && durationMs > 0) {
                     val totalSeconds = durationMs / 1000
                     val minutes = totalSeconds / 60
@@ -193,7 +206,6 @@ class MkrNotificationProvider(
                 }
             }
 
-            // Re-build the notification and preserve media session token
             val updatedNotification = builder.build()
             reattachMediaSessionToken(mediaNotification.notification, updatedNotification)
             MediaNotification(mediaNotification.notificationId, updatedNotification)

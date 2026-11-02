@@ -43,6 +43,9 @@ Milestone release delivering unified Material 3 Expressive library views, streng
 ---
 
 ### 🛠️ Fixed
+- **Persistent Notification Artwork & Dynamic Palette on Track Changes:** Fixed notification artwork disappearing and falling back to default grey/black on subsequent track transitions. Connected direct futures on bitmap loading and removed asynchronous builder recovery race conditions so every track continuously displays high-resolution thumbnails and synchronized dynamic colors.
+- **Onboarding Navigation Flow:** Streamlined onboarding experience by removing the 3rd "Join our Community" screen, transitioning directly from permissions to feature configuration.
+- **Application ID & Permanent Release Signing:** Standardized package identification strictly on `com.kaif.music` across all build variants, and configured permanent release keystore signing via GitHub Secrets to enable seamless future app updates without reinstallation.
 - **Notification Artwork & Lifecycle Synchronization:** Restored exact `CoilBitmapLoader` and Media3 session binding to fix missing notification artwork.
 - **Quick Picks Discovery on Guest Accounts:** Fixed guest deduplication filter ensuring unauthenticated users receive curated picks without dropouts.
 - **Top 3-Dot Menu Across All Player Styles:** Added missing options menu in `MaterialExtendedPlayer` for uniform top-bar controls.

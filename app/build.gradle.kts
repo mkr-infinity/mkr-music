@@ -131,20 +131,22 @@ android {
    signingConfigs {
     create("release") {
         val keystoreFile = file("keystore/release.keystore")
-        if (keystoreFile.exists()) {
+        val envStorePass = System.getenv("KEYSTORE_PASSWORD") ?: System.getenv("STORE_PASSWORD")
+        if (keystoreFile.exists() && !envStorePass.isNullOrBlank()) {
             storeFile = keystoreFile
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: System.getenv("STORE_PASSWORD") ?: "MkrMusicKey2026!"
-            keyAlias = System.getenv("KEY_ALIAS") ?: "mkrmusic"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: "MkrMusicKey2026!"
+            storePassword = envStorePass
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
         }
     }
     getByName("debug") {
         val keystoreFile = file("keystore/release.keystore")
-        if (keystoreFile.exists()) {
+        val envStorePass = System.getenv("KEYSTORE_PASSWORD") ?: System.getenv("STORE_PASSWORD")
+        if (keystoreFile.exists() && !envStorePass.isNullOrBlank()) {
             storeFile = keystoreFile
-            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: System.getenv("STORE_PASSWORD") ?: "MkrMusicKey2026!"
-            keyAlias = System.getenv("KEY_ALIAS") ?: "mkrmusic"
-            keyPassword = System.getenv("KEY_PASSWORD") ?: "MkrMusicKey2026!"
+            storePassword = envStorePass
+            keyAlias = System.getenv("KEY_ALIAS")
+            keyPassword = System.getenv("KEY_PASSWORD")
         } else {
             keyAlias = "androiddebugkey"
             keyPassword = "android"
@@ -156,7 +158,9 @@ android {
 
 buildTypes {
     release {
-        signingConfig = if (file("keystore/release.keystore").exists())
+        val hasReleaseKey = file("keystore/release.keystore").exists() &&
+            (!System.getenv("KEYSTORE_PASSWORD").isNullOrBlank() || !System.getenv("STORE_PASSWORD").isNullOrBlank())
+        signingConfig = if (hasReleaseKey)
             signingConfigs.getByName("release")
         else
             signingConfigs.getByName("debug")
@@ -172,7 +176,9 @@ buildTypes {
     }
     debug {
         isDebuggable = true
-        signingConfig = if (file("keystore/release.keystore").exists())
+        val hasReleaseKey = file("keystore/release.keystore").exists() &&
+            (!System.getenv("KEYSTORE_PASSWORD").isNullOrBlank() || !System.getenv("STORE_PASSWORD").isNullOrBlank())
+        signingConfig = if (hasReleaseKey)
             signingConfigs.getByName("release")
         else
             signingConfigs.getByName("debug")
