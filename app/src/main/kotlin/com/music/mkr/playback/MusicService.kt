@@ -70,6 +70,7 @@ import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
+import com.music.mkr.mkrmusic.updater.downloadmanager.MkrNotificationProvider
 import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
@@ -560,15 +561,13 @@ class MusicService :
         }
 
         setMediaNotificationProvider(
-            DefaultMediaNotificationProvider(
+            MkrNotificationProvider(
                 this,
+                scope,
                 { NOTIFICATION_ID },
                 CHANNEL_ID,
                 R.string.music_player
-            )
-                .apply {
-                    setSmallIcon(R.drawable.mkrmusicnotification)
-                },
+            ).setSmallIcon(R.drawable.mkrmusicnotification)
         )
         player = createExoPlayer()
         player.addListener(this@MusicService)
@@ -4636,6 +4635,8 @@ class MusicService :
         secondaryPlayer = null
         try {
             (mediaSession as MediaSession).player = player
+            currentMediaMetadata.value = player.currentMetadata
+            updateNotification()
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to swap player in MediaSession")
         }

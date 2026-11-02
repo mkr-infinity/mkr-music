@@ -18,7 +18,9 @@ import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
 import coil3.toBitmap
+import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
+import com.music.mkr.ui.theme.PlayerColorExtractor
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.guava.future
@@ -28,6 +30,28 @@ class CoilBitmapLoader(
     private val context: Context,
     private val scope: CoroutineScope,
 ) : BitmapLoader {
+
+    companion object {
+        private const val MAX_BITMAP_CACHE_SIZE = 16
+        private val bitmapCache = object : LinkedHashMap<String, Bitmap>(MAX_BITMAP_CACHE_SIZE, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Bitmap>?): Boolean {
+                return size > MAX_BITMAP_CACHE_SIZE
+            }
+        }
+
+        @Synchronized
+        fun getCachedBitmap(key: String): Bitmap? {
+            val bmp = bitmapCache[key]
+            return if (bmp != null && !bmp.isRecycled) bmp else null
+        }
+
+        @Synchronized
+        fun putCachedBitmap(key: String, bitmap: Bitmap) {
+            if (key.isNotBlank() && !bitmap.isRecycled) {
+                bitmapCache[key] = bitmap
+            }
+        }
+    }
     
     override fun supportsMimeType(mimeType: String): Boolean =
         mimeType.startsWith("image/") || mimeType.isEmpty() || mimeType == "*/*"
@@ -64,9 +88,14 @@ class CoilBitmapLoader(
             }
         }
 
-    override fun loadBitmap(uri: Uri): ListenableFuture<Bitmap> =
-        scope.future(Dispatchers.IO) {
-            val uriString = uri.toString()
+    override fun loadBitmap(uri: Uri): ListenableFuture<Bitmap> {
+        val uriString = uri.toString()
+        val cached = getCachedBitmap(uriString)
+        if (cached != null) {
+            return Futures.immediateFuture(cached)
+        }
+
+        return scope.future(Dispatchers.IO) {
             val request = ImageRequest.Builder(context)
                 .data(if (uri.scheme == "http" || uri.scheme == "https") uriString else uri)
                 .allowHardware(false)
@@ -74,11 +103,29 @@ class CoilBitmapLoader(
                 .diskCachePolicy(CachePolicy.ENABLED)
                 .build()
 
-            val result = try {
+            var result = try {
                 context.imageLoader.execute(request)
             } catch (e: Exception) {
                 Timber.tag("CoilBitmapLoader").w(e, "Exception executing image request for $uri")
                 null
+            }
+
+            // If maxresdefault 404s, fall back to hqdefault which is universally available on YouTube
+            if ((result == null || result is ErrorResult) && uriString.contains("maxresdefault")) {
+                val fallbackUri = uriString
+                    .replace("maxresdefault.webp", "hqdefault.webp")
+                    .replace("maxresdefault.jpg", "hqdefault.jpg")
+                val fallbackRequest = ImageRequest.Builder(context)
+                    .data(fallbackUri)
+                    .allowHardware(false)
+                    .memoryCachePolicy(CachePolicy.ENABLED)
+                    .diskCachePolicy(CachePolicy.ENABLED)
+                    .build()
+                result = try {
+                    context.imageLoader.execute(fallbackRequest)
+                } catch (_: Exception) {
+                    null
+                }
             }
 
             when (result) {
@@ -88,8 +135,13 @@ class CoilBitmapLoader(
                 }
                 is SuccessResult -> {
                     try {
-                        val bitmap = result.image.toBitmap()
-                        bitmap.copyIfNeeded()
+                        val bitmap = result.image.toBitmap().copyIfNeeded()
+                        putCachedBitmap(uriString, bitmap)
+                        try {
+                            val palette = PlayerColorExtractor.extractFromBitmap(bitmap)
+                            PlayerColorExtractor.putCachedPalette(uriString, palette)
+                        } catch (_: Exception) {}
+                        bitmap
                     } catch (e: Exception) {
                         Timber.tag("CoilBitmapLoader").w(e, "Failed to convert image to bitmap")
                         createFallbackBitmap()
@@ -98,6 +150,7 @@ class CoilBitmapLoader(
                 null -> createFallbackBitmap()
             }
         }
+    }
 
     override fun loadBitmapFromMetadata(metadata: androidx.media3.common.MediaMetadata): ListenableFuture<Bitmap>? {
         if (metadata.artworkData != null) {
@@ -108,6 +161,6 @@ class CoilBitmapLoader(
         if (artworkUri != null) {
             return loadBitmap(artworkUri)
         }
-        return scope.future(Dispatchers.IO) { createFallbackBitmap() }
+        return Futures.immediateFuture(createFallbackBitmap())
     }
 }

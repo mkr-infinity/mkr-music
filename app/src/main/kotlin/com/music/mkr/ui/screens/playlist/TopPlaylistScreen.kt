@@ -62,7 +62,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import com.music.mkr.ui.component.mkrPressFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -582,14 +587,26 @@ private fun TopPlaylistHeader(
 
             Spacer(Modifier.height(24.dp))
 
+            val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+            val liquidBorder = BorderStroke(
+                1.dp,
+                Brush.verticalGradient(
+                    if (isDark) listOf(Color(0x35FFFFFF), Color(0x10FFFFFF))
+                    else listOf(Color(0x60FFFFFF), Color(0x18000000))
+                )
+            )
+            val liquidContainer = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
+                alpha = if (isDark) 0.75f else 0.85f
+            )
+
             // Action Buttons Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Shuffle Button
-                Button(
+                // Shuffle Button (Liquid-style capsule)
+                Surface(
                     onClick = {
                         playerConnection.playQueue(
                             ListQueue(
@@ -598,27 +615,39 @@ private fun TopPlaylistHeader(
                             )
                         )
                     },
-                    shape = ButtonDefaults.shape,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.surfaceVariant,
-                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                    ),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp),
-                    modifier = Modifier.weight(1f)
+                    shape = CircleShape,
+                    color = liquidContainer,
+                    contentColor = MaterialTheme.colorScheme.onSurface,
+                    border = liquidBorder,
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .mkrPressFeedback()
                 ) {
                     Row(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 8.dp),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.shuffle),
                             contentDescription = null,
-                            modifier = Modifier.size(20.dp)
+                            tint = MaterialTheme.colorScheme.onSurface,
+                            modifier = Modifier.size(18.dp)
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.shuffle),
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.5.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
@@ -633,13 +662,16 @@ private fun TopPlaylistHeader(
                             )
                         )
                     },
-                    shape = ButtonDefaults.shape,
+                    shape = CircleShape,
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.primary,
                         contentColor = MaterialTheme.colorScheme.onPrimary
                     ),
-                    contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 12.dp),
-                    modifier = Modifier.weight(1f)
+                    contentPadding = PaddingValues(horizontal = 10.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(48.dp)
+                        .mkrPressFeedback()
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.Center,
@@ -648,13 +680,18 @@ private fun TopPlaylistHeader(
                         Icon(
                             painter = painterResource(R.drawable.play),
                             contentDescription = null,
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.onPrimary
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(Modifier.width(6.dp))
                         Text(
                             text = stringResource(R.string.play),
-                            style = MaterialTheme.typography.labelLarge
+                            style = MaterialTheme.typography.labelLarge.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.5.sp
+                            ),
+                            maxLines = 1,
+                            softWrap = false
                         )
                     }
                 }
@@ -704,8 +741,11 @@ private fun TopPlaylistHeader(
                         }
                     },
                     shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.size(48.dp)
+                    color = liquidContainer,
+                    border = liquidBorder,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .mkrPressFeedback()
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
@@ -714,7 +754,7 @@ private fun TopPlaylistHeader(
                         Icon(
                             painter = painterResource(R.drawable.more_vert),
                             contentDescription = null,
-                            modifier = Modifier.size(20.dp),
+                            modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }

@@ -83,20 +83,20 @@ fun LibraryTrackRow(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
+            .clip(CircleShape)
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             )
             .mkrPressFeedback(),
-        shape = RoundedCornerShape(16.dp),
+        shape = CircleShape,
         color = containerColor,
         border = BorderStroke(1.dp, borderColor)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 8.dp),
+                .padding(start = 10.dp, top = 6.dp, bottom = 6.dp, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // 1. Left-side Numbering / Playing Visualizer / Checkbox

@@ -68,7 +68,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import com.music.mkr.ui.component.mkrPressFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -682,12 +685,24 @@ private fun CachePlaylistHeader(
             }
         }
 
+        val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
+        val liquidBorder = BorderStroke(
+            1.dp,
+            Brush.verticalGradient(
+                if (isDark) listOf(Color(0x35FFFFFF), Color(0x10FFFFFF))
+                else listOf(Color(0x60FFFFFF), Color(0x18000000))
+            )
+        )
+        val liquidContainer = MaterialTheme.colorScheme.surfaceContainerHighest.copy(
+            alpha = if (isDark) 0.75f else 0.85f
+        )
+
         // Expressive Action Deck
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 6.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Play Button
@@ -705,10 +720,11 @@ private fun CachePlaylistHeader(
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary
                 ),
-                contentPadding = PaddingValues(horizontal = 14.dp),
+                contentPadding = PaddingValues(horizontal = 10.dp),
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
+                    .mkrPressFeedback()
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -717,19 +733,23 @@ private fun CachePlaylistHeader(
                     Icon(
                         painter = painterResource(R.drawable.play),
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(6.dp))
                     Text(
                         text = stringResource(R.string.play),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.5.sp
+                        ),
+                        maxLines = 1,
+                        softWrap = false
                     )
                 }
             }
 
-            // Shuffle Button
-            FilledTonalButton(
+            // Shuffle Button (Liquid-style capsule)
+            Surface(
                 onClick = {
                     playerConnection.playQueue(
                         ListQueue(
@@ -739,29 +759,38 @@ private fun CachePlaylistHeader(
                     )
                 },
                 shape = CircleShape,
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    contentColor = MaterialTheme.colorScheme.onSurface
-                ),
-                contentPadding = PaddingValues(horizontal = 14.dp),
+                color = liquidContainer,
+                contentColor = MaterialTheme.colorScheme.onSurface,
+                border = liquidBorder,
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
+                    .mkrPressFeedback()
             ) {
                 Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.shuffle),
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp)
+                        tint = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.size(18.dp)
                     )
-                    Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(6.dp))
                     Text(
                         text = stringResource(R.string.shuffle),
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.labelLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 13.5.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis
                     )
                 }
             }
@@ -770,15 +799,18 @@ private fun CachePlaylistHeader(
             Surface(
                 onClick = onStartSearch,
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                modifier = Modifier.size(48.dp)
+                color = liquidContainer,
+                border = liquidBorder,
+                modifier = Modifier
+                    .size(44.dp)
+                    .mkrPressFeedback()
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         painter = painterResource(R.drawable.search),
                         contentDescription = stringResource(R.string.search),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
@@ -814,14 +846,17 @@ private fun CachePlaylistHeader(
                     }
                 },
                 shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                modifier = Modifier.size(48.dp)
+                color = liquidContainer,
+                border = liquidBorder,
+                modifier = Modifier
+                    .size(44.dp)
+                    .mkrPressFeedback()
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
                         painter = painterResource(R.drawable.more_vert),
                         contentDescription = null,
-                        modifier = Modifier.size(20.dp),
+                        modifier = Modifier.size(18.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
