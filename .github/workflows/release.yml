@@ -118,18 +118,18 @@ jobs:
 
       - name: Validate Release Signing Secrets
         run: |
-          echo "=== Validating Release Signing Secrets ==="
+          echo "=== Validating Required GitHub Release Signing Secrets ==="
           MISSING=0
           if [ -z "${{ secrets.KEYSTORE }}" ]; then
             echo "::error::Required secret 'KEYSTORE' is missing or empty!"
             MISSING=1
           fi
-          if [ -z "${{ secrets.KEY_ALIAS }}" ]; then
-            echo "::error::Required secret 'KEY_ALIAS' is missing or empty!"
-            MISSING=1
-          fi
           if [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ]; then
             echo "::error::Required secret 'KEYSTORE_PASSWORD' is missing or empty!"
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.KEY_ALIAS }}" ]; then
+            echo "::error::Required secret 'KEY_ALIAS' is missing or empty!"
             MISSING=1
           fi
           if [ -z "${{ secrets.KEY_PASSWORD }}" ]; then
@@ -138,20 +138,44 @@ jobs:
           fi
 
           if [ "$MISSING" -ne 0 ]; then
-            echo "::error::Release signing secrets are missing or invalid! Refusing to build release without required persistent release credentials."
+            echo "::error::All four release signing secrets (KEYSTORE, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD) must be configured in GitHub Secrets. Failing build immediately."
             exit 1
           fi
-          echo "✓ All release signing secrets are present and verified."
+          echo "✓ All four required release signing secrets are present."
 
-      - name: Setup Persistent Release Keystore
+      - name: Setup and Validate Persistent Release Keystore
+        id: keystore_validation
         run: |
+          echo "=== Decoding and Validating Persistent Release Keystore ==="
           mkdir -p app/keystore
           echo "${{ secrets.KEYSTORE }}" | base64 -d > app/keystore/release.keystore
+
           if [ ! -s app/keystore/release.keystore ]; then
             echo "::error::Decoded release keystore file is empty or invalid!"
             exit 1
           fi
-          echo "✓ Persistent release keystore written to app/keystore/release.keystore"
+
+          echo "Validating keystore integrity and alias with keytool..."
+          if ! keytool -list -keystore app/keystore/release.keystore \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -alias "${{ secrets.KEY_ALIAS }}" > /dev/null 2>&1; then
+            echo "::error::Keystore validation failed! Keystore is corrupt, password is wrong, or alias '${{ secrets.KEY_ALIAS }}' does not exist."
+            exit 1
+          fi
+
+          # Extract canonical SHA-256 certificate fingerprint directly from the configured release keystore
+          EXPECTED_FINGERPRINT=$(keytool -exportcert -keystore app/keystore/release.keystore \
+            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
+            -alias "${{ secrets.KEY_ALIAS }}" | sha256sum | awk '{print $1}' | tr '[:lower:]' '[:upper:]')
+
+          if [ -z "$EXPECTED_FINGERPRINT" ]; then
+            echo "::error::Failed to compute SHA-256 fingerprint from release keystore certificate!"
+            exit 1
+          fi
+
+          echo "expected_cert_sha256=$EXPECTED_FINGERPRINT" >> $GITHUB_OUTPUT
+          echo "✓ Persistent release keystore validated successfully (Alias: ${{ secrets.KEY_ALIAS }})."
+          echo "✓ Expected Signer Certificate SHA-256: $EXPECTED_FINGERPRINT"
 
       - name: Build Universal Release APK
         env:
@@ -159,7 +183,7 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "Building single Universal APK variant (release-signed with persistent keystore)..."
+          echo "Building single Universal APK variant (including all supported ABIs)..."
           ./gradlew :app:assembleUniversalRelease \
             --no-configuration-cache --console=plain --warning-mode summary -x lint
 
@@ -180,14 +204,11 @@ jobs:
           mkdir -p release_assets
 
           UNIVERSAL_SRC="${{ steps.sign_universal.outputs.signedFile }}"
-          if [ -z "$UNIVERSAL_SRC" ] || [ ! -f "$UNIVERSAL_SRC" ]; then
-            UNIVERSAL_SRC=$(find app/build/outputs/apk/universal/release/ -name "*.apk" ! -name "*unsigned*" | head -n 1)
-          fi
+          echo "Signed APK output from signing action: '$UNIVERSAL_SRC'"
 
-          echo "Universal source: $UNIVERSAL_SRC"
-
+          # Strictly require the signing action's output without arbitrary fallback
           if [ -z "$UNIVERSAL_SRC" ] || [ ! -f "$UNIVERSAL_SRC" ]; then
-            echo "::error::Built release-signed Universal APK file not found!"
+            echo "::error::Signing action failed to produce signed output! 'steps.sign_universal.outputs.signedFile' is missing or not found on disk."
             exit 1
           fi
 
@@ -281,13 +302,44 @@ jobs:
           fi
           echo "✓ Confirmed genuine universal APK: includes arm64-v8a ($HAS_ARM64 libs) and armeabi-v7a ($HAS_ARMV7 libs)"
 
-          echo "=== Verifying Release Keystore Signature with apksigner ==="
+          echo "=== Mandatory Release Signature & Certificate Fingerprint Verification ==="
           APKSIGNER=$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -name "apksigner" -type f 2>/dev/null | sort -V | tail -n 1)
-          if [ -n "$APKSIGNER" ] && [ -x "$APKSIGNER" ]; then
-            echo "Verifying APK release signature using: $APKSIGNER"
-            "$APKSIGNER" verify --verbose "$apk_path"
-            echo "✓ Release signature verified successfully with apksigner"
+          if [ -z "$APKSIGNER" ] || [ ! -x "$APKSIGNER" ]; then
+            echo "::error::Mandatory tool 'apksigner' not found in Android SDK build-tools! Failing workflow."
+            exit 1
           fi
+          echo "Using apksigner: $APKSIGNER"
+
+          EXPECTED_CERT="${{ steps.keystore_validation.outputs.expected_cert_sha256 }}"
+          if [ -z "$EXPECTED_CERT" ]; then
+            echo "::error::Expected release certificate fingerprint output from keystore validation is missing!"
+            exit 1
+          fi
+
+          echo "Target Expected Certificate SHA-256: $EXPECTED_CERT"
+
+          for apk in release_assets/*.apk; do
+            [ -e "$apk" ] || continue
+            echo "--------------------------------------------------------"
+            echo "Verifying cryptographic signature on: $apk"
+            if ! "$APKSIGNER" verify --verbose "$apk"; then
+              echo "::error::apksigner cryptographic signature verification failed for $apk!"
+              exit 1
+            fi
+            echo "✓ apksigner signature verification passed for $apk"
+
+            echo "Extracting signer certificate fingerprint from $apk..."
+            APK_CERT_DIGEST=$("$APKSIGNER" verify --print-certs "$apk" | grep -i "certificate SHA-256 digest" | head -n 1 | awk '{print $NF}' | tr -d ' :' | tr '[:lower:]' '[:upper:]')
+
+            echo "APK Signer Certificate SHA-256: $APK_CERT_DIGEST"
+            echo "Expected Keystore Certificate:   $EXPECTED_CERT"
+
+            if [ "$APK_CERT_DIGEST" != "$EXPECTED_CERT" ]; then
+              echo "::error::Signer certificate mismatch on $apk! Expected $EXPECTED_CERT but found $APK_CERT_DIGEST. The APK was not signed with the intended persistent release key."
+              exit 1
+            fi
+            echo "✓ Verified $apk is cryptographically signed with the intended persistent release key."
+          done
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
