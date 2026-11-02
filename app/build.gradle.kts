@@ -133,16 +133,24 @@ android {
         val keystoreFile = file("keystore/release.keystore")
         if (keystoreFile.exists()) {
             storeFile = keystoreFile
-            storePassword = System.getenv("STORE_PASSWORD")
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: System.getenv("STORE_PASSWORD") ?: "MkrMusicKey2026!"
+            keyAlias = System.getenv("KEY_ALIAS") ?: "mkrmusic"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "MkrMusicKey2026!"
         }
     }
     getByName("debug") {
-        keyAlias = "androiddebugkey"
-        keyPassword = "android"
-        storePassword = "android"
-        storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
+        val keystoreFile = file("keystore/release.keystore")
+        if (keystoreFile.exists()) {
+            storeFile = keystoreFile
+            storePassword = System.getenv("KEYSTORE_PASSWORD") ?: System.getenv("STORE_PASSWORD") ?: "MkrMusicKey2026!"
+            keyAlias = System.getenv("KEY_ALIAS") ?: "mkrmusic"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "MkrMusicKey2026!"
+        } else {
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+            storePassword = "android"
+            storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
+        }
     }
 }
 
@@ -163,9 +171,11 @@ buildTypes {
         buildConfigField("String", "ARCHITECTURE", "\"release\"")
     }
     debug {
-        applicationIdSuffix = ".debug"
         isDebuggable = true
-        signingConfig = signingConfigs.getByName("debug")
+        signingConfig = if (file("keystore/release.keystore").exists())
+            signingConfigs.getByName("release")
+        else
+            signingConfigs.getByName("debug")
         buildConfigField("String", "ARCHITECTURE", "\"debug\"")
     }
 }
