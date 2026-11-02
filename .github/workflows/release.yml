@@ -116,38 +116,54 @@ jobs:
           fi
           echo "✓ Workflow and Gradle version definitions are 100% aligned ($GRADLE_VN / $GRADLE_VC)."
 
-      - name: Check Keystore Availability
-        id: check_keystore
+      - name: Validate Release Signing Secrets
         run: |
-          if [ -n "${{ secrets.KEYSTORE }}" ]; then
-            echo "has_keystore=true" >> $GITHUB_OUTPUT
-            echo "Custom Keystore secret detected."
-          else
-            echo "has_keystore=false" >> $GITHUB_OUTPUT
-            echo "No custom Keystore secret found. Using standard signing fallback."
+          echo "=== Validating Release Signing Secrets ==="
+          MISSING=0
+          if [ -z "${{ secrets.KEYSTORE }}" ]; then
+            echo "::error::Required secret 'KEYSTORE' is missing or empty!"
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.KEY_ALIAS }}" ]; then
+            echo "::error::Required secret 'KEY_ALIAS' is missing or empty!"
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ]; then
+            echo "::error::Required secret 'KEYSTORE_PASSWORD' is missing or empty!"
+            MISSING=1
+          fi
+          if [ -z "${{ secrets.KEY_PASSWORD }}" ]; then
+            echo "::error::Required secret 'KEY_PASSWORD' is missing or empty!"
+            MISSING=1
           fi
 
-      - name: Generate Signing Keystore
+          if [ "$MISSING" -ne 0 ]; then
+            echo "::error::Release signing secrets are missing or invalid! Refusing to build release without required persistent release credentials."
+            exit 1
+          fi
+          echo "✓ All release signing secrets are present and verified."
+
+      - name: Setup Persistent Release Keystore
         run: |
-          mkdir -p ~/.android
-          keytool -genkey -v \
-            -keystore ~/.android/debug.keystore \
-            -storepass android \
-            -alias androiddebugkey \
-            -keypass android \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -dname "CN=MKR Music,O=MKR,C=US"
+          mkdir -p app/keystore
+          echo "${{ secrets.KEYSTORE }}" | base64 -d > app/keystore/release.keystore
+          if [ ! -s app/keystore/release.keystore ]; then
+            echo "::error::Decoded release keystore file is empty or invalid!"
+            exit 1
+          fi
+          echo "✓ Persistent release keystore written to app/keystore/release.keystore"
 
       - name: Build Universal Release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
-          echo "Building single Universal APK variant (including all supported ABIs)..."
+          echo "Building single Universal APK variant (release-signed with persistent keystore)..."
           ./gradlew :app:assembleUniversalRelease \
             --no-configuration-cache --console=plain --warning-mode summary -x lint
 
-      - name: Sign Universal APK with Custom Keystore
-        if: steps.check_keystore.outputs.has_keystore == 'true'
+      - name: Sign Universal APK with Persistent Release Keystore
         id: sign_universal
         uses: ilharp/sign-android-release@v2.0.0
         with:
@@ -163,16 +179,15 @@ jobs:
         run: |
           mkdir -p release_assets
 
-          if [ "${{ steps.check_keystore.outputs.has_keystore }}" == "true" ]; then
-            UNIVERSAL_SRC="${{ steps.sign_universal.outputs.signedFile }}"
-          else
-            UNIVERSAL_SRC=$(find app/build/outputs/apk/universal/release/ -name "*.apk" | head -n 1)
+          UNIVERSAL_SRC="${{ steps.sign_universal.outputs.signedFile }}"
+          if [ -z "$UNIVERSAL_SRC" ] || [ ! -f "$UNIVERSAL_SRC" ]; then
+            UNIVERSAL_SRC=$(find app/build/outputs/apk/universal/release/ -name "*.apk" ! -name "*unsigned*" | head -n 1)
           fi
 
           echo "Universal source: $UNIVERSAL_SRC"
 
           if [ -z "$UNIVERSAL_SRC" ] || [ ! -f "$UNIVERSAL_SRC" ]; then
-            echo "::error::Built Universal APK file not found!"
+            echo "::error::Built release-signed Universal APK file not found!"
             exit 1
           fi
 
@@ -265,6 +280,14 @@ jobs:
             exit 1
           fi
           echo "✓ Confirmed genuine universal APK: includes arm64-v8a ($HAS_ARM64 libs) and armeabi-v7a ($HAS_ARMV7 libs)"
+
+          echo "=== Verifying Release Keystore Signature with apksigner ==="
+          APKSIGNER=$(find "${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools" -name "apksigner" -type f 2>/dev/null | sort -V | tail -n 1)
+          if [ -n "$APKSIGNER" ] && [ -x "$APKSIGNER" ]; then
+            echo "Verifying APK release signature using: $APKSIGNER"
+            "$APKSIGNER" verify --verbose "$apk_path"
+            echo "✓ Release signature verified successfully with apksigner"
+          fi
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4

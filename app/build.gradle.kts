@@ -137,33 +137,23 @@ android {
             storePassword = envStorePass
             keyAlias = System.getenv("KEY_ALIAS")
             keyPassword = System.getenv("KEY_PASSWORD")
+            enableV1Signing = true
+            enableV2Signing = true
+            enableV3Signing = true
+            enableV4Signing = true
         }
     }
     getByName("debug") {
-        val keystoreFile = file("keystore/release.keystore")
-        val envStorePass = System.getenv("KEYSTORE_PASSWORD") ?: System.getenv("STORE_PASSWORD")
-        if (keystoreFile.exists() && !envStorePass.isNullOrBlank()) {
-            storeFile = keystoreFile
-            storePassword = envStorePass
-            keyAlias = System.getenv("KEY_ALIAS")
-            keyPassword = System.getenv("KEY_PASSWORD")
-        } else {
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
-            storePassword = "android"
-            storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
-        }
+        keyAlias = "androiddebugkey"
+        keyPassword = "android"
+        storePassword = "android"
+        storeFile = file("${System.getProperty("user.home")}/.android/debug.keystore")
     }
 }
 
 buildTypes {
     release {
-        val hasReleaseKey = file("keystore/release.keystore").exists() &&
-            (!System.getenv("KEYSTORE_PASSWORD").isNullOrBlank() || !System.getenv("STORE_PASSWORD").isNullOrBlank())
-        signingConfig = if (hasReleaseKey)
-            signingConfigs.getByName("release")
-        else
-            signingConfigs.getByName("debug")
+        signingConfig = signingConfigs.getByName("release")
         isMinifyEnabled = true
         isShrinkResources = true
         isCrunchPngs = false
@@ -176,12 +166,7 @@ buildTypes {
     }
     debug {
         isDebuggable = true
-        val hasReleaseKey = file("keystore/release.keystore").exists() &&
-            (!System.getenv("KEYSTORE_PASSWORD").isNullOrBlank() || !System.getenv("STORE_PASSWORD").isNullOrBlank())
-        signingConfig = if (hasReleaseKey)
-            signingConfigs.getByName("release")
-        else
-            signingConfigs.getByName("debug")
+        signingConfig = signingConfigs.getByName("debug")
         buildConfigField("String", "ARCHITECTURE", "\"debug\"")
     }
 }
