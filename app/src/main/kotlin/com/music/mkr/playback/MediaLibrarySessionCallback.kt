@@ -41,6 +41,8 @@ import com.music.mkr.constants.SongSortType
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.PlaylistEntity
 import com.music.mkr.db.entities.Song
+import com.music.mkr.extensions.filterExplicit as filterExplicitSongs
+import com.music.mkr.extensions.filterVideoSongs as filterDownloadedVideos
 import com.music.mkr.extensions.sessionArtworkUrl
 import com.music.mkr.extensions.toMediaItem
 import com.music.mkr.extensions.toggleRepeatMode
@@ -230,7 +232,7 @@ constructor(
 
                     MusicService.PLAYLIST -> {
                         val likedSongCount = database.likedSongsCount().first()
-                        val downloadedSongCount = downloadUtil.completedSongs(SongSortType.CREATE_DATE, true).first().size
+                        val downloadedSongCount = browsableDownloads().first().size
                         val youtubePlaylists = try {
                             YouTube.home().getOrNull()?.sections
                                 ?.flatMap { it.items }
@@ -277,7 +279,7 @@ constructor(
                                     )
 
                                     PlaylistEntity.DOWNLOADED_PLAYLIST_ID ->
-                                        downloadUtil.completedSongs(SongSortType.CREATE_DATE, true)
+                                        browsableDownloads()
 
                                     else ->
                                         database.playlistSongs(playlistId).map { list ->
@@ -471,7 +473,7 @@ constructor(
                     val songs = when (playlistId) {
                         PlaylistEntity.LIKED_PLAYLIST_ID -> database.likedSongs(SongSortType.CREATE_DATE, descending = true)
                         PlaylistEntity.DOWNLOADED_PLAYLIST_ID ->
-                            downloadUtil.completedSongs(SongSortType.CREATE_DATE, true)
+                            browsableDownloads()
                         else -> database.playlistSongs(playlistId).map { list ->
                             list.map { it.song }
                         }
@@ -667,6 +669,12 @@ constructor(
         ),
     )
 
+    private fun browsableDownloads() =
+        downloadUtil.completedSongs(SongSortType.CREATE_DATE, true).map { songs ->
+            songs.filterExplicitSongs(context.dataStore.get(HideExplicitKey, false))
+                .filterDownloadedVideos(context.dataStore.get(HideVideoSongsKey, false))
+        }
+
     private suspend fun getMediaItem(mediaId: String): MediaItem? {
         val path = mediaId.split("/")
         val type = path.firstOrNull() ?: return null
@@ -733,7 +741,7 @@ constructor(
                     if (songId == MusicService.SHUFFLE_ACTION) {
                         shuffleMediaItem("${MusicService.PLAYLIST}/$playlistId")
                     } else if (playlistId == PlaylistEntity.DOWNLOADED_PLAYLIST_ID) {
-                        downloadUtil.completedSongs(SongSortType.CREATE_DATE, true).first()
+                        browsableDownloads().first()
                             .firstOrNull { it.id == songId }?.toMediaItem("${MusicService.PLAYLIST}/$playlistId")
                     } else {
                         database.song(songId).first()?.toMediaItem("${MusicService.PLAYLIST}/$playlistId")
@@ -770,7 +778,7 @@ constructor(
     private suspend fun playlistMediaItem(playlistId: String): MediaItem? =
         when (playlistId) {
             PlaylistEntity.LIKED_PLAYLIST_ID -> likedSongsMediaItem(database.likedSongsCount().first())
-            PlaylistEntity.DOWNLOADED_PLAYLIST_ID -> downloadedSongsMediaItem(downloadUtil.completedSongs(SongSortType.CREATE_DATE, true).first().size)
+            PlaylistEntity.DOWNLOADED_PLAYLIST_ID -> downloadedSongsMediaItem(browsableDownloads().first().size)
             else -> database.playlist(playlistId).first()?.toBrowsableMediaItem()
         }
 

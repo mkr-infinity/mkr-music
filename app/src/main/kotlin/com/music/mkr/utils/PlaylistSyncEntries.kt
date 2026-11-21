@@ -1,6 +1,15 @@
 package com.music.mkr.utils
 
 import com.music.mkr.db.entities.PlaylistSongMap
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+
+internal class PlaylistEditGate {
+    private val locks = Array(32) { Mutex() }
+
+    suspend fun <T> withEdit(playlistId: String, action: suspend () -> T): T =
+        locks[(playlistId.hashCode() and Int.MAX_VALUE) % locks.size].withLock { action() }
+}
 
 internal fun unmatchedLocalPlaylistEntries(
     local: List<PlaylistSongMap>,

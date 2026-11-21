@@ -50,8 +50,6 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -946,10 +944,10 @@ class SyncUtils @Inject constructor(
         }
     }
 
-    private val playlistLocks = Array(32) { Mutex() }
+    private val playlistEdits = PlaylistEditGate()
 
     internal suspend fun <T> withPlaylistEdit(playlistId: String, action: suspend () -> T): T =
-        playlistLocks[(playlistId.hashCode() and Int.MAX_VALUE) % playlistLocks.size].withLock { action() }
+        playlistEdits.withEdit(playlistId, action)
 
     private suspend fun executeSyncPlaylist(browseId: String, playlistId: String) = withContext(Dispatchers.IO) {
         withPlaylistEdit(playlistId) {

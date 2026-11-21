@@ -1264,8 +1264,10 @@ class MusicService :
 
     private fun applyPlaybackVolume() {
         if (!::player.isInitialized || !::playerVolume.isInitialized) return
-        val duck = if (lastAudioFocusState == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) 0.2f else 1f
-        val volume = if (!hasAudioFocus || isMuted.value) 0f else playerVolume.value.coerceIn(0f, 1f) * duck
+        val volume = playbackOutputVolume(
+            playerVolume.value, isMuted.value, hasAudioFocus,
+            ducking = lastAudioFocusState == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK,
+        )
         val outgoing = fadingPlayer
         if (outgoing == null) {
             player.volume = volume
@@ -4181,6 +4183,7 @@ class MusicService :
         if (reason == Player.DISCONTINUITY_REASON_SEEK) {
             releaseCrossfadePlayers()
             scheduleCrossfade()
+            if (dataStore.get(PersistentQueueKey, true)) saveQueueToDisk()
         }
     }
 
@@ -4481,19 +4484,23 @@ class MusicService :
 
     private fun updateOutgoingPlayback() {
         val outgoing = fadingPlayer ?: return
-        val incomingAudible = hasAudioFocus && player.isPlaying
-        overlapPlaying.value = incomingAudible
-        val keepOutgoing = hasAudioFocus && player.playWhenReady &&
-            player.playbackSuppressionReason == Player.PLAYBACK_SUPPRESSION_REASON_NONE
-        if (keepOutgoing && (incomingAudible || player.playbackState == Player.STATE_BUFFERING)) {
-            if (!incomingAudible) {
+        val transition = outgoingPlayback(
+            focusGranted = hasAudioFocus,
+            playRequested = player.playWhenReady,
+            suppressed = player.playbackSuppressionReason != Player.PLAYBACK_SUPPRESSION_REASON_NONE,
+            incomingPlaying = player.isPlaying,
+            incomingBuffering = player.playbackState == Player.STATE_BUFFERING,
+        )
+        overlapPlaying.value = transition == OutgoingPlayback.Fade
+        when (transition) {
+            OutgoingPlayback.Pause -> outgoing.pause()
+            OutgoingPlayback.Fade -> outgoing.play()
+            OutgoingPlayback.Carry -> {
                 crossfadeNeedsRestart = true
                 crossfadeProgress = 0f
                 applyPlaybackVolume()
+                outgoing.play()
             }
-            outgoing.play()
-        } else {
-            outgoing.pause()
         }
     }
 

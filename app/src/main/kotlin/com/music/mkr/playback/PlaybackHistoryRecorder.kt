@@ -76,11 +76,14 @@ internal class PlaybackHistoryRecorder(
             val index = player.currentMediaItemIndex
             val matches = index in 0 until timeline.windowCount &&
                 timeline.getWindow(index, Timeline.Window()).uid == gapless.second.uid
-            when {
-                !matches || player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED ->
-                    pendingGaplessStart = null
-                player.isPlaying && player.currentTracks.isTypeSelected(C.TRACK_TYPE_AUDIO) ->
-                    start(gapless.first, gapless.second, LocalDateTime.now())
+            when (gaplessHistoryStart(
+                matchesTrack = matches,
+                terminalState = player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED,
+                playingAudio = player.isPlaying && player.currentTracks.isTypeSelected(C.TRACK_TYPE_AUDIO),
+            )) {
+                GaplessHistoryStart.Discard -> pendingGaplessStart = null
+                GaplessHistoryStart.Record -> start(gapless.first, gapless.second, LocalDateTime.now())
+                GaplessHistoryStart.Wait -> Unit
             }
         }
 

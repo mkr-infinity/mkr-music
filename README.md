@@ -6,7 +6,7 @@
   <a href="https://mkr-infinity.github.io/mkr-music-web" target="_blank"><img src="https://img.shields.io/badge/🌐%20Official%20Website-Live%20Web%20Experience-6366F1?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Official Website"/></a>
   <a href="https://github.com/mkr-infinity/mkr-music/releases/latest/download/mkr-music-universal.apk"><img src="https://img.shields.io/badge/⚡%20Download%20APK-Universal%20Latest-00E676?style=for-the-badge&logo=android&logoColor=white" alt="Download Universal APK"/></a>
   <a href="https://github.com/mkr-infinity"><img src="https://img.shields.io/badge/Developer-%40mkr--infinity-E74C3C?style=for-the-badge&logo=github&logoColor=white" alt="Developer @mkr-infinity"/></a>
-  <img src="https://img.shields.io/badge/Platform-Android%207.0%2B-F39C12?style=for-the-badge" alt="Platform Android 7.0+"/>
+  <img src="https://img.shields.io/badge/Platform-Android%208.0%2B-F39C12?style=for-the-badge" alt="Platform Android 8.0+"/>
 </p>
 
 <div align="center">
@@ -41,6 +41,12 @@ Stream **YouTube Music**, import **Spotify playlists**, and listen offline with 
 </p>
 
 </div>
+
+---
+
+## Updating MKR Music
+
+Install the Universal APK over your existing compatible installation to keep your app data. In-place updates require the same application ID and signing certificate, with a newer release version code. If Android rejects the APK as incompatible, keep your existing installation and verify the APK source and signer before proceeding.
 
 ---
 
@@ -140,7 +146,7 @@ Your privacy is fundamental:
 **MKR Music** is an independent open-source project developed solely by **Mohammad Kaif Raja**.
 - MKR Music is **not affiliated with, endorsed by, sponsored by, or funded by Google LLC, YouTube, Spotify, or any of their subsidiaries**.
 - All music content, audio streams, logos, artist names, and trademarks belong to their respective copyright owners.
-- This software is distributed strictly for personal, educational, and non-commercial use under the GPL-3.0 license.
+- MKR Music is distributed under the [GNU General Public License v3.0](LICENSE).
 
 ---
 
