@@ -417,6 +417,13 @@
     <string name="wired_headphones">Wired headphones</string>
     <string name="hdmi">HDMI</string>
     <string name="phone_speaker">Phone speaker</string>
+    <string name="audio_output_title">Audio output</string>
+    <string name="audio_output_detecting">Detecting audio outputs…</string>
+    <string name="audio_output_selected">In use</string>
+    <string name="audio_output_pair_bluetooth">Pair Bluetooth</string>
+    <string name="audio_output_volume_percent">Volume · %1$d%%</string>
+    <string name="audio_output_mute">Mute</string>
+    <string name="audio_output_unmute">Unmute</string>
     <string name="audio_quality_title">Audio Quality</string>
     <string name="battery_content_desc">Battery Level</string>
     <string name="done">Done</string>
