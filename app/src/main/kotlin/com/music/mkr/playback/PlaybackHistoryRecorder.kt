@@ -8,6 +8,7 @@ package com.music.mkr.playback
 import android.database.SQLException
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.common.util.UnstableApi
@@ -52,6 +53,10 @@ internal class PlaybackHistoryRecorder(
         newPosition: Player.PositionInfo,
         reason: Int,
     ) {
+        val pending = pendingGaplessStart
+        if (pending != null && (newPosition.windowUid != pending.second.uid ||
+                reason == Player.DISCONTINUITY_REASON_SEEK)
+        ) pendingGaplessStart = null
         if (reason != Player.DISCONTINUITY_REASON_AUTO_TRANSITION || eventTime.currentTimeline.isEmpty) return
         val next = eventTime.currentMediaPeriodId ?: return
         if (next.isAd) return
@@ -66,12 +71,17 @@ internal class PlaybackHistoryRecorder(
 
     override fun onEvents(player: Player, events: AnalyticsListener.Events) {
         val gapless = pendingGaplessStart
-        pendingGaplessStart = null
-        if (gapless != null && player.isPlaying && player.currentTracks.isTypeSelected(C.TRACK_TYPE_AUDIO) &&
-            !player.currentTimeline.isEmpty &&
-            player.currentTimeline.getWindow(player.currentMediaItemIndex, Timeline.Window()).uid == gapless.second.uid
-        ) {
-            start(gapless.first, gapless.second, LocalDateTime.now())
+        if (gapless != null) {
+            val timeline = player.currentTimeline
+            val index = player.currentMediaItemIndex
+            val matches = index in 0 until timeline.windowCount &&
+                timeline.getWindow(index, Timeline.Window()).uid == gapless.second.uid
+            when {
+                !matches || player.playbackState == Player.STATE_IDLE || player.playbackState == Player.STATE_ENDED ->
+                    pendingGaplessStart = null
+                player.isPlaying && player.currentTracks.isTypeSelected(C.TRACK_TYPE_AUDIO) ->
+                    start(gapless.first, gapless.second, LocalDateTime.now())
+            }
         }
 
         if (events.contains(AnalyticsListener.EVENT_PLAYBACK_STATE_CHANGED) && player.playbackState == Player.STATE_ENDED) {
@@ -83,7 +93,12 @@ internal class PlaybackHistoryRecorder(
         }
     }
 
+    override fun onPlayerError(eventTime: EventTime, error: PlaybackException) {
+        pendingGaplessStart = null
+    }
+
     private fun start(sequence: Long, window: Timeline.Window, timestamp: LocalDateTime) {
+        if (pendingGaplessStart?.first == sequence) pendingGaplessStart = null
         lastAudible = sequence to window.uid
         val replay = ended?.takeIf { it.first == sequence }
         if (sequence in plays && replay == null) return

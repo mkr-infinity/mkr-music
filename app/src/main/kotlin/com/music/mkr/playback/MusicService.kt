@@ -285,9 +285,8 @@ class MusicService :
     private lateinit var audioManager: AudioManager
     private var audioFocusRequest: AudioFocusRequest? = null
     private var lastAudioFocusState = AudioManager.AUDIOFOCUS_NONE
-    private var wasPlayingBeforeAudioFocusLoss = false
     private var hasAudioFocus = false
-    private var reentrantFocusGain = false
+    private var resumeAfterFocusLoss = false
     private var wasPlayingBeforeVolumeMute = false
     private var isPausedByVolumeMute = false
     var preferredDeviceId: Int? = null
@@ -367,9 +366,11 @@ class MusicService :
     private var crossfadeProgress = 1f
     private var activeCrossfadeCurve = CrossfadeCurve.EASE_OUT_QUAD
     private val overlapPlaying = MutableStateFlow(false)
+    private var crossfadeNeedsRestart = false
 
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var queueLoadJob: Job? = null
+    private var restoringQueue = false
     private var pendingQueueSwitch = false
 
     private val binder = MusicBinder()
@@ -1098,35 +1099,12 @@ class MusicService :
             }
 
         if (dataStore.get(PersistentQueueKey, true)) {
-            val queueFile = filesDir.resolve(PERSISTENT_QUEUE_FILE)
-            if (queueFile.exists()) {
-                runCatching {
-                    queueFile.inputStream().use { fis ->
-                        ObjectInputStream(fis).use { oos ->
-                            oos.readObject() as PersistQueue
-                        }
-                    }
-                }.onSuccess { queue ->
-                    runCatching {
-                        // Convert back to proper queue type
-                        val restoredQueue = queue.toQueue()
-                        // Wait for player initialization before playing
-                        scope.launch {
-                            playerInitialized.first { it }
-                            if (isActive) {
-                                playQueue(
-                                    queue = restoredQueue,
-                                    playWhenReady = false,
-                                )
-                            }
-                        }
-                    }.onFailure { error ->
-                        Timber.tag(TAG).w(error, "Failed to restore persisted queue, clearing data")
-                        clearPersistedQueueFiles()
-                    }
-                }.onFailure { error ->
-                    Timber.tag(TAG).w(error, "Failed to read persisted queue, clearing data")
-                    clearPersistedQueueFiles()
+            restoringQueue = true
+            loadSavedQueue()?.let { saved ->
+                savedPlaybackPosition(saved)?.let { restored ->
+                    adoptSavedQueue(saved)
+                    player.setMediaItems(restored.mediaItems, restored.startIndex, restored.startPositionMs)
+                    player.prepare()
                 }
             }
 
@@ -1161,27 +1139,14 @@ class MusicService :
                         }
                     }
                 }.onSuccess { playerState ->
-                    // Restore player settings after queue is loaded
-                    scope.launch {
-                        delay(1000) // Wait for queue to be loaded
-                        // Don't restore repeat/shuffle from playerState as they are already set from DataStore (source of truth)
-                        // player.repeatMode = playerState.repeatMode
-                        // player.shuffleModeEnabled = playerState.shuffleModeEnabled
-                        playerVolume.value = playerState.volume
-
-                        // Restore position if it's still valid
-                        if (playerState.currentMediaItemIndex < player.mediaItemCount) {
-                            player.seekTo(playerState.currentMediaItemIndex, playerState.currentPosition)
-                        }
-
-                        // Trigger initial load of radio filter chips for the restored song
-                        refreshChipsForCurrentSong()
-                    }
+                    playerVolume.value = playerState.volume.coerceIn(0f, 1f)
+                    if (player.mediaItemCount > 0) refreshChipsForCurrentSong()
                 }.onFailure { error ->
                     Timber.tag(TAG).w(error, "Failed to read player state, clearing data")
                     clearPersistedQueueFiles()
                 }
             }
+            restoringQueue = false
         }
 
         // Save queue periodically (30s) to preserve state without causing constant flash I/O churn
@@ -1193,6 +1158,52 @@ class MusicService :
                 }
             }
         }
+    }
+
+    private fun loadSavedQueue(): PersistQueue? {
+        val file = filesDir.resolve(PERSISTENT_QUEUE_FILE)
+        if (!file.isFile) return null
+        return runCatching { ObjectInputStream(file.inputStream()).use { it.readObject() as PersistQueue } }
+            .onFailure { Timber.w(it, "Could not read the saved playback queue") }
+            .getOrNull()
+    }
+
+    private fun savedPlaybackPosition(saved: PersistQueue): MediaSession.MediaItemsWithStartPosition? {
+        val hideExplicit = dataStore.get(HideExplicitKey, false)
+        val hideVideos = dataStore.get(HideVideoSongsKey, false)
+        val deduplicate = dataStore.get(PreventDuplicateTracksInQueueKey, true)
+        val seen = mutableSetOf<String>()
+        val kept = saved.items.mapIndexedNotNull { index, metadata ->
+            val item = metadata.toMediaItem()
+            if (metadata.id.isBlank() ||
+                listOf(item).filterExplicit(hideExplicit).filterVideoSongs(hideVideos).isEmpty() ||
+                (deduplicate && !seen.add(item.mediaId))
+            ) null else index to item
+        }
+        if (kept.isEmpty()) return null
+        val savedId = saved.items.getOrNull(saved.mediaItemIndex)?.id
+        val exact = kept.indexOfFirst { it.first == saved.mediaItemIndex }
+        val sameSong = if (deduplicate) kept.indexOfFirst { it.second.mediaId == savedId } else -1
+        val index = maxOf(exact, sameSong).takeIf { it >= 0 }
+            ?: restoredQueueIndex(saved.mediaItemIndex, kept.map { it.first })
+        val position = if (kept[index].second.mediaId == savedId) saved.position.coerceAtLeast(0) else 0L
+        return MediaSession.MediaItemsWithStartPosition(kept.map { it.second }, index, position)
+    }
+
+    private fun adoptSavedQueue(saved: PersistQueue) {
+        currentQueue = saved.toQueue()
+        queueTitle = saved.title
+        originalQueueSize = saved.items.size
+    }
+
+    internal suspend fun resumeSavedPlayback(): MediaSession.MediaItemsWithStartPosition {
+        check(dataStore.get(PersistentQueueKey, true)) { "Queue persistence is disabled" }
+        val saved = withContext(Dispatchers.IO) { loadSavedQueue() }
+        check(player.mediaItemCount == 0 && queueLoadJob?.isActive != true) { "Playback queue already being restored" }
+        val persisted = checkNotNull(saved) { "No saved playback queue" }
+        val restored = savedPlaybackPosition(persisted) ?: error("The saved queue is empty")
+        adoptSavedQueue(persisted)
+        return restored
     }
 
     private fun createExoPlayer(forCrossfade: Boolean = false): ExoPlayer {
@@ -1224,6 +1235,7 @@ class MusicService :
             .setDeviceVolumeControlEnabled(true)
             .build()
 
+        player.volume = 0f
         playerSilenceProcessors[player] = silenceProcessor
         playerEqualizerProcessors[player] = eqProcessor
         equalizerService.addAudioProcessor(eqProcessor)
@@ -1261,7 +1273,7 @@ class MusicService :
     private fun applyPlaybackVolume() {
         if (!::player.isInitialized || !::playerVolume.isInitialized) return
         val duck = if (lastAudioFocusState == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) 0.2f else 1f
-        val volume = if (isMuted.value) 0f else playerVolume.value.coerceIn(0f, 1f) * duck
+        val volume = if (!hasAudioFocus || isMuted.value) 0f else playerVolume.value.coerceIn(0f, 1f) * duck
         val outgoing = fadingPlayer
         if (outgoing == null) {
             player.volume = volume
@@ -1283,7 +1295,6 @@ class MusicService :
             .setOnAudioFocusChangeListener { focusChange ->
                 handleAudioFocusChange(focusChange)
             }
-            .setAcceptsDelayedFocusGain(true)
             .build()
     }
 
@@ -1291,30 +1302,21 @@ class MusicService :
         when (focusChange) {
 
             AudioManager.AUDIOFOCUS_GAIN,
-            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT -> {
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT,
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK -> {
                 hasAudioFocus = true
 
-                if (wasPlayingBeforeAudioFocusLoss && !player.isPlaying && !reentrantFocusGain) {
-                    reentrantFocusGain = true
-                    scope.launch {
-                        delay(300)
-                        if (hasAudioFocus && wasPlayingBeforeAudioFocusLoss && !player.isPlaying) {
-                            // Don't start local playback if casting
-                            if (castConnectionHandler?.isCasting?.value != true) {
-                                player.play()
-                            }
-                            wasPlayingBeforeAudioFocusLoss = false
-                        }
-                        reentrantFocusGain = false
-                    }
-                }
-
+                val resume = resumeAfterFocusLoss
+                resumeAfterFocusLoss = false
                 lastAudioFocusState = focusChange
                 applyPlaybackVolume()
+                if (resume && castConnectionHandler?.isCasting?.value != true) player.play()
+                updateOutgoingPlayback()
+                scheduleCrossfade()
             }
 
             AudioManager.AUDIOFOCUS_LOSS -> {
-                wasPlayingBeforeAudioFocusLoss = false
+                resumeAfterFocusLoss = false
                 lastAudioFocusState = focusChange
                 player.pause()
                 fadingPlayer?.pause()
@@ -1324,44 +1326,43 @@ class MusicService :
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
                 hasAudioFocus = false
-                wasPlayingBeforeAudioFocusLoss = player.playWhenReady
+                resumeAfterFocusLoss = resumeAfterFocusLoss || player.playWhenReady
                 lastAudioFocusState = focusChange
+                applyPlaybackVolume()
                 player.pause()
                 fadingPlayer?.pause()
+                overlapPlaying.value = false
+                cancelCrossfadePreparation()
             }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK -> {
-                wasPlayingBeforeAudioFocusLoss = false
                 lastAudioFocusState = focusChange
                 applyPlaybackVolume()
             }
 
-            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK -> {
-                hasAudioFocus = true
-                lastAudioFocusState = focusChange
-                applyPlaybackVolume()
-            }
         }
     }
 
     private fun requestAudioFocus(): Boolean {
-        if (hasAudioFocus || lastAudioFocusState == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) return true
+        if (hasAudioFocus) return true
+        if (lastAudioFocusState == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) return false
 
         audioFocusRequest?.let { request ->
             val result = audioManager.requestAudioFocus(request)
             hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
+            if (hasAudioFocus) lastAudioFocusState = AudioManager.AUDIOFOCUS_GAIN
+            applyPlaybackVolume()
             return hasAudioFocus
         }
         return false
     }
 
     private fun abandonAudioFocus() {
-        if (hasAudioFocus) {
-            audioFocusRequest?.let { request ->
-                audioManager.abandonAudioFocusRequest(request)
-                hasAudioFocus = false
-            }
-        }
+        audioFocusRequest?.let(audioManager::abandonAudioFocusRequest)
+        hasAudioFocus = false
+        resumeAfterFocusLoss = false
+        lastAudioFocusState = AudioManager.AUDIOFOCUS_NONE
+        applyPlaybackVolume()
     }
 
     private fun clearPersistedQueueFiles() {
@@ -2722,7 +2723,10 @@ class MusicService :
     }
 
     override fun onPlayWhenReadyChanged(playWhenReady: Boolean, reason: Int) {
-        if (!playWhenReady) cancelCrossfadePreparation()
+        if (!playWhenReady) {
+            cancelCrossfadePreparation()
+            updateOutgoingPlayback()
+        }
         // Safety net: if local player tries to start while casting, immediately pause it
         if (playWhenReady && castConnectionHandler?.isCasting?.value == true) {
             player.pause()
@@ -2745,10 +2749,7 @@ class MusicService :
     }
 
     override fun onIsPlayingChanged(isPlaying: Boolean) {
-        overlapPlaying.value = isPlaying
-        fadingPlayer?.let { outgoing ->
-            if (isPlaying) outgoing.play() else outgoing.pause()
-        }
+        updateOutgoingPlayback()
         if (isPlaying) {
             val mediaId = player.currentMediaItem?.mediaId
             if (mediaId != null) {
@@ -2775,6 +2776,13 @@ class MusicService :
                 val focusGranted = requestAudioFocus()
                 if (focusGranted) {
                     openAudioEffectSession()
+                    updateOutgoingPlayback()
+                } else if (lastAudioFocusState == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+                    resumeAfterFocusLoss = true
+                    player.pause()
+                } else {
+                    player.pause()
+                    releaseCrossfadePlayers()
                 }
             } else {
                 closeAudioEffectSession()
@@ -3255,6 +3263,7 @@ class MusicService :
         retryJob?.cancel()
         retryJob = scope.launch {
             try {
+                val resumeAfterRecovery = player.playWhenReady
                 // Pause playback immediately to stop the renderer
                 player.pause()
                 Timber.tag(TAG).d("Paused playback due to AudioTrack error")
@@ -3279,7 +3288,7 @@ class MusicService :
                     Timber.tag(TAG).d("Retrying playback for $mediaId after AudioTrack error")
 
                     // Resume playback if it wasn't paused by user
-                    if (wasPlayingBeforeAudioFocusLoss) {
+                    if (resumeAfterRecovery) {
                         delay(500) // Brief delay to allow renderer to be ready
                         if (hasAudioFocus && playerInitialized.value) {
                             if (castConnectionHandler?.isCasting?.value != true) {
@@ -3913,6 +3922,7 @@ class MusicService :
     }
 
     private fun saveQueueToDisk() {
+        if (restoringQueue) return
         if (player.mediaItemCount == 0) {
             Timber.tag(TAG).d("Skipping queue save - no media items")
             return
@@ -4232,7 +4242,7 @@ class MusicService :
         val source = player
         val index = source.currentMediaItemIndex
         val timeline = source.currentTimeline
-        if (!crossfadeEnabled || crossfadeDurationMs <= 0 || !source.isPlaying ||
+        if (!crossfadeEnabled || crossfadeDurationMs <= 0 || !source.isPlaying || !hasAudioFocus ||
             castConnectionHandler?.isCasting?.value == true || timeline.isEmpty ||
             index !in 0 until timeline.windowCount || source.isCurrentMediaItemLive || source.duration <= 0
         ) return null
@@ -4246,7 +4256,7 @@ class MusicService :
         val active = player
         val index = active.currentMediaItemIndex
         val timeline = active.currentTimeline
-        return active === source.player && active.isPlaying && crossfadeEnabled &&
+        return active === source.player && active.isPlaying && hasAudioFocus && crossfadeEnabled &&
             castConnectionHandler?.isCasting?.value != true && index in 0 until timeline.windowCount &&
             timeline.getWindow(index, Timeline.Window()).uid == source.windowUid &&
             active.playbackParameters.speed == source.speed
@@ -4479,6 +4489,7 @@ class MusicService :
         outgoing.addListener(outgoingListener)
         outgoing.setPauseAtEndOfMediaItems(true)
         crossfadeProgress = 0f
+        crossfadeNeedsRestart = false
         val curve = crossfadeCurve
         activeCrossfadeCurve = curve
         next.addListener(this)
@@ -4492,17 +4503,24 @@ class MusicService :
         previousMediaItemIndex = C.INDEX_UNSET
         handleMediaItemTransition(next.currentMediaItem, reason)
         updateWidgetUI(next.isPlaying)
-        overlapPlaying.value = next.isPlaying
+        updateOutgoingPlayback()
         applyPlaybackVolume()
 
-        val startPosition = next.currentPosition
+        var startPosition = next.currentPosition
+        var overlapDuration = duration
         val speed = next.playbackParameters.speed
         crossfadeJob = scope.launch {
             try {
                 while (isActive && fadingPlayer === outgoing && player === next) {
                     if (withTimeoutOrNull(5_000L) { overlapPlaying.first { it } } != true) break
+                    if (crossfadeNeedsRestart) {
+                        crossfadeNeedsRestart = false
+                        startPosition = next.currentPosition
+                        overlapDuration = minOf(duration, remainingPlaybackMs(outgoing.duration, outgoing.currentPosition, speed))
+                        if (overlapDuration < CROSSFADE_MIN_OVERLAP_MS) break
+                    }
                     val elapsed = (next.currentPosition - startPosition).coerceAtLeast(0) / speed
-                    crossfadeProgress = (elapsed / duration).coerceIn(0f, 1f)
+                    crossfadeProgress = (elapsed / overlapDuration).coerceIn(0f, 1f)
                     applyPlaybackVolume()
                     if (crossfadeProgress >= 1f || outgoing.playbackState == Player.STATE_ENDED ||
                         !outgoing.playWhenReady
@@ -4512,6 +4530,24 @@ class MusicService :
             } finally {
                 if (fadingPlayer === outgoing) endOutgoingPlayback()
             }
+        }
+    }
+
+    private fun updateOutgoingPlayback() {
+        val outgoing = fadingPlayer ?: return
+        val incomingAudible = hasAudioFocus && player.isPlaying
+        overlapPlaying.value = incomingAudible
+        val keepOutgoing = hasAudioFocus && player.playWhenReady &&
+            player.playbackSuppressionReason == Player.PLAYBACK_SUPPRESSION_REASON_NONE
+        if (keepOutgoing && (incomingAudible || player.playbackState == Player.STATE_BUFFERING)) {
+            if (!incomingAudible) {
+                crossfadeNeedsRestart = true
+                crossfadeProgress = 0f
+                applyPlaybackVolume()
+            }
+            outgoing.play()
+        } else {
+            outgoing.pause()
         }
     }
 

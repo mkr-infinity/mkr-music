@@ -29,7 +29,6 @@ import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
-import com.google.common.util.concurrent.SettableFuture
 import com.music.innertube.YouTube
 import com.music.innertube.models.PlaylistItem
 import com.music.innertube.models.SongItem
@@ -156,7 +155,8 @@ constructor(
         mediaSession: MediaSession,
         controller: MediaSession.ControllerInfo
     ): ListenableFuture<MediaItemsWithStartPosition> {
-        return SettableFuture.create<MediaItemsWithStartPosition>()
+        if (!::service.isInitialized) return Futures.immediateFailedFuture(IllegalStateException("Playback unavailable"))
+        return scope.future { service.resumeSavedPlayback() }
     }
 
     override fun onGetLibraryRoot(
