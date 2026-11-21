@@ -78,6 +78,7 @@ import com.music.mkr.constants.HidePlayerThumbnailKey
 import com.music.mkr.constants.ShowPlayerThumbnailShadowKey
 import com.music.mkr.constants.PlayerThumbnailShadowElevationKey
 import com.music.mkr.constants.LibraryFilter
+import com.music.mkr.constants.DefaultListenTogetherHomeShortcut
 import com.music.mkr.constants.ShowListenTogetherHomeShortcutKey
 import com.music.mkr.constants.LyricsAnimationStyle
 import com.music.mkr.constants.LyricsAnimationStyleKey
@@ -355,7 +356,7 @@ fun AppearanceSettings(
 
     val (showListenTogetherHomeShortcut, onShowListenTogetherHomeShortcutChange) = rememberPreference(
         ShowListenTogetherHomeShortcutKey,
-        defaultValue = true
+        defaultValue = DefaultListenTogetherHomeShortcut
     )
 
     val (swipeToSong, onSwipeToSongChange) = rememberPreference(

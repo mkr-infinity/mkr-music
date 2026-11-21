@@ -7,6 +7,7 @@ package com.music.mkr.ui.component
 
 import androidx.annotation.DrawableRes
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -128,17 +129,30 @@ fun ExpressiveIconButton(
     borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
     size: Dp = 40.dp,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+    animateShape: Boolean = false,
+    animationsEnabled: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.91f else 1f,
+    val scale = animateFloatAsState(
+        targetValue = if (animationsEnabled && isPressed) (if (animateShape) 0.97f else 0.91f) else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
             stiffness = Spring.StiffnessMediumLow
         ),
         label = "expressive_button_press_scale"
     )
+
+    val faceShape = if (animateShape && animationsEnabled) {
+        val radius by animateDpAsState(
+            targetValue = if (isPressed) 12.dp else size / 2,
+            animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy),
+            label = "expressive_button_corner",
+        )
+        RoundedCornerShape(radius)
+    } else {
+        shape
+    }
 
     Box(
         modifier = modifier
@@ -158,11 +172,11 @@ fun ExpressiveIconButton(
             modifier = Modifier
                 .size(size)
                 .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
+                    scaleX = if (animationsEnabled) scale.value else 1f
+                    scaleY = scaleX
                 }
-                .border(1.dp, borderColor, shape)
-                .clip(shape)
+                .border(1.dp, borderColor, faceShape)
+                .clip(faceShape)
                 .background(containerColor),
             contentAlignment = Alignment.Center,
         ) {

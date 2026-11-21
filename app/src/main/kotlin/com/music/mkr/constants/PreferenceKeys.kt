@@ -257,6 +257,7 @@ val ListenTogetherSyncVolumeKey = booleanPreferencesKey("listenTogetherSyncVolum
 val ListenTogetherSmartResyncKey = booleanPreferencesKey("listenTogetherSmartResync")
 val ListenTogetherBlockedUsersKey = stringPreferencesKey("listenTogetherBlockedUsers")
 val ListenTogetherInTopBarKey = booleanPreferencesKey("listenTogetherInTopBar")
+internal const val DefaultListenTogetherHomeShortcut = false
 val ShowListenTogetherHomeShortcutKey = booleanPreferencesKey("showListenTogetherHomeShortcut")
 // Session persistence for reconnection
 val ListenTogetherSessionTokenKey = stringPreferencesKey("listenTogetherSessionToken")

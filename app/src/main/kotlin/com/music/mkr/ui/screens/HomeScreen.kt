@@ -7,81 +7,82 @@ package com.music.mkr.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.ui.util.lerp
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.snapping.rememberSnapFlingBehavior
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.grid.itemsIndexed
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.itemsIndexed
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
-import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
-import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material3.ContainedLoadingIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
+import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
+import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
+import androidx.compose.material3.carousel.rememberCarouselState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Surface
 import androidx.compose.material3.surfaceColorAtElevation
-import androidx.compose.material3.Text
-import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -90,35 +91,40 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.dp
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.util.lerp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
-import coil3.request.crossfade
 import coil3.request.ImageRequest
+import coil3.request.crossfade
+import com.music.innertube.YouTube
 import com.music.innertube.models.AlbumItem
 import com.music.innertube.models.ArtistItem
 import com.music.innertube.models.PlaylistItem
@@ -127,19 +133,25 @@ import com.music.innertube.models.WatchEndpoint
 import com.music.innertube.models.YTItem
 import com.music.innertube.utils.completed
 import com.music.innertube.utils.parseCookieString
-import com.music.innertube.YouTube
+import com.music.mkr.LocalDatabase
+import com.music.mkr.LocalListenTogetherManager
+import com.music.mkr.LocalPlayerAwareWindowInsets
+import com.music.mkr.LocalPlayerConnection
+import com.music.mkr.R
 import com.music.mkr.constants.DataSaverKey
+import com.music.mkr.constants.DefaultListenTogetherHomeShortcut
 import com.music.mkr.constants.GridItemSize
 import com.music.mkr.constants.GridItemsSizeKey
 import com.music.mkr.constants.GridThumbnailHeight
+import com.music.mkr.constants.HideSpeedDialKey
 import com.music.mkr.constants.InnerTubeCookieKey
+import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.constants.ListItemHeight
 import com.music.mkr.constants.ListThumbnailSize
 import com.music.mkr.constants.RandomizeHomeOrderKey
-import com.music.mkr.constants.HideSpeedDialKey
+import com.music.mkr.constants.ShowListenTogetherHomeShortcutKey
 import com.music.mkr.constants.SmallGridThumbnailHeight
 import com.music.mkr.constants.ThumbnailCornerRadius
-import com.music.mkr.constants.ShowListenTogetherHomeShortcutKey
 import com.music.mkr.db.entities.Album
 import com.music.mkr.db.entities.Artist
 import com.music.mkr.db.entities.LocalItem
@@ -148,16 +160,15 @@ import com.music.mkr.db.entities.PlaylistEntity
 import com.music.mkr.db.entities.PlaylistSongMap
 import com.music.mkr.db.entities.Song
 import com.music.mkr.extensions.toMediaItem
-import com.music.mkr.LocalDatabase
-import com.music.mkr.LocalListenTogetherManager
-import com.music.mkr.LocalPlayerAwareWindowInsets
-import com.music.mkr.LocalPlayerConnection
+import com.music.mkr.mkrmusic.component.UpdateAvailableHomeCard
+import com.music.mkr.mkrmusic.component.UpdatePreviewDialog
+import com.music.mkr.mkrmusic.updater.ReleasePreviewState
+import com.music.mkr.mkrmusic.updater.getAutoUpdateCheckSetting
 import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.playback.queues.ListQueue
 import com.music.mkr.playback.queues.LocalAlbumRadio
 import com.music.mkr.playback.queues.YouTubeAlbumRadio
 import com.music.mkr.playback.queues.YouTubeQueue
-import com.music.mkr.R
 import com.music.mkr.ui.component.AlbumGridItem
 import com.music.mkr.ui.component.ArtistGridItem
 import com.music.mkr.ui.component.ChipsRow
@@ -167,14 +178,15 @@ import com.music.mkr.ui.component.LocalBottomSheetPageState
 import com.music.mkr.ui.component.LocalMenuState
 import com.music.mkr.ui.component.NavigationTitle
 import com.music.mkr.ui.component.RandomizeGridItem
-import com.music.mkr.ui.component.shimmer.GridItemPlaceHolder
-import com.music.mkr.ui.component.shimmer.ShimmerHost
-import com.music.mkr.ui.component.shimmer.TextPlaceholder
 import com.music.mkr.ui.component.SongGridItem
 import com.music.mkr.ui.component.SongListItem
 import com.music.mkr.ui.component.SpeedDialGridItem
 import com.music.mkr.ui.component.YouTubeGridItem
 import com.music.mkr.ui.component.YouTubeListItem
+import com.music.mkr.ui.component.mkrPressFeedback
+import com.music.mkr.ui.component.shimmer.GridItemPlaceHolder
+import com.music.mkr.ui.component.shimmer.ShimmerHost
+import com.music.mkr.ui.component.shimmer.TextPlaceholder
 import com.music.mkr.ui.menu.AlbumMenu
 import com.music.mkr.ui.menu.ArtistMenu
 import com.music.mkr.ui.menu.SongMenu
@@ -188,11 +200,8 @@ import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.listItemShape
 import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.utils.rememberPreference
-import com.music.mkr.mkrmusic.component.UpdateAvailableHomeCard
-import com.music.mkr.mkrmusic.component.UpdatePreviewDialog
-import com.music.mkr.mkrmusic.updater.ReleasePreviewState
-import com.music.mkr.mkrmusic.updater.getAutoUpdateCheckSetting
 import com.music.mkr.viewmodels.CommunityPlaylistItem
+import com.music.mkr.viewmodels.DailyDiscoverItem
 import com.music.mkr.viewmodels.HomeViewModel
 import kotlin.math.min
 import kotlin.random.Random
@@ -200,7 +209,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import com.music.mkr.viewmodels.DailyDiscoverItem
 
 
 sealed class HomeSection(val id: String, val baseWeight: Int) {
@@ -601,7 +609,7 @@ fun HomeScreen(
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, "")
     val (randomizeHomeOrder) = rememberPreference(RandomizeHomeOrderKey, true)
     val (hideSpeedDial) = rememberPreference(HideSpeedDialKey, false)
-    val (showListenTogetherShortcut) = rememberPreference(ShowListenTogetherHomeShortcutKey, true)
+    val (showListenTogetherShortcut) = rememberPreference(ShowListenTogetherHomeShortcutKey, DefaultListenTogetherHomeShortcut)
     val updateState by viewModel.updateState.collectAsState()
     var showUpdateDialog by remember { mutableStateOf(false) }
     var updateDismissed by rememberSaveable { mutableStateOf(false) }
@@ -2360,92 +2368,49 @@ fun BoxScope.ListenTogetherShortcut(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val listenTogetherManager = LocalListenTogetherManager.current
-    val isInRoom = listenTogetherManager?.isInRoom == true
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
-        targetValue = if (isPressed) 0.94f else 1f,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow,
-        ),
-        label = "listen_together_shortcut_press",
-    )
+    val room = LocalListenTogetherManager.current?.roomState?.collectAsStateWithLifecycle()?.value
+    val inRoom = room != null
+    val roomDescription = stringResource(R.string.in_room)
+    val interaction = remember { MutableInteractionSource() }
+    val interfaceAnimations by rememberPreference(InterfaceAnimationsKey, true)
+    val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
+    val animate = interfaceAnimations && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
+    val colors = MaterialTheme.colorScheme
 
     AnimatedVisibility(
         visible = lazyListState.isScrollingUp(),
-        enter = slideInVertically { it },
-        exit = slideOutVertically { it },
-        modifier = modifier
-            .align(Alignment.BottomStart)
+        enter = if (animate) slideInVertically { it } else EnterTransition.None,
+        exit = if (animate) slideOutVertically { it } else ExitTransition.None,
+        modifier = modifier.align(Alignment.BottomStart)
             .windowInsetsPadding(
-                LocalPlayerAwareWindowInsets.current
-                    .only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
+                LocalPlayerAwareWindowInsets.current.only(WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal),
             )
-            .padding(16.dp),
+            .padding(16.dp)
+            .widthIn(max = 300.dp),
     ) {
         Surface(
             onClick = onClick,
-            shape = RoundedCornerShape(20.dp),
-            color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            tonalElevation = 4.dp,
-            shadowElevation = 6.dp,
-            border = BorderStroke(
-                width = 1.dp,
-                color = if (isInRoom) {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                } else {
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
-                },
-            ),
-            interactionSource = interactionSource,
-            modifier = Modifier
-                .graphicsLayer {
-                    scaleX = scale
-                    scaleY = scale
-                },
+            shape = MaterialTheme.shapes.extraLarge,
+            color = if (inRoom) colors.primaryContainer else colors.secondaryContainer,
+            contentColor = if (inRoom) colors.onPrimaryContainer else colors.onSecondaryContainer,
+            shadowElevation = 2.dp,
+            interactionSource = interaction,
+            modifier = Modifier.mkrPressFeedback(0.97f, interaction, animate)
+                .semantics { if (inRoom) stateDescription = roomDescription },
         ) {
             Row(
-                modifier = Modifier
-                    .padding(horizontal = 14.dp, vertical = 9.dp),
+                modifier = Modifier.heightIn(min = 48.dp).padding(horizontal = 16.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                Box(
-                    modifier = Modifier
-                        .size(28.dp)
-                        .clip(CircleShape)
-                        .background(
-                            if (isInRoom) {
-                                MaterialTheme.colorScheme.primary
-                            } else {
-                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-                            },
-                        ),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        painter = painterResource(if (isInRoom) R.drawable.link else R.drawable.group),
-                        contentDescription = null,
-                        tint = if (isInRoom) {
-                            MaterialTheme.colorScheme.onPrimary
-                        } else {
-                            MaterialTheme.colorScheme.onPrimaryContainer
-                        },
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
-
+                Icon(
+                    painter = painterResource(if (inRoom) R.drawable.link else R.drawable.group),
+                    contentDescription = null,
+                    modifier = Modifier.size(20.dp),
+                )
                 Text(
                     text = stringResource(R.string.listen_together),
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = 0.1.sp,
-                    ),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
+                    style = MaterialTheme.typography.labelLarge,
                 )
             }
         }

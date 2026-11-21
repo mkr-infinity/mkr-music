@@ -144,6 +144,9 @@ import androidx.core.util.Consumer
 import androidx.core.view.WindowCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
@@ -169,6 +172,7 @@ import com.music.mkr.constants.DefaultOpenTabKey
 import com.music.mkr.constants.DisableScreenshotKey
 import com.music.mkr.constants.DynamicThemeKey
 import com.music.mkr.constants.EnableHighRefreshRateKey
+import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.constants.ListenTogetherInTopBarKey
 import com.music.mkr.constants.ListenTogetherUsernameKey
 import com.music.mkr.constants.MiniPlayerBottomSpacing
@@ -1066,6 +1070,9 @@ class MainActivity : ComponentActivity() {
                 val pauseListenHistory by rememberPreference(PauseListenHistoryKey, defaultValue = false)
                 val eventCount by database.eventCount().collectAsState(initial = 0)
                 val showHistoryButton = true
+                val interfaceAnimations by rememberPreference(InterfaceAnimationsKey, true)
+                val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
+                val animateHomeControls = interfaceAnimations && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
 
                 val baseBg = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
 
@@ -1204,19 +1211,23 @@ class MainActivity : ComponentActivity() {
                                         actions = {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                modifier = Modifier.padding(end = 12.dp)
+                                                horizontalArrangement = Arrangement.spacedBy(if (isHome) 2.dp else 8.dp),
+                                                modifier = Modifier.padding(end = if (isHome) 4.dp else 12.dp)
                                             ) {
                                                 // Listening History navigation action (expressive squircle capsule)
                                                 if (showHistoryButton) {
                                                     val historyDesc = stringResource(R.string.listening_history)
                                                     ExpressiveIconButton(
-                                                        onClick = { navController.navigate("history") }
+                                                        onClick = { navController.navigate("history") },
+                                                        animateShape = isHome,
+                                                        animationsEnabled = !isHome || animateHomeControls,
+                                                        shape = if (isHome) CircleShape else RoundedCornerShape(13.dp),
+                                                        containerColor = if (isHome) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.52f),
+                                                        contentColor = if (isHome) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
                                                     ) {
                                                         Icon(
                                                             painter = painterResource(R.drawable.history),
                                                             contentDescription = historyDesc,
-                                                            tint = MaterialTheme.colorScheme.onSurface,
                                                             modifier = Modifier.size(20.dp)
                                                         )
                                                     }
@@ -1256,12 +1267,16 @@ class MainActivity : ComponentActivity() {
                                                 // Settings navigation action (expressive squircle capsule)
                                                 val settingsDesc = stringResource(R.string.settings)
                                                 ExpressiveIconButton(
-                                                    onClick = { navController.navigate("settings") }
+                                                    onClick = { navController.navigate("settings") },
+                                                    animateShape = isHome,
+                                                    animationsEnabled = !isHome || animateHomeControls,
+                                                    shape = if (isHome) CircleShape else RoundedCornerShape(13.dp),
+                                                    containerColor = if (isHome) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.52f),
+                                                    contentColor = if (isHome) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
                                                 ) {
                                                     Icon(
                                                         painter = painterResource(R.drawable.settings),
                                                         contentDescription = settingsDesc,
-                                                        tint = MaterialTheme.colorScheme.onSurface,
                                                         modifier = Modifier.size(20.dp)
                                                     )
                                                 }

@@ -79,6 +79,7 @@ import com.music.mkr.constants.ListenTogetherSyncVolumeKey
 import com.music.mkr.constants.ListenTogetherUsernameKey
 import com.music.mkr.constants.ListenTogetherAvatarIndexKey
 import com.music.mkr.constants.ListenTogetherInTopBarKey
+import com.music.mkr.constants.DefaultListenTogetherHomeShortcut
 import com.music.mkr.constants.ShowListenTogetherHomeShortcutKey
 import com.music.mkr.listentogether.ListenTogetherEvent
 import com.music.mkr.listentogether.ListenTogetherServer
@@ -119,7 +120,7 @@ fun ListenTogetherSettings(
     var autoApproval by rememberPreference(ListenTogetherAutoApprovalKey, false)
     var syncHostVolume by rememberPreference(ListenTogetherSyncVolumeKey, true)
     var smartResync by rememberPreference(ListenTogetherSmartResyncKey, true)
-    var showHomeShortcut by rememberPreference(ShowListenTogetherHomeShortcutKey, true)
+    var showHomeShortcut by rememberPreference(ShowListenTogetherHomeShortcutKey, DefaultListenTogetherHomeShortcut)
     var listenTogetherInTopBar by rememberPreference(ListenTogetherInTopBarKey, true)
     
     var showServerUrlDialog by rememberSaveable { mutableStateOf(false) }
