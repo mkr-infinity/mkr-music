@@ -6,7 +6,7 @@ import com.music.innertube.pages.PlaylistPage
 import java.security.MessageDigest
 
 @JvmName("completedLibrary")
-suspend fun Result<PlaylistPage>.completed(): Result<PlaylistPage> = runCatching {
+suspend fun Result<PlaylistPage>.completed(requireComplete: Boolean = false): Result<PlaylistPage> = runCatching {
     val page = getOrThrow()
     val songs = page.songs.toMutableList()
     var continuation = page.songsContinuation
@@ -16,17 +16,15 @@ suspend fun Result<PlaylistPage>.completed(): Result<PlaylistPage> = runCatching
     var consecutiveEmptyResponses = 0
     
     while (continuation != null && requestCount < maxRequests) {
-        if (continuation in seenContinuations) {
-            break
-        }
-        seenContinuations.add(continuation)
+        if (!seenContinuations.add(continuation)) break
         requestCount++
         
-        val continuationPage = YouTube.playlistContinuation(continuation).getOrNull() ?: break
+        val result = YouTube.playlistContinuation(continuation)
+        val continuationPage = if (requireComplete) result.getOrThrow() else result.getOrNull() ?: break
         
         if (continuationPage.songs.isEmpty()) {
             consecutiveEmptyResponses++
-            if (consecutiveEmptyResponses >= 2) break
+            if (consecutiveEmptyResponses >= 2 && continuationPage.continuation != null) break
         } else {
             consecutiveEmptyResponses = 0
             songs += continuationPage.songs
@@ -34,6 +32,7 @@ suspend fun Result<PlaylistPage>.completed(): Result<PlaylistPage> = runCatching
         
         continuation = continuationPage.continuation
     }
+    check(!requireComplete || continuation == null) { "Incomplete playlist pagination" }
     PlaylistPage(
         playlist = page.playlist,
         songs = songs,

@@ -10,7 +10,7 @@ object SpotifyMapper {
     private val BRACKET_PATTERN = Regex("\\[.*?]")
     private val REMASTER_PATTERN = Regex("\\(.*?remaster.*?\\)", RegexOption.IGNORE_CASE)
     private val REMIX_PATTERN = Regex("\\(.*?remix.*?\\)", RegexOption.IGNORE_CASE)
-    private val NON_ALNUM_PATTERN = Regex("[^a-z0-9\\s]")
+    private val NON_ALNUM_PATTERN = Regex("[^\\p{L}\\p{M}\\p{N}\\s]")
     private val MULTI_SPACE_PATTERN = Regex("\\s+")
 
     private const val NORM_CACHE_MAX_SIZE = 256
@@ -136,6 +136,7 @@ object SpotifyMapper {
         }
     }
 
+    @Synchronized
     private fun cachedNormalize(title: String): String {
         normalizeCache[title]?.let { return it }
         val normalized = normalizeTitle(title)
@@ -143,6 +144,7 @@ object SpotifyMapper {
         return normalized
     }
 
+    @Synchronized
     private fun cachedBigrams(normalized: String): Set<String> {
         bigramCache[normalized]?.let { return it }
         val bigrams = if (normalized.length < 2) emptySet() else normalized.windowed(2).toSet()
@@ -166,7 +168,7 @@ object SpotifyMapper {
         a: String, bigramsA: Set<String>,
         b: String, bigramsB: Set<String>,
     ): Double {
-        if (a == b) return 1.0
+        if (a == b) return if (a.isEmpty()) 0.0 else 1.0
         if (bigramsA.isEmpty() || bigramsB.isEmpty()) return 0.0
         val intersection = bigramsA.count { it in bigramsB }
         return (2.0 * intersection) / (bigramsA.size + bigramsB.size)

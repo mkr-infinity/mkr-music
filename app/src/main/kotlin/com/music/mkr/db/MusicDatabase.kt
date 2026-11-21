@@ -113,7 +113,7 @@ class MusicDatabase(
         SortedSongAlbumMap::class,
         PlaylistSongMapPreview::class,
     ],
-    version = 34,
+    version = InternalDatabase.SCHEMA_VERSION,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 2, to = 3),
@@ -157,6 +157,7 @@ abstract class InternalDatabase : RoomDatabase() {
 
     companion object {
         const val DB_NAME = "song.db"
+        const val SCHEMA_VERSION = 34
 
         fun newInstance(context: Context): MusicDatabase =
             MusicDatabase(

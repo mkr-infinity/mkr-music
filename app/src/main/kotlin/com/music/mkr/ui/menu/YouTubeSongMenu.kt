@@ -516,7 +516,7 @@ fun YouTubeSongMenu(
         item {
             Material3MenuGroup(
                 expressive = true,
-                items = listOf(
+                items = listOfNotNull(
                     when (download?.state) {
                         Download.STATE_COMPLETED -> {
                             Material3MenuItemData(
@@ -588,7 +588,8 @@ fun YouTubeSongMenu(
                                 }
                             )
                         }
-                    }
+                    },
+                    downloadExportRetryItem(song.id, download?.state == Download.STATE_COMPLETED),
                 )
             )
         }

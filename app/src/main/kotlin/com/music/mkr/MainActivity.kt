@@ -199,7 +199,6 @@ import com.music.mkr.constants.SlimNavBarKey
 import com.music.mkr.constants.FloatingNavBarKey
 import com.music.mkr.constants.NavigationStyle
 import com.music.mkr.constants.NavigationStyleKey
-import com.music.mkr.constants.StopMusicOnTaskClearKey
 import com.music.mkr.constants.UseNewMiniPlayerDesignKey
 import com.music.mkr.constants.UseAppleMiniPlayerKey
 import com.music.mkr.db.MusicDatabase
@@ -358,31 +357,6 @@ class MainActivity : ComponentActivity() {
             com.music.mkr.utils.IconUtils.applyPendingIconIfAny(this@MainActivity)
         }
         super.onStop()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        if (dataStore.get(StopMusicOnTaskClearKey, false) && isFinishing) {
-            try {
-                playerConnection?.service?.let { s ->
-                    s.player.pause()
-                    s.player.stop()
-                    s.stopForeground(android.app.Service.STOP_FOREGROUND_REMOVE)
-                }
-                stopService(Intent(this, MusicService::class.java))
-                if (isServiceBound) {
-                    try {
-                        unbindService(serviceConnection)
-                    } catch (e: Exception) {
-                        // Ignore
-                    }
-                    isServiceBound = false
-                }
-                playerConnection = null
-            } catch (e: Exception) {
-                // Ignore cleanup errors
-            }
-        }
     }
 
     override fun onNewIntent(intent: Intent) {

@@ -277,7 +277,7 @@ fun SpotifyScreen(
     }
 
     importProgress?.let { progress ->
-        val isFinished = progress.isFinished || progress.percent >= 1f
+        val isFinished = progress.isFinished
         DefaultDialog(
             onDismiss = {
                 if (isFinished) {
@@ -314,21 +314,26 @@ fun SpotifyScreen(
                 modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text(
-                    text = stringResource(R.string.playlists) + ": " + progress.playlistName,
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface
-                )
-                Text(
-                    text = if (isFinished) {
-                        stringResource(R.string.spotify_imported_songs_count, progress.currentSongIndex, progress.totalSongs)
-                    } else {
-                        stringResource(R.string.spotify_importing_songs_count, progress.currentSongIndex, progress.totalSongs)
-                    },
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                if (isFinished) {
+                    Text(stringResource(
+                        R.string.spotify_import_summary,
+                        progress.importedPlaylists,
+                        progress.currentSongIndex,
+                        progress.unmatchedTracks,
+                    ))
+                    if (progress.skippedPlaylists > 0) {
+                        Text(stringResource(R.string.spotify_import_skipped, progress.skippedPlaylists))
+                    }
+                } else {
+                    Text(
+                        text = progress.playlistName,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold,
+                    )
+                    Text(stringResource(
+                        R.string.spotify_importing_songs_count, progress.currentSongIndex, progress.totalSongs,
+                    ))
+                }
                 LinearProgressIndicator(
                     progress = { progress.percent },
                     modifier = Modifier

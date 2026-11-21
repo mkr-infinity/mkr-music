@@ -599,7 +599,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         ),
                         OnboardingFeatureItem(
                             title = "Offline Downloads",
-                            description = "Download tracks, albums and entire playlists for unmetered, lossless offline listening anywhere.",
+                            description = "Download tracks, albums and entire playlists for offline listening anywhere.",
                             tag = "OFFLINE",
                             iconRes = R.drawable.download,
                             iconColor = Color(0xFF67d4ff),
@@ -1316,7 +1316,7 @@ private fun WelcomePageContent(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        WelcomeFeatureBadge(icon = R.drawable.music_note, label = "Lossless Sound")
+                        WelcomeFeatureBadge(icon = R.drawable.music_note, label = "Audio Quality")
                         WelcomeFeatureBadge(icon = R.drawable.sparks, label = "Zero Ads")
                         WelcomeFeatureBadge(icon = R.drawable.equalizer, label = "Pure Focus")
                     }
@@ -1392,7 +1392,7 @@ private fun WelcomePageContent(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    WelcomeFeatureBadge(icon = R.drawable.music_note, label = "Lossless")
+                    WelcomeFeatureBadge(icon = R.drawable.music_note, label = "Stream Info")
                     WelcomeFeatureBadge(icon = R.drawable.sparks, label = "Ad-Free")
                     WelcomeFeatureBadge(icon = R.drawable.equalizer, label = "Open Source")
                 }

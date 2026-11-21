@@ -57,6 +57,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -68,7 +70,7 @@ import javax.inject.Singleton
 class DownloadUtil
 @Inject
 constructor(
-    @ApplicationContext context: Context,
+    @ApplicationContext private val context: Context,
     val database: MusicDatabase,
     val databaseProvider: DatabaseProvider,
     @DownloadCache val downloadCache: SimpleCache,
@@ -82,6 +84,11 @@ constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val downloads = MutableStateFlow<Map<String, Download>>(emptyMap())
+    private val stateLock = Mutex()
+    private val exportPreferences = context.getSharedPreferences("download_exports", Context.MODE_PRIVATE)
+    private val exportFailures = MutableStateFlow(exportPreferences.all.keys.toSet())
+    private val activeExports = java.util.concurrent.ConcurrentHashMap.newKeySet<String>()
+
 
     private val dataSourceFactory =
         ResolvingDataSource.Factory(
@@ -269,19 +276,9 @@ constructor(
                         scope.launch {
                             when (download.state) {
                                 Download.STATE_COMPLETED -> {
-                                    val writeSuccess = DownloadDestinationWriter.writeCompletedDownload(
-                                        context = context,
-                                        downloadCache = downloadCache,
-                                        database = database,
-                                        songId = download.request.id
-                                    )
-                                    if (writeSuccess) {
-                                        database.updateDownloadedInfo(download.request.id, true, LocalDateTime.now())
-                                        Timber.tag("DownloadDiagnostics").i("Download successfully saved to destination for %s", download.request.id)
-                                    } else {
-                                        database.updateDownloadedInfo(download.request.id, false, null)
-                                        Timber.tag("DownloadDiagnostics").e("Download destination write failed for %s", download.request.id)
-                                    }
+                                    val downloadId = download.request.id
+                                    syncOfflineState(downloadId)
+                                    exportDownload(downloadId)
 
                                     // Pre-cache lyrics for completed download so offline playback has instant lyrics
                                     try {
@@ -303,7 +300,7 @@ constructor(
                                 Download.STATE_FAILED,
                                 Download.STATE_STOPPED,
                                 Download.STATE_REMOVING -> {
-                                    database.updateDownloadedInfo(download.request.id, false, null)
+                                    syncOfflineState(download.request.id)
                                 }
                                 else -> {
                                 }
@@ -319,18 +316,11 @@ constructor(
                         Timber.tag("DownloadDiagnostics").d("onDownloadRemoved [%s]: App requested download removal", downloadId)
                         songUrlCache.invalidate(downloadId)
 
+                        downloads.update { it - downloadId }
                         scope.launch {
-                            runCatching {
-                                database.updateDownloadedInfo(downloadId, false, null)
-                            }.onSuccess {
-                                downloads.update { map ->
-                                    map.toMutableMap().apply {
-                                        remove(downloadId)
-                                    }
-                                }
-                                Timber.tag("DownloadUtil").d("Successfully removed download $downloadId from in-memory map")
-                            }.onFailure { error ->
-                                Timber.tag("DownloadUtil").e(error, "Failed to update database for removed download $downloadId, keeping in-memory entry")
+                            syncOfflineState(downloadId)
+                            stateLock.withLock {
+                                if (downloads.value[downloadId] == null) setExportFailed(downloadId, false)
                             }
                         }
                     }
@@ -340,14 +330,58 @@ constructor(
 
     init {
         val result = mutableMapOf<String, Download>()
-        val cursor = downloadManager.downloadIndex.getDownloads()
-        while (cursor.moveToNext()) {
-            result[cursor.download.request.id] = cursor.download
+        downloadManager.downloadIndex.getDownloads().use { cursor ->
+            while (cursor.moveToNext()) {
+                result[cursor.download.request.id] = cursor.download
+            }
         }
         downloads.value = result
+        scope.launch {
+            val knownDownloads = database.downloadedSongIds().toSet()
+            val completed = result.values.filter { it.state == Download.STATE_COMPLETED }
+                .map { it.request.id }
+            for (songId in knownDownloads + completed) {
+                syncOfflineState(songId, recoverExportFailure = songId !in knownDownloads)
+            }
+        }
     }
 
     fun getDownload(songId: String): Flow<Download?> = downloads.map { it[songId] }
+
+    fun hasExportFailure(songId: String): Flow<Boolean> = exportFailures.map { songId in it }
+
+    fun retryExport(songId: String) {
+        scope.launch { exportDownload(songId) }
+    }
+
+    private suspend fun syncOfflineState(songId: String, recoverExportFailure: Boolean = false) = stateLock.withLock {
+        val song = database.getSongByIdBlocking(songId)?.song ?: return@withLock
+        val completed = downloads.value[songId]?.state == Download.STATE_COMPLETED
+        if (song.isDownloaded != completed) {
+            if (completed && recoverExportFailure && songId !in activeExports) setExportFailed(songId, true)
+            database.updateDownloadedInfo(songId, completed, if (completed) LocalDateTime.now() else null)
+        }
+    }
+
+    private suspend fun exportDownload(songId: String) {
+        if (!activeExports.add(songId)) return
+        try {
+            if (downloads.value[songId]?.state != Download.STATE_COMPLETED) return
+            val written = DownloadDestinationWriter.writeCompletedDownload(context, downloadCache, database, songId)
+            stateLock.withLock {
+                setExportFailed(songId, !written && downloads.value[songId]?.state == Download.STATE_COMPLETED)
+            }
+        } finally {
+            activeExports.remove(songId)
+        }
+    }
+
+    private fun setExportFailed(songId: String, failed: Boolean) {
+        exportPreferences.edit().apply {
+            if (failed) putBoolean(songId, true) else remove(songId)
+        }.apply()
+        exportFailures.update { if (failed) it + songId else it - songId }
+    }
 
     fun release() {
         scope.cancel()

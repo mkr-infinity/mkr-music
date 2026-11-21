@@ -909,7 +909,7 @@ private fun VinylCollectorCover(
 }
 
 /**
- * Editorial Album Metadata Section with category, release year, artist link, and audio specs.
+ * Editorial album metadata with category, release year, and artist link.
  */
 @Composable
 private fun AlbumEditorialMetadata(
@@ -959,18 +959,6 @@ private fun AlbumEditorialMetadata(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
-            }
-
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHighest
-            ) {
-                Text(
-                    text = "Lossless • Hi-Res",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                )
             }
         }
 

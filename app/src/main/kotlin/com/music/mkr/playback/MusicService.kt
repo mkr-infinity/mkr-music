@@ -214,6 +214,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -230,7 +233,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
@@ -323,13 +325,15 @@ class MusicService :
     private val secondaryPlayerListener = object : Player.Listener {
         override fun onPlayerError(error: PlaybackException) {
             Timber.tag(TAG).e(error, "Secondary player error")
-            secondaryPlayer?.stop()
-            secondaryPlayer?.clearMediaItems()
+            val failedPlayer = secondaryPlayer ?: return
             secondaryPlayer = null
+            playerSilenceProcessors.remove(failedPlayer)
+            failedPlayer.release()
         }
     }
 
-    private var scope = CoroutineScope(Dispatchers.Main) + Job()
+    private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
+    private var queueLoadJob: Job? = null
 
     private val binder = MusicBinder()
 
@@ -1497,12 +1501,13 @@ class MusicService :
         queue: Queue,
         playWhenReady: Boolean = true,
     ) {
-        if (!scope.isActive) scope = CoroutineScope(Dispatchers.Main) + Job()
+        if (!scope.isActive) return
+        queueLoadJob?.cancel()
 
         // Safety Check : Ensuring player is initilized
         if (!playerInitialized.value) {
             Timber.tag(TAG).w("playQueue called before player initialization, queuing request")
-            scope.launch {
+            queueLoadJob = scope.launch {
                 playerInitialized.first { it }
                 playQueue(queue, playWhenReady)
             }
@@ -1520,7 +1525,7 @@ class MusicService :
         // Requires the player to actually be playing, since the fade ramp
         // pauses while the primary player is paused.
         val canAttemptQueueCrossfade =
-            crossfadeEnabled &&
+            playWhenReady && crossfadeEnabled &&
                 crossfadeManualSkipEnabled &&
                 !isCrossfading &&
                 castConnectionHandler?.isCasting?.value != true &&
@@ -1546,7 +1551,6 @@ class MusicService :
         radioChipsJob = null
         radioChips.value = emptyList()
         val persistShuffleAcrossQueues = dataStore.get(PersistentShuffleAcrossQueuesKey, false)
-        val previousShuffleEnabled = player.shuffleModeEnabled
         if (!canAttemptQueueCrossfade && !persistShuffleAcrossQueues) {
             player.shuffleModeEnabled = false
         }
@@ -1571,13 +1575,19 @@ class MusicService :
             player.prepare()
             player.playWhenReady = playWhenReady
         }
-        scope.launch(SilentHandler) {
+        queueLoadJob = scope.launch(SilentHandler) {
             val initialStatus =
                 withContext(Dispatchers.IO) {
                     queue.getInitialStatus()
                         .filterExplicit(dataStore.get(HideExplicitKey, false))
                         .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
+                        .let { status ->
+                            if (dataStore.get(PreventDuplicateTracksInQueueKey, true)) {
+                                status.withItems(status.items.distinctBy { it.mediaId })
+                            } else status
+                        }
                 }
+            ensureActive()
             if (queue.preloadItem != null && player.playbackState == STATE_IDLE) return@launch
             if (initialStatus.title != null) {
                 queueTitle = initialStatus.title
@@ -1612,22 +1622,17 @@ class MusicService :
                 }
             }
 
-            val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
-            val queueItems = if (preventDuplicates) {
-                initialStatus.items.distinctBy { it.mediaId }
-            } else {
-                initialStatus.items
-            }
+            val queueItems = initialStatus.items
 
             if (queue.preloadItem != null) {
                 val actualIndex = queueItems.indexOfFirst { it.mediaId == queue.preloadItem!!.id }
-                val targetIndex = if (actualIndex != -1) {
-                    actualIndex
-                } else {
+                val targetIndex = if (actualIndex != -1) actualIndex else
                     initialStatus.mediaItemIndex.coerceIn(0, queueItems.size)
-                }
 
-                if (targetIndex < queueItems.size) {
+                if (actualIndex == -1) {
+                    player.addMediaItems(0, queueItems.take(targetIndex))
+                    player.addMediaItems(queueItems.drop(targetIndex))
+                } else {
                     player.addMediaItems(
                         0,
                         queueItems.subList(0, targetIndex)
@@ -1638,28 +1643,12 @@ class MusicService :
                             queueItems.size
                         )
                     )
-                    if (actualIndex != -1) {
-                        player.replaceMediaItem(
-                            targetIndex,
-                            queueItems[targetIndex]
-                        )
-                    }
-                } else {
-                    val remaining = if (preventDuplicates) {
-                        queueItems.filter { it.mediaId != queue.preloadItem!!.id }
-                    } else {
-                        queueItems
-                    }
-                    player.addMediaItems(0, remaining)
+                    player.replaceMediaItem(targetIndex, queueItems[targetIndex])
                 }
             } else {
                 player.setMediaItems(
                     queueItems,
-                    if (initialStatus.mediaItemIndex > 0) {
-                        initialStatus.mediaItemIndex.coerceAtMost(queueItems.lastIndex.coerceAtLeast(0))
-                    } else {
-                        0
-                    },
+                    initialStatus.mediaItemIndex.coerceIn(0, queueItems.lastIndex),
                     initialStatus.position,
                 )
                 player.prepare()
@@ -2254,7 +2243,7 @@ class MusicService :
         if (!isCached) return
 
         database.query {
-            update(song.song.copy(dateDownload = java.time.LocalDateTime.now()))
+            markSongCached(mediaId, java.time.LocalDateTime.now())
         }
     }
 
@@ -2578,13 +2567,14 @@ class MusicService :
             currentQueue.hasNextPage() &&
             !(dataStore.get(DisableLoadMoreWhenRepeatAllKey, false) && player.repeatMode == REPEAT_MODE_ALL)
         ) {
+            val queue = currentQueue
             scope.launch(SilentHandler) {
                 val mediaItems = withContext(Dispatchers.IO) {
-                    currentQueue.nextPage()
+                    queue.nextPage()
                         .filterExplicit(dataStore.get(HideExplicitKey, false))
                         .filterVideoSongs(dataStore.get(HideVideoSongsKey, false))
                 }
-                if (player.playbackState != STATE_IDLE && mediaItems.isNotEmpty()) {
+                if (currentQueue === queue && player.playbackState != STATE_IDLE && mediaItems.isNotEmpty()) {
                     val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
                     val itemsToAdd = if (preventDuplicates) {
                         val existingIds = (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId }.toSet()
@@ -4069,6 +4059,7 @@ class MusicService :
 
     override fun onDestroy() {
         isRunning = false
+        scope.cancel()
 
         try {
             unregisterReceiver(screenStateReceiver)
@@ -4096,31 +4087,33 @@ class MusicService :
         // or we can't easily reference the specific processor created in createExoPlayer here without storing it.
         // But since we are destroying the service, it's fine.
         player.release()
-        discordUpdateJob?.cancel()
+        releaseCrossfadePlayers()
         super.onDestroy()
     }
 
     override fun onBind(intent: Intent?) = super.onBind(intent) ?: binder
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        val stopOnTaskClear = dataStore.get(StopMusicOnTaskClearKey, false)
-        if (stopOnTaskClear) {
-            Timber.d("Task cleared with stopMusicOnTaskClear enabled - stopping music and tearing down service cleanly")
-            try {
-                abandonAudioFocus()
-                player.pause()
-                player.stop()
-                player.clearMediaItems()
-                releaseLoudnessEnhancer()
-                stopForeground(STOP_FOREGROUND_REMOVE)
-                getSystemService(NotificationManager::class.java)?.cancelAll()
-            } catch (e: Exception) {
-                Timber.e(e, "Error stopping player on task clear")
-            }
-            stopSelf()
-        } else {
-            Timber.d("Task cleared with stopMusicOnTaskClear disabled - keeping playback and service active in background")
+        if (!dataStore.get(StopMusicOnTaskClearKey, false)) return
+
+        queueLoadJob?.cancel()
+        crossfadeTriggerJob?.cancel()
+        crossfadeJob?.cancel()
+        castConnectionHandler?.pause()
+        player.pause()
+        releaseCrossfadePlayers()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
+    }
+
+    private fun releaseCrossfadePlayers() {
+        for (extraPlayer in listOfNotNull(secondaryPlayer, fadingPlayer)) {
+            playerSilenceProcessors.remove(extraPlayer)
+            extraPlayer.release()
         }
+        secondaryPlayer = null
+        fadingPlayer = null
+        isCrossfading = false
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
@@ -4699,11 +4692,7 @@ class MusicService :
     }
 
     private fun cleanupCrossfade() {
-        fadingPlayer?.stop()
-        fadingPlayer?.clearMediaItems()
-        fadingPlayer?.release()
-        fadingPlayer = null
-        isCrossfading = false
+        releaseCrossfadePlayers()
         sleepTimer.notifySongTransition()
     }
 

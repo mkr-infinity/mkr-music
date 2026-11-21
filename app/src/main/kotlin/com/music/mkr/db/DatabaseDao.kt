@@ -1094,6 +1094,12 @@ interface DatabaseDao {
     @Query("SELECT * FROM song WHERE isDownloaded = 1 ORDER BY totalPlayTime")
     fun downloadedSongsByPlayTimeAsc(): Flow<List<Song>>
 
+    @Query("SELECT id FROM song WHERE isDownloaded = 1")
+    fun downloadedSongIds(): List<String>
+
+    @Query("UPDATE song SET dateDownload = :date WHERE id = :songId AND isDownloaded = 0 AND dateDownload IS NULL")
+    fun markSongCached(songId: String, date: LocalDateTime)
+
     @Query("UPDATE song SET isDownloaded = :downloaded, dateDownload = :date WHERE id = :songId")
     fun updateDownloadedInfo(songId: String, downloaded: Boolean, date: LocalDateTime?)
 

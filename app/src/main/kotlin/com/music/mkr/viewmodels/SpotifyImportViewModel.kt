@@ -26,11 +26,13 @@ import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -72,7 +74,10 @@ data class SpotifyImportProgress(
     val currentSongIndex: Int,
     val totalSongs: Int,
     val percent: Float,
-    val isFinished: Boolean = false
+    val isFinished: Boolean = false,
+    val importedPlaylists: Int = 0,
+    val skippedPlaylists: Int = 0,
+    val unmatchedTracks: Int = 0,
 )
 
 private data class PlaylistImportData(
@@ -235,7 +240,12 @@ class SpotifyImportViewModel @Inject constructor(
                     }
                     playlistsList.addAll(page.items)
                     offset += limit
-                    if (offset >= page.total) break
+                    if (offset >= page.total) {
+                check(tracks.size == page.total) {
+                    context.getString(R.string.spotify_import_incomplete_fetch, tracks.size, page.total)
+                }
+                break
+            }
                 }
 
                 _uiState.update {
@@ -284,7 +294,7 @@ class SpotifyImportViewModel @Inject constructor(
                 block()
             }
 
-    suspend fun fetchPlaylistTracks(playlistId: String): List<Song> = withContext(Dispatchers.IO) {
+    private suspend fun fetchPlaylistTracks(playlistId: String): List<Song> = withContext(Dispatchers.IO) {
         val tracks = mutableListOf<SpotifyTrack>()
         var offset = 0
         val limit = 100
@@ -294,7 +304,12 @@ class SpotifyImportViewModel @Inject constructor(
             }
             tracks.addAll(page.items.mapNotNull { it.track })
             offset += limit
-            if (offset >= page.total) break
+            if (offset >= page.total) {
+                check(tracks.size == page.total) {
+                    context.getString(R.string.spotify_import_incomplete_fetch, tracks.size, page.total)
+                }
+                break
+            }
         }
 
         return@withContext tracks.map { track ->
@@ -310,7 +325,7 @@ class SpotifyImportViewModel @Inject constructor(
         }
     }
 
-    suspend fun fetchLikedSongsTracks(): List<Song> = withContext(Dispatchers.IO) {
+    private suspend fun fetchLikedSongsTracks(): List<Song> = withContext(Dispatchers.IO) {
         val tracks = mutableListOf<SpotifyTrack>()
         var offset = 0
         val limit = 50
@@ -337,12 +352,17 @@ class SpotifyImportViewModel @Inject constructor(
     }
 
     fun startImport(selectedIds: List<String>) {
-        importJob?.cancel()
+        val previousImport = importJob
         importJob = appScope.launch(Dispatchers.IO) {
+            previousImport?.cancelAndJoin()
             _importProgress.update { null }
 
             try {
-                selectedIds.forEachIndexed { playlistIndex, id ->
+                var importedPlaylists = 0
+                var skippedPlaylists = 0
+                var matchedTracks = 0
+                var unmatchedTracks = 0
+                selectedIds.forEach { id ->
                     val importData = if (id == "liked_songs") {
                         val songs = fetchLikedSongsTracks()
                         PlaylistImportData(
@@ -364,40 +384,12 @@ class SpotifyImportViewModel @Inject constructor(
                         } else {
                             null
                         }
-                    } ?: return@forEachIndexed
+                    } ?: return@forEach
 
                     val totalSongs = importData.songs.size
                     if (totalSongs == 0) {
-                        database.withTransaction {
-                            val existing = getPlaylistEntity(importData.localPlaylistId)
-                            val now = LocalDateTime.now()
-                            val entity = existing?.copy(
-                                name = importData.title,
-                                bookmarkedAt = existing.bookmarkedAt ?: now,
-                                lastUpdateTime = now,
-                                thumbnailUrl = importData.thumbnailUrl ?: existing.thumbnailUrl,
-                                isEditable = true,
-                            ) ?: PlaylistEntity(
-                                id = importData.localPlaylistId,
-                                name = importData.title,
-                                bookmarkedAt = now,
-                                lastUpdateTime = now,
-                                thumbnailUrl = importData.thumbnailUrl,
-                                isEditable = true,
-                            )
-                            if (existing == null) insert(entity) else update(entity)
-                            clearPlaylist(importData.localPlaylistId)
-                        }
-
-                        _importProgress.update {
-                            SpotifyImportProgress(
-                                playlistName = importData.title,
-                                currentSongIndex = 0,
-                                totalSongs = 0,
-                                percent = 1.0f
-                            )
-                        }
-                        return@forEachIndexed
+                        skippedPlaylists++
+                        return@forEach
                     }
 
                     _importProgress.update {
@@ -418,48 +410,38 @@ class SpotifyImportViewModel @Inject constructor(
                                 var resultMedia: MediaMetadata? = null
                                 try {
                                     val artist = song.artists.firstOrNull()?.name.orEmpty()
-                                    val songTitle = song.title
-                                    val query = if (artist.isEmpty()) songTitle else "$artist $songTitle"
-
-                                    val searchResult = YouTube.search(
-                                        query = query,
-                                        filter = YouTube.SearchFilter.FILTER_SONG,
-                                    ).getOrNull()
-
-                                    var candidates = searchResult?.items
-                                        ?.filterIsInstance<SongItem>()
-                                        ?.distinctBy { it.id }
-                                        .orEmpty()
-
-                                    if (candidates.isEmpty()) {
-                                        val fallbackResult = YouTube.search(
-                                            query = songTitle,
-                                            filter = YouTube.SearchFilter.FILTER_SONG,
-                                        ).getOrNull() ?: YouTube.search(
-                                            query = query,
-                                            filter = YouTube.SearchFilter.FILTER_VIDEO,
-                                        ).getOrNull()
-
-                                        candidates = fallbackResult?.items
-                                            ?.filterIsInstance<SongItem>()
-                                            ?.distinctBy { it.id }
-                                            .orEmpty()
+                                    val query = if (artist.isEmpty()) song.title else "$artist ${song.title}"
+                                    val track = SpotifyMapper.precompute(
+                                        song.title, song.artists.joinToString(" ") { it.name }, song.song.duration * 1000,
+                                    )
+                                    val searches = listOf(
+                                        query to YouTube.SearchFilter.FILTER_SONG,
+                                        song.title to YouTube.SearchFilter.FILTER_SONG,
+                                        query to YouTube.SearchFilter.FILTER_VIDEO,
+                                    ).distinct()
+                                    for ((term, filter) in searches) {
+                                        val result = YouTube.search(term, filter)
+                                        result.exceptionOrNull()?.let {
+                                            if (it is CancellationException) throw it
+                                            reportException(it)
+                                        }
+                                        val items = result.getOrNull()?.items ?: continue
+                                        val best = items.filterIsInstance<SongItem>()
+                                            .map { candidate ->
+                                                candidate to SpotifyMapper.matchScorePrecomputed(
+                                                    track, candidate.title,
+                                                    candidate.artists.joinToString(" ") { it.name },
+                                                    candidate.duration,
+                                                )
+                                            }
+                                            .maxByOrNull { it.second }
+                                        if (best != null && best.second >= 0.8) {
+                                            resultMedia = best.first.toMediaMetadata()
+                                            break
+                                        }
                                     }
-
-                                    val best = candidates.maxByOrNull { candidate ->
-                                        SpotifyMapper.matchScore(
-                                            spotifyTitle = song.title,
-                                            spotifyArtist = song.artists.joinToString(" ") { it.name },
-                                            spotifyDurationMs = song.song.duration * 1000,
-                                            candidateTitle = candidate.title,
-                                            candidateArtist = candidate.artists.joinToString(" ") { it.name },
-                                            candidateDurationSec = candidate.duration,
-                                        )
-                                    } ?: candidates.firstOrNull()
-
-                                    if (best != null) {
-                                        resultMedia = best.toMediaMetadata()
-                                    }
+                                } catch (e: CancellationException) {
+                                    throw e
                                 } catch (e: Exception) {
                                     reportException(e)
                                 } finally {
@@ -478,8 +460,13 @@ class SpotifyImportViewModel @Inject constructor(
                         }
                     }.awaitAll().filterNotNull()
 
+                    unmatchedTracks += totalSongs - matchedMedia.size
+                    var saved = false
                     database.withTransaction {
                         val existing = getPlaylistEntity(importData.localPlaylistId)
+                        if (matchedMedia.isEmpty() || (existing != null && matchedMedia.size != totalSongs)) {
+                            return@withTransaction
+                        }
                         val now = LocalDateTime.now()
                         val entity = existing?.copy(
                             name = importData.title,
@@ -525,18 +512,25 @@ class SpotifyImportViewModel @Inject constructor(
                                 )
                             )
                         }
-                        update(entity.copy(lastUpdateTime = now))
+                        saved = true
+                    }
+                    if (saved) {
+                        importedPlaylists++
+                        matchedTracks += matchedMedia.size
+                    } else {
+                        skippedPlaylists++
                     }
                 }
-                _importProgress.update { old ->
-                    old?.copy(isFinished = true) ?: SpotifyImportProgress(
-                        playlistName = "",
-                        currentSongIndex = 0,
-                        totalSongs = 0,
-                        percent = 1.0f,
-                        isFinished = true
-                    )
-                }
+                _importProgress.value = SpotifyImportProgress(
+                    playlistName = "",
+                    currentSongIndex = matchedTracks,
+                    totalSongs = matchedTracks + unmatchedTracks,
+                    percent = 1f,
+                    isFinished = true,
+                    importedPlaylists = importedPlaylists,
+                    skippedPlaylists = skippedPlaylists,
+                    unmatchedTracks = unmatchedTracks,
+                )
             } catch (e: Exception) {
                 if (e !is kotlinx.coroutines.CancellationException) {
                     reportException(e)
@@ -552,7 +546,6 @@ class SpotifyImportViewModel @Inject constructor(
 
     fun cancelImport() {
         importJob?.cancel()
-        importJob = null
         _importProgress.update { null }
     }
 

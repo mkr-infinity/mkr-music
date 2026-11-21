@@ -10,6 +10,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.music.mkr.MainActivity
 import com.music.mkr.R
 import com.music.mkr.db.InternalDatabase
@@ -18,18 +19,17 @@ import com.music.mkr.db.entities.ArtistEntity
 import com.music.mkr.db.entities.Song
 import com.music.mkr.db.entities.SongEntity
 import com.music.mkr.extensions.div
-import com.music.mkr.extensions.tryOrNull
-import com.music.mkr.extensions.zipInputStream
 import com.music.mkr.extensions.zipOutputStream
-import com.music.mkr.playback.MusicService
-import com.music.mkr.playback.MusicService.Companion.PERSISTENT_QUEUE_FILE
+import com.music.mkr.utils.BackupRestore
 import com.music.mkr.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
+import kotlinx.coroutines.runBlocking
 import java.io.FileInputStream
-import java.io.FileOutputStream
 import java.util.zip.ZipEntry
 import javax.inject.Inject
 import kotlin.system.exitProcess
@@ -77,84 +77,37 @@ class BackupRestoreViewModel @Inject constructor(
         }
     }
 
-    fun restore(context: Context, uri: Uri) {
-        val inputStream = try {
-            context.contentResolver.openInputStream(uri)
-        } catch (e: Exception) {
-            null
-        }
-        if (inputStream == null) {
-            Timber.tag("RESTORE").e("Could not open input stream for uri: $uri")
-            Toast.makeText(context, R.string.restore_failed, Toast.LENGTH_SHORT).show()
-            return
-        }
-        restoreFromInputStream(context, inputStream)
+    fun restore(context: Context, uri: Uri) = restoreArchive(context) {
+        requireNotNull(context.contentResolver.openInputStream(uri))
     }
 
-    fun restoreFromFile(context: Context, file: java.io.File) {
-        val inputStream = try {
-            java.io.FileInputStream(file)
-        } catch (e: Exception) {
-            null
-        }
-        if (inputStream == null) {
-            Timber.tag("RESTORE").e("Could not open input stream for file: ${file.absolutePath}")
-            Toast.makeText(context, R.string.restore_failed, Toast.LENGTH_SHORT).show()
-            return
-        }
-        restoreFromInputStream(context, inputStream)
+    fun restoreFromFile(context: Context, file: java.io.File) = restoreArchive(context) {
+        file.inputStream()
     }
 
-    private fun restoreFromInputStream(context: Context, raw: java.io.InputStream) {
-        runCatching {
-            raw.use {
-                it.zipInputStream().use { inputStream ->
-                    var entry = tryOrNull { inputStream.nextEntry } // prevent ZipException
-                    var foundAny = false
-                    while (entry != null) {
-                        Timber.tag("RESTORE").i("Found zip entry: ${entry.name}")
-                        when (entry.name) {
-                            SETTINGS_FILENAME -> {
-                                Timber.tag("RESTORE").i("Restoring settings to datastore")
-                                foundAny = true
-                                (context.filesDir / "datastore" / SETTINGS_FILENAME).outputStream()
-                                    .use { outputStream ->
-                                        inputStream.copyTo(outputStream)
-                                    }
-                            }
-                            InternalDatabase.DB_NAME -> {
-                                Timber.tag("RESTORE").i("Restoring DB (entry = ${entry.name})")
-                                foundAny = true
-                                // capture path before closing DB to avoid reopening race
-                                val dbPath = database.openHelper.writableDatabase.path
-                                runBlocking(Dispatchers.IO) { database.checkpoint() }
-                                database.close()
-                                Timber.tag("RESTORE").i("Overwriting DB at path: $dbPath")
-                                FileOutputStream(dbPath).use { outputStream ->
-                                    inputStream.copyTo(outputStream)
-                                }
-                                Timber.tag("RESTORE").i("DB overwrite complete")
-                            }
-                            else -> {
-                                Timber.tag("RESTORE").i("Skipping unexpected entry: ${entry.name}")
-                            }
-                        }
-                        entry = tryOrNull { inputStream.nextEntry } // prevent ZipException
-                    }
-                    if (!foundAny) {
-                        Timber.tag("RESTORE").w("No expected entries found in archive")
-                    }
+    private var restoring = false
+
+    private fun restoreArchive(context: Context, openArchive: () -> java.io.InputStream) {
+        if (restoring) return
+        restoring = true
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    openArchive().use { BackupRestore.stage(context.applicationContext, it) }
                 }
+                val restart = Intent.makeRestartActivityTask(
+                    android.content.ComponentName(context, MainActivity::class.java)
+                )
+                context.startActivity(restart)
+                exitProcess(0)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                reportException(e)
+                Toast.makeText(context, R.string.restore_failed, Toast.LENGTH_SHORT).show()
+            } finally {
+                restoring = false
             }
-
-            context.stopService(Intent(context, MusicService::class.java))
-            context.filesDir.resolve(PERSISTENT_QUEUE_FILE).delete()
-            context.startActivity(Intent(context, MainActivity::class.java))
-            exitProcess(0)
-        }.onFailure {
-            reportException(it)
-            Timber.tag("RESTORE").e(it, "Restore failed")
-            Toast.makeText(context, R.string.restore_failed, Toast.LENGTH_SHORT).show()
         }
     }
 

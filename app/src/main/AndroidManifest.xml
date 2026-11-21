@@ -353,6 +353,7 @@
 
         <service
             android:name=".playback.MusicService"
+            android:stopWithTask="false"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback"
             tools:ignore="ExportedService">

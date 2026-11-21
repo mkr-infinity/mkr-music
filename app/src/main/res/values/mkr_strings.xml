@@ -157,7 +157,7 @@
     <string name="player_style_cinematic">Cinematic</string>
     <string name="player_style_cinematic_desc">Asymmetric spacious controls with prominent animated play button</string>
     <string name="player_style_immersive">Immersive</string>
-    <string name="player_style_immersive_desc">Edge-to-edge ambient artwork with lossless audio format badge</string>
+    <string name="player_style_immersive_desc">Edge-to-edge ambient artwork with audio format badge</string>
     <string name="player_style_immersive_extended">Immersive Extended</string>
     <string name="player_style_immersive_extended_desc">Extended ambient backdrop with integrated volume bar and queue peek</string>
     <string name="player_style_material_extended">Material Extended</string>
@@ -1151,4 +1151,9 @@
     <string name="no_direct_apk">Direct APK download is unavailable for this release</string>
     <string name="read_more_github">Read full notes on GitHub</string>
     <string name="version_code_unverified">Version code verification unavailable</string>
+    <string name="download_export_retry">Retry saving audio file</string>
+    <string name="download_export_failed">Available offline. The file could not be saved to your download folder.</string>
+    <string name="search_load_failed">Could not load search results.</string>
+    <string name="spotify_import_incomplete_fetch">Spotify returned %1$d of %2$d tracks. The playlist was kept unchanged.</string>
+    <string name="spotify_import_skipped">Skipped %1$d empty or incomplete playlists. Existing playlists were preserved.</string>
 </resources>

@@ -27,7 +27,9 @@ import com.music.mkr.utils.get
 import com.music.mkr.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.net.URLDecoder
 import javax.inject.Inject
@@ -49,73 +51,87 @@ constructor(
     var summaryPage by mutableStateOf<SearchSummaryPage?>(null)
     val viewStateMap = mutableStateMapOf<String, ItemsPage?>()
 
+    private val failedInitial = mutableStateMapOf<YouTube.SearchFilter?, Boolean>()
+    private val failedPages = mutableStateMapOf<String, String>()
+    private val initialJobs = mutableSetOf<YouTube.SearchFilter?>()
+    private val loadingPages = mutableSetOf<String>()
+
     init {
         viewModelScope.launch {
-            filter.collect { filter ->
-                if (filter == null) {
-                    if (summaryPage == null) {
-                        YouTube
-                            .searchSummary(query)
-                            .onSuccess {
-                                val hideExplicit = context.dataStore.get(HideExplicitKey, false)
-                                val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
-                                val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
-                                summaryPage =
-                                    it.filterExplicit(
-                                        hideExplicit,
-                                    ).filterVideoSongs(hideVideoSongs).filterYoutubeShorts(hideYoutubeShorts)
-                            }.onFailure {
-                                reportException(it)
-                            }
-                    }
-                } else {
-                    if (viewStateMap[filter.value] == null) {
-                        YouTube
-                            .search(query, filter)
-                            .onSuccess { result ->
-                                val hideExplicit = context.dataStore.get(HideExplicitKey, false)
-                                val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
-                                val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
-                                viewStateMap[filter.value] =
-                                    ItemsPage(
-                                        result.items
-                                            .distinctBy { it.id }
-                                            .filterExplicit(
-                                                hideExplicit,
-                                            )
-                                            .filterVideoSongs(hideVideoSongs)
-                                            .filterYoutubeShorts(hideYoutubeShorts),
-                                        result.continuation,
-                                    )
-                            }.onFailure {
-                                reportException(it)
-                            }
-                    }
-                }
+            filter.collectLatest { selected ->
+                if (selected == null && summaryPage == null ||
+                    selected != null && viewStateMap[selected.value] == null
+                ) loadInitial(selected)
             }
         }
     }
 
-    fun loadMore() {
-        val filter = filter.value?.value
-        viewModelScope.launch {
-            if (filter == null) return@launch
-            val viewState = viewStateMap[filter] ?: return@launch
-            val continuation = viewState.continuation
-            if (continuation != null) {
-                val searchResult =
-                    YouTube.searchContinuation(continuation).getOrNull() ?: return@launch
-                val hideExplicit = context.dataStore.get(HideExplicitKey, false)
-                val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
-                val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
-                val newItems = searchResult.items
-                    .filterExplicit(hideExplicit)
-                    .filterVideoSongs(hideVideoSongs)
-                    .filterYoutubeShorts(hideYoutubeShorts)
-                viewStateMap[filter] = ItemsPage(
-                    (viewState.items + newItems).distinctBy { it.id },
-                    searchResult.continuation
+    fun initialFailed(selected: YouTube.SearchFilter?) = failedInitial[selected] == true
+
+    fun pageFailed(selected: YouTube.SearchFilter?, continuation: String?) =
+        selected != null && continuation != null && failedPages[selected.value] == continuation
+
+    fun retryInitial() {
+        val selected = filter.value
+        if (!initialFailed(selected)) return
+        failedInitial.remove(selected)
+        viewModelScope.launch { loadInitial(selected) }
+    }
+
+    private suspend fun loadInitial(selected: YouTube.SearchFilter?) {
+        if (!initialJobs.add(selected)) return
+        failedInitial.remove(selected)
+        try {
+            val hideExplicit = context.dataStore.get(HideExplicitKey, false)
+            val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
+            val hideShorts = context.dataStore.get(HideYoutubeShortsKey, false)
+            if (selected == null) {
+                summaryPage = YouTube.searchSummary(query).getOrThrow()
+                    .filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs).filterYoutubeShorts(hideShorts)
+            } else {
+                val result = YouTube.search(query, selected).getOrThrow()
+                viewStateMap[selected.value] = ItemsPage(
+                    result.items.distinctBy { it.id }
+                        .filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs).filterYoutubeShorts(hideShorts),
+                    result.continuation,
                 )
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            failedInitial[selected] = true
+            reportException(e)
+        } finally {
+            initialJobs.remove(selected)
+        }
+    }
+
+    fun loadMore(selected: YouTube.SearchFilter?, continuation: String, retry: Boolean = false) {
+        if (selected == null || selected != filter.value) return
+        val key = selected.value
+        val page = viewStateMap[key] ?: return
+        if (page.continuation != continuation || (!retry && pageFailed(selected, continuation))) return
+        if (!loadingPages.add(continuation)) return
+        failedPages.remove(key)
+        viewModelScope.launch {
+            try {
+                val result = YouTube.searchContinuation(continuation).getOrThrow()
+                check(result.continuation != continuation) { "Search returned the same continuation" }
+                val newItems = result.items
+                    .filterExplicit(context.dataStore.get(HideExplicitKey, false))
+                    .filterVideoSongs(context.dataStore.get(HideVideoSongsKey, false))
+                    .filterYoutubeShorts(context.dataStore.get(HideYoutubeShortsKey, false))
+                viewStateMap[key] = ItemsPage(
+                    (page.items + newItems).distinctBy { it.id },
+                    result.continuation,
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                failedPages[key] = continuation
+                reportException(e)
+            } finally {
+                loadingPages.remove(continuation)
             }
         }
     }

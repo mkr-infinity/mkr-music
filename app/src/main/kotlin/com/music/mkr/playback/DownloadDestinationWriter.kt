@@ -13,6 +13,7 @@ import android.os.Environment
 import android.provider.DocumentsContract
 import android.provider.MediaStore
 import androidx.core.net.toUri
+import androidx.media3.datasource.cache.ContentMetadata
 import androidx.media3.datasource.cache.SimpleCache
 import com.music.mkr.db.MusicDatabase
 import timber.log.Timber
@@ -94,13 +95,17 @@ object DownloadDestinationWriter {
         val docUri = DocumentsContract.createDocument(context.contentResolver, parentDocUri, mimeType, fileName)
             ?: throw IOException("Failed to create document $fileName in $treeUri")
 
-        val outputStream = context.contentResolver.openOutputStream(docUri)
-            ?: throw IOException("Failed to open output stream for document $docUri")
-
-        outputStream.use { out ->
-            if (!copyCachedResource(downloadCache, songId, out)) {
-                throw IOException("No cached bytes found in downloadCache for $songId")
+        try {
+            val outputStream = context.contentResolver.openOutputStream(docUri)
+                ?: throw IOException("Failed to open output stream for document $docUri")
+            outputStream.use { out ->
+                if (!copyCachedResource(downloadCache, songId, out)) {
+                    throw IOException("No cached bytes found in downloadCache for $songId")
+                }
             }
+        } catch (e: Exception) {
+            runCatching { DocumentsContract.deleteDocument(context.contentResolver, docUri) }
+            throw e
         }
     }
 
@@ -144,10 +149,16 @@ object DownloadDestinationWriter {
             val mkrDir = musicDir?.resolve("MKR Music") ?: context.getExternalFilesDir(Environment.DIRECTORY_MUSIC)
             mkrDir?.mkdirs()
             val targetFile = File(mkrDir, fileName)
-            targetFile.outputStream().use { out ->
-                if (!copyCachedResource(downloadCache, songId, out)) {
-                    throw IOException("No cached bytes found in downloadCache for $songId")
+            val temporary = File.createTempFile("download-", ".part", mkrDir)
+            try {
+                temporary.outputStream().use { out ->
+                    if (!copyCachedResource(downloadCache, songId, out)) {
+                        throw IOException("No cached bytes found in downloadCache for $songId")
+                    }
                 }
+                android.system.Os.rename(temporary.path, targetFile.path)
+            } finally {
+                temporary.delete()
             }
         }
     }
@@ -159,13 +170,15 @@ object DownloadDestinationWriter {
     ): Boolean {
         val spans = cache.getCachedSpans(key).sortedBy { it.position }
         if (spans.isEmpty()) return false
+        var position = 0L
         for (span in spans) {
-            val file = span.file ?: continue
-            file.inputStream().use { input ->
-                input.copyTo(outputStream)
-            }
+            val file = span.file ?: return false
+            if (span.position != position) return false
+            val written = file.inputStream().use { it.copyTo(outputStream) }
+            if (written != span.length) return false
+            position += written
         }
-        outputStream.flush()
-        return true
+        val expected = ContentMetadata.getContentLength(cache.getContentMetadata(key))
+        return position > 0 && (expected <= 0 || position == expected)
     }
 }

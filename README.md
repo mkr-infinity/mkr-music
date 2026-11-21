@@ -16,7 +16,7 @@
 ### *Not just a music player — an intelligent, private sonic sanctuary.*
 
 **MKR Music**  is a premier open-source music streaming and offline audio player for Android.
-Unifying **YouTube Music** and **Spotify playlist sync**, it delivers studio-grade lossless sound up to 320 kbps, synchronized lyrics, dynamic canvas visuals, and smart mood queues — completely ad-free and 100% private forever.
+Stream **YouTube Music**, import **Spotify playlists**, and listen offline with synchronized lyrics, dynamic canvas visuals, and smart mood queues.
 
 
 <br/>
@@ -84,7 +84,7 @@ Unifying **YouTube Music** and **Spotify playlist sync**, it delivers studio-gra
 
 ## ✨ Key Features
 
-- 🎧 **Tri-Engine Streaming & Sync** – YouTube Music, JioSaavn, and Spotify playlist integration with lossless playback.
+- 🎧 **Streaming & Playlist Import** – Stream YouTube Music and match Spotify playlist tracks to YouTube Music.
 - 🎚️ **MKR Studio Equalizer** – 10-band precision EQ, Dolby Atmos simulation, bass boost, and audio presets.
 - 📜 **Synchronized Lyrics** – Live word-by-word scrolling lyrics with dynamic animated glow and blurred backdrops.
 - 🧠 **Mood Queue & Quick Picks** – Smart track recommendations matching your active mood and listening taste.
@@ -138,7 +138,7 @@ Your privacy is fundamental:
 ## ⚠️ Disclaimer
 
 **MKR Music** is an independent open-source project developed solely by **Mohammad Kaif Raja**.
-- MKR Music is **not affiliated with, endorsed by, sponsored by, or funded by Google LLC, YouTube, JioSaavn, or any of their subsidiaries**.
+- MKR Music is **not affiliated with, endorsed by, sponsored by, or funded by Google LLC, YouTube, Spotify, or any of their subsidiaries**.
 - All music content, audio streams, logos, artist names, and trademarks belong to their respective copyright owners.
 - This software is distributed strictly for personal, educational, and non-commercial use under the GPL-3.0 license.
 
