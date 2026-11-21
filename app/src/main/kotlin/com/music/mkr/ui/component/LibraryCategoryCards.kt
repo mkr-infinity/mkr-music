@@ -70,7 +70,7 @@ fun LibraryCategoryCardsSection(
     val showDownloads by rememberPreference(ShowDownloadedPlaylistKey, true)
     val showCached by rememberPreference(ShowCachedPlaylistKey, true)
     val animationsEnabled by rememberPreference(InterfaceAnimationsKey, true)
-    val cookieShape = remember { MaterialShapes.Cookie6Sided.toShape() }
+    val cookieShape = MaterialShapes.Cookie6Sided.toShape()
 
     val items = buildList {
         if (showLiked) add(

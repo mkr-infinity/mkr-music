@@ -22,7 +22,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
@@ -54,7 +53,7 @@ internal fun MkrSnackbarHost(
             )
         } else if (playlist != null) {
             val isError = playlist.iconRes == R.drawable.error
-            val iconShape = remember { MaterialShapes.Cookie6Sided.toShape() }
+            val iconShape = MaterialShapes.Cookie6Sided.toShape()
             Snackbar(
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
                 shape = MaterialTheme.shapes.large,
