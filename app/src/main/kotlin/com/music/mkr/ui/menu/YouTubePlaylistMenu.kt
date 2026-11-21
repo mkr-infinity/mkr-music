@@ -121,21 +121,11 @@ fun YouTubePlaylistMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onGetSong = { targetPlaylist ->
-            val allSongs = songs
-                .ifEmpty {
-                    YouTube.playlist(targetPlaylist.id).completed().getOrNull()?.songs.orEmpty()
-                }.map {
-                    it.toMediaMetadata()
-                }
-            database.transaction {
-                allSongs.forEach(::insert)
-            }
-            coroutineScope.launch(Dispatchers.IO) {
-                targetPlaylist.playlist.browseId?.let { playlistId ->
-                    YouTube.addPlaylistToPlaylist(playlistId, targetPlaylist.id)
-                }
-            }
+        onGetSong = {
+            val allSongs = songs.ifEmpty {
+                YouTube.playlist(playlist.id).completed(requireComplete = true).getOrThrow().songs
+            }.map { it.toMediaMetadata() }
+            database.withTransaction { allSongs.forEach { insert(it) } }
             allSongs.map { it.id }
         },
         onDismiss = { showChoosePlaylistDialog = false },

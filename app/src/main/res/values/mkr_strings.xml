@@ -274,6 +274,12 @@
 
     <string name="import_online">Import a \"m3u\" playlists</string>
     <string name="import_csv">Import a \"csv\" playlists</string>
+    <string name="playlist_add_pending">Adding songs…</string>
+    <string name="playlist_add_success">Added to %1$s</string>
+    <string name="playlist_add_already_present">Already in %1$s</string>
+    <string name="playlist_add_failed">Couldn’t add to %1$s</string>
+    <string name="playlist_add_sync_failed">Added to %1$s on this device. Couldn’t sync all songs.</string>
+    <string name="playlist_add_local_only">Added to %1$s on this device</string>
     <string name="playlist_add_local_to_synced_note">Note: Adding local songs to synced/remote playlists is unsupported. Any other combination is valid</string>
 
     <string name="auto_download_on_like">Auto download on like</string>

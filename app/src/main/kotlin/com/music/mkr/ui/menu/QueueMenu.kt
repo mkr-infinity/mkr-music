@@ -119,13 +119,8 @@ fun QueueMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onGetSong = { playlist ->
-            database.withTransaction {
-                insert(mediaMetadata)
-            }
-            coroutineScope.launch(Dispatchers.IO) {
-                playlist.playlist.browseId?.let { YouTube.addToPlaylist(it, mediaMetadata.id) }
-            }
+        onGetSong = {
+            database.withTransaction { insert(mediaMetadata) }
             listOf(mediaMetadata.id)
         },
         onDismiss = {

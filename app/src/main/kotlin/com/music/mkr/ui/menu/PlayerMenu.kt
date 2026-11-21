@@ -74,7 +74,6 @@ import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
-import com.music.innertube.YouTube
 import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalDownloadUtil
 import com.music.mkr.LocalListenTogetherManager
@@ -157,13 +156,8 @@ fun PlayerMenu(
 
     AddToPlaylistDialog(
         isVisible = showChoosePlaylistDialog,
-        onGetSong = { playlist ->
-            database.transaction {
-                insert(mediaMetadata)
-            }
-            coroutineScope.launch(Dispatchers.IO) {
-                playlist.playlist.browseId?.let { YouTube.addToPlaylist(it, mediaMetadata.id) }
-            }
+        onGetSong = {
+            database.withTransaction { insert(mediaMetadata) }
             listOf(mediaMetadata.id)
         },
         onDismiss = {

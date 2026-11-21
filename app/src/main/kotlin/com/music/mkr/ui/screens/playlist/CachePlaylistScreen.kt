@@ -5,7 +5,6 @@
 
 package com.music.mkr.ui.screens.playlist
 
-import android.text.format.Formatter
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -478,10 +477,6 @@ private fun CachePlaylistHeader(
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val cacheLength = remember(songs) { songs.fastSumBy { it.song.duration ?: 0 } }
-    val totalBytes = remember(songs) { songs.sumOf { it.format?.contentLength ?: 0L } }
-    val cacheSizeStr = remember(totalBytes) {
-        if (totalBytes > 0) Formatter.formatFileSize(context, totalBytes) else null
-    }
 
     Column(
         modifier = modifier
@@ -655,27 +650,6 @@ private fun CachePlaylistHeader(
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Medium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-
-                        if (cacheSizeStr != null) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.7f),
-                                modifier = Modifier.height(24.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Text(
-                                        text = cacheSizeStr,
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSecondaryContainer
                                     )
                                 }
                             }

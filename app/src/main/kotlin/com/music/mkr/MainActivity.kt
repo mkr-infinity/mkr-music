@@ -84,17 +84,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
 import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.ui.component.snackbar.LocalSnackbarHostState
+import com.music.mkr.ui.component.snackbar.MkrSnackbarHost
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
@@ -448,9 +447,12 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
             SnackbarManager.events.collectLatest { event ->
                 snackbarHostState.currentSnackbarData?.dismiss()
-                val messageStr = context.getString(event.messageResource)
+                val messageStr = event.messageArgs?.let { context.getString(event.messageResource, it) }
+                    ?: context.getString(event.messageResource)
                 val actionLabelStr = event.actionLabel?.let { context.getString(it) }
-                val result = snackbarHostState.showSnackbar(
+                val result = if (event.iconRes != null) {
+                    snackbarHostState.showSnackbar(SnackbarManager.PlaylistVisuals(messageStr, event.duration, event.iconRes))
+                } else snackbarHostState.showSnackbar(
                     message = messageStr,
                     actionLabel = actionLabelStr,
                     duration = event.duration
@@ -1338,25 +1340,13 @@ class MainActivity : ComponentActivity() {
                                         bottom
                                     }
 
-                                    SnackbarHost(
-                                        hostState = snackbarHostState,
+                                    MkrSnackbarHost(
+                                        state = snackbarHostState,
                                         modifier = Modifier
                                             .align(Alignment.BottomCenter)
-                                            .padding(bottom = snackbarBottomPadding)
-                                            .graphicsLayer {
-                                                alpha = (1f - playerBottomSheetState.progress).coerceIn(0f, 1f)
-                                            }
-                                    ) { data ->
-                                        Snackbar(
-                                            snackbarData = data,
-                                            shape = RoundedCornerShape(28.dp),
-                                            containerColor = MaterialTheme.colorScheme.inverseSurface,
-                                            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                                            actionColor = MaterialTheme.colorScheme.inversePrimary,
-                                            actionContentColor = MaterialTheme.colorScheme.inversePrimary,
-                                            dismissActionContentColor = MaterialTheme.colorScheme.inverseOnSurface
-                                        )
-                                    }
+                                            .padding(bottom = snackbarBottomPadding),
+                                        standardAlpha = { (1f - playerBottomSheetState.progress).coerceIn(0f, 1f) },
+                                    )
 
                                     AppNavigationBar(
                                         navigationItems = navigationItems,
@@ -1409,6 +1399,12 @@ class MainActivity : ComponentActivity() {
                                             state = playerBottomSheetState,
                                             navController = navController,
                                             pureBlack = pureBlack
+                                        )
+
+                                        MkrSnackbarHost(
+                                            state = snackbarHostState,
+                                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomInset),
+                                            playlistOnly = true,
                                         )
 
                                         Box(

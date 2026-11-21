@@ -1046,14 +1046,40 @@ interface DatabaseDao {
         songIds: List<String>,
     ): List<String>
 
+    @Query("SELECT COALESCE(MAX(position) + 1, 0) FROM playlist_song_map WHERE playlistId = :playlistId")
+    fun nextPlaylistPosition(playlistId: String): Int
+
     @Transaction
     fun addSongToPlaylist(playlist: Playlist, songIds: List<String>) {
-        var position = playlist.songCount
+        addSongsAtEnd(playlist.id, songIds)
+    }
+
+    @Transaction
+    fun appendSongsFromPicker(
+        playlistId: String,
+        songIds: List<String>,
+        allowDuplicates: Boolean?,
+    ): Triple<PlaylistEntity, List<String>, Int> {
+        val playlist = checkNotNull(getPlaylistEntity(playlistId))
+        val existing = if (allowDuplicates == true) emptySet() else {
+            songIds.distinct().chunked(500).flatMap { playlistDuplicates(playlistId, it) }.toSet()
+        }
+        if (allowDuplicates == null && existing.isNotEmpty()) {
+            return Triple(playlist, emptyList(), existing.size)
+        }
+        val idsToAdd = songIds.filterNot { it in existing }
+        if (idsToAdd.isNotEmpty()) addSongsAtEnd(playlistId, idsToAdd)
+        return Triple(playlist, idsToAdd, 0)
+    }
+
+    @Transaction
+    fun addSongsAtEnd(playlistId: String, songIds: List<String>) {
+        var position = nextPlaylistPosition(playlistId)
         songIds.forEach { id ->
             insert(
                 PlaylistSongMap(
                     songId = id,
-                    playlistId = playlist.id,
+                    playlistId = playlistId,
                     position = position++
                 )
             )
