@@ -1,6 +1,9 @@
 name: Production Release Build
 
 'on':
+  push:
+    branches:
+      - fix/music-app-audit
   workflow_dispatch:
     inputs:
       publish_release:
@@ -370,7 +373,7 @@ jobs:
 
   publish:
     name: Publish verified Universal APK
-    if: inputs.publish_release
+    if: github.event_name == 'workflow_dispatch' && inputs.publish_release
     needs: build_apks
     runs-on: ubuntu-latest
     permissions:

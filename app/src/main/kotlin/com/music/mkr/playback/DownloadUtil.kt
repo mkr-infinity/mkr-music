@@ -412,7 +412,7 @@ constructor(
         }.distinctUntilChanged().flowOn(Dispatchers.IO)
             .catch {
                 Timber.w(it, "Could not observe offline downloads")
-                emit(emptySet())
+                emit(mutableSetOf<String>())
             }
             .shareIn(scope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
     }

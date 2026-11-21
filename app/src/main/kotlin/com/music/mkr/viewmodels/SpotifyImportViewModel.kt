@@ -240,12 +240,7 @@ class SpotifyImportViewModel @Inject constructor(
                     }
                     playlistsList.addAll(page.items)
                     offset += limit
-                    if (offset >= page.total) {
-                check(tracks.size == page.total) {
-                    context.getString(R.string.spotify_import_incomplete_fetch, tracks.size, page.total)
-                }
-                break
-            }
+                    if (offset >= page.total) break
                 }
 
                 _uiState.update {
