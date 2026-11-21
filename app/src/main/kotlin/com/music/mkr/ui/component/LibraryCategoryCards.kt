@@ -13,9 +13,9 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -120,27 +120,29 @@ fun LibraryCategoryCardsSection(
         )
     }
 
-    val columns = if (LocalDensity.current.fontScale >= 1.4f) 1 else 2
-    Column(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        items.chunked(columns).forEach { rowItems ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                rowItems.forEach { item ->
-                    ShortcutCard(
-                        item = item,
-                        badgeShape = cookieShape,
-                        animationsEnabled = animate,
-                        modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(item.route) { launchSingleTop = true } },
-                    )
+    val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+    BoxWithConstraints(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+        val columns = libraryCategoryColumns(maxWidth.value, fontScale, items.size)
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            items.chunked(columns).forEach { rowItems ->
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    rowItems.forEach { item ->
+                        ShortcutCard(
+                            item = item,
+                            badgeShape = cookieShape,
+                            animationsEnabled = animate,
+                            modifier = Modifier.weight(1f),
+                            onClick = { navController.navigate(item.route) { launchSingleTop = true } },
+                        )
+                    }
                 }
-                if (rowItems.size < columns) Spacer(Modifier.weight(1f))
             }
         }
     }
 }
+
+internal fun libraryCategoryColumns(widthDp: Float, fontScale: Float, count: Int): Int =
+    ((widthDp + 12f) / (144f * fontScale + 12f)).toInt().coerceIn(1, count.coerceAtLeast(1))
 
 @Composable
 private fun ShortcutCard(
