@@ -24,7 +24,6 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import com.music.mkr.R
@@ -34,16 +33,14 @@ import com.music.mkr.R
 internal fun MkrSnackbarHost(
     state: SnackbarHostState,
     modifier: Modifier = Modifier,
-    playlistOnly: Boolean = false,
-    standardAlpha: () -> Float = { 1f },
 ) {
     SnackbarHost(hostState = state, modifier = modifier) { data ->
         val colors = MaterialTheme.colorScheme
         val playlist = data.visuals as? SnackbarManager.PlaylistVisuals
-        if (playlist == null && !playlistOnly) {
+        if (playlist == null) {
             Snackbar(
                 snackbarData = data,
-                modifier = Modifier.graphicsLayer { alpha = standardAlpha() },
+                actionOnNewLine = data.visuals.actionLabel != null,
                 shape = RoundedCornerShape(28.dp),
                 containerColor = colors.inverseSurface,
                 contentColor = colors.inverseOnSurface,
@@ -51,7 +48,7 @@ internal fun MkrSnackbarHost(
                 actionContentColor = colors.inversePrimary,
                 dismissActionContentColor = colors.inverseOnSurface,
             )
-        } else if (playlist != null) {
+        } else {
             val isError = playlist.iconRes == R.drawable.error
             val iconShape = MaterialShapes.Cookie6Sided.toShape()
             Snackbar(
@@ -74,7 +71,7 @@ internal fun MkrSnackbarHost(
                             Icon(painterResource(playlist.iconRes), contentDescription = null, modifier = Modifier.size(18.dp))
                         }
                     }
-                    Text(playlist.message, style = MaterialTheme.typography.bodyMedium)
+                    Text(playlist.message, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }

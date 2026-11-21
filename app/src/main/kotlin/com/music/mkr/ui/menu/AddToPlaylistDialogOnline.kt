@@ -98,7 +98,7 @@ fun AddToPlaylistDialogOnline(
     }
 
     val selectedSongs = songs.toList()
-    val (addingSongs, addSongs) = playlistAddHandler(isVisible, viewModel, onDismiss, syncRemote = false) {
+    val (addingSongs, addFeedback, addSongs) = playlistAddHandler(isVisible, viewModel, onDismiss, syncRemote = false) {
         database.withTransaction {
             selectedSongs.asReversed().forEach { insert(it.toMediaMetadata()) }
         }
@@ -119,7 +119,7 @@ fun AddToPlaylistDialogOnline(
         val totalItemsCount = 1 + filteredPlaylists.size
         ListDialog(
             onDismiss = onDismiss,
-            title = if (addingSongs) ({ PlaylistAddProgress() }) else null,
+            title = if (addingSongs || addFeedback != null) ({ PlaylistAddStatus(addingSongs, addFeedback) }) else null,
         ) {
             item {
                 ListItem(

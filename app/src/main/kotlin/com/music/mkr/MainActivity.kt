@@ -42,6 +42,8 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
@@ -63,7 +65,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -884,17 +885,10 @@ class MainActivity : ComponentActivity() {
                     label = "navBarHeight",
                 )
 
-                val isSnackbarShowing = snackbarHostState.currentSnackbarData != null
-                val extraSnackbarHeight by animateDpAsState(
-                    targetValue = if (isSnackbarShowing) 64.dp else 0.dp,
-                    label = "snackbarHeight"
-                )
-
                 val playerBottomSheetState = rememberBottomSheetState(
                     dismissedBound = 0.dp,
                     collapsedBound = bottomInset +
                         (if (!showRail && shouldShowNavigationBar) navPadding else 0.dp) +
-                        extraSnackbarHeight +
                         (if (useNewMiniPlayerDesign || useAppleMiniPlayer) {
                             if (navigationStyle == NavigationStyle.CLEAN_MATERIAL) 0.dp else MiniPlayerBottomSpacing
                         } else 0.dp) +
@@ -907,13 +901,11 @@ class MainActivity : ComponentActivity() {
                     shouldShowNavigationBar,
                     playerBottomSheetState.isDismissed,
                     showRail,
-                    extraSnackbarHeight
                 ) {
                     var bottom = bottomInset
                     if (shouldShowNavigationBar && !showRail) {
                         bottom += NavigationBarHeight
                     }
-                    bottom += extraSnackbarHeight
                     if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight
                     windowsInsets
                         .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
@@ -1332,22 +1324,6 @@ class MainActivity : ComponentActivity() {
                                         pureBlack = pureBlack
                                     )
 
-                                    val snackbarBottomPadding = remember(bottomInset, shouldShowNavigationBar, slimNav) {
-                                        var bottom = bottomInset
-                                        if (shouldShowNavigationBar) {
-                                            bottom += if (slimNav) SlimNavBarHeight else NavigationBarHeight
-                                        }
-                                        bottom
-                                    }
-
-                                    MkrSnackbarHost(
-                                        state = snackbarHostState,
-                                        modifier = Modifier
-                                            .align(Alignment.BottomCenter)
-                                            .padding(bottom = snackbarBottomPadding),
-                                        standardAlpha = { (1f - playerBottomSheetState.progress).coerceIn(0f, 1f) },
-                                    )
-
                                     AppNavigationBar(
                                         navigationItems = navigationItems,
                                         currentRoute = currentRoute,
@@ -1399,12 +1375,6 @@ class MainActivity : ComponentActivity() {
                                             state = playerBottomSheetState,
                                             navController = navController,
                                             pureBlack = pureBlack
-                                        )
-
-                                        MkrSnackbarHost(
-                                            state = snackbarHostState,
-                                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomInset),
-                                            playlistOnly = true,
                                         )
 
                                         Box(
@@ -1574,6 +1544,15 @@ class MainActivity : ComponentActivity() {
 
 
 
+                    MkrSnackbarHost(
+                        state = snackbarHostState,
+                        modifier = Modifier.align(Alignment.TopCenter)
+                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                            .padding(horizontal = 12.dp)
+                            .padding(top = if (shouldShowTopBar && !playerBottomSheetState.isExpanded) AppBarHeight + 8.dp else 8.dp)
+                            .widthIn(max = 560.dp),
+                    )
+
                     sharedSong?.let { song ->
                         playerConnection?.let {
                             Dialog(
@@ -1712,12 +1691,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             } else {
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(this@MainActivity, R.string.error_playback_failed, Toast.LENGTH_SHORT).show()
+                                    SnackbarManager.show(R.string.error_playback_failed)
                                 }
                             }
                         }.onFailure { ex ->
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(this@MainActivity, R.string.error_no_stream, Toast.LENGTH_SHORT).show()
+                                SnackbarManager.show(R.string.error_no_stream)
                             }
                             reportException(ex)
                         }
@@ -1743,12 +1722,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             } else {
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(this@MainActivity, R.string.error_playback_failed, Toast.LENGTH_SHORT).show()
+                                    SnackbarManager.show(R.string.error_playback_failed)
                                 }
                             }
                         }.onFailure { ex ->
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(this@MainActivity, R.string.error_no_stream, Toast.LENGTH_SHORT).show()
+                                SnackbarManager.show(R.string.error_no_stream)
                             }
                             reportException(ex)
                         }

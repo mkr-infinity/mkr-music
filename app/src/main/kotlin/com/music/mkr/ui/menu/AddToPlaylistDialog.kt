@@ -70,7 +70,7 @@ fun AddToPlaylistDialog(
     val playlists by viewModel.allPlaylists.collectAsState()
     val animationsEnabled by rememberPreference(InterfaceAnimationsKey, true)
     var showCreatePlaylistDialog by rememberSaveable { mutableStateOf(false) }
-    val (addingSongs, addSongs) = playlistAddHandler(isVisible, viewModel, onDismiss, prepare = onGetSong)
+    val (addingSongs, addFeedback, addSongs) = playlistAddHandler(isVisible, viewModel, onDismiss, prepare = onGetSong)
     var searchQuery by rememberSaveable {
         mutableStateOf("")
     }
@@ -86,7 +86,7 @@ fun AddToPlaylistDialog(
         val totalItemsCount = 1 + filteredPlaylists.size
         ListDialog(
             onDismiss = onDismiss,
-            title = if (addingSongs) ({ PlaylistAddProgress() }) else null,
+            title = if (addingSongs || addFeedback != null) ({ PlaylistAddStatus(addingSongs, addFeedback) }) else null,
         ) {
             item {
                 ListItem(
