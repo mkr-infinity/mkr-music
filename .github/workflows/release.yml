@@ -1,9 +1,6 @@
 name: Production Release Build
 
 'on':
-  push:
-    branches:
-      - fix/music-app-audit
   workflow_dispatch:
     inputs:
       publish_release:
