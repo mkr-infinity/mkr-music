@@ -31,6 +31,7 @@ import com.music.mkr.mkrmusic.release.NewReleaseCheckWorker
 import com.music.mkr.di.ApplicationScope
 import com.music.mkr.extensions.toEnum
 import com.music.mkr.extensions.toInetSocketAddress
+import com.music.mkr.utils.BackupRestore
 import com.music.mkr.utils.CrashHandler
 import com.music.mkr.utils.MkrPrefCache
 import com.music.mkr.utils.InnerTubeXPlayer
@@ -62,6 +63,18 @@ class App : Application(), SingletonImageLoader.Factory {
     @Inject
     @ApplicationScope
     lateinit var applicationScope: CoroutineScope
+
+    override fun attachBaseContext(base: Context) {
+        super.attachBaseContext(base)
+        val processName = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            Application.getProcessName()
+        } else {
+            runCatching { java.io.File("/proc/self/cmdline").readText().substringBefore(0.toChar()) }.getOrNull()
+        }
+        if (processName == base.packageName && !BackupRestore.applyPending(base)) {
+            Toast.makeText(base, R.string.restore_failed, Toast.LENGTH_LONG).show()
+        }
+    }
 
     override fun onCreate() {
         super.onCreate()

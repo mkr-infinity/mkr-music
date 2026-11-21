@@ -8,114 +8,95 @@ package com.music.mkr.viewmodels
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.media3.datasource.cache.ContentMetadata
 import androidx.media3.datasource.cache.SimpleCache
+import com.music.mkr.R
+import com.music.mkr.constants.DisableSongCacheKey
 import com.music.mkr.constants.HideExplicitKey
 import com.music.mkr.constants.HideVideoSongsKey
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.Song
-import com.music.mkr.di.DownloadCache
 import com.music.mkr.di.PlayerCache
 import com.music.mkr.extensions.filterExplicit
 import com.music.mkr.extensions.filterVideoSongs
+import com.music.mkr.playback.CacheSpanChanges
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.dataStore
-import com.music.mkr.utils.get
+import com.music.mkr.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.launch
-import java.time.LocalDateTime
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class CachePlaylistViewModel @Inject constructor(
-    @ApplicationContext private val context: Context,
-    private val database: MusicDatabase,
+    @ApplicationContext context: Context,
+    database: MusicDatabase,
     @PlayerCache private val playerCache: SimpleCache,
-    @DownloadCache private val downloadCache: SimpleCache
+    cacheChanges: CacheSpanChanges,
 ) : ViewModel() {
+    sealed interface State {
+        data object Loading : State
+        data object Error : State
+        data class Ready(val songs: List<Song>) : State
+    }
 
-    private val _cachedSongs = MutableStateFlow<List<Song>>(emptyList())
-    val cachedSongs: StateFlow<List<Song>> = _cachedSongs
+    private val reload = MutableStateFlow(0)
+    private val preferences = context.dataStore.data
+        .map { Triple(it[DisableSongCacheKey] ?: false, it[HideExplicitKey] ?: false, it[HideVideoSongsKey] ?: false) }
+        .distinctUntilChanged()
 
-    init {
-        viewModelScope.launch(Dispatchers.IO) {
-            while (true) {
-                val hideExplicit = context.dataStore.get(HideExplicitKey, false)
-                val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
-
-                val cachedKeys = playerCache.keys.toSet() + downloadCache.keys.toSet()
-                if (cachedKeys.isEmpty()) {
-                    _cachedSongs.value = emptyList()
-                    delay(1000)
-                    continue
-                }
-
-                // Query database for all candidate IDs in safe chunks
-                val songs = cachedKeys.chunked(500).flatMap { chunk ->
-                    database.getSongsByIds(chunk)
-                }
-
-                val songsById = songs.associateBy { it.id }
-                val validCachedSongs = mutableListOf<Song>()
-                val newlyDiscoveredSongs = mutableListOf<Song>()
-
-                for (key in cachedKeys) {
-                    val song = songsById[key] ?: continue
-
-                    val formatLength = song.format?.contentLength?.takeIf { it > 0 }
-                    val plLen = ContentMetadata.getContentLength(playerCache.getContentMetadata(key)).takeIf { it > 0 }
-                    val dlLen = ContentMetadata.getContentLength(downloadCache.getContentMetadata(key)).takeIf { it > 0 }
-
-                    val isCachedInPlayer = (plLen != null && playerCache.isCached(key, 0L, plLen)) ||
-                        (formatLength != null && playerCache.isCached(key, 0L, formatLength))
-                    val isCachedInDownload = (dlLen != null && downloadCache.isCached(key, 0L, dlLen)) ||
-                        (formatLength != null && downloadCache.isCached(key, 0L, formatLength))
-
-                    val isPlayable = song.song.isDownloaded || isCachedInPlayer || isCachedInDownload
-
-                    if (isPlayable) {
-                        validCachedSongs += song
-                        if (song.song.dateDownload == null) {
-                            newlyDiscoveredSongs += song
-                        }
-                    } else if (song.song.dateDownload != null && !song.song.isDownloaded) {
-                        // Reconcile stale cache record: audio file is missing or corrupt
-                        database.query { update(song.song.copy(dateDownload = null)) }
-                    }
-                }
-
-                if (newlyDiscoveredSongs.isNotEmpty()) {
-                    val now = LocalDateTime.now()
-                    database.query {
-                        newlyDiscoveredSongs.forEach { item ->
-                            update(item.song.copy(dateDownload = now))
-                        }
-                    }
-                }
-
-                _cachedSongs.value = validCachedSongs
-                    .sortedByDescending { it.song.dateDownload ?: LocalDateTime.MIN }
-                    .filterExplicit(hideExplicit)
-                    .filterVideoSongs(hideVideoSongs)
-
-                delay(1000)
+    val state = combine(reload, preferences) { _, settings -> settings }
+        .flatMapLatest { (disabled, hideExplicit, hideVideoSongs) ->
+            val entries = if (disabled) flowOf(emptyMap<String, Long>()) else cacheChanges.completeEntries(playerCache)
+            val songs = entries.map { it.keys }.distinctUntilChanged().flatMapLatest { ids ->
+                val queries = ids.chunked(500).map(database::observeSongsByIds)
+                if (queries.isEmpty()) flowOf(emptyList()) else combine(queries) { it.flatMap { songs -> songs } }
             }
+            combine(songs, entries) { rows, complete ->
+                State.Ready(
+                    rows.filter { it.id in complete }
+                        .sortedByDescending { complete[it.id] }
+                        .filterExplicit(hideExplicit)
+                        .filterVideoSongs(hideVideoSongs),
+                ) as State
+            }.onStart { emit(State.Loading) }
+                .catch {
+                    reportException(it)
+                    emit(State.Error)
+                }
         }
+        .flowOn(Dispatchers.IO)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), State.Loading)
+
+    fun retry() {
+        reload.update { it + 1 }
     }
 
     fun removeSongFromCache(songId: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 playerCache.removeResource(songId)
-            } catch (_: Exception) {}
-            val song = database.song(songId).first()
-            if (song != null && !song.song.isDownloaded) {
-                database.query { update(song.song.copy(dateDownload = null)) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                reportException(e)
+                SnackbarManager.show(R.string.library_cache_remove_error)
             }
         }
     }

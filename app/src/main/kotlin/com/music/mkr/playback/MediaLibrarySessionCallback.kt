@@ -16,7 +16,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.offline.Download
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaConstants
 import androidx.media3.session.MediaLibraryService
@@ -29,7 +28,6 @@ import androidx.media3.session.SessionResult
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
-import com.google.common.util.concurrent.SettableFuture
 import com.music.innertube.YouTube
 import com.music.innertube.models.PlaylistItem
 import com.music.innertube.models.SongItem
@@ -43,6 +41,9 @@ import com.music.mkr.constants.SongSortType
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.PlaylistEntity
 import com.music.mkr.db.entities.Song
+import com.music.mkr.extensions.filterExplicit as filterExplicitSongs
+import com.music.mkr.extensions.filterVideoSongs as filterDownloadedVideos
+import com.music.mkr.extensions.sessionArtworkUrl
 import com.music.mkr.extensions.toMediaItem
 import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.models.toMediaMetadata
@@ -54,7 +55,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.plus
@@ -74,21 +74,20 @@ constructor(
     var toggleStartRadio: () -> Unit = {}
     var toggleLibrary: () -> Unit = {}
 
+    private fun canUseLibrary(session: MediaSession, controller: MediaSession.ControllerInfo): Boolean =
+        controller.packageName == context.packageName || controller.isTrusted ||
+            session.isAutomotiveController(controller) || session.isAutoCompanionController(controller)
+
+    private fun canEditFromController(controller: MediaSession.ControllerInfo): Boolean =
+        controller.packageName == context.packageName
+
     override fun onConnect(
         session: MediaSession,
         controller: MediaSession.ControllerInfo,
     ): MediaSession.ConnectionResult {
+        if (!canUseLibrary(session, controller)) return MediaSession.ConnectionResult.reject()
         val connectionResult = super.onConnect(session, controller)
-        val availablePlayerCommands = connectionResult.availablePlayerCommands
-            .buildUpon()
-            .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
-            .add(Player.COMMAND_SEEK_TO_MEDIA_ITEM)
-            .add(Player.COMMAND_SEEK_TO_NEXT)
-            .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
-            .add(Player.COMMAND_SEEK_TO_PREVIOUS)
-            .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
-            .add(Player.COMMAND_PLAY_PAUSE)
-            .build()
+        if (!canEditFromController(controller)) return connectionResult
         return MediaSession.ConnectionResult.accept(
             connectionResult.availableSessionCommands
                 .buildUpon()
@@ -98,7 +97,7 @@ constructor(
                 .add(MediaSessionConstants.CommandToggleShuffle)
                 .add(MediaSessionConstants.CommandToggleRepeatMode)
                 .build(),
-            availablePlayerCommands,
+            connectionResult.availablePlayerCommands,
         )
     }
 
@@ -108,6 +107,9 @@ constructor(
         customCommand: SessionCommand,
         args: Bundle,
     ): ListenableFuture<SessionResult> {
+        if (!canEditFromController(controller)) {
+            return Futures.immediateFuture(SessionResult(SessionError.ERROR_PERMISSION_DENIED))
+        }
         when (customCommand.customAction) {
             MediaSessionConstants.ACTION_TOGGLE_LIKE -> toggleLike()
             MediaSessionConstants.ACTION_TOGGLE_START_RADIO -> toggleStartRadio()
@@ -116,6 +118,7 @@ constructor(
                 !session.player.shuffleModeEnabled
 
             MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> session.player.toggleRepeatMode()
+            else -> return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
         }
         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
     }
@@ -165,7 +168,8 @@ constructor(
         mediaSession: MediaSession,
         controller: MediaSession.ControllerInfo
     ): ListenableFuture<MediaItemsWithStartPosition> {
-        return SettableFuture.create<MediaItemsWithStartPosition>()
+        if (!::service.isInitialized) return Futures.immediateFailedFuture(IllegalStateException("Playback unavailable"))
+        return scope.requestPlaybackResumption { service.resumeSavedPlayback() }
     }
 
     override fun onGetLibraryRoot(
@@ -228,7 +232,7 @@ constructor(
 
                     MusicService.PLAYLIST -> {
                         val likedSongCount = database.likedSongsCount().first()
-                        val downloadedSongCount = downloadUtil.downloads.value.size
+                        val downloadedSongCount = browsableDownloads().first().size
                         val youtubePlaylists = try {
                             YouTube.home().getOrNull()?.sections
                                 ?.flatMap { it.items }
@@ -274,22 +278,8 @@ constructor(
                                         true
                                     )
 
-                                    PlaylistEntity.DOWNLOADED_PLAYLIST_ID -> {
-                                        val downloads = downloadUtil.downloads.value
-                                        database
-                                            .allSongs()
-                                            .flowOn(Dispatchers.IO)
-                                            .map { songs ->
-                                                songs.filter {
-                                                    downloads[it.id]?.state == Download.STATE_COMPLETED
-                                                }
-                                            }.map { songs ->
-                                                songs
-                                                    .map { it to downloads[it.id] }
-                                                    .sortedBy { it.second?.updateTimeMs ?: 0L }
-                                                    .map { it.first }
-                                            }
-                                    }
+                                    PlaylistEntity.DOWNLOADED_PLAYLIST_ID ->
+                                        browsableDownloads()
 
                                     else ->
                                         database.playlistSongs(playlistId).map { list ->
@@ -482,27 +472,18 @@ constructor(
                     val playlistId = path.getOrNull(1) ?: return@future defaultResult
                     val songs = when (playlistId) {
                         PlaylistEntity.LIKED_PLAYLIST_ID -> database.likedSongs(SongSortType.CREATE_DATE, descending = true)
-                        PlaylistEntity.DOWNLOADED_PLAYLIST_ID -> {
-                            val downloads = downloadUtil.downloads.value
-                            database
-                                .allSongs()
-                                .flowOn(Dispatchers.IO)
-                                .map { songs ->
-                                    songs.filter {
-                                        downloads[it.id]?.state == Download.STATE_COMPLETED
-                                    }
-                                }.map { songs ->
-                                    songs
-                                        .map { it to downloads[it.id] }
-                                        .sortedBy { it.second?.updateTimeMs ?: 0L }
-                                        .map { it.first }
-                                }
-                        }
+                        PlaylistEntity.DOWNLOADED_PLAYLIST_ID ->
+                            browsableDownloads()
                         else -> database.playlistSongs(playlistId).map { list ->
                             list.map { it.song }
                         }
                     }.first()
 
+                    if (playlistId == PlaylistEntity.DOWNLOADED_PLAYLIST_ID &&
+                        (songs.isEmpty() || (songId != MusicService.SHUFFLE_ACTION && songs.none { it.id == songId }))
+                    ) {
+                        return@future MediaItemsWithStartPosition(emptyList(), C.INDEX_UNSET, C.TIME_UNSET)
+                    }
                     // Check if this is a shuffle action
                     if (songId == MusicService.SHUFFLE_ACTION) {
                         MediaItemsWithStartPosition(
@@ -688,6 +669,12 @@ constructor(
         ),
     )
 
+    private fun browsableDownloads() =
+        downloadUtil.completedSongs(SongSortType.CREATE_DATE, true).map { songs ->
+            songs.filterExplicitSongs(context.dataStore.get(HideExplicitKey, false))
+                .filterDownloadedVideos(context.dataStore.get(HideVideoSongsKey, false))
+        }
+
     private suspend fun getMediaItem(mediaId: String): MediaItem? {
         val path = mediaId.split("/")
         val type = path.firstOrNull() ?: return null
@@ -753,6 +740,9 @@ constructor(
                     val songId = path.lastOrNull() ?: return null
                     if (songId == MusicService.SHUFFLE_ACTION) {
                         shuffleMediaItem("${MusicService.PLAYLIST}/$playlistId")
+                    } else if (playlistId == PlaylistEntity.DOWNLOADED_PLAYLIST_ID) {
+                        browsableDownloads().first()
+                            .firstOrNull { it.id == songId }?.toMediaItem("${MusicService.PLAYLIST}/$playlistId")
                     } else {
                         database.song(songId).first()?.toMediaItem("${MusicService.PLAYLIST}/$playlistId")
                     }
@@ -788,7 +778,7 @@ constructor(
     private suspend fun playlistMediaItem(playlistId: String): MediaItem? =
         when (playlistId) {
             PlaylistEntity.LIKED_PLAYLIST_ID -> likedSongsMediaItem(database.likedSongsCount().first())
-            PlaylistEntity.DOWNLOADED_PLAYLIST_ID -> downloadedSongsMediaItem(downloadUtil.downloads.value.size)
+            PlaylistEntity.DOWNLOADED_PLAYLIST_ID -> downloadedSongsMediaItem(browsableDownloads().first().size)
             else -> database.playlist(playlistId).first()?.toBrowsableMediaItem()
         }
 
@@ -913,6 +903,7 @@ constructor(
 
     private fun Song.toMediaItem(path: String, isPlayable: Boolean = true, isBrowsable: Boolean = false): MediaItem {
         val extras = playableMediaItemExtras().apply {
+            putString("artwork_uri", song.thumbnailUrl)
             if (song.duration > 0) {
                 putLong("duration", song.duration * 1000L)
                 putLong("android.media.metadata.DURATION", song.duration * 1000L)
@@ -927,7 +918,10 @@ constructor(
                     .setTitle(song.title)
                     .setSubtitle(artists.joinToString { it.name })
                     .setArtist(artists.joinToString { it.name })
-                    .setArtworkUri(song.thumbnailUrl?.toUri())
+                    .setArtworkUri(sessionArtworkUrl?.toUri())
+                    .setAlbumTitle(song.albumName ?: album?.title)
+                    .setDisplayTitle(song.title)
+                    .setDurationMs(song.duration.takeIf { it > 0 }?.times(1000L))
                     .setIsPlayable(isPlayable)
                     .setIsBrowsable(isBrowsable)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
@@ -952,7 +946,10 @@ constructor(
                     .setTitle(title)
                     .setSubtitle(artists.joinToString(", ") { it.name })
                     .setArtist(artists.joinToString(", ") { it.name })
-                    .setArtworkUri(thumbnail.toUri())
+                    .setArtworkUri(thumbnail.takeIf { it.isNotBlank() }?.toUri())
+                    .setAlbumTitle(album?.name)
+                    .setDisplayTitle(title)
+                    .setDurationMs(duration?.takeIf { it > 0 }?.times(1000L))
                     .setIsPlayable(true)
                     .setIsBrowsable(false)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)

@@ -29,22 +29,32 @@ interface Queue {
         val position: Long = 0L,
     ) {
         fun filterExplicit(enabled: Boolean = true) =
-            if (enabled) {
-                copy(
-                    items = items.filterExplicit(),
-                )
-            } else {
-                this
-            }
+            if (enabled) withItems(items.filterExplicit()) else this
 
         fun filterVideoSongs(disableVideos: Boolean = false) =
-            if (disableVideos) {
-                copy(
-                    items = items.filterVideoSongs(true),
-                )
-            } else {
-                this
+            if (disableVideos) withItems(items.filterVideoSongs(true)) else this
+
+        fun withItems(newItems: List<MediaItem>): Status {
+            val selected = items.getOrNull(mediaItemIndex)
+            val selectedIndex = newItems.indexOfFirst { it === selected }.takeIf { it >= 0 }
+                ?: newItems.indexOfFirst { it.mediaId == selected?.mediaId }
+            val nextIndex = when {
+                selected == null -> 0
+                selectedIndex >= 0 -> selectedIndex
+                else -> {
+                    val retainedIds = newItems.mapTo(hashSetOf()) { it.mediaId }
+                    val next = items.asSequence().drop(mediaItemIndex + 1)
+                        .firstOrNull { it.mediaId in retainedIds }
+                    newItems.indexOfFirst { it === next }.takeIf { it >= 0 }
+                        ?: newItems.lastIndex.coerceAtLeast(0)
+                }
             }
+            return copy(
+                items = newItems,
+                mediaItemIndex = nextIndex,
+                position = if (selectedIndex != -1 || selected == null) position else 0L,
+            )
+        }
     }
 }
 

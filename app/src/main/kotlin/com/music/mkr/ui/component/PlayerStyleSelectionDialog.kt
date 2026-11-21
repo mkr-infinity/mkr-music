@@ -319,7 +319,7 @@ private fun StylePreviewBadge(
                 }
             }
             PlayerStyle.IMMERSIVE -> {
-                // Immersive ambient glow with lossless equalizer badge
+                // Immersive ambient glow with audio format badge
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.spacedBy(3.dp)

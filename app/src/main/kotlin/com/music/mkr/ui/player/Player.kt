@@ -216,7 +216,6 @@ import com.music.mkr.ui.component.SquigglySlider
 import com.music.mkr.ui.component.WavySlider
 import com.music.mkr.ui.component.rememberBottomSheetState
 import com.music.mkr.ui.menu.LyricsMenu
-import com.music.mkr.ui.menu.OldPlayerMenu
 import com.music.mkr.ui.menu.PlayerMenu
 import com.music.mkr.ui.component.VolumeSlider
 import com.music.mkr.ui.screens.settings.DarkMode

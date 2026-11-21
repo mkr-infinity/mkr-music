@@ -142,18 +142,8 @@ fun ExpressiveIconButton(
 
     Box(
         modifier = modifier
-            .size(size)
-            .graphicsLayer {
-                scaleX = scale
-                scaleY = scale
-            }
-            .border(
-                width = 1.dp,
-                color = borderColor,
-                shape = shape
-            )
+            .sizeIn(minWidth = maxOf(size, 48.dp), minHeight = maxOf(size, 48.dp))
             .clip(shape)
-            .background(color = containerColor)
             .combinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick,
@@ -164,7 +154,20 @@ fun ExpressiveIconButton(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        CompositionLocalProvider(LocalContentColor provides contentColor, content = content)
+        Box(
+            modifier = Modifier
+                .size(size)
+                .graphicsLayer {
+                    scaleX = scale
+                    scaleY = scale
+                }
+                .border(1.dp, borderColor, shape)
+                .clip(shape)
+                .background(containerColor),
+            contentAlignment = Alignment.Center,
+        ) {
+            CompositionLocalProvider(LocalContentColor provides contentColor, content = content)
+        }
     }
 }
 

@@ -159,7 +159,7 @@ fun LibraryPlaylistsScreen(
         Playlist(
             playlist = PlaylistEntity(
                 id = UUID.randomUUID().toString(),
-                name = stringResource(R.string.offline)
+                name = stringResource(R.string.library_downloads)
             ),
             songCount = 0,
             songThumbnails = emptyList(),
@@ -325,7 +325,7 @@ fun LibraryPlaylistsScreen(
                             contentType = "stat_card",
                         ) {
                             StatCard(
-                                title = stringResource(R.string.offline),
+                                title = stringResource(R.string.library_downloads),
                                 icon = painterResource(R.drawable.downloadedstore),
                                 iconTint = Color.Unspecified,
                                 thumbnails = recentDownloadedThumbnails,

@@ -18,8 +18,8 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -53,6 +53,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ripple
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -103,6 +104,7 @@ import com.music.mkr.LocalDownloadUtil
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
+import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.constants.HideExplicitKey
 import com.music.mkr.constants.UseExpressiveAlbumDesignKey
 import com.music.mkr.db.entities.Album
@@ -115,6 +117,7 @@ import com.music.mkr.ui.component.MkrBadge
 import com.music.mkr.ui.component.NavigationTitle
 import com.music.mkr.ui.component.PlayingIndicator
 import com.music.mkr.ui.component.YouTubeGridItem
+import com.music.mkr.ui.component.SongDownloadCapsule
 import com.music.mkr.ui.component.mkrPressFeedback
 import com.music.mkr.ui.component.shimmer.ButtonPlaceholder
 import com.music.mkr.ui.component.shimmer.ListItemPlaceHolder
@@ -417,14 +420,12 @@ fun AlbumScreen(
                     key = { _, songWrapper -> songWrapper.item.id },
                 ) { index, songWrapper ->
                     val isSongActive = songWrapper.item.id == mediaMetadata?.id
-                    val isSongDownloaded = downloads[songWrapper.item.id]?.state == Download.STATE_COMPLETED
 
                     AlbumTrackCard(
                         song = songWrapper.item,
                         trackNumber = index + 1,
                         isActive = isSongActive,
                         isPlaying = isPlaying,
-                        isDownloaded = isSongDownloaded,
                         isSelected = songWrapper.isSelected && selection,
                         selectionMode = selection,
                         onSelectToggle = {
@@ -909,7 +910,7 @@ private fun VinylCollectorCover(
 }
 
 /**
- * Editorial Album Metadata Section with category, release year, artist link, and audio specs.
+ * Editorial album metadata with category, release year, and artist link.
  */
 @Composable
 private fun AlbumEditorialMetadata(
@@ -959,18 +960,6 @@ private fun AlbumEditorialMetadata(
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
                     )
                 }
-            }
-
-            Surface(
-                shape = RoundedCornerShape(8.dp),
-                color = MaterialTheme.colorScheme.surfaceContainerHighest
-            ) {
-                Text(
-                    text = "Lossless • Hi-Res",
-                    style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                )
             }
         }
 
@@ -1084,12 +1073,14 @@ private fun AlbumCommandDeck(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Prominent Play Button (Asymmetrical Primary Pill)
+            val playPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = playPressInteraction,
                 onClick = onPlay,
                 modifier = Modifier
                     .weight(1.15f)
                     .height(52.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = playPressInteraction),
                 shape = RoundedCornerShape(26.dp),
                 color = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -1126,12 +1117,14 @@ private fun AlbumCommandDeck(
             }
 
             // Shuffle Button (Tonal Pill)
+            val shufflePressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = shufflePressInteraction,
                 onClick = onShuffle,
                 modifier = Modifier
                     .weight(0.85f)
                     .height(52.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = shufflePressInteraction),
                 shape = RoundedCornerShape(26.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
                 contentColor = MaterialTheme.colorScheme.onSurface,
@@ -1168,11 +1161,13 @@ private fun AlbumCommandDeck(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Bookmark / Add to Library
+            val bookmarkPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = bookmarkPressInteraction,
                 onClick = onToggleBookmark,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = bookmarkPressInteraction),
                 shape = CircleShape,
                 color = if (isBookmarked) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
                        else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -1192,11 +1187,13 @@ private fun AlbumCommandDeck(
             }
 
             // Download Album Action
+            val downloadPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = downloadPressInteraction,
                 onClick = onDownloadClick,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = downloadPressInteraction),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
@@ -1234,11 +1231,13 @@ private fun AlbumCommandDeck(
             }
 
             // Download Queue Status
+            val downloadProgressPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = downloadProgressPressInteraction,
                 onClick = onDownloadProgressClick,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = downloadProgressPressInteraction),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
@@ -1258,11 +1257,13 @@ private fun AlbumCommandDeck(
             }
 
             // More Options
+            val morePressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = morePressInteraction,
                 onClick = onMoreClick,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = morePressInteraction),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
@@ -1296,7 +1297,6 @@ private fun AlbumTrackCard(
     trackNumber: Int,
     isActive: Boolean,
     isPlaying: Boolean,
-    isDownloaded: Boolean,
     isSelected: Boolean,
     selectionMode: Boolean,
     onSelectToggle: () -> Unit,
@@ -1305,6 +1305,8 @@ private fun AlbumTrackCard(
     onMoreClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val rowInteraction = remember { MutableInteractionSource() }
+    val animationsEnabled = rememberPreference(InterfaceAnimationsKey, true).value
     val cardColor = if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f)
                     else if (isSelected) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                     else Color.Transparent
@@ -1321,10 +1323,12 @@ private fun AlbumTrackCard(
             .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp))
             .combinedClickable(
+                interactionSource = rowInteraction,
+                indication = ripple(),
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            .mkrPressFeedback()
+            .mkrPressFeedback(0.98f, rowInteraction, animationsEnabled)
     ) {
         Row(
             modifier = Modifier
@@ -1413,20 +1417,13 @@ private fun AlbumTrackCard(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                if (isDownloaded) {
-                    Icon(
-                        painter = painterResource(R.drawable.offline),
-                        contentDescription = "Downloaded",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(15.dp)
+                SongDownloadCapsule(song.id) {
+                    Text(
+                        text = makeTimeString(song.song.duration * 1000L),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
-
-                Text(
-                    text = makeTimeString(song.song.duration * 1000L),
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
 
                 IconButton(
                     onClick = onMoreClick,
@@ -1556,14 +1553,16 @@ private fun AlbumStateCard(
 
                 if (onRetry != null) {
                     Spacer(modifier = Modifier.height(20.dp))
+                    val retryPressInteraction = remember { MutableInteractionSource() }
                     Button(
+                        interactionSource = retryPressInteraction,
                         onClick = onRetry,
                         shape = RoundedCornerShape(22.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
-                        modifier = Modifier.mkrPressFeedback()
+                        modifier = Modifier.mkrPressFeedback(interactionSource = retryPressInteraction)
                     ) {
                         Text(
                             text = stringResource(R.string.retry),

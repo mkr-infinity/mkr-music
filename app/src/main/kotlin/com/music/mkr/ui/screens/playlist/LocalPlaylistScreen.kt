@@ -5,6 +5,7 @@
 
 package com.music.mkr.ui.screens.playlist
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
@@ -17,7 +18,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -1389,7 +1389,9 @@ fun LocalPlaylistHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Play Button
+            val playPressInteraction = remember { MutableInteractionSource() }
             Button(
+                interactionSource = playPressInteraction,
                 onClick = {
                     playerConnection.playQueue(
                         ListQueue(
@@ -1407,7 +1409,7 @@ fun LocalPlaylistHeader(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = playPressInteraction)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -1432,7 +1434,9 @@ fun LocalPlaylistHeader(
             }
 
             // Shuffle Button (Liquid-style capsule)
+            val shufflePressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = shufflePressInteraction,
                 onClick = {
                     playerConnection.playQueue(
                         ListQueue(
@@ -1448,7 +1452,7 @@ fun LocalPlaylistHeader(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = shufflePressInteraction)
             ) {
                 Row(
                     modifier = Modifier
@@ -1479,14 +1483,16 @@ fun LocalPlaylistHeader(
             }
 
             // Search Auxiliary Button
+            val searchPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = searchPressInteraction,
                 onClick = onStartSearch,
                 shape = CircleShape,
                 color = liquidContainer,
                 border = liquidBorder,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = searchPressInteraction)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -1499,7 +1505,9 @@ fun LocalPlaylistHeader(
             }
 
             // Menu Auxiliary Button
+            val actionPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = actionPressInteraction,
                 onClick = {
                     menuState.show {
                         LocalPlaylistMenu(
@@ -1578,7 +1586,7 @@ fun LocalPlaylistHeader(
                 border = liquidBorder,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = actionPressInteraction)
             ) {
                 Box(
                     modifier = Modifier.fillMaxSize(),

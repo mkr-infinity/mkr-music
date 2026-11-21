@@ -594,7 +594,7 @@ interface DatabaseDao {
 
     @Transaction
     @Query("SELECT * FROM song WHERE id IN (:songIds)")
-    suspend fun getSongsByIds(songIds: List<String>): List<Song>
+    fun observeSongsByIds(songIds: List<String>): Flow<List<Song>>
 
 
     @Transaction
@@ -1046,14 +1046,43 @@ interface DatabaseDao {
         songIds: List<String>,
     ): List<String>
 
+    @Query("SELECT COALESCE(MAX(position) + 1, 0) FROM playlist_song_map WHERE playlistId = :playlistId")
+    fun nextPlaylistPosition(playlistId: String): Int
+
+    @Query("SELECT * FROM playlist_song_map WHERE playlistId = :playlistId ORDER BY position")
+    fun playlistMappings(playlistId: String): List<PlaylistSongMap>
+
     @Transaction
     fun addSongToPlaylist(playlist: Playlist, songIds: List<String>) {
-        var position = playlist.songCount
+        addSongsAtEnd(playlist.id, songIds)
+    }
+
+    @Transaction
+    fun appendSongsFromPicker(
+        playlistId: String,
+        songIds: List<String>,
+        allowDuplicates: Boolean?,
+    ): Triple<PlaylistEntity, List<String>, Int> {
+        val playlist = checkNotNull(getPlaylistEntity(playlistId))
+        val existing = if (allowDuplicates == true) emptySet() else {
+            songIds.distinct().chunked(500).flatMap { playlistDuplicates(playlistId, it) }.toSet()
+        }
+        if (allowDuplicates == null && existing.isNotEmpty()) {
+            return Triple(playlist, emptyList(), existing.size)
+        }
+        val idsToAdd = if (allowDuplicates == true) songIds else songIds.distinct().filterNot { it in existing }
+        if (idsToAdd.isNotEmpty()) addSongsAtEnd(playlistId, idsToAdd)
+        return Triple(playlist, idsToAdd, 0)
+    }
+
+    @Transaction
+    fun addSongsAtEnd(playlistId: String, songIds: List<String>) {
+        var position = nextPlaylistPosition(playlistId)
         songIds.forEach { id ->
             insert(
                 PlaylistSongMap(
                     songId = id,
-                    playlistId = playlist.id,
+                    playlistId = playlistId,
                     position = position++
                 )
             )
@@ -1093,6 +1122,15 @@ interface DatabaseDao {
     @Transaction
     @Query("SELECT * FROM song WHERE isDownloaded = 1 ORDER BY totalPlayTime")
     fun downloadedSongsByPlayTimeAsc(): Flow<List<Song>>
+
+    @Query("SELECT id FROM song WHERE isDownloaded = 1")
+    fun downloadedSongIds(): List<String>
+
+    @Query("SELECT id FROM song WHERE isDownloaded = 1")
+    fun observeDownloadedSongIds(): Flow<List<String>>
+
+    @Query("UPDATE song SET dateDownload = :date WHERE id = :songId AND isDownloaded = 0 AND dateDownload IS NULL")
+    fun markSongCached(songId: String, date: LocalDateTime)
 
     @Query("UPDATE song SET isDownloaded = :downloaded, dateDownload = :date WHERE id = :songId")
     fun updateDownloadedInfo(songId: String, downloaded: Boolean, date: LocalDateTime?)
@@ -1332,7 +1370,10 @@ interface DatabaseDao {
     fun insert(searchHistory: SearchHistory)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(event: Event)
+    fun insert(event: Event): Long
+
+    @Query("UPDATE event SET playTime = :playTime WHERE id = :eventId")
+    fun updateEventPlayTime(eventId: Long, playTime: Long)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(map: RelatedSongMap)

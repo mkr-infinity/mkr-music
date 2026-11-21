@@ -5,11 +5,11 @@
 
 package com.music.mkr.ui.screens.playlist
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,6 +45,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -115,6 +116,7 @@ import com.music.mkr.playback.queues.ListQueue
 import com.music.mkr.ui.component.DefaultDialog
 import com.music.mkr.ui.component.DraggableScrollbar
 import com.music.mkr.ui.component.EmptyPlaceholder
+import com.music.mkr.ui.component.LibraryLoadError
 import com.music.mkr.ui.component.ExpandableText
 import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.LibraryTrackRow
@@ -150,10 +152,11 @@ fun AutoPlaylistScreen(
     val playlist = when (viewModel.playlist) {
         "liked" -> stringResource(R.string.liked)
 
-        else -> stringResource(R.string.offline)
+        else -> stringResource(R.string.library_downloads)
     }
 
-    val songs by viewModel.likedSongs.collectAsState(null)
+    val songs by viewModel.likedSongs.collectAsState()
+    val downloadLoadFailed by viewModel.downloadLoadFailed.collectAsState()
     val mutableSongs =
         remember {
             mutableStateListOf<Song>()
@@ -334,12 +337,22 @@ fun AutoPlaylistScreen(
             state = state,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
         ) {
-            if (songs != null) {
+            if (playlistType == PlaylistType.DOWNLOAD && downloadLoadFailed) {
+                item(key = "download_error") {
+                    LibraryLoadError(stringResource(R.string.library_downloads_error), viewModel::retryDownloads)
+                }
+            } else if (songs == null && playlistType == PlaylistType.DOWNLOAD) {
+                item(key = "loading_downloads") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+            }
+            if (songs != null && !downloadLoadFailed) {
                 if (songs!!.isEmpty()) {
                     item(key = "empty_placeholder") {
                         EmptyPlaceholder(
-                            icon = R.drawable.music_note,
+                            icon = if (playlistType == PlaylistType.DOWNLOAD) R.drawable.download else R.drawable.music_note,
                             text = stringResource(R.string.playlist_is_empty),
+                            description = if (playlistType == PlaylistType.DOWNLOAD) {
+                                stringResource(R.string.library_downloads_empty)
+                            } else null,
                         )
                     }
                 } else {
@@ -808,7 +821,9 @@ private fun AutoPlaylistHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Play Button
+            val playPressInteraction = remember { MutableInteractionSource() }
             Button(
+                interactionSource = playPressInteraction,
                 onClick = {
                     playerConnection.playQueue(
                         ListQueue(
@@ -826,7 +841,7 @@ private fun AutoPlaylistHeader(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = playPressInteraction)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -851,7 +866,9 @@ private fun AutoPlaylistHeader(
             }
 
             // Shuffle Button (Liquid-style capsule)
+            val shufflePressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = shufflePressInteraction,
                 onClick = {
                     playerConnection.playQueue(
                         ListQueue(
@@ -867,7 +884,7 @@ private fun AutoPlaylistHeader(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = shufflePressInteraction)
             ) {
                 Row(
                     modifier = Modifier
@@ -898,14 +915,16 @@ private fun AutoPlaylistHeader(
             }
 
             // Search Auxiliary Button
+            val searchPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = searchPressInteraction,
                 onClick = onStartSearch,
                 shape = CircleShape,
                 color = liquidContainer,
                 border = liquidBorder,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = searchPressInteraction)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -918,7 +937,9 @@ private fun AutoPlaylistHeader(
             }
 
             // Menu Auxiliary Button
+            val actionPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = actionPressInteraction,
                 onClick = {
                     menuState.show {
                         AutoPlaylistMenu(
@@ -967,7 +988,7 @@ private fun AutoPlaylistHeader(
                 border = liquidBorder,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = actionPressInteraction)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(

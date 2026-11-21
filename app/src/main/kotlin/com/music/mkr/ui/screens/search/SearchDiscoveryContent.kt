@@ -5,9 +5,10 @@
 
 package com.music.mkr.ui.screens.search
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.music.mkr.ui.component.mkrClickable
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -150,8 +151,7 @@ private fun GenreTileCard(
     Surface(
         modifier = modifier
             .height(68.dp)
-            .mkrPressFeedback()
-            .clickable(onClick = onClick),
+            .mkrClickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
         shadowElevation = 2.dp,
         tonalElevation = 1.dp
@@ -243,12 +243,14 @@ fun RecentSearchesSection(
             modifier = Modifier.fillMaxWidth()
         ) {
             items(history.take(12), key = { it.id }) { item ->
+                val suggestionPressInteraction = remember { MutableInteractionSource() }
                 Surface(
+                    interactionSource = suggestionPressInteraction,
                     onClick = { onQueryClick(item.query) },
                     shape = RoundedCornerShape(12.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     tonalElevation = 1.dp,
-                    modifier = Modifier.mkrPressFeedback()
+                    modifier = Modifier.mkrPressFeedback(interactionSource = suggestionPressInteraction)
                 ) {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
@@ -334,8 +336,7 @@ fun RecentListensSection(
                     isActive = isActive,
                     isPlaying = isActive && isPlaying,
                     modifier = Modifier
-                        .mkrPressFeedback()
-                        .clickable { onEventClick(event) }
+                        .mkrClickable { onEventClick(event) }
                 )
             }
         }

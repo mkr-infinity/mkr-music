@@ -12,6 +12,7 @@ import android.net.Uri
 import android.os.Build
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -19,12 +20,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.togetherWith
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -32,11 +36,12 @@ import androidx.compose.animation.core.tween
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.LinearWavyProgressIndicator
+import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.toShape
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -48,6 +53,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -62,6 +68,7 @@ import androidx.work.WorkManager
 import androidx.work.workDataOf
 import com.music.mkr.BuildConfig
 import com.music.mkr.R
+import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.mkrmusic.updater.downloadmanager.UpdateDownloadWorker
 import com.music.mkr.mkrmusic.updater.downloadmanager.DownloadNotificationManager
 import kotlinx.coroutines.Dispatchers
@@ -76,7 +83,10 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.regex.Pattern
 import com.music.mkr.ui.component.IconButton
+import com.music.mkr.ui.component.ActionButtonEmphasis
+import com.music.mkr.ui.component.AnimatedActionButton
 import com.music.mkr.ui.utils.backToMain
+import com.music.mkr.utils.rememberPreference
 import com.music.mkr.ui.component.ErrorSnackbar
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.withStyle
@@ -93,8 +103,6 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
@@ -102,8 +110,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.ProgressBarRangeInfo
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.progressBarRangeInfo
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.buildAnnotatedString
-import androidx.compose.foundation.layout.aspectRatio
 import coil3.compose.AsyncImage
 import android.graphics.Typeface
 import android.text.style.ForegroundColorSpan
@@ -125,6 +138,9 @@ import androidx.media3.common.Player
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import androidx.compose.ui.text.AnnotatedString
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 
 
@@ -177,6 +193,11 @@ fun UpdateScreen(navController: NavHostController) {
     }
 
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
+    val colors = MaterialTheme.colorScheme
+    val (animationsEnabled) = rememberPreference(InterfaceAnimationsKey, true)
+    val lifecycleState by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
+    val animate = animationsEnabled && lifecycleState.isAtLeast(Lifecycle.State.RESUMED)
+    val actionsMaxHeight = LocalConfiguration.current.screenHeightDp.dp * 0.5f
 
     Scaffold(
         topBar = {
@@ -185,8 +206,8 @@ fun UpdateScreen(navController: NavHostController) {
                     Icon(
                         painter = painterResource(R.drawable.mobile_update),
                         contentDescription = null,
-                        modifier = Modifier.size(32.dp),
-                        tint = MaterialTheme.colorScheme.primary
+                        modifier = Modifier.size(26.dp),
+                        tint = colors.onSurfaceVariant
                     )
                 },
                 navigationIcon = {
@@ -200,29 +221,42 @@ fun UpdateScreen(navController: NavHostController) {
                         )
                     }
                 },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = colors.surface,
+                    scrolledContainerColor = colors.surfaceContainer,
+                ),
                 scrollBehavior = scrollBehavior
             )
         },
         bottomBar = {
             Surface(
-                color = MaterialTheme.colorScheme.background,
+                color = colors.surfaceContainerLow,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(WindowInsets.navigationBars.asPaddingValues())
-                        .padding(horizontal = 24.dp, vertical = 16.dp),
+                        .heightIn(max = actionsMaxHeight)
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 24.dp, vertical = 12.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     when (val currentStatus = status) {
                         is MkrUpdateStatus.Idle, is MkrUpdateStatus.Checking, is MkrUpdateStatus.NoUpdate, is MkrUpdateStatus.Error -> {
                             val btnText = if (currentStatus is MkrUpdateStatus.Error) stringResource(R.string.try_again) else stringResource(R.string.check_for_update)
-                            Button(
+                            AnimatedActionButton(
                                 onClick = { triggerUpdateCheck() },
                                 enabled = currentStatus !is MkrUpdateStatus.Checking,
-                                modifier = Modifier.fillMaxWidth().height(56.dp)
+                                animate = animate,
+                                modifier = Modifier.fillMaxWidth()
                             ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.refresh),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
                                 Text(
                                     text = btnText,
                                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
@@ -233,13 +267,13 @@ fun UpdateScreen(navController: NavHostController) {
                         is MkrUpdateStatus.Available -> {
                             Column(
                                 modifier = Modifier.fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                                verticalArrangement = Arrangement.spacedBy(6.dp)
                             ) {
                                 val releaseUrl = "https://github.com/mkr-infinity/mkr-music/releases/tag/${currentStatus.version}"
                                 val hasDirectApk = !currentStatus.apkUrl.isNullOrBlank()
 
                                 // Button 1: Download APK
-                                Button(
+                                AnimatedActionButton(
                                     onClick = {
                                         currentStatus.apkUrl?.let { apkUrl ->
                                             try {
@@ -260,7 +294,8 @@ fun UpdateScreen(navController: NavHostController) {
                                         }
                                     },
                                     enabled = hasDirectApk,
-                                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                                    animate = animate,
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Icon(
                                         painter = painterResource(R.drawable.download),
@@ -275,7 +310,7 @@ fun UpdateScreen(navController: NavHostController) {
                                 }
 
                                 // Button 2: View Release
-                                OutlinedButton(
+                                AnimatedActionButton(
                                     onClick = {
                                         val intent = Intent(Intent.ACTION_VIEW, Uri.parse(releaseUrl))
                                         try {
@@ -285,7 +320,9 @@ fun UpdateScreen(navController: NavHostController) {
                                             context.startActivity(fallbackIntent)
                                         }
                                     },
-                                    modifier = Modifier.fillMaxWidth().height(56.dp)
+                                    animate = animate,
+                                    emphasis = ActionButtonEmphasis.Tonal,
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Icon(
                                         painter = painterResource(R.drawable.open_in_new_icon),
@@ -299,9 +336,11 @@ fun UpdateScreen(navController: NavHostController) {
                                     )
                                 }
 
-                                TextButton(
+                                AnimatedActionButton(
                                     onClick = { navController.navigateUp() },
-                                    modifier = Modifier.fillMaxWidth().height(48.dp)
+                                    animate = animate,
+                                    emphasis = ActionButtonEmphasis.Quiet,
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Text(
                                         text = stringResource(R.string.later),
@@ -315,7 +354,7 @@ fun UpdateScreen(navController: NavHostController) {
             }
         },
         snackbarHost = { ErrorSnackbar(hostState = snackbarHostState) },
-        containerColor = MaterialTheme.colorScheme.background,
+        containerColor = colors.surface,
         modifier = Modifier
             .widthIn(max = 700.dp)
             .fillMaxSize()
@@ -339,14 +378,7 @@ fun UpdateScreen(navController: NavHostController) {
                         is MkrUpdateStatus.Error -> "Update error"
                         else -> "System update"
                     }
-                    Text(
-                        text = titleText,
-                        style = if (status is MkrUpdateStatus.Checking || status is MkrUpdateStatus.Error) MaterialTheme.typography.headlineMedium else MaterialTheme.typography.headlineLarge,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 24.dp)
-                    )
+                    UpdateStatusHeading(status, titleText, Modifier.padding(bottom = 20.dp))
                     
                     val currentStatus = status
                     if (currentStatus is MkrUpdateStatus.Available) {
@@ -358,9 +390,9 @@ fun UpdateScreen(navController: NavHostController) {
                         }
                         Text(
                             text = "MKR MUSIC $displayVer",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.SemiBold,
+                            color = colors.onSurface,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(bottom = 4.dp)
@@ -378,17 +410,35 @@ fun UpdateScreen(navController: NavHostController) {
 
                 if (status is MkrUpdateStatus.Checking) {
                     item {
-                        val strokeWidthPx = with(LocalDensity.current) { 6.dp.toPx() }
-                        val customStroke = Stroke(width = strokeWidthPx, cap = StrokeCap.Round)
                         Column(
-                            modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 20.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            LinearWavyProgressIndicator(
-                                modifier = Modifier.fillMaxWidth(),
-                                stroke = customStroke,
-                                trackStroke = customStroke
-                            )
+                            if (animate) {
+                                val strokeWidthPx = with(LocalDensity.current) { 4.dp.toPx() }
+                                val stroke = remember(strokeWidthPx) { Stroke(width = strokeWidthPx, cap = StrokeCap.Round) }
+                                LinearWavyProgressIndicator(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    color = colors.primary,
+                                    trackColor = colors.surfaceContainerHighest,
+                                    stroke = stroke,
+                                    trackStroke = stroke,
+                                    amplitude = 0.55f,
+                                    waveSpeed = 16.dp,
+                                )
+                            } else {
+                                Box(
+                                    Modifier.fillMaxWidth().height(4.dp)
+                                        .background(colors.surfaceContainerHighest, MaterialTheme.shapes.small)
+                                        .semantics { progressBarRangeInfo = ProgressBarRangeInfo.Indeterminate },
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    Box(
+                                        Modifier.width(32.dp).height(4.dp)
+                                            .background(colors.primary, MaterialTheme.shapes.small),
+                                    )
+                                }
+                            }
                         }
                     }
                 }
@@ -403,7 +453,11 @@ fun UpdateScreen(navController: NavHostController) {
                         AnimatedContent(
                             targetState = status,
                             transitionSpec = {
-                                fadeIn(animationSpec = tween(400)) togetherWith fadeOut(animationSpec = tween(400))
+                                if (animate) {
+                                    fadeIn(animationSpec = tween(180)) togetherWith fadeOut(animationSpec = tween(120))
+                                } else {
+                                    (EnterTransition.None togetherWith ExitTransition.None).using(null)
+                                }
                             },
                             label = "statusTransition"
                         ) { currentStatus ->
@@ -432,9 +486,9 @@ fun UpdateScreen(navController: NavHostController) {
                                         }
                                         Text(
                                             text = "MKR MUSIC VERSION $displayVer",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onBackground
+                                            style = MaterialTheme.typography.titleLarge,
+                                            fontWeight = FontWeight.SemiBold,
+                                            color = colors.onSurface
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
                                         Text(
@@ -442,7 +496,7 @@ fun UpdateScreen(navController: NavHostController) {
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
-                                        Spacer(modifier = Modifier.height(24.dp))
+                                        Spacer(modifier = Modifier.height(20.dp))
                                         Text(
                                             text = "Last successful check for update:",
                                             style = MaterialTheme.typography.bodyMedium,
@@ -453,9 +507,9 @@ fun UpdateScreen(navController: NavHostController) {
                                             text = checkTime,
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onBackground
+                                            color = colors.onSurface
                                         )
-                                        Spacer(modifier = Modifier.height(24.dp))
+                                        Spacer(modifier = Modifier.height(20.dp))
                                         Text(
                                             text = "\"Donations help make project development & updates faster!\"",
                                             style = MaterialTheme.typography.bodyMedium,
@@ -466,12 +520,18 @@ fun UpdateScreen(navController: NavHostController) {
                                 }
 
                                 is MkrUpdateStatus.Error -> {
-                                    Column(horizontalAlignment = Alignment.Start) {
+                                    Surface(
+                                        shape = MaterialTheme.shapes.large,
+                                        color = colors.errorContainer,
+                                        contentColor = colors.onErrorContainer,
+                                        modifier = Modifier.fillMaxWidth(),
+                                    ) {
                                         Text(
                                             text = currentStatus.message,
                                             style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.error,
-                                            fontWeight = FontWeight.Bold
+                                            modifier = Modifier.padding(16.dp).semantics {
+                                                liveRegion = LiveRegionMode.Polite
+                                            },
                                         )
                                     }
                                 }
@@ -483,9 +543,10 @@ fun UpdateScreen(navController: NavHostController) {
                                     ) {
                                         // Backup & Restore warning capsule card
                                         Surface(
-                                            shape = RoundedCornerShape(20.dp),
-                                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.45f),
-                                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.secondary.copy(alpha = 0.35f)),
+                                            shape = MaterialTheme.shapes.extraLarge,
+                                            color = colors.surfaceContainer,
+                                            contentColor = colors.onSurface,
+                                            border = BorderStroke(1.dp, colors.outlineVariant),
                                             modifier = Modifier
                                                 .fillMaxWidth()
                                                 .padding(bottom = 16.dp)
@@ -501,7 +562,7 @@ fun UpdateScreen(navController: NavHostController) {
                                                     Icon(
                                                         painter = painterResource(R.drawable.backup),
                                                         contentDescription = null,
-                                                        tint = MaterialTheme.colorScheme.secondary,
+                                                        tint = colors.primary,
                                                         modifier = Modifier.size(22.dp)
                                                     )
                                                     Spacer(modifier = Modifier.width(10.dp))
@@ -509,24 +570,20 @@ fun UpdateScreen(navController: NavHostController) {
                                                         text = "Before updating: Back up your data",
                                                         style = MaterialTheme.typography.titleSmall,
                                                         fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                                                        color = colors.onSurface
                                                     )
                                                 }
                                                 Spacer(modifier = Modifier.height(8.dp))
                                                 Text(
                                                     text = "If an in-place update fails due to a signature mismatch, uninstalling will delete the app's internal files. Export a backup to your Downloads folder first so your playlists and settings remain safe.",
-                                                    style = MaterialTheme.typography.bodySmall,
-                                                    color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.85f),
-                                                    lineHeight = 18.sp
+                                                    style = MaterialTheme.typography.bodyMedium,
+                                                    color = colors.onSurfaceVariant
                                                 )
                                                 Spacer(modifier = Modifier.height(12.dp))
-                                                Button(
+                                                AnimatedActionButton(
                                                     onClick = { navController.navigate("settings/backup_restore") },
-                                                    shape = RoundedCornerShape(12.dp),
-                                                    colors = ButtonDefaults.buttonColors(
-                                                        containerColor = MaterialTheme.colorScheme.secondary,
-                                                        contentColor = MaterialTheme.colorScheme.onSecondary
-                                                    ),
+                                                    animate = animate,
+                                                    emphasis = ActionButtonEmphasis.Tonal,
                                                     modifier = Modifier.align(Alignment.End)
                                                 ) {
                                                     Text(
@@ -548,7 +605,7 @@ fun UpdateScreen(navController: NavHostController) {
                                                         ContextCompat.startActivity(context, Intent(Intent.ACTION_VIEW, Uri.parse(it.item)), null)
                                                     }
                                                 },
-                                                style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onBackground)
+                                                style = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface)
                                             )
                                             Spacer(modifier = Modifier.height(16.dp))
                                         }
@@ -559,7 +616,7 @@ fun UpdateScreen(navController: NavHostController) {
                                                         text = section.title,
                                                         style = MaterialTheme.typography.titleMedium,
                                                         fontWeight = FontWeight.Bold,
-                                                        color = MaterialTheme.colorScheme.onBackground,
+                                                        color = colors.onSurface,
                                                         modifier = Modifier.padding(bottom = 16.dp)
                                                     )
                                                 }
@@ -573,7 +630,7 @@ fun UpdateScreen(navController: NavHostController) {
                                                                 ContextCompat.startActivity(context, Intent(Intent.ACTION_VIEW, Uri.parse(it.item)), null)
                                                             }
                                                         },
-                                                        style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onBackground),
+                                                        style = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface),
                                                         modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                                                     )
                                                 }
@@ -587,7 +644,7 @@ fun UpdateScreen(navController: NavHostController) {
                                                                 ContextCompat.startActivity(context, Intent(Intent.ACTION_VIEW, Uri.parse(it.item)), null)
                                                             }
                                                         },
-                                                        style = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onBackground),
+                                                        style = MaterialTheme.typography.bodyLarge.copy(color = colors.onSurface),
                                                         modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
                                                     )
                                                 }
@@ -613,6 +670,61 @@ fun UpdateScreen(navController: NavHostController) {
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun UpdateStatusHeading(
+    status: MkrUpdateStatus,
+    title: String,
+    modifier: Modifier = Modifier,
+) {
+    val colors = MaterialTheme.colorScheme
+    val (icon, badgeColor, iconColor) = when (status) {
+        MkrUpdateStatus.Idle -> Triple(R.drawable.mobile_update, colors.secondaryContainer, colors.onSecondaryContainer)
+        MkrUpdateStatus.Checking -> Triple(R.drawable.refresh, colors.secondaryContainer, colors.onSecondaryContainer)
+        is MkrUpdateStatus.Available -> Triple(R.drawable.download, colors.primary, colors.onPrimary)
+        is MkrUpdateStatus.NoUpdate -> Triple(R.drawable.check, colors.tertiaryContainer, colors.onTertiaryContainer)
+        is MkrUpdateStatus.Error -> Triple(R.drawable.error, colors.errorContainer, colors.onErrorContainer)
+    }
+
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.extraLarge,
+        color = colors.surfaceContainerLow,
+        contentColor = colors.onSurface,
+        border = BorderStroke(1.dp, colors.outlineVariant),
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Surface(
+                modifier = Modifier.size(56.dp),
+                shape = MaterialShapes.Cookie12Sided.toShape(),
+                color = badgeColor,
+                contentColor = iconColor,
+                shadowElevation = 1.dp,
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        painter = painterResource(icon),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp),
+                    )
+                }
+            }
+            Text(
+                text = title,
+                style = MaterialTheme.typography.headlineMedium,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.semantics {
+                    heading()
+                    liveRegion = LiveRegionMode.Polite
+                },
+            )
         }
     }
 }

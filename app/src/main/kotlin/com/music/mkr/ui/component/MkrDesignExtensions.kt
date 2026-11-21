@@ -10,8 +10,12 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
@@ -51,15 +55,16 @@ import androidx.compose.ui.unit.sp
  * Provides a gentle, cute bouncy scaling response on press without heavy computations.
  */
 fun Modifier.mkrPressFeedback(
-    scaleDown: Float = 0.96f
+    scaleDown: Float = 0.96f,
+    interactionSource: MutableInteractionSource,
+    animationsEnabled: Boolean = true,
 ): Modifier = composed {
-    val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) scaleDown else 1.0f,
+        targetValue = if (animationsEnabled && isPressed) scaleDown else 1f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = Spring.StiffnessMedium
         ),
         label = "MkrPressFeedbackScale"
     )
@@ -68,6 +73,23 @@ fun Modifier.mkrPressFeedback(
         scaleX = scale
         scaleY = scale
     }
+}
+
+internal fun Modifier.mkrClickable(onClick: () -> Unit): Modifier = composed {
+    val interaction = remember { MutableInteractionSource() }
+    mkrPressFeedback(interactionSource = interaction)
+        .clickable(interactionSource = interaction, indication = LocalIndication.current, onClick = onClick)
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+internal fun Modifier.mkrCombinedClickable(onClick: () -> Unit, onLongClick: (() -> Unit)?): Modifier = composed {
+    val interaction = remember { MutableInteractionSource() }
+    mkrPressFeedback(interactionSource = interaction).combinedClickable(
+        interactionSource = interaction,
+        indication = LocalIndication.current,
+        onClick = onClick,
+        onLongClick = onLongClick,
+    )
 }
 
 /**

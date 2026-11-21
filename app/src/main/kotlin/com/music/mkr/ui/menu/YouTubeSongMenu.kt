@@ -125,17 +125,10 @@ fun YouTubeSongMenu(
 
     AddToPlaylistDialog(  
         isVisible = showChoosePlaylistDialog,  
-        onGetSong = { playlist ->  
-            database.withTransaction {  
-                insert(song.toMediaMetadata())  
-            }  
-            coroutineScope.launch(Dispatchers.IO) {  
-                playlist.playlist.browseId?.let { browseId ->  
-                    YouTube.addToPlaylist(browseId, song.id)  
-                }  
-            }  
-            listOf(song.id)  
-        },  
+        onGetSong = {
+            database.withTransaction { insert(song.toMediaMetadata()) }
+            listOf(song.id)
+        },
         onDismiss = { showChoosePlaylistDialog = false }  
     )  
 
@@ -516,7 +509,7 @@ fun YouTubeSongMenu(
         item {
             Material3MenuGroup(
                 expressive = true,
-                items = listOf(
+                items = listOfNotNull(
                     when (download?.state) {
                         Download.STATE_COMPLETED -> {
                             Material3MenuItemData(
@@ -588,7 +581,8 @@ fun YouTubeSongMenu(
                                 }
                             )
                         }
-                    }
+                    },
+                    downloadExportRetryItem(song.id, download?.state == Download.STATE_COMPLETED),
                 )
             )
         }

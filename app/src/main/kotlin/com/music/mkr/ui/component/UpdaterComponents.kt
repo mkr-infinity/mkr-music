@@ -1,7 +1,9 @@
 package com.music.mkr.ui.component
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -24,6 +26,7 @@ import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
@@ -42,6 +45,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -111,6 +115,60 @@ fun AnimatedActionButton(
             )
         }
     }
+}
+
+internal enum class ActionButtonEmphasis { Primary, Tonal, Quiet }
+
+@Composable
+internal fun AnimatedActionButton(
+    onClick: () -> Unit,
+    animate: Boolean,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    emphasis: ActionButtonEmphasis = ActionButtonEmphasis.Primary,
+    content: @Composable RowScope.() -> Unit,
+) {
+    val colors = MaterialTheme.colorScheme
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    val primary = emphasis == ActionButtonEmphasis.Primary
+    val quiet = emphasis == ActionButtonEmphasis.Quiet
+    val face = when (emphasis) {
+        ActionButtonEmphasis.Primary -> colors.primary
+        ActionButtonEmphasis.Tonal -> colors.secondaryContainer
+        ActionButtonEmphasis.Quiet -> Color.Transparent
+    }
+    val ink = when (emphasis) {
+        ActionButtonEmphasis.Primary -> colors.onPrimary
+        ActionButtonEmphasis.Tonal -> colors.onSecondaryContainer
+        ActionButtonEmphasis.Quiet -> colors.primary
+    }
+    val raised = if (primary) 3.dp else 1.dp
+
+    Button(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier
+            .heightIn(min = if (primary) 56.dp else 48.dp)
+            .mkrPressFeedback(0.975f, interaction, animate),
+        shape = if (primary) MaterialTheme.shapes.extraLarge else MaterialTheme.shapes.large,
+        interactionSource = interaction,
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (pressed && !quiet) lerp(face, ink, 0.06f) else face,
+            contentColor = ink,
+        ),
+        elevation = if (quiet) null else ButtonDefaults.buttonElevation(
+            defaultElevation = raised,
+            pressedElevation = if (animate) 0.dp else raised,
+            focusedElevation = raised,
+            hoveredElevation = raised,
+        ),
+        border = if (quiet || !enabled) null else BorderStroke(
+            1.dp, if (primary) colors.onPrimary.copy(alpha = 0.18f) else colors.outlineVariant,
+        ),
+        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+        content = content,
+    )
 }
 
 @Composable

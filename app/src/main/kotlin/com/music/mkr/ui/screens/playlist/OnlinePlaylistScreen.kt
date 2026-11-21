@@ -5,6 +5,7 @@
 
 package com.music.mkr.ui.screens.playlist
 
+import com.music.mkr.ui.component.mkrClickable
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -20,6 +21,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -58,6 +60,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ripple
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -117,6 +120,7 @@ import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
+import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.constants.HideExplicitKey
 import com.music.mkr.db.entities.Playlist
 import com.music.mkr.db.entities.PlaylistEntity
@@ -133,6 +137,7 @@ import com.music.mkr.ui.component.MkrBadge
 import com.music.mkr.ui.component.NavigationTitle
 import com.music.mkr.ui.component.PlayingIndicator
 import com.music.mkr.ui.component.YouTubeGridItem
+import com.music.mkr.ui.component.SongDownloadCapsule
 import com.music.mkr.ui.component.mkrPressFeedback
 import com.music.mkr.ui.component.shimmer.ButtonPlaceholder
 import com.music.mkr.ui.component.shimmer.ListItemPlaceHolder
@@ -906,8 +911,7 @@ private fun PlaylistHeroArtwork(
                 shape = RoundedCornerShape(26.dp),
                 spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
             )
-            .mkrPressFeedback()
-            .clickable(onClick = onPlayClick),
+            .mkrClickable(onClick = onPlayClick),
         shape = RoundedCornerShape(26.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
@@ -1129,8 +1133,7 @@ private fun PlaylistCommandDeck(
             modifier = Modifier
                 .weight(1f)
                 .height(46.dp)
-                .mkrPressFeedback()
-                .clickable(onClick = onPlay),
+                .mkrClickable(onClick = onPlay),
             shape = RoundedCornerShape(23.dp),
             color = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -1169,8 +1172,7 @@ private fun PlaylistCommandDeck(
             modifier = Modifier
                 .weight(1f)
                 .height(46.dp)
-                .mkrPressFeedback()
-                .clickable(onClick = onShuffle),
+                .mkrClickable(onClick = onShuffle),
             shape = RoundedCornerShape(23.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
             contentColor = MaterialTheme.colorScheme.onSurface,
@@ -1201,8 +1203,7 @@ private fun PlaylistCommandDeck(
         Surface(
             modifier = Modifier
                 .size(46.dp)
-                .mkrPressFeedback()
-                .clickable(onClick = onToggleBookmark),
+                .mkrClickable(onClick = onToggleBookmark),
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
@@ -1224,8 +1225,7 @@ private fun PlaylistCommandDeck(
         Surface(
             modifier = Modifier
                 .size(46.dp)
-                .mkrPressFeedback()
-                .clickable(onClick = onSearchTrigger),
+                .mkrClickable(onClick = onSearchTrigger),
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
@@ -1247,8 +1247,7 @@ private fun PlaylistCommandDeck(
         Surface(
             modifier = Modifier
                 .size(46.dp)
-                .mkrPressFeedback()
-                .clickable(onClick = onShareClick),
+                .mkrClickable(onClick = onShareClick),
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
@@ -1357,6 +1356,8 @@ private fun PlaylistTrackRow(
     enabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val rowInteraction = remember { MutableInteractionSource() }
+    val animationsEnabled = rememberPreference(InterfaceAnimationsKey, true).value
     val durationStr = songItem.duration?.let { dur ->
         makeTimeString(dur.toLong() * 1000L)
     }
@@ -1376,8 +1377,10 @@ private fun PlaylistTrackRow(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .mkrPressFeedback()
+            .mkrPressFeedback(0.98f, rowInteraction, animationsEnabled)
             .combinedClickable(
+                interactionSource = rowInteraction,
+                indication = ripple(),
                 enabled = enabled,
                 onClick = onClick,
                 onLongClick = onLongClick
@@ -1499,22 +1502,27 @@ private fun PlaylistTrackRow(
                 }
             }
 
-            // Duration Pill
-            if (!durationStr.isNullOrEmpty()) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(start = 4.dp, end = 2.dp)
-                ) {
-                    Text(
-                        text = durationStr,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
+            SongDownloadCapsule(
+                songId = songItem.id,
+                modifier = Modifier.padding(start = 4.dp, end = 2.dp),
+                showCompletedIcon = false,
+            ) {
+                if (!durationStr.isNullOrEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(start = 4.dp, end = 2.dp)
+                    ) {
+                        Text(
+                            text = durationStr,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 11.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
                 }
             }
 
@@ -1739,14 +1747,16 @@ private fun OnlinePlaylistStateCard(
 
                 if (onRetry != null) {
                     Spacer(modifier = Modifier.height(20.dp))
+                    val retryPressInteraction = remember { MutableInteractionSource() }
                     Button(
+                        interactionSource = retryPressInteraction,
                         onClick = onRetry,
                         shape = RoundedCornerShape(22.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
-                        modifier = Modifier.mkrPressFeedback()
+                        modifier = Modifier.mkrPressFeedback(interactionSource = retryPressInteraction)
                     ) {
                         Text(
                             text = stringResource(R.string.retry),

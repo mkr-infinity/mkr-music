@@ -5,6 +5,7 @@
 
 package com.music.mkr.ui.screens.search
 
+import com.music.mkr.ui.component.mkrCombinedClickable
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -38,6 +39,7 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LoadingIndicator
 import androidx.compose.material3.Scaffold
@@ -119,7 +121,6 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.music.mkr.ui.component.PlayingIndicator
-import com.music.mkr.ui.component.mkrPressFeedback
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.dataStore
@@ -207,12 +208,13 @@ fun OnlineSearchResult(
         }
     }
 
-    LaunchedEffect(lazyListState) {
+    LaunchedEffect(lazyListState, searchFilter) {
         snapshotFlow {
-            lazyListState.layoutInfo.visibleItemsInfo.any { it.key == "loading" }
-        }.collect { shouldLoadMore ->
-            if (!shouldLoadMore) return@collect
-            viewModel.loadMore()
+            itemsPage?.continuation?.takeIf {
+                lazyListState.layoutInfo.visibleItemsInfo.any { item -> item.key == "loading" }
+            }
+        }.collect { continuation ->
+            continuation?.let { viewModel.loadMore(searchFilter, it) }
         }
     }
 
@@ -413,7 +415,7 @@ fun OnlineSearchResult(
                         ytItemContent(item, index, itemsPage?.items.orEmpty().distinctBy { it.id }.size)
                     }
 
-                    if (itemsPage?.continuation != null) {
+                    itemsPage?.continuation?.let { continuation ->
                         item(key = "loading") {
                             Box(
                                 modifier = Modifier
@@ -421,7 +423,9 @@ fun OnlineSearchResult(
                                     .padding(32.dp),
                                 contentAlignment = Alignment.Center
                             ) {
-                                LoadingIndicator()
+                                if (viewModel.pageFailed(searchFilter, continuation)) {
+                                    SearchRetry { viewModel.loadMore(searchFilter, continuation, retry = true) }
+                                } else LoadingIndicator()
                             }
                         }
                     }
@@ -445,7 +449,9 @@ fun OnlineSearchResult(
                                 .padding(64.dp),
                             contentAlignment = Alignment.Center
                         ) {
-                            LoadingIndicator()
+                            if (viewModel.initialFailed(searchFilter)) {
+                                SearchRetry(viewModel::retryInitial)
+                            } else LoadingIndicator()
                         }
                     }
                 }
@@ -458,6 +464,14 @@ fun OnlineSearchResult(
     }
 }
 }
+}
+
+@Composable
+private fun SearchRetry(onRetry: () -> Unit) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(stringResource(R.string.search_load_failed))
+        TextButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+    }
 }
 
 /**
@@ -522,8 +536,7 @@ private fun SearchResultCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 3.dp)
-            .mkrPressFeedback()
-            .combinedClickable(
+            .mkrCombinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),

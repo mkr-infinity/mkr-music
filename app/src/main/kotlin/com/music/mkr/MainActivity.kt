@@ -70,8 +70,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -86,17 +84,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarResult
 import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.ui.component.snackbar.LocalSnackbarHostState
+import com.music.mkr.ui.component.snackbar.MkrSnackbarHost
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
@@ -199,7 +196,6 @@ import com.music.mkr.constants.SlimNavBarKey
 import com.music.mkr.constants.FloatingNavBarKey
 import com.music.mkr.constants.NavigationStyle
 import com.music.mkr.constants.NavigationStyleKey
-import com.music.mkr.constants.StopMusicOnTaskClearKey
 import com.music.mkr.constants.UseNewMiniPlayerDesignKey
 import com.music.mkr.constants.UseAppleMiniPlayerKey
 import com.music.mkr.db.MusicDatabase
@@ -246,7 +242,6 @@ import com.music.mkr.ui.screens.search.suggestions.SuggestionsViewModel
 import com.valentinilk.shimmer.LocalShimmerTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -360,31 +355,6 @@ class MainActivity : ComponentActivity() {
         super.onStop()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        if (dataStore.get(StopMusicOnTaskClearKey, false) && isFinishing) {
-            try {
-                playerConnection?.service?.let { s ->
-                    s.player.pause()
-                    s.player.stop()
-                    s.stopForeground(android.app.Service.STOP_FOREGROUND_REMOVE)
-                }
-                stopService(Intent(this, MusicService::class.java))
-                if (isServiceBound) {
-                    try {
-                        unbindService(serviceConnection)
-                    } catch (e: Exception) {
-                        // Ignore
-                    }
-                    isServiceBound = false
-                }
-                playerConnection = null
-            } catch (e: Exception) {
-                // Ignore cleanup errors
-            }
-        }
-    }
-
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         if (::navController.isInitialized) {
@@ -477,9 +447,12 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
             SnackbarManager.events.collectLatest { event ->
                 snackbarHostState.currentSnackbarData?.dismiss()
-                val messageStr = context.getString(event.messageResource)
+                val messageStr = event.messageArgs?.let { context.getString(event.messageResource, it) }
+                    ?: context.getString(event.messageResource)
                 val actionLabelStr = event.actionLabel?.let { context.getString(it) }
-                val result = snackbarHostState.showSnackbar(
+                val result = if (event.iconRes != null) {
+                    snackbarHostState.showSnackbar(SnackbarManager.PlaylistVisuals(messageStr, event.duration, event.iconRes))
+                } else snackbarHostState.showSnackbar(
                     message = messageStr,
                     actionLabel = actionLabelStr,
                     duration = event.duration
@@ -1123,12 +1096,6 @@ class MainActivity : ComponentActivity() {
                                 enter = fadeIn(animationSpec = tween(durationMillis = 300)),
                                 exit = fadeOut(animationSpec = tween(durationMillis = 200))
                             ) {
-                                var logoClickCount by remember { mutableIntStateOf(0) }
-                                var lastClickTime by remember { mutableLongStateOf(0L) }
-                                val logoScope = rememberCoroutineScope()
-                                var resetJob by remember { mutableStateOf<Job?>(null) }
-                                var currentToast by remember { mutableStateOf<Toast?>(null) }
-
                                 val isHome = navBackStackEntry?.destination?.route == Screens.Home.route
                                 val isLibrary = navBackStackEntry?.destination?.route == Screens.Library.route
                                 val isTopBarImmersive = isHome || isLibrary
@@ -1158,56 +1125,12 @@ class MainActivity : ComponentActivity() {
                                             if (isHome) {
                                                 Row(
                                                     verticalAlignment = Alignment.CenterVertically,
-                                                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                                    horizontalArrangement = Arrangement.spacedBy(5.dp)
                                                 ) {
                                                     ExpressiveIconButton(
                                                         onClick = {
-                                                            val currentTime = System.currentTimeMillis()
-                                                            // Debounce rapid bursts (< 180ms)
-                                                            if (currentTime - lastClickTime < 180L) {
-                                                                return@ExpressiveIconButton
-                                                            }
-                                                            if (currentTime - lastClickTime > 2500L) {
-                                                                logoClickCount = 1
-                                                            } else {
-                                                                logoClickCount++
-                                                            }
-                                                            lastClickTime = currentTime
-
-                                                            // Cancel previous inactivity timer
-                                                            resetJob?.cancel()
-
-                                                            // Easter egg triggers at 5 or more deliberate clicks
-                                                            if (logoClickCount >= 5) {
-                                                                currentToast?.cancel()
-                                                                val toastMessage = when (logoClickCount) {
-                                                                    5 -> "Hey, what are you doing?"
-                                                                    6 -> "Stop poking the MKR logo bro!"
-                                                                    7 -> "One more click and something wild might happen..."
-                                                                    8 -> "Bro please don't do it bro! What are you looking for?! There's no secret menu here!"
-                                                                    9 -> "Bro really has too much free time today!"
-                                                                    10 -> "MKR Music — MKR stands for Mohammad Kaif Raja"
-                                                                    else -> {
-                                                                        val funnyQuotes = listOf(
-                                                                            "Go listen to some bangers instead bro!",
-                                                                            "MKR Music loves you, but please spare the logo!",
-                                                                            "Still clicking?! You must really love this note!",
-                                                                            "Achievement unlocked: Professional Logo Tapper"
-                                                                        )
-                                                                        funnyQuotes[(logoClickCount - 11) % funnyQuotes.size]
-                                                                    }
-                                                                }
-
-                                                                currentToast = Toast.makeText(this@MainActivity, toastMessage, Toast.LENGTH_SHORT)
-                                                                currentToast?.show()
-                                                            }
-
-                                                            // Stop toast and reset clicks if user is not clicking for 2.5 seconds
-                                                            resetJob = logoScope.launch {
-                                                                delay(2500L)
-                                                                currentToast?.cancel()
-                                                                currentToast = null
-                                                                logoClickCount = 0
+                                                            if (navController.currentDestination?.route == Screens.Home.route) {
+                                                                navController.navigate("settings/about") { launchSingleTop = true }
                                                             }
                                                         },
                                                         size = 38.dp,
@@ -1215,7 +1138,10 @@ class MainActivity : ComponentActivity() {
                                                     ) {
                                                         Image(
                                                             painter = painterResource(R.drawable.icon),
-                                                            contentDescription = stringResource(R.string.app_name),
+                                                            contentDescription = stringResource(
+                                                                R.string.open_about_app,
+                                                                stringResource(R.string.app_name),
+                                                            ),
                                                             modifier = Modifier
                                                                 .fillMaxSize()
                                                                 .padding(5.dp)
@@ -1414,25 +1340,13 @@ class MainActivity : ComponentActivity() {
                                         bottom
                                     }
 
-                                    SnackbarHost(
-                                        hostState = snackbarHostState,
+                                    MkrSnackbarHost(
+                                        state = snackbarHostState,
                                         modifier = Modifier
                                             .align(Alignment.BottomCenter)
-                                            .padding(bottom = snackbarBottomPadding)
-                                            .graphicsLayer {
-                                                alpha = (1f - playerBottomSheetState.progress).coerceIn(0f, 1f)
-                                            }
-                                    ) { data ->
-                                        Snackbar(
-                                            snackbarData = data,
-                                            shape = RoundedCornerShape(28.dp),
-                                            containerColor = MaterialTheme.colorScheme.inverseSurface,
-                                            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-                                            actionColor = MaterialTheme.colorScheme.inversePrimary,
-                                            actionContentColor = MaterialTheme.colorScheme.inversePrimary,
-                                            dismissActionContentColor = MaterialTheme.colorScheme.inverseOnSurface
-                                        )
-                                    }
+                                            .padding(bottom = snackbarBottomPadding),
+                                        standardAlpha = { (1f - playerBottomSheetState.progress).coerceIn(0f, 1f) },
+                                    )
 
                                     AppNavigationBar(
                                         navigationItems = navigationItems,
@@ -1485,6 +1399,12 @@ class MainActivity : ComponentActivity() {
                                             state = playerBottomSheetState,
                                             navController = navController,
                                             pureBlack = pureBlack
+                                        )
+
+                                        MkrSnackbarHost(
+                                            state = snackbarHostState,
+                                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomInset),
+                                            playlistOnly = true,
                                         )
 
                                         Box(

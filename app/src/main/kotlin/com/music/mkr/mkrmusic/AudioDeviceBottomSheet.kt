@@ -40,7 +40,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -989,7 +988,9 @@ private fun ExpressiveVolumeCard(
                     "100%" to maxVolume.toFloat()
                 ).forEach { (label, targetVol) ->
                     val isSelected = kotlin.math.abs(currentVolume - targetVol) < 0.6f
+                    val volumePressInteraction = remember { MutableInteractionSource() }
                     Surface(
+                        interactionSource = volumePressInteraction,
                         onClick = {
                             onVolumeChange(targetVol)
                             onVolumeFinished()
@@ -1003,7 +1004,7 @@ private fun ExpressiveVolumeCard(
                         modifier = Modifier
                             .weight(1f)
                             .height(36.dp)
-                            .mkrPressFeedback()
+                            .mkrPressFeedback(interactionSource = volumePressInteraction)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(
@@ -1045,14 +1046,16 @@ private fun OutputDestinationTile(
     val cardBorder = if (isActive) BorderStroke(1.5.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.7f))
                      else BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
 
+    val devicePressInteraction = remember { MutableInteractionSource() }
     Surface(
+        interactionSource = devicePressInteraction,
         onClick = onClick,
         shape = RoundedCornerShape(18.dp),
         color = cardColor,
         border = cardBorder,
         modifier = modifier
             .fillMaxWidth()
-            .mkrPressFeedback()
+            .mkrPressFeedback(interactionSource = devicePressInteraction)
     ) {
         Row(
             modifier = Modifier
@@ -1198,7 +1201,9 @@ private fun AudioRoutingActionsCard(
                 horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
                 // Bluetooth Pairing Button
+                val bluetoothPressInteraction = remember { MutableInteractionSource() }
                 Surface(
+                    interactionSource = bluetoothPressInteraction,
                     onClick = onOpenBluetoothSettings,
                     shape = RoundedCornerShape(14.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
@@ -1206,7 +1211,7 @@ private fun AudioRoutingActionsCard(
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
-                        .mkrPressFeedback()
+                        .mkrPressFeedback(interactionSource = bluetoothPressInteraction)
                 ) {
                     Row(
                         modifier = Modifier
@@ -1232,7 +1237,9 @@ private fun AudioRoutingActionsCard(
                 }
 
                 // Equalizer Button
+                val equalizerPressInteraction = remember { MutableInteractionSource() }
                 Surface(
+                    interactionSource = equalizerPressInteraction,
                     onClick = onOpenEqualizer,
                     shape = RoundedCornerShape(14.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.7f),
@@ -1240,7 +1247,7 @@ private fun AudioRoutingActionsCard(
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
-                        .mkrPressFeedback()
+                        .mkrPressFeedback(interactionSource = equalizerPressInteraction)
                 ) {
                     Row(
                         modifier = Modifier
@@ -1321,7 +1328,9 @@ private fun AudioQualityCard(
                     AudioQuality.LOW to stringResource(R.string.audio_quality_low)
                 ).forEach { (quality, label) ->
                     val isChecked = selectedQuality == quality
+                    val qualityPressInteraction = remember { MutableInteractionSource() }
                     Surface(
+                        interactionSource = qualityPressInteraction,
                         onClick = { onQualityChange(quality) },
                         shape = RoundedCornerShape(12.dp),
                         color = if (isChecked) MaterialTheme.colorScheme.primary
@@ -1332,7 +1341,7 @@ private fun AudioQualityCard(
                         modifier = Modifier
                             .weight(1f)
                             .height(40.dp)
-                            .mkrPressFeedback()
+                            .mkrPressFeedback(interactionSource = qualityPressInteraction)
                     ) {
                         Box(contentAlignment = Alignment.Center) {
                             Text(

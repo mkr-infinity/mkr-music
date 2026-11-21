@@ -12,13 +12,17 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -52,13 +56,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -175,6 +181,7 @@ fun AboutScreen(
     )
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun DeveloperHeroCard(
     onSupportClick: () -> Unit
@@ -279,47 +286,39 @@ private fun DeveloperHeroCard(
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            // 4. Social Links Box: 2 in one line (2x2 grid)
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(10.dp)
-            ) {
-                Row(
+            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+                val showTiles = maxWidth >= 276.dp * fontScale + 12.dp
+                FlowRow(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                    maxItemsInEachRow = if (showTiles) 3 else 1,
                 ) {
-                    SocialLinkPill(
-                        modifier = Modifier.weight(1f),
+                    val linkModifier = Modifier.weight(1f).fillMaxRowHeight()
+                    SocialLinkTile(
+                        modifier = linkModifier,
                         icon = R.drawable.github,
                         title = "GitHub",
                         subtitle = GitHubConfig.DEV_HANDLE,
+                        stackedContent = showTiles,
                         onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_GITHUB_URL) }
                     )
-                    SocialLinkPill(
-                        modifier = Modifier.weight(1f),
+                    SocialLinkTile(
+                        modifier = linkModifier,
                         icon = R.drawable.instagram,
                         title = "Instagram",
                         subtitle = "@mkr_infinity",
+                        stackedContent = showTiles,
                         onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_INSTAGRAM_URL) }
                     )
-                }
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    SocialLinkPill(
-                        modifier = Modifier.weight(1f),
+                    SocialLinkTile(
+                        modifier = linkModifier,
                         icon = R.drawable.telegram,
                         title = "Telegram",
                         subtitle = "@mkr_infinity",
+                        stackedContent = showTiles,
                         onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_TELEGRAM_URL) }
-                    )
-                    SocialLinkPill(
-                        modifier = Modifier.weight(1f),
-                        icon = R.drawable.globe,
-                        title = "Website",
-                        subtitle = "mkr-infinity",
-                        onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_WEBSITE_URL) }
                     )
                 }
             }
@@ -495,59 +494,64 @@ private fun ChainsawSupportButton(
 }
 
 @Composable
-private fun SocialLinkPill(
+private fun SocialLinkTile(
     modifier: Modifier = Modifier,
     icon: Int,
     title: String,
     subtitle: String,
+    stackedContent: Boolean,
     onClick: () -> Unit
 ) {
     Surface(
+        onClick = onClick,
         modifier = modifier
-            .clip(RoundedCornerShape(16.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
+            .heightIn(min = 48.dp)
+            .semantics { role = Role.Button },
+        shape = MaterialTheme.shapes.large,
         color = MaterialTheme.colorScheme.surfaceContainer,
-        border = BorderStroke(1.dp, Color.Black.copy(alpha = 0.35f))
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(10.dp)
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(34.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                contentAlignment = Alignment.Center
+        val content: @Composable () -> Unit = {
+            Surface(
+                modifier = Modifier.size(32.dp),
+                shape = MaterialTheme.shapes.small,
+                color = MaterialTheme.colorScheme.secondaryContainer,
+                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
             ) {
-                Icon(
-                    painter = painterResource(icon),
-                    contentDescription = title,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(18.dp)
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(18.dp))
+                }
             }
-            Column(modifier = Modifier.weight(1f)) {
+            Column(horizontalAlignment = if (stackedContent) Alignment.CenterHorizontally else Alignment.Start) {
+                val textAlign = if (stackedContent) TextAlign.Center else TextAlign.Start
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    style = MaterialTheme.typography.labelLarge,
+                    textAlign = textAlign,
                 )
                 Text(
                     text = subtitle,
-                    style = MaterialTheme.typography.bodySmall,
+                    style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
+                    textAlign = textAlign,
                 )
             }
+        }
+        if (stackedContent) {
+            Column(
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 10.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
+                content = { content() },
+            )
+        } else {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                content = { content() },
+            )
         }
     }
 }

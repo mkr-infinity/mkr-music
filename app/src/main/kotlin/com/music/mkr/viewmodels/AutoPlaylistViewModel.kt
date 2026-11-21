@@ -15,20 +15,28 @@ import com.music.mkr.constants.SongSortDescendingKey
 import com.music.mkr.constants.SongSortType
 import com.music.mkr.constants.SongSortTypeKey
 import com.music.mkr.db.MusicDatabase
+import com.music.mkr.playback.DownloadUtil
+import com.music.mkr.db.entities.Song
 import com.music.mkr.extensions.filterExplicit
 import com.music.mkr.extensions.filterVideoSongs
 import com.music.mkr.extensions.toEnum
 import com.music.mkr.utils.SyncUtils
 import com.music.mkr.utils.dataStore
+import com.music.mkr.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -42,14 +50,22 @@ constructor(
     private val database: MusicDatabase,
     savedStateHandle: SavedStateHandle,
     private val syncUtils: SyncUtils,
+    downloadUtil: DownloadUtil,
 ) : ViewModel() {
     val playlist = savedStateHandle.get<String>("playlist")!!
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val likedSongs =
+    private val downloadReload = MutableStateFlow(0)
+    private val _downloadLoadFailed = MutableStateFlow(false)
+    val downloadLoadFailed = _downloadLoadFailed.asStateFlow()
+
+    fun retryDownloads() {
+        downloadReload.update { it + 1 }
+    }
+
+    val likedSongs: StateFlow<List<Song>?> =
         context.dataStore.data
             .map {
                 Triple(
@@ -66,13 +82,20 @@ constructor(
                     "liked" -> database.likedSongs(sortType, descending)
                         .map { it.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs) }
 
-                    "downloaded" -> database.downloadedSongs(sortType, descending)
-                        .map { it.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs) }
+                    "downloaded" -> downloadReload.flatMapLatest {
+                        downloadUtil.completedSongs(sortType, descending)
+                            .map { it.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs) }
+                            .onStart { _downloadLoadFailed.value = false }
+                            .catch {
+                                reportException(it)
+                                _downloadLoadFailed.value = true
+                            }
+                    }
 
                     else -> kotlinx.coroutines.flow.flowOf(emptyList())
                 }
             }
-            .stateIn(viewModelScope, kotlinx.coroutines.flow.SharingStarted.Lazily, emptyList())
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     fun syncLikedSongs() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }

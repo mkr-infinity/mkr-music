@@ -37,7 +37,7 @@
     <string name="liked">Liked</string>
     <string name="offline">Downloaded</string>
     <string name="my_top">My top</string>
-    <string name="cached_playlist">Cached</string>
+    <string name="cached_playlist">Cached songs</string>
     <string name="uploaded_playlist">Uploaded</string>
     <string name="filter_uploaded">Uploaded</string>
     <string name="sync_playlist">Sync playlist</string>
@@ -80,6 +80,17 @@
     <!-- Menu descriptions -->
     <string name="download_playlist_desc">Download all songs for offline playback</string>
     <string name="remove_download_playlist_desc">Remove all downloaded songs from this playlist</string>
+    <string name="download_capsule_active">Active</string>
+    <string name="download_capsule_queued">Queued</string>
+    <string name="download_capsule_progress">Downloading, %1$s</string>
+    <string name="download_capsule_unknown">Downloading, progress unavailable</string>
+    <string name="download_capsule_paused">Paused</string>
+    <string name="download_capsule_paused_progress">Paused at %1$s</string>
+    <string name="download_capsule_saving">Saving</string>
+    <string name="download_capsule_completed">Download complete</string>
+    <string name="download_capsule_failed_label">Failed</string>
+    <string name="download_capsule_failed">Download failed</string>
+    <string name="download_capsule_save_failed">Save failed</string>
     <string name="download_in_progress_desc">Download is in progress</string>
     <string name="share_playlist_desc">Share this playlist with others</string>
     <string name="delete_playlist_desc">Remove this playlist permanently</string>
@@ -157,7 +168,7 @@
     <string name="player_style_cinematic">Cinematic</string>
     <string name="player_style_cinematic_desc">Asymmetric spacious controls with prominent animated play button</string>
     <string name="player_style_immersive">Immersive</string>
-    <string name="player_style_immersive_desc">Edge-to-edge ambient artwork with lossless audio format badge</string>
+    <string name="player_style_immersive_desc">Edge-to-edge ambient artwork with audio format badge</string>
     <string name="player_style_immersive_extended">Immersive Extended</string>
     <string name="player_style_immersive_extended_desc">Extended ambient backdrop with integrated volume bar and queue peek</string>
     <string name="player_style_material_extended">Material Extended</string>
@@ -165,6 +176,17 @@
     <!-- Library 5-Category Cards -->
     <string name="library_liked_songs">Liked songs</string>
     <string name="library_liked_songs_desc">Your favorite tracks</string>
+    <string name="library_downloads">Downloads</string>
+    <string name="library_downloads_desc">Saved for offline listening</string>
+    <string name="library_cached_songs_desc">Automatically saved for offline listening</string>
+    <string name="library_history_desc">Your recent plays</string>
+    <string name="library_cache_empty">Fully cached songs appear here after streaming.</string>
+    <string name="library_cache_error">Couldn’t load cached songs.</string>
+    <string name="library_cache_remove_error">Couldn’t remove the cached song.</string>
+    <string name="library_downloads_error">Couldn’t load downloads.</string>
+    <string name="library_history_error">Couldn’t load history.</string>
+    <string name="library_downloads_empty">Completed downloads appear here.</string>
+    <string name="library_history_empty">Songs you play appear here.</string>
     <string name="library_offline">Offline</string>
     <string name="library_offline_desc">Downloaded for offline</string>
     <string name="library_cached">Cached</string>
@@ -206,7 +228,7 @@
     <string name="slim_navbar">Slim bottom navigation bar</string>
     <string name="auto_playlists">Auto playlists</string>
     <string name="show_liked_playlist">Show \"Liked\" playlist</string>
-    <string name="show_downloaded_playlist">Show \"Downloaded\" playlist</string>
+    <string name="show_downloaded_playlist">Show Downloads</string>
     <string name="show_top_playlist">Show \"Top\" playlist</string>
     <string name="show_cached_playlist">Show \"Cached\" playlist</string>
     <string name="show_uploaded_playlist">Show \"Uploaded\" playlist</string>
@@ -274,6 +296,12 @@
 
     <string name="import_online">Import a \"m3u\" playlists</string>
     <string name="import_csv">Import a \"csv\" playlists</string>
+    <string name="playlist_add_pending">Adding songs…</string>
+    <string name="playlist_add_success">Added to %1$s</string>
+    <string name="playlist_add_already_present">Already in %1$s</string>
+    <string name="playlist_add_failed">Couldn’t add to %1$s</string>
+    <string name="playlist_add_sync_failed">Added to %1$s on this device. Couldn’t sync all songs.</string>
+    <string name="playlist_add_local_only">Added to %1$s on this device</string>
     <string name="playlist_add_local_to_synced_note">Note: Adding local songs to synced/remote playlists is unsupported. Any other combination is valid</string>
 
     <string name="auto_download_on_like">Auto download on like</string>
@@ -403,6 +431,7 @@
     <string name="setting_data_saver_desc">Restrict network usage</string>
     <string name="setting_backup_restore_desc">Import/export settings</string>
     <string name="setting_about_desc">App version and info</string>
+    <string name="open_about_app">Open About %1$s</string>
     <string name="setting_auto_update_desc">Automatically check for new app releases</string>
     <string name="setting_beta_updates_desc">Opt-in to experimental beta builds</string>
 
@@ -1151,4 +1180,9 @@
     <string name="no_direct_apk">Direct APK download is unavailable for this release</string>
     <string name="read_more_github">Read full notes on GitHub</string>
     <string name="version_code_unverified">Version code verification unavailable</string>
+    <string name="download_export_retry">Retry saving audio file</string>
+    <string name="download_export_failed">Available offline. The file could not be saved to your download folder.</string>
+    <string name="search_load_failed">Could not load search results.</string>
+    <string name="spotify_import_incomplete_fetch">Spotify returned %1$d of %2$d tracks. The playlist was kept unchanged.</string>
+    <string name="spotify_import_skipped">Skipped %1$d empty or incomplete playlists. Existing playlists were preserved.</string>
 </resources>

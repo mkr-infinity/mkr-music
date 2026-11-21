@@ -13,6 +13,7 @@ import com.music.mkr.constants.PlaylistSortType
 import com.music.mkr.constants.SongSortType
 import com.music.mkr.constants.TopSize
 import com.music.mkr.db.MusicDatabase
+import com.music.mkr.playback.DownloadUtil
 import com.music.mkr.db.entities.Album
 import com.music.mkr.db.entities.Artist
 import com.music.mkr.db.entities.Playlist
@@ -33,6 +34,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.Collator
@@ -53,6 +55,7 @@ constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
     private val syncUtils: SyncUtils,
+    downloadUtil: DownloadUtil,
 ) : ViewModel() {
     val syncAllLibrary = {
          viewModelScope.launch(Dispatchers.IO) {
@@ -103,9 +106,13 @@ constructor(
         .map { songs -> songs.take(3).mapNotNull { it.thumbnailUrl } }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val recentDownloadedThumbnails = database.downloadedSongs(SongSortType.CREATE_DATE, true)
+    val recentDownloadedThumbnails = downloadUtil.completedSongs(SongSortType.CREATE_DATE, true)
         .map { songs -> songs.take(3).mapNotNull { it.thumbnailUrl } }
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        .catch {
+            reportException(it)
+            emit(emptyList())
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     var artists = refreshTrigger.flatMapLatest {
         database.artistsBookmarked(
