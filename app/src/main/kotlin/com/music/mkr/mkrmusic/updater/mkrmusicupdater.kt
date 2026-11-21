@@ -366,8 +366,14 @@ fun UpdateScreen(navController: NavHostController) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 item {
+                    val lastChecked = getLastCheckedTime(context)
+                    val headingStatus = if (status is MkrUpdateStatus.NoUpdate && lastChecked.isBlank()) {
+                        MkrUpdateStatus.Idle
+                    } else {
+                        status
+                    }
                     val title = stringResource(
-                        when (status) {
+                        when (headingStatus) {
                             MkrUpdateStatus.Idle -> R.string.system_update
                             MkrUpdateStatus.Checking -> R.string.checking_for_updates
                             is MkrUpdateStatus.Available -> R.string.update_available
@@ -375,7 +381,7 @@ fun UpdateScreen(navController: NavHostController) {
                             is MkrUpdateStatus.Error -> R.string.update_check_error_title
                         }
                     )
-                    UpdateStatusHeading(status, title, Modifier.padding(bottom = 12.dp))
+                    UpdateStatusHeading(headingStatus, title, Modifier.padding(bottom = 12.dp))
                     Surface(
                         modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                         shape = MaterialTheme.shapes.large,
@@ -394,7 +400,6 @@ fun UpdateScreen(navController: NavHostController) {
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = colors.onSurfaceVariant,
                             )
-                            val lastChecked = getLastCheckedTime(context)
                             Text(
                                 if (lastChecked.isBlank()) stringResource(R.string.update_not_checked_yet)
                                 else stringResource(R.string.last_checked, lastChecked),

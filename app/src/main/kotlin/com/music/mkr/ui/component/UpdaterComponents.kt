@@ -35,9 +35,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -144,6 +141,12 @@ internal fun AnimatedActionButton(
         ActionButtonEmphasis.Quiet -> colors.primary
     }
     val raised = if (primary) 3.dp else 1.dp
+    val restCorner = if (primary) 28.dp else 20.dp
+    val corner by animateDpAsState(
+        targetValue = if (animate && pressed && !quiet) restCorner - 5.dp else restCorner,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        label = "action_button_corner",
+    )
 
     Button(
         onClick = onClick,
@@ -151,7 +154,7 @@ internal fun AnimatedActionButton(
         modifier = modifier
             .heightIn(min = if (primary) 56.dp else 48.dp)
             .mkrPressFeedback(0.975f, interaction, animate),
-        shape = if (primary) MaterialTheme.shapes.extraLarge else MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(if (animate) corner else restCorner),
         interactionSource = interaction,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (pressed && !quiet) lerp(face, ink, 0.06f) else face,
@@ -205,26 +208,6 @@ fun ExpressiveIconButton(
                 modifier = Modifier.size(24.dp)
             )
         }
-    }
-}
-
-@Composable
-fun ErrorSnackbar(
-    hostState: SnackbarHostState,
-    modifier: Modifier = Modifier
-) {
-    SnackbarHost(
-        hostState = hostState,
-        modifier = modifier
-    ) { data ->
-        Snackbar(
-            snackbarData = data,
-            containerColor = MaterialTheme.colorScheme.inverseSurface,
-            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-            actionColor = MaterialTheme.colorScheme.inversePrimary,
-            actionContentColor = MaterialTheme.colorScheme.inversePrimary,
-            dismissActionContentColor = MaterialTheme.colorScheme.inverseOnSurface
-        )
     }
 }
 
