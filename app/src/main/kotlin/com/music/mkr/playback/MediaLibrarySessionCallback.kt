@@ -72,11 +72,20 @@ constructor(
     var toggleStartRadio: () -> Unit = {}
     var toggleLibrary: () -> Unit = {}
 
+    private fun canUseLibrary(session: MediaSession, controller: MediaSession.ControllerInfo): Boolean =
+        controller.packageName == context.packageName || controller.isTrusted ||
+            session.isAutomotiveController(controller) || session.isAutoCompanionController(controller)
+
+    private fun canEditFromController(controller: MediaSession.ControllerInfo): Boolean =
+        controller.packageName == context.packageName
+
     override fun onConnect(
         session: MediaSession,
         controller: MediaSession.ControllerInfo,
     ): MediaSession.ConnectionResult {
+        if (!canUseLibrary(session, controller)) return MediaSession.ConnectionResult.reject()
         val connectionResult = super.onConnect(session, controller)
+        if (!canEditFromController(controller)) return connectionResult
         return MediaSession.ConnectionResult.accept(
             connectionResult.availableSessionCommands
                 .buildUpon()
@@ -96,6 +105,9 @@ constructor(
         customCommand: SessionCommand,
         args: Bundle,
     ): ListenableFuture<SessionResult> {
+        if (!canEditFromController(controller)) {
+            return Futures.immediateFuture(SessionResult(SessionError.ERROR_PERMISSION_DENIED))
+        }
         when (customCommand.customAction) {
             MediaSessionConstants.ACTION_TOGGLE_LIKE -> toggleLike()
             MediaSessionConstants.ACTION_TOGGLE_START_RADIO -> toggleStartRadio()
@@ -104,6 +116,7 @@ constructor(
                 !session.player.shuffleModeEnabled
 
             MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> session.player.toggleRepeatMode()
+            else -> return Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
         }
         return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
     }

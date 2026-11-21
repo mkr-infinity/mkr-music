@@ -10,20 +10,27 @@ name: Production Release Build
         type: boolean
 
 permissions:
-  contents: write
+  contents: read
+
+concurrency:
+  group: ${{ inputs.publish_release && 'mkr-production-release' || github.run_id }}
+  cancel-in-progress: false
 
 jobs:
   build_apks:
     name: Build & Package MKR Music APKs
     runs-on: ubuntu-latest
     if: github.actor != 'dependabot[bot]'
+    outputs:
+      version_name: ${{ steps.version_info.outputs.version_name }}
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          ref: ${{ github.ref }}
+          ref: ${{ github.sha }}
+          persist-credentials: false
 
       - name: Set up JDK 21
         uses: actions/setup-java@v5
@@ -85,7 +92,7 @@ jobs:
           COMPUTED_CODE=$(( 10#$MAJOR * 10000 + 10#$MINOR * 100 + 10#$PATCH ))
 
           # Ensure strictly greater than historical published version code 77
-          if (( COMPUTED_CODE <= 77 )); then
+          if (( COMPUTED_CODE <= 77 || COMPUTED_CODE > 2147483647 )); then
             echo "::error file=version.properties::Computed versionCode ($COMPUTED_CODE) must be strictly greater than historical version code 77."
             exit 1
           fi
@@ -113,66 +120,36 @@ jobs:
           fi
           echo "✓ Workflow and Gradle version definitions are 100% aligned ($GRADLE_VN / $GRADLE_VC)."
 
-      - name: Validate Release Signing Secrets
-        run: |
-          echo "=== Validating Required GitHub Release Signing Secrets ==="
-          MISSING=0
-          if [ -z "${{ secrets.KEYSTORE }}" ]; then
-            echo "::error::Required secret 'KEYSTORE' is missing or empty!"
-            MISSING=1
-          fi
-          if [ -z "${{ secrets.KEYSTORE_PASSWORD }}" ]; then
-            echo "::error::Required secret 'KEYSTORE_PASSWORD' is missing or empty!"
-            MISSING=1
-          fi
-          if [ -z "${{ secrets.KEY_ALIAS }}" ]; then
-            echo "::error::Required secret 'KEY_ALIAS' is missing or empty!"
-            MISSING=1
-          fi
-          if [ -z "${{ secrets.KEY_PASSWORD }}" ]; then
-            echo "::error::Required secret 'KEY_PASSWORD' is missing or empty!"
-            MISSING=1
-          fi
-
-          if [ "$MISSING" -ne 0 ]; then
-            echo "::error::All four release signing secrets (KEYSTORE, KEYSTORE_PASSWORD, KEY_ALIAS, KEY_PASSWORD) must be configured in GitHub Secrets. Failing build immediately."
-            exit 1
-          fi
-          echo "✓ All four required release signing secrets are present."
-
-      - name: Setup and Validate Persistent Release Keystore
+      - name: Setup and verify the existing release keystore
         id: keystore_validation
+        env:
+          KEYSTORE: ${{ secrets.KEYSTORE }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+        shell: bash
         run: |
-          echo "=== Decoding and Validating Persistent Release Keystore ==="
+          for secret in KEYSTORE KEYSTORE_PASSWORD KEY_ALIAS KEY_PASSWORD; do
+            if [[ -z "${!secret}" ]]; then
+              echo "::error::Required signing secret '$secret' is missing."
+              exit 1
+            fi
+          done
+
+          umask 077
           mkdir -p app/keystore
-          echo "${{ secrets.KEYSTORE }}" | base64 -d > app/keystore/release.keystore
-
-          if [ ! -s app/keystore/release.keystore ]; then
-            echo "::error::Decoded release keystore file is empty or invalid!"
+          if ! printf '%s' "$KEYSTORE" | base64 --decode > app/keystore/release.keystore 2>/dev/null; then
+            echo "::error::Could not decode the release keystore."
             exit 1
           fi
 
-          echo "Validating keystore integrity and alias with keytool..."
-          if ! keytool -list -keystore app/keystore/release.keystore \
-            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-            -alias "${{ secrets.KEY_ALIAS }}" > /dev/null 2>&1; then
-            echo "::error::Keystore validation failed! Keystore is corrupt, password is wrong, or alias '${{ secrets.KEY_ALIAS }}' does not exist."
+          if ! keytool -exportcert -keystore app/keystore/release.keystore \
+            -storepass:env KEYSTORE_PASSWORD -alias "$KEY_ALIAS" -file "$RUNNER_TEMP/mkr-release-cert.der" >/dev/null 2>&1; then
+            echo "::error::Could not read the certificate from the existing release keystore."
             exit 1
           fi
-
-          # Extract canonical SHA-256 certificate fingerprint directly from the configured release keystore
-          EXPECTED_FINGERPRINT=$(keytool -exportcert -keystore app/keystore/release.keystore \
-            -storepass "${{ secrets.KEYSTORE_PASSWORD }}" \
-            -alias "${{ secrets.KEY_ALIAS }}" | sha256sum | awk '{print $1}' | tr '[:lower:]' '[:upper:]')
-
-          if [ -z "$EXPECTED_FINGERPRINT" ]; then
-            echo "::error::Failed to compute SHA-256 fingerprint from release keystore certificate!"
-            exit 1
-          fi
-
-          echo "expected_cert_sha256=$EXPECTED_FINGERPRINT" >> $GITHUB_OUTPUT
-          echo "✓ Persistent release keystore validated successfully (Alias: ${{ secrets.KEY_ALIAS }})."
-          echo "✓ Expected Signer Certificate SHA-256: $EXPECTED_FINGERPRINT"
+          fingerprint=$(sha256sum "$RUNNER_TEMP/mkr-release-cert.der" | awk '{print toupper($1)}')
+          echo "expected_cert_sha256=$fingerprint" >> "$GITHUB_OUTPUT"
 
       - name: Build Universal Release APK
         env:
@@ -183,6 +160,10 @@ jobs:
           echo "Building single Universal APK variant directly signed by Gradle with persistent release keystore..."
           ./gradlew :app:assembleUniversalRelease \
             --no-configuration-cache --console=plain --warning-mode summary -x lint
+
+      - name: Remove the decoded keystore from the runner
+        if: always()
+        run: rm -f app/keystore/release.keystore "$RUNNER_TEMP/mkr-release-cert.der"
 
       - name: Prepare, Validate & Provenance Universal APK
         id: prepare_assets
@@ -266,12 +247,8 @@ jobs:
               exit 1
             fi
           else
-            echo "Notice: aapt binary not directly available; verifying manifest entry in archive..."
-            if ! unzip -l "$apk_path" | grep -q "AndroidManifest.xml"; then
-              echo "::error::AndroidManifest.xml missing from universal APK!"
-              exit 1
-            fi
-            echo "✓ AndroidManifest.xml verified present in APK archive"
+            echo "::error::aapt is required to verify the APK package and version."
+            exit 1
           fi
 
           echo "=== Inspecting Native Multi-ABI Libraries in Universal APK ==="
@@ -335,6 +312,36 @@ jobs:
             echo "✓ Verified $apk is cryptographically signed with the intended persistent release key."
           done
 
+      - name: Check upgrade compatibility against the latest public APK
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION_CODE: ${{ steps.version_info.outputs.version_code }}
+          EXPECTED_CERT: ${{ steps.keystore_validation.outputs.expected_cert_sha256 }}
+          PUBLISH_RELEASE: ${{ inputs.publish_release }}
+        shell: bash
+        run: |
+          previous=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq '.tag_name')
+          apk="$RUNNER_TEMP/mkr-previous.apk"
+          gh release download "$previous" --repo "$GITHUB_REPOSITORY" --pattern 'mkr-music-universal.apk' --output "$apk"
+
+          tools="${ANDROID_HOME:-$ANDROID_SDK_ROOT}/build-tools"
+          aapt=$(find "$tools" -name aapt -type f | sort -V | tail -n 1)
+          apksigner=$(find "$tools" -name apksigner -type f | sort -V | tail -n 1)
+          previous_badging=$("$aapt" dump badging "$apk")
+          previous_code=$(sed -n "s/^package: name='com[.]kaif[.]music' versionCode='\([0-9][0-9]*\)'.*/\1/p" <<< "$previous_badging")
+          previous_signers=$("$apksigner" verify --print-certs "$apk")
+          previous_fingerprint=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' <<< "$previous_signers" | tr '[:lower:]' '[:upper:]')
+
+          signer_count=$(grep -c '^Signer #[0-9][0-9]* certificate SHA-256 digest: ' <<< "$previous_signers")
+          if [[ -z "$previous_code" || "$signer_count" != 1 || "$previous_fingerprint" != "$EXPECTED_CERT" ]]; then
+            echo "::error::The release key or package does not match the compatible public APK baseline."
+            exit 1
+          fi
+          if (( VERSION_CODE < previous_code )) || [[ "$PUBLISH_RELEASE" == true && "$VERSION_CODE" -eq "$previous_code" ]]; then
+            echo "::error::Publishing requires a versionCode greater than the latest public APK."
+            exit 1
+          fi
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -361,10 +368,27 @@ jobs:
           echo "### 📦 Download Artifacts" >> $GITHUB_STEP_SUMMARY
           echo "Download the compiled APK directly from the **Artifacts** section at the top of this run (\`mkr-music-universal-apk-v${{ steps.version_info.outputs.version_name }}\`)." >> $GITHUB_STEP_SUMMARY
 
+  publish:
+    name: Publish verified Universal APK
+    if: inputs.publish_release
+    needs: build_apks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download verified build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: mkr-music-universal-apk-v${{ needs.build_apks.outputs.version_name }}
+          path: release_assets
+
+      - name: Verify artifact checksum
+        working-directory: release_assets
+        run: sha256sum --check mkr-music-universal.apk.sha256
+
       - name: Generate Beautiful Release Notes
-        if: github.event.inputs.publish_release == 'true' || github.event.inputs.publish_release == true
         env:
-          VERSION_NAME: ${{ steps.version_info.outputs.version_name }}
+          VERSION_NAME: ${{ needs.build_apks.outputs.version_name }}
         shell: python
         run: |
           import os
@@ -379,8 +403,7 @@ jobs:
           # MKR Music v{version_name}
 
           > [!IMPORTANT]
-          > **Clean Installation Required:**
-          > Please **delete/uninstall any previous version of MKR Music** from your device before installing this update. MKR Music has transitioned to the official package ID (`com.kaif.music`) and permanent release signing key. Deleting the previous app ensures a clean install without signature conflicts. All future updates can then be installed seamlessly without deleting the app.
+          > **Update in place:** Install this APK over your existing compatible MKR Music installation. The package and signing certificate must match, and the build must have a newer version code. If Android reports an incompatibility, keep the existing installation and verify the APK and its source before proceeding.
 
           > ### Release Highlights
           >
@@ -416,22 +439,30 @@ jobs:
           with open("release_notes.txt", "w", encoding="utf-8") as f:
               f.write(body.strip())
 
-      - name: Publish or Attach Assets to GitHub Release
-        if: github.event.inputs.publish_release == 'true' || github.event.inputs.publish_release == true
+      - name: Publish a new release for the verified commit
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ github.token }}
+          VERSION_NAME: ${{ needs.build_apks.outputs.version_name }}
+        shell: bash
         run: |
-          VERSION_NAME="${{ steps.version_info.outputs.version_name }}"
-          TAG_NAME="v$VERSION_NAME"
-
-          echo "Publishing via workflow_dispatch to tag: $TAG_NAME"
-          if gh release view "$TAG_NAME" >/dev/null 2>&1; then
-            echo "Release $TAG_NAME already exists, uploading assets with --clobber..."
-            gh release upload "$TAG_NAME" release_assets/* --clobber
-          else
-            echo "Creating new release $TAG_NAME..."
-            gh release create "$TAG_NAME" release_assets/* \
-              --title "MKR Music v$VERSION_NAME" \
-              --notes-file release_notes.txt \
-              --target "${{ github.sha }}"
+          tag="v$VERSION_NAME"
+          repo="https://github.com/$GITHUB_REPOSITORY.git"
+          refs=$(git ls-remote "$repo" "refs/tags/$tag" "refs/tags/$tag^{}")
+          commit=$(awk -v ref="refs/tags/$tag^{}" '$2 == ref {print $1}' <<< "$refs")
+          if [[ -z "$commit" ]]; then
+            commit=$(awk -v ref="refs/tags/$tag" '$2 == ref {print $1}' <<< "$refs")
           fi
+          if [[ -n "$commit" && "$commit" != "$GITHUB_SHA" ]]; then
+            echo "::error::The release tag points to a different commit."
+            exit 1
+          fi
+          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "::error::A release already exists for this version. Existing assets are preserved."
+            exit 1
+          fi
+          if [[ -z "$commit" ]]; then
+            gh api --method POST "repos/$GITHUB_REPOSITORY/git/refs" \
+              -f "ref=refs/tags/$tag" -f "sha=$GITHUB_SHA" >/dev/null
+          fi
+          gh release create "$tag" release_assets/* --repo "$GITHUB_REPOSITORY" \
+            --verify-tag --title "MKR Music $tag" --notes-file release_notes.txt
