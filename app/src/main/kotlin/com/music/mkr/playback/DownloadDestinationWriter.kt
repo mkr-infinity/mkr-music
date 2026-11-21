@@ -139,7 +139,9 @@ object DownloadDestinationWriter {
 
                 contentValues.clear()
                 contentValues.put(MediaStore.Audio.Media.IS_PENDING, 0)
-                context.contentResolver.update(uri, contentValues, null, null)
+                if (context.contentResolver.update(uri, contentValues, null, null) == 0) {
+                    throw IOException("Failed to finalize MediaStore audio record")
+                }
             } catch (e: Exception) {
                 context.contentResolver.delete(uri, null, null)
                 throw e

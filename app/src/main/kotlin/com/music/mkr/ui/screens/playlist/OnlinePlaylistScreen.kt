@@ -20,6 +20,7 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -58,6 +59,7 @@ import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ripple
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -117,6 +119,7 @@ import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
+import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.constants.HideExplicitKey
 import com.music.mkr.db.entities.Playlist
 import com.music.mkr.db.entities.PlaylistEntity
@@ -133,6 +136,7 @@ import com.music.mkr.ui.component.MkrBadge
 import com.music.mkr.ui.component.NavigationTitle
 import com.music.mkr.ui.component.PlayingIndicator
 import com.music.mkr.ui.component.YouTubeGridItem
+import com.music.mkr.ui.component.SongDownloadCapsule
 import com.music.mkr.ui.component.mkrPressFeedback
 import com.music.mkr.ui.component.shimmer.ButtonPlaceholder
 import com.music.mkr.ui.component.shimmer.ListItemPlaceHolder
@@ -1357,6 +1361,8 @@ private fun PlaylistTrackRow(
     enabled: Boolean,
     modifier: Modifier = Modifier,
 ) {
+    val rowInteraction = remember { MutableInteractionSource() }
+    val animationsEnabled = rememberPreference(InterfaceAnimationsKey, true).value
     val durationStr = songItem.duration?.let { dur ->
         makeTimeString(dur.toLong() * 1000L)
     }
@@ -1376,8 +1382,10 @@ private fun PlaylistTrackRow(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .mkrPressFeedback()
+            .mkrPressFeedback(0.98f, rowInteraction, animationsEnabled)
             .combinedClickable(
+                interactionSource = rowInteraction,
+                indication = ripple(),
                 enabled = enabled,
                 onClick = onClick,
                 onLongClick = onLongClick
@@ -1499,22 +1507,27 @@ private fun PlaylistTrackRow(
                 }
             }
 
-            // Duration Pill
-            if (!durationStr.isNullOrEmpty()) {
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(start = 4.dp, end = 2.dp)
-                ) {
-                    Text(
-                        text = durationStr,
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                    )
+            SongDownloadCapsule(
+                songId = songItem.id,
+                modifier = Modifier.padding(start = 4.dp, end = 2.dp),
+                showCompletedIcon = false,
+            ) {
+                if (!durationStr.isNullOrEmpty()) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(start = 4.dp, end = 2.dp)
+                    ) {
+                        Text(
+                            text = durationStr,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 11.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
                 }
             }
 

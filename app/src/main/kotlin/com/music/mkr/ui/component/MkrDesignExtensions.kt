@@ -51,15 +51,17 @@ import androidx.compose.ui.unit.sp
  * Provides a gentle, cute bouncy scaling response on press without heavy computations.
  */
 fun Modifier.mkrPressFeedback(
-    scaleDown: Float = 0.96f
+    scaleDown: Float = 0.96f,
+    interactionSource: MutableInteractionSource? = null,
+    animationsEnabled: Boolean = true,
 ): Modifier = composed {
-    val interactionSource = remember { MutableInteractionSource() }
-    val isPressed by interactionSource.collectIsPressedAsState()
+    val source = interactionSource ?: remember { MutableInteractionSource() }
+    val isPressed by source.collectIsPressedAsState()
     val scale by animateFloatAsState(
-        targetValue = if (isPressed) scaleDown else 1.0f,
+        targetValue = if (animationsEnabled && isPressed) scaleDown else 1f,
         animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessLow
+            dampingRatio = if (interactionSource == null) Spring.DampingRatioMediumBouncy else Spring.DampingRatioNoBouncy,
+            stiffness = if (interactionSource == null) Spring.StiffnessLow else Spring.StiffnessMedium
         ),
         label = "MkrPressFeedbackScale"
     )

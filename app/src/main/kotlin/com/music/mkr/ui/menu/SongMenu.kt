@@ -302,6 +302,7 @@ fun SongMenu(
 
     SongListItem(
         song = song,
+        showDownloadIcon = false,
         badges = {},
         shape = listItemShape(0, 2),
         backgroundColor = Color.Transparent,

@@ -80,6 +80,17 @@
     <!-- Menu descriptions -->
     <string name="download_playlist_desc">Download all songs for offline playback</string>
     <string name="remove_download_playlist_desc">Remove all downloaded songs from this playlist</string>
+    <string name="download_capsule_active">Active</string>
+    <string name="download_capsule_queued">Queued</string>
+    <string name="download_capsule_progress">Downloading, %1$s</string>
+    <string name="download_capsule_unknown">Downloading, progress unavailable</string>
+    <string name="download_capsule_paused">Paused</string>
+    <string name="download_capsule_paused_progress">Paused at %1$s</string>
+    <string name="download_capsule_saving">Saving</string>
+    <string name="download_capsule_completed">Download complete</string>
+    <string name="download_capsule_failed_label">Failed</string>
+    <string name="download_capsule_failed">Download failed</string>
+    <string name="download_capsule_save_failed">Save failed</string>
     <string name="download_in_progress_desc">Download is in progress</string>
     <string name="share_playlist_desc">Share this playlist with others</string>
     <string name="delete_playlist_desc">Remove this playlist permanently</string>

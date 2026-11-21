@@ -45,19 +45,28 @@ import com.music.mkr.utils.YTPlayerUtils
 import com.music.mkr.utils.enumPreference
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Runnable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -89,6 +98,18 @@ constructor(
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val downloads = MutableStateFlow<Map<String, Download>>(emptyMap())
+    private val downloadsPaused = MutableStateFlow(false)
+    private data class CompletionCheck(val download: Download, val stage: SongDownloadStage)
+    private val completionChecks = MutableStateFlow<Map<String, CompletionCheck>>(emptyMap())
+
+    // Media3 publishes byte changes into volatile fields, without publishing every change to its listeners.
+    private val progressTicks = flow {
+        while (true) {
+            delay(250)
+            emit(Unit)
+        }
+    }.shareIn(scope, SharingStarted.WhileSubscribed())
+
     private val stateLock = Mutex()
     private val exportPreferences = context.getSharedPreferences("download_exports", Context.MODE_PRIVATE)
     private val exportFailures = MutableStateFlow(exportPreferences.all.keys.toSet())
@@ -254,6 +275,10 @@ constructor(
             maxParallelDownloads = 3
             addListener(
                 object : DownloadManager.Listener {
+                    override fun onDownloadsPausedChanged(downloadManager: DownloadManager, downloadsPaused: Boolean) {
+                        this@DownloadUtil.downloadsPaused.value = downloadsPaused
+                    }
+
                     override fun onDownloadChanged(
                         downloadManager: DownloadManager,
                         download: Download,
@@ -271,18 +296,30 @@ constructor(
                             songUrlCache.invalidate(download.request.id)
                         }
 
-                        downloads.update { map ->
-                            map.toMutableMap().apply {
-                                set(download.request.id, download)
-                            }
+                        val downloadId = download.request.id
+                        if (download.state == Download.STATE_COMPLETED) {
+                            completionChecks.update { it + (downloadId to CompletionCheck(download, SongDownloadStage.Saving)) }
+                        }
+                        downloads.update { it + (downloadId to download) }
+                        if (download.state != Download.STATE_COMPLETED) {
+                            completionChecks.update { it - downloadId }
                         }
 
                         scope.launch {
                             when (download.state) {
                                 Download.STATE_COMPLETED -> {
-                                    val downloadId = download.request.id
-                                    syncOfflineState(downloadId)
-                                    exportDownload(downloadId)
+                                    verifyCompletion(download) {
+                                        // Keep an interrupted export recoverable across process death.
+                                        stateLock.withLock {
+                                            if (downloads.value[downloadId] === download) {
+                                                if (!exportPreferences.edit().putBoolean(downloadId, true).commit()) {
+                                                    Timber.w("Could not persist pending export for %s", downloadId)
+                                                }
+                                            }
+                                        }
+                                        syncOfflineState(downloadId)
+                                        exportDownload(download)
+                                    }
 
                                     // Pre-cache lyrics for completed download so offline playback has instant lyrics
                                     try {
@@ -321,6 +358,7 @@ constructor(
                         songUrlCache.invalidate(downloadId)
 
                         downloads.update { it - downloadId }
+                        completionChecks.update { it - downloadId }
                         scope.launch {
                             syncOfflineState(downloadId)
                             stateLock.withLock {
@@ -339,13 +377,21 @@ constructor(
                 result[cursor.download.request.id] = cursor.download
             }
         }
+        downloadsPaused.value = downloadManager.downloadsPaused
+        val completed = result.filterValues { it.state == Download.STATE_COMPLETED }
+        completionChecks.value = completed.mapValues { CompletionCheck(it.value, SongDownloadStage.Saving) }
         downloads.value = result
         scope.launch {
             val knownDownloads = database.downloadedSongIds().toSet()
-            val completed = result.values.filter { it.state == Download.STATE_COMPLETED }
-                .map { it.request.id }
-            for (songId in knownDownloads + completed) {
-                syncOfflineState(songId, recoverExportFailure = songId !in knownDownloads)
+            for (songId in knownDownloads + completed.keys) {
+                val download = completed[songId]
+                if (download == null) {
+                    syncOfflineState(songId)
+                } else {
+                    verifyCompletion(download) {
+                        syncOfflineState(songId, recoverExportFailure = songId !in knownDownloads)
+                    }
+                }
             }
         }
     }
@@ -363,10 +409,96 @@ constructor(
 
     fun getDownload(songId: String): Flow<Download?> = downloads.map { it[songId] }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    internal fun observeSongDownload(songId: String): Flow<SongDownloadStatus?> =
+        combine(
+            getDownload(songId).distinctUntilChanged(),
+            downloadsPaused,
+            completionChecks.map { it[songId] }.distinctUntilChanged(),
+        ) { download, paused, completion ->
+            if (download == null) return@combine flowOf<SongDownloadStatus?>(null)
+            when (download.state) {
+                Download.STATE_QUEUED -> {
+                    val stage = if (paused) SongDownloadStage.Paused else SongDownloadStage.Queued
+                    flowOf(SongDownloadStatus(download.startTimeMs, stage, download.progressFraction().takeIf { paused }))
+                }
+                Download.STATE_STOPPED -> flowOf(
+                    SongDownloadStatus(download.startTimeMs, SongDownloadStage.Paused, download.progressFraction())
+                )
+                Download.STATE_RESTARTING -> flowOf(SongDownloadStatus(download.startTimeMs, SongDownloadStage.Queued))
+                Download.STATE_DOWNLOADING -> {
+                    if (paused) {
+                        flowOf(SongDownloadStatus(download.startTimeMs, SongDownloadStage.Paused, download.progressFraction()))
+                    } else {
+                        progressTicks.onStart { emit(Unit) }.map {
+                            val progress = download.progressFraction()
+                            val stage = if (progress == 1f) SongDownloadStage.Saving else SongDownloadStage.Downloading
+                            SongDownloadStatus(download.startTimeMs, stage, progress)
+                        }
+                    }
+                }
+                Download.STATE_COMPLETED -> {
+                    val stage = completion?.takeIf { it.download === download }?.stage ?: SongDownloadStage.Saving
+                    flowOf(
+                        SongDownloadStatus(
+                            download.startTimeMs,
+                            stage,
+                            if (stage == SongDownloadStage.Saving) download.progressFraction() else null,
+                        )
+                    )
+                }
+                Download.STATE_FAILED -> flowOf(SongDownloadStatus(download.startTimeMs, SongDownloadStage.Failed))
+                else -> flowOf(null)
+            }
+        }.flatMapLatest { it }.distinctUntilChanged()
+
+    private fun Download.progressFraction(): Float? {
+        val total = contentLength
+        val bytes = bytesDownloaded
+        if (total <= 0 || bytes < 0 || bytes > total) return null
+        return if (bytes == total) 1f else (bytes.toDouble() / total).toFloat().coerceAtMost(0.99999994f)
+    }
+
+    private suspend fun verifyCompletion(download: Download, save: suspend () -> Unit) {
+        val id = download.request.id
+        val pending = completionChecks.value[id] ?: return
+        if (pending.download !== download) return
+        val stage = try {
+            save()
+            val persisted = downloadManager.downloadIndex.getDownload(id)
+            val key = download.request.customCacheKey ?: download.request.uri.toString()
+            if (persisted != null && persisted.state == Download.STATE_COMPLETED &&
+                persisted.updateTimeMs == download.updateTimeMs &&
+                downloadCache.completeAudioCachedAt(key) != null &&
+                database.getSongByIdBlocking(id)?.song?.isDownloaded == true &&
+                id !in exportFailures.value
+            ) SongDownloadStage.Completed else SongDownloadStage.SaveFailed
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.w(e, "Could not verify download completion for %s", id)
+            SongDownloadStage.SaveFailed
+        }
+        completionChecks.update { checks ->
+            if (checks[id] === pending) checks + (id to CompletionCheck(download, stage)) else checks
+        }
+    }
+
     fun hasExportFailure(songId: String): Flow<Boolean> = exportFailures.map { songId in it }
 
     fun retryExport(songId: String) {
-        scope.launch { exportDownload(songId) }
+        scope.launch {
+            val download = downloads.value[songId]?.takeIf { it.state == Download.STATE_COMPLETED } ?: return@launch
+            val saving = CompletionCheck(download, SongDownloadStage.Saving)
+            completionChecks.update { checks ->
+                val current = checks[songId]
+                if (current != null && current.download === download && current.stage == SongDownloadStage.SaveFailed) {
+                    checks + (songId to saving)
+                } else checks
+            }
+            if (completionChecks.value[songId] !== saving) return@launch
+            verifyCompletion(download) { exportDownload(download) }
+        }
     }
 
     private suspend fun syncOfflineState(songId: String, recoverExportFailure: Boolean = false) = stateLock.withLock {
@@ -378,13 +510,19 @@ constructor(
         }
     }
 
-    private suspend fun exportDownload(songId: String) {
-        if (!activeExports.add(songId)) return
+    private suspend fun exportDownload(download: Download) {
+        val songId = download.request.id
+        if (downloads.value[songId] !== download) return
+        if (!activeExports.add(songId)) {
+            stateLock.withLock {
+                if (downloads.value[songId] === download) setExportFailed(songId, true)
+            }
+            return
+        }
         try {
-            if (downloads.value[songId]?.state != Download.STATE_COMPLETED) return
             val written = DownloadDestinationWriter.writeCompletedDownload(context, downloadCache, database, songId)
             stateLock.withLock {
-                setExportFailed(songId, !written && downloads.value[songId]?.state == Download.STATE_COMPLETED)
+                if (downloads.value[songId] === download) setExportFailed(songId, !written)
             }
         } finally {
             activeExports.remove(songId)

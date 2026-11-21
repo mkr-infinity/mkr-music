@@ -68,8 +68,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
 import androidx.compose.ui.graphics.Color
@@ -416,11 +414,6 @@ fun SongListItem(
         if (showInLibraryIcon && song.song.inLibrary != null) {
             Icon.Library()
         }
-        if (showDownloadIcon) {
-            val download by LocalDownloadUtil.current.getDownload(song.id)
-                .collectAsState(initial = null)
-            Icon.Download(download?.state)
-        }
     },
     isSelected: Boolean = false,
     isActive: Boolean = false,
@@ -453,7 +446,10 @@ fun SongListItem(
                     modifier = Modifier.size(ListThumbnailSize)
                 )
             },
-            trailingContent = trailingContent,
+            trailingContent = {
+                if (showDownloadIcon) SongDownloadCapsule(song.id, Modifier.padding(end = 4.dp))
+                trailingContent()
+            },
             modifier = modifier,
             isSelected = isSelected,
             isActive = isActive,
@@ -484,7 +480,6 @@ fun ExpressiveSongRow(
     isPlaying: Boolean = false,
     isSelected: Boolean = false,
     showDownloadIcon: Boolean = true,
-    downloadState: Download? = null,
     shape: Shape = RectangleShape,
     trailingContent: @Composable RowScope.() -> Unit = {},
     modifier: Modifier = Modifier
@@ -497,15 +492,6 @@ fun ExpressiveSongRow(
 
     val expressiveSongAlbumImage by rememberPreference(key = ExpressiveSongAlbumImageKey, defaultValue = false)
 
-    val animatedProgress by animateFloatAsState(
-        targetValue = if (downloadState?.state == Download.STATE_DOWNLOADING || downloadState?.state == Download.STATE_QUEUED) {
-            (maxOf(0f, downloadState.percentDownloaded) / 100f).coerceIn(0f, 1f)
-        } else 0f,
-        animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec<Float>(),
-        label = "DownloadProgress"
-    )
-    val progressColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f)
-
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
@@ -513,15 +499,7 @@ fun ExpressiveSongRow(
             .height(56.dp)
             .padding(horizontal = 16.dp)
             .clip(shape)
-            .drawBehind {
-                drawRect(color = backgroundColor)
-                if (animatedProgress > 0f) {
-                    drawRect(
-                        color = progressColor,
-                        size = size.copy(width = size.width * animatedProgress)
-                    )
-                }
-            }
+            .background(backgroundColor)
             .padding(start = 12.dp, end = 4.dp)
     ) {
         // 1. Thumbnail, index number or visualizer on the left
@@ -623,8 +601,7 @@ fun ExpressiveSongRow(
         )
 
         if (showDownloadIcon) {
-            Spacer(Modifier.width(8.dp))
-            Icon.Download(downloadState?.state)
+            SongDownloadCapsule(song.id, Modifier.padding(start = 8.dp))
         }
 
         // 4. Trailing Content (more_vert or Checkbox)
@@ -647,8 +624,7 @@ fun SongGridItem(
             Icon.Library()
         }
         if (showDownloadIcon) {
-            val download by LocalDownloadUtil.current.getDownload(song.id).collectAsState(initial = null)
-            Icon.Download(download?.state)
+            SongDownloadCapsule(song.id, Modifier.padding(end = 4.dp))
         }
     },
     isActive: Boolean = false,
@@ -1205,10 +1181,6 @@ fun YouTubeListItem(
             Icon.Favorite()
         }
         if (item.explicit) Icon.Explicit()
-        if (item is SongItem) {
-            val download by LocalDownloadUtil.current.getDownload(item.id).collectAsState(null)
-            Icon.Download(download?.state)
-        }
     },
     shape: Shape = RectangleShape,
     drawHighlight: Boolean = true,
@@ -1237,7 +1209,10 @@ fun YouTubeListItem(
                     modifier = Modifier.size(ListThumbnailSize)
                 )
             },
-            trailingContent = trailingContent,
+            trailingContent = {
+                if (item is SongItem) SongDownloadCapsule(item.id, Modifier.padding(end = 4.dp))
+                trailingContent()
+            },
             modifier = modifier,
             isSelected = isSelected,
             isActive = isActive,
@@ -1281,8 +1256,7 @@ fun YouTubeGridItem(
         if (item.explicit) Icon.Explicit()
         // if (item is SongItem && song?.song?.inLibrary != null) Icon.Library()
         if (item is SongItem) {
-            val download by LocalDownloadUtil.current.getDownload(item.id).collectAsState(null)
-            Icon.Download(download?.state)
+            SongDownloadCapsule(item.id, Modifier.padding(end = 4.dp))
         }
     },
     thumbnailRatio: Float = if (item is SongItem) 16f / 9 else 1f,

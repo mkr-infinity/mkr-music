@@ -8,6 +8,7 @@ package com.music.mkr.ui.component
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ripple
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,9 +45,11 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.music.mkr.R
+import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.db.entities.Song
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.makeTimeString
+import com.music.mkr.utils.rememberPreference
 
 /**
  * Material 3 Expressive track row for Library collections
@@ -68,6 +72,8 @@ fun LibraryTrackRow(
     onLongClick: () -> Unit = {},
     trailingContent: @Composable RowScope.() -> Unit = {},
 ) {
+    val rowInteraction = remember { MutableInteractionSource() }
+    val animationsEnabled = rememberPreference(InterfaceAnimationsKey, true).value
     val containerColor = if (isActive) {
         MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
     } else {
@@ -85,10 +91,12 @@ fun LibraryTrackRow(
             .fillMaxWidth()
             .clip(CircleShape)
             .combinedClickable(
+                interactionSource = rowInteraction,
+                indication = ripple(),
                 onClick = onClick,
                 onLongClick = onLongClick
             )
-            .mkrPressFeedback(),
+            .mkrPressFeedback(0.98f, rowInteraction, animationsEnabled),
         shape = CircleShape,
         color = containerColor,
         border = BorderStroke(1.dp, borderColor)
@@ -232,22 +240,27 @@ fun LibraryTrackRow(
                 }
             }
 
-            // 4. Half-circle Stadium Capsule Duration Pill
-            if (song.song.duration > 0) {
-                Surface(
-                    shape = CircleShape,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
-                    modifier = Modifier.padding(start = 4.dp, end = 2.dp)
-                ) {
-                    Text(
-                        text = makeTimeString(song.song.duration * 1000L),
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 11.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                    )
+            SongDownloadCapsule(
+                songId = song.id,
+                modifier = Modifier.padding(start = 4.dp, end = 2.dp),
+                showCompletedIcon = false,
+            ) {
+                if (song.song.duration > 0) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.5f),
+                        modifier = Modifier.padding(start = 4.dp, end = 2.dp)
+                    ) {
+                        Text(
+                            text = makeTimeString(song.song.duration * 1000L),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontWeight = FontWeight.Medium,
+                                fontSize = 11.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
+                        )
+                    }
                 }
             }
 
