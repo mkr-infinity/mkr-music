@@ -7,6 +7,7 @@ package com.music.mkr.ui.screens.artist
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.music.mkr.ui.component.mkrClickable
+import com.music.mkr.ui.component.mkrCombinedClickable
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -402,7 +403,7 @@ fun ArtistScreen(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 4.dp)
-                                    .combinedClickable(
+                                    .mkrCombinedClickable(
                                         onClick = {
                                             if (song.id == mediaMetadata?.id) {
                                                 playerConnection.togglePlayPause()
@@ -563,7 +564,7 @@ fun ArtistScreen(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(horizontal = 16.dp, vertical = 4.dp)
-                                        .combinedClickable(
+                                        .mkrCombinedClickable(
                                             onClick = {
                                                 if (song.id == mediaMetadata?.id) {
                                                     playerConnection.togglePlayPause()
@@ -1390,12 +1391,8 @@ private fun ArtistTrackLeaderboardCard(
         else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f)
     }
 
-    val actionPressInteraction = remember { MutableInteractionSource() }
     Surface(
-        interactionSource = actionPressInteraction,
-        modifier = modifier
-            .fillMaxWidth()
-            .mkrPressFeedback(interactionSource = actionPressInteraction),
+        modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(if (isTopOne) 18.dp else 16.dp),
         color = containerColor,
         border = BorderStroke(1.dp, borderColor)
