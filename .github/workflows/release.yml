@@ -43,9 +43,6 @@ jobs:
         with:
           cache-disabled: false
 
-      - name: Install Android SDK
-        run: sdkmanager "platforms;android-37.0" "build-tools;37.0.0"
-
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
