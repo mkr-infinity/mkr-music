@@ -452,8 +452,7 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
             SnackbarManager.events.collectLatest { event ->
                 snackbarHostState.currentSnackbarData?.dismiss()
-                val messageStr = event.messageArgs?.let { context.getString(event.messageResource, it) }
-                    ?: context.getString(event.messageResource)
+                val messageStr = event.resolveMessage(context)
                 val actionLabelStr = event.actionLabel?.let { context.getString(it) }
                 val result = if (event.iconRes != null) {
                     snackbarHostState.showSnackbar(SnackbarManager.PlaylistVisuals(messageStr, event.duration, event.iconRes))

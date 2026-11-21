@@ -54,56 +54,58 @@ fun DonateDialog(onDismiss: () -> Unit) {
     ) {
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.TopCenter) {
             Column(
-                Modifier.widthIn(max = 520.dp).fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = 20.dp, end = 20.dp, bottom = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
+                Modifier.widthIn(max = 520.dp).fillMaxWidth().padding(horizontal = 20.dp),
             ) {
                 Text(stringResource(R.string.support_mkr_title), style = MaterialTheme.typography.headlineSmall)
                 MkrSnackbarHost(feedback, modifier = Modifier.fillMaxWidth())
-                Text(
-                    stringResource(R.string.support_mkr_intro),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-                Surface(
-                    shape = MaterialTheme.shapes.extraLarge,
-                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                Column(
+                    Modifier.verticalScroll(rememberScrollState()).padding(top = 12.dp, bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    Column(
-                        Modifier.fillMaxWidth().padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    Text(
+                        stringResource(R.string.support_mkr_intro),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Surface(
+                        shape = MaterialTheme.shapes.extraLarge,
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     ) {
-                        Text(stringResource(R.string.support_upi_id), style = MaterialTheme.typography.labelMedium)
-                        Text(GitHubConfig.DEV_UPI_ID, style = MaterialTheme.typography.titleMedium)
-                        AnimatedActionButton(
-                            onClick = {
-                                val copied = runCatching {
-                                    val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                                    clipboard.setPrimaryClip(ClipData.newPlainText("UPI ID", GitHubConfig.DEV_UPI_ID))
-                                }.isSuccess
-                                feedback.currentSnackbarData?.dismiss()
-                                scope.launch {
-                                    feedback.showSnackbar(context.getString(
-                                        if (copied) R.string.copied_to_clipboard else R.string.support_upi_copy_failed
-                                    ))
-                                }
-                            },
-                            animate = animationsEnabled,
-                            emphasis = ActionButtonEmphasis.Tonal,
-                        ) { Text(stringResource(R.string.copy)) }
+                        Column(
+                            Modifier.fillMaxWidth().padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            Text(stringResource(R.string.support_upi_id), style = MaterialTheme.typography.labelMedium)
+                            Text(GitHubConfig.DEV_UPI_ID, style = MaterialTheme.typography.titleMedium)
+                            AnimatedActionButton(
+                                onClick = {
+                                    val copied = runCatching {
+                                        val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                                        clipboard.setPrimaryClip(ClipData.newPlainText("UPI ID", GitHubConfig.DEV_UPI_ID))
+                                    }.isSuccess
+                                    feedback.currentSnackbarData?.dismiss()
+                                    scope.launch {
+                                        feedback.showSnackbar(context.getString(
+                                            if (copied) R.string.copied_to_clipboard else R.string.support_upi_copy_failed
+                                        ))
+                                    }
+                                },
+                                animate = animationsEnabled,
+                                emphasis = ActionButtonEmphasis.Tonal,
+                            ) { Text(stringResource(R.string.copy)) }
+                        }
                     }
-                }
-                Text(stringResource(R.string.support_upi_helper), style = MaterialTheme.typography.bodyMedium)
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                ) {
-                    TextButton(onClick = {
-                        uriHandler.safeOpenUri(context, GitHubConfig.DEV_BUYMEACOFFEE_URL)
-                        onDismiss()
-                    }) { Text(stringResource(R.string.support_buy_me_a_coffee)) }
-                    TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) }
+                    Text(stringResource(R.string.support_upi_helper), style = MaterialTheme.typography.bodyMedium)
+                    FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                    ) {
+                        TextButton(onClick = {
+                            uriHandler.safeOpenUri(context, GitHubConfig.DEV_BUYMEACOFFEE_URL)
+                            onDismiss()
+                        }) { Text(stringResource(R.string.support_buy_me_a_coffee)) }
+                        TextButton(onClick = onDismiss) { Text(stringResource(R.string.done)) }
+                    }
                 }
             }
         }

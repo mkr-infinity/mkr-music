@@ -155,6 +155,7 @@ import com.music.mkr.ui.menu.SelectionMediaMetadataMenu
 import com.music.mkr.ui.screens.CommentSheet
 import com.music.mkr.ui.utils.ShowMediaInfo
 import com.music.mkr.ui.utils.resize
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.listItemShape
 import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.rememberPreference
@@ -176,7 +177,6 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
-import android.widget.Toast
 import androidx.compose.foundation.layout.PaddingValues
 import coil3.compose.AsyncImage
 import kotlinx.coroutines.coroutineScope
@@ -856,7 +856,7 @@ fun Queue(
                     ToggleButton(
                         checked = false,
                         onCheckedChange = {
-                            Toast.makeText(context, context.getString(R.string.starting_radio), Toast.LENGTH_SHORT).show()
+                            SnackbarManager.show(R.string.starting_radio)
                             playerConnection.startRadioSeamlessly()
                         },
                         enabled = !isListenTogetherGuest,

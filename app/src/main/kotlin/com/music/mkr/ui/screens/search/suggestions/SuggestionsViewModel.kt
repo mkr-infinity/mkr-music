@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
 import com.music.mkr.constants.SuggestionRegionKey
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 
 @HiltViewModel
 class SuggestionsViewModel @Inject constructor(
@@ -259,11 +260,7 @@ class SuggestionsViewModel @Inject constructor(
                     }
                 } else {
                     withContext(Dispatchers.Main) {
-                        android.widget.Toast.makeText(
-                            context,
-                            "\"${track.title}\" is not available on YouTube Music",
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
+                        SnackbarManager.show("\"${track.title}\" is not available on YouTube Music")
                     }
                 }
             }
@@ -327,11 +324,7 @@ class SuggestionsViewModel @Inject constructor(
                         }
                     } else {
                         withContext(Dispatchers.Main) {
-                            android.widget.Toast.makeText(
-                                context,
-                                "\"${video.title}\" is not available on YouTube Music",
-                                android.widget.Toast.LENGTH_SHORT
-                            ).show()
+                            SnackbarManager.show("\"${video.title}\" is not available on YouTube Music")
                         }
                     }
                 }

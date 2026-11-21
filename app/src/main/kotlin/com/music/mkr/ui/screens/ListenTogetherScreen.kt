@@ -8,7 +8,6 @@ package com.music.mkr.ui.screens
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
@@ -126,6 +125,7 @@ import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.utils.listItemShape
 import com.music.mkr.ui.utils.backToMain
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.viewmodels.ListenTogetherViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -303,14 +303,14 @@ fun ListenTogetherScreen(
                     val finalUsername = username.trim()
                     if (finalUsername.isNotBlank()) {
                         savedUsername = finalUsername
-                        Toast.makeText(context, R.string.creating_room, Toast.LENGTH_SHORT).show()
+                        SnackbarManager.show(R.string.creating_room)
                         viewModel.isCreatingRoom.value = true
                         viewModel.isJoiningRoom.value = false
                         viewModel.joinErrorMessage.value = null
                         listenTogetherManager.connect()
                         listenTogetherManager.createRoom(finalUsername)
                     } else {
-                        Toast.makeText(context, R.string.error_username_empty, Toast.LENGTH_SHORT).show()
+                        SnackbarManager.show(R.string.error_username_empty)
                     }
                 },
                 onJoinRoom = {
@@ -318,18 +318,14 @@ fun ListenTogetherScreen(
                     val finalUsername = username.trim()
                     if (finalUsername.isNotBlank()) {
                         savedUsername = finalUsername
-                        Toast.makeText(
-                            context,
-                            context.getString(R.string.joining_room, roomCodeInput),
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        SnackbarManager.show(context.getString(R.string.joining_room, roomCodeInput))
                         viewModel.isJoiningRoom.value = true
                         viewModel.isCreatingRoom.value = false
                         viewModel.joinErrorMessage.value = null
                         listenTogetherManager.connect()
                         listenTogetherManager.joinRoom(roomCodeInput, finalUsername)
                     } else {
-                        Toast.makeText(context, R.string.error_username_empty, Toast.LENGTH_SHORT).show()
+                        SnackbarManager.show(R.string.error_username_empty)
                     }
                 },
                 onLeaveRoom = { listenTogetherManager.leaveRoom() },
@@ -745,7 +741,7 @@ private fun RoomStatusCard(
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         val clip = ClipData.newPlainText("Listen Together Link", inviteLink)
                         clipboard.setPrimaryClip(clip)
-                        Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+                        SnackbarManager.show(R.string.copied_to_clipboard)
                     },
                     colors = ButtonDefaults.filledTonalButtonColors(
                         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -776,7 +772,7 @@ private fun RoomStatusCard(
                         val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                         val clip = ClipData.newPlainText("Room Code", roomCode)
                         clipboard.setPrimaryClip(clip)
-                        Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+                        SnackbarManager.show(R.string.copied_to_clipboard)
                     },
                     colors = ButtonDefaults.filledTonalButtonColors(
                         containerColor = MaterialTheme.colorScheme.secondaryContainer,

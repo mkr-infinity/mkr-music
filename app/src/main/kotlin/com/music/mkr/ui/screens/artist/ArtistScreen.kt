@@ -11,7 +11,6 @@ import com.music.mkr.ui.component.mkrCombinedClickable
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -142,6 +141,7 @@ import com.music.mkr.ui.theme.LocalPlayerArtworkPalette
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.isScrollingUp
 import com.music.mkr.ui.utils.resize
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.listItemShape
 import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.rememberPreference
@@ -327,7 +327,7 @@ fun ArtistScreen(
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                 val clip = ClipData.newPlainText("Artist Link", link)
                                 clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, R.string.link_copied, Toast.LENGTH_SHORT).show()
+                                SnackbarManager.show(R.string.link_copied)
                             }
                         },
                         modifier = Modifier
@@ -807,7 +807,7 @@ fun ArtistScreen(
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             val clip = ClipData.newPlainText("Artist Link", link)
                             clipboard.setPrimaryClip(clip)
-                            Toast.makeText(context, R.string.link_copied, Toast.LENGTH_SHORT).show()
+                            SnackbarManager.show(R.string.link_copied)
                         }
                     },
                 ) {

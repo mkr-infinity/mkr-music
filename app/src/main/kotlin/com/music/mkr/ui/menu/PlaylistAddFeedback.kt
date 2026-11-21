@@ -62,9 +62,10 @@ internal fun playlistAddHandler(
     var duplicateRequest by remember { mutableStateOf<DuplicateSongs?>(null) }
     var feedback by remember { mutableStateOf<PlaylistAddResult.Feedback?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var dismissing by remember { mutableStateOf(false) }
 
     fun submit(playlist: Playlist, choice: DuplicateChoice? = null) {
-        if (busy) return
+        if (busy || dismissing) return
         val prepared = duplicateRequest?.songIds
         duplicateRequest = null
         activePlaylist = playlist
@@ -77,7 +78,10 @@ internal fun playlistAddHandler(
                     is PlaylistAddResult.Duplicates -> if (pickerVisible) duplicateRequest = result.songs
                     is PlaylistAddResult.Feedback -> {
                         if (result.added || !pickerVisible) {
-                            if (pickerVisible) dismissPicker()
+                            if (pickerVisible) {
+                                dismissing = true
+                                dismissPicker()
+                            }
                             SnackbarManager.show(result.message, messageArgs = result.playlistName, iconRes = result.icon)
                         } else {
                             feedback = result
@@ -94,6 +98,7 @@ internal fun playlistAddHandler(
         if (!isVisible) {
             duplicateRequest = null
             feedback = null
+            dismissing = false
         }
     }
     val request = duplicateRequest

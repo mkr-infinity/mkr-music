@@ -5,7 +5,6 @@
 
 package com.music.mkr.ui.component
 
-import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -38,6 +37,7 @@ import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.EnableGoogleCastKey
 import com.music.mkr.utils.rememberPreference
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import timber.log.Timber
 
 /**
@@ -160,7 +160,7 @@ fun CastButton(
                     .clip(RoundedCornerShape(20.dp))
                     .clickable {
                     if (currentMetadata == null && !isCasting) {
-                        Toast.makeText(context, "Play a song first to cast", Toast.LENGTH_SHORT).show()
+                        SnackbarManager.show("Play a song first to cast")
                         return@clickable
                     }
                     

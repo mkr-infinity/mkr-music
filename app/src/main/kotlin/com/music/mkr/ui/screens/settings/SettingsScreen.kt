@@ -75,13 +75,13 @@ import com.music.mkr.ui.component.DefaultDialog
 import com.music.mkr.ui.screens.Screens
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.safeOpenUri
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.constants.*
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
-import android.widget.Toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -581,11 +581,7 @@ fun SettingsScreen(
                                 sharedPrefs.edit().clear().apply()
 
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(
-                                        context,
-                                        context.getString(R.string.reset_settings_done),
-                                        Toast.LENGTH_SHORT
-                                    ).show()
+                                    SnackbarManager.show(R.string.reset_settings_done)
                                 }
                             } catch (e: Exception) {
                                 Timber.tag("SettingsScreen").e(e, "Error resetting settings")

@@ -94,6 +94,7 @@ import com.music.mkr.ui.component.Material3MenuItemData
 import com.music.mkr.ui.component.NewAction
 import com.music.mkr.ui.component.NewActionGrid
 import com.music.mkr.ui.component.VolumeSlider
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.listentogether.ListenTogetherServers
 import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
@@ -321,7 +322,7 @@ fun PlayerMenu(
                             },
                             text = stringResource(R.string.start_an_radio),
                             onClick = {
-                                Toast.makeText(context, startingRadioText, Toast.LENGTH_SHORT).show()
+                                SnackbarManager.show(startingRadioText)
                                 playerConnection.startRadioSeamlessly()
                                 onDismiss()
                             }
@@ -1337,7 +1338,7 @@ fun ListenTogetherDialog(
                                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                             val clip = android.content.ClipData.newPlainText("Listen Together Link", inviteLink)
                                             clipboard.setPrimaryClip(clip)
-                                            Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+                                            SnackbarManager.show(R.string.copied_to_clipboard)
                                         }
                                     ) {
                                         Icon(
@@ -1356,7 +1357,7 @@ fun ListenTogetherDialog(
                                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                             val clip = android.content.ClipData.newPlainText("Room Code", room.roomCode)
                                             clipboard.setPrimaryClip(clip)
-                                            Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+                                            SnackbarManager.show(R.string.copied_to_clipboard)
                                         }
                                     ) {
                                         Icon(

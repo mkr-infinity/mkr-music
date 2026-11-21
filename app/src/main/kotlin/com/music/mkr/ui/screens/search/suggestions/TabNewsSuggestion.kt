@@ -65,6 +65,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import com.music.innertube.models.AlbumItem
 import com.music.mkr.ui.component.NavigationTitle
 import com.music.mkr.ui.screens.NetworkReload
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -83,7 +84,6 @@ fun SuggestionsTabContent(
     val isManualLoading by viewModel.isManualLoading.collectAsState()
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     val playerConnection = com.music.mkr.LocalPlayerConnection.current
-    val context = LocalContext.current
     val (regionCode, _) = rememberPreference(
         key = SuggestionRegionKey,
         defaultValue = "system"
@@ -134,7 +134,7 @@ fun SuggestionsTabContent(
                         tracks = suggestionTracks!!,
                         countryCode = regionCode,
                         onTrackClick = { track ->
-                            android.widget.Toast.makeText(context, "Loading ${track.title}...", android.widget.Toast.LENGTH_SHORT).show()
+                            SnackbarManager.show("Loading ${track.title}...")
                             viewModel.playTrack(track, playerConnection)
                         },
                         onMoreClick = {
@@ -150,7 +150,7 @@ fun SuggestionsTabContent(
                     YouTubeLatestAlbumsSection(
                         albums = albums,
                         onAlbumClick = { album ->
-                            android.widget.Toast.makeText(context, "Loading ${album.title}...", android.widget.Toast.LENGTH_SHORT).show()
+                            SnackbarManager.show("Loading ${album.title}...")
                             navController.navigate("album/${album.id}")
                         },
                         onMoreClick = {
@@ -165,7 +165,7 @@ fun SuggestionsTabContent(
                     TopArtistsSection(
                         artists = artists,
                         onArtistClick = { artist ->
-                            android.widget.Toast.makeText(context, "Loading ${artist.name}...", android.widget.Toast.LENGTH_SHORT).show()
+                            SnackbarManager.show("Loading ${artist.name}...")
                             viewModel.navigateToArtist(artist, navController)
                         }
                     )
@@ -177,7 +177,7 @@ fun SuggestionsTabContent(
                     TrendingAlbumsSection(
                         albums = albums,
                         onAlbumClick = { album ->
-                            android.widget.Toast.makeText(context, "Loading ${album.title}...", android.widget.Toast.LENGTH_SHORT).show()
+                            SnackbarManager.show("Loading ${album.title}...")
                             viewModel.navigateToAlbum(album, navController)
                         },
                         onMoreClick = {
@@ -193,7 +193,7 @@ fun SuggestionsTabContent(
                     TrendingVideosSection(
                         videos = videos,
                         onVideoClick = { video ->
-                            android.widget.Toast.makeText(context, "Loading video ${video.title}...", android.widget.Toast.LENGTH_SHORT).show()
+                            SnackbarManager.show("Loading video ${video.title}...")
                             viewModel.playVideo(video, playerConnection)
                         },
                         onMoreClick = {

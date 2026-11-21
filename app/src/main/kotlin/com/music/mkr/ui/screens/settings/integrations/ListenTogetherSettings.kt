@@ -92,6 +92,7 @@ import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.ExpressiveSettingGroup
 import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.ui.utils.backToMain
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.viewmodels.ListenTogetherViewModel
 import kotlinx.coroutines.flow.collectLatest
@@ -158,22 +159,22 @@ fun ListenTogetherSettings(
                     // Room created toast is shown globally by the client
                 }
                 is ListenTogetherEvent.JoinApproved -> {
-                    Toast.makeText(context, "Joined room: ${event.roomCode}", Toast.LENGTH_SHORT).show()
+                    SnackbarManager.show("Joined room: ${event.roomCode}")
                 }
                 is ListenTogetherEvent.JoinRejected -> {
-                    Toast.makeText(context, "Join rejected: ${event.reason}", Toast.LENGTH_SHORT).show()
+                    SnackbarManager.show("Join rejected: ${event.reason}")
                 }
                 is ListenTogetherEvent.JoinRequestReceived -> {
-                    Toast.makeText(context, "${event.username} wants to join", Toast.LENGTH_SHORT).show()
+                    SnackbarManager.show("${event.username} wants to join")
                 }
                 is ListenTogetherEvent.Kicked -> {
-                    Toast.makeText(context, "Kicked: ${event.reason}", Toast.LENGTH_SHORT).show()
+                    SnackbarManager.show("Kicked: ${event.reason}")
                 }
                 is ListenTogetherEvent.ConnectionError -> {
-                    Toast.makeText(context, "Connection error: ${event.error}", Toast.LENGTH_SHORT).show()
+                    SnackbarManager.show("Connection error: ${event.error}")
                 }
                 is ListenTogetherEvent.ServerError -> {
-                    Toast.makeText(context, "Error: ${event.message}", Toast.LENGTH_SHORT).show()
+                    SnackbarManager.show("Error: ${event.message}")
                 }
                 else -> {}
             }
@@ -399,7 +400,7 @@ fun ListenTogetherSettings(
                                     onClick = if (roomState == null) {
                                         { showAvatarPicker = true }
                                     } else {
-                                        { Toast.makeText(context, context.getString(R.string.listen_together_cannot_edit_username_in_room), Toast.LENGTH_SHORT).show() }
+                                        { SnackbarManager.show(R.string.listen_together_cannot_edit_username_in_room) }
                                     }
                                 ),
                             shape = androidx.compose.foundation.shape.CircleShape,
@@ -422,7 +423,7 @@ fun ListenTogetherSettings(
                     onClick = if (roomState == null) {
                         { showUsernameDialog = true }
                     } else {
-                        { Toast.makeText(context, context.getString(R.string.listen_together_cannot_edit_username_in_room), Toast.LENGTH_SHORT).show() }
+                        { SnackbarManager.show(R.string.listen_together_cannot_edit_username_in_room) }
                     }
                 ),
                 Material3SettingsItem(

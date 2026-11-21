@@ -8,7 +8,6 @@ package com.music.mkr.ui.menu
 import android.app.SearchManager
 import android.content.Intent
 import android.content.res.Configuration
-import android.widget.Toast
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -80,6 +79,7 @@ import com.music.mkr.ui.component.ListDialog
 import com.music.mkr.ui.component.Material3MenuGroup
 import com.music.mkr.ui.component.Material3MenuItemData
 import com.music.mkr.ui.component.TextFieldDialog
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.viewmodels.LyricsMenuViewModel
 import com.music.mkr.constants.OpenRouterApiKey
 import com.music.mkr.constants.DeeplApiKey
@@ -233,7 +233,7 @@ fun LyricsMenu(
                         
                         // Show warning only if network is definitely unavailable
                         if (!isNetworkAvailable) {
-                            Toast.makeText(context, context.getString(R.string.error_no_internet), Toast.LENGTH_SHORT).show()
+                            SnackbarManager.show(R.string.error_no_internet)
                         }
                     },
                 ) {

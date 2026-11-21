@@ -7,7 +7,6 @@
 
 package com.music.mkr.ui.component
 
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animate
 import androidx.compose.animation.core.tween
@@ -127,6 +126,7 @@ import com.music.mkr.extensions.toMediaItem
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.queues.LocalAlbumRadio
 import com.music.mkr.ui.utils.resize
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.joinByBullet
 import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.rememberEnumPreference
@@ -1822,7 +1822,6 @@ fun SwipeToSongBox(
     mediaItem: MediaItem,
     content: @Composable BoxScope.() -> Unit
 ) {
-    val ctx = LocalContext.current
     val player = LocalPlayerConnection.current
     val scope = rememberCoroutineScope()
     val offset = remember { mutableFloatStateOf(0f) }
@@ -1842,13 +1841,13 @@ fun SwipeToSongBox(
                     when {
                         offset.floatValue >= threshold -> {
                             player?.playNext(listOf(mediaItem))
-                            Toast.makeText(ctx, R.string.play_next, Toast.LENGTH_SHORT).show()
+                            SnackbarManager.show(R.string.play_next)
                             reset(offset, scope)
                         }
 
                         offset.floatValue <= -threshold -> {
                             player?.addToQueue(listOf(mediaItem))
-                            Toast.makeText(ctx, R.string.add_to_queue, Toast.LENGTH_SHORT).show()
+                            SnackbarManager.show(R.string.add_to_queue)
                             reset(offset, scope)
                         }
 

@@ -9,7 +9,6 @@ import com.music.mkr.ui.component.mkrClickable
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -151,6 +150,7 @@ import com.music.mkr.ui.menu.YouTubeSongMenu
 import com.music.mkr.ui.theme.LocalPlayerArtworkPalette
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.resize
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.viewmodels.OnlinePlaylistViewModel
@@ -349,7 +349,7 @@ fun OnlinePlaylistScreen(
             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
             val clip = ClipData.newPlainText("Playlist Link", link)
             clipboard.setPrimaryClip(clip)
-            Toast.makeText(context, R.string.link_copied, Toast.LENGTH_SHORT).show()
+            SnackbarManager.show(R.string.link_copied)
         }
     }
 
