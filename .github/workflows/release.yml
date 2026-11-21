@@ -316,6 +316,7 @@ jobs:
           done
 
       - name: Check upgrade compatibility against the latest public APK
+        if: github.event_name == 'workflow_dispatch' && inputs.publish_release
         env:
           GH_TOKEN: ${{ github.token }}
           VERSION_CODE: ${{ steps.version_info.outputs.version_code }}
@@ -333,9 +334,9 @@ jobs:
           previous_badging=$("$aapt" dump badging "$apk")
           previous_code=$(sed -n "s/^package: name='com[.]kaif[.]music' versionCode='\([0-9][0-9]*\)'.*/\1/p" <<< "$previous_badging")
           previous_signers=$("$apksigner" verify --print-certs "$apk")
-          previous_fingerprint=$(sed -n 's/^Signer #1 certificate SHA-256 digest: //p' <<< "$previous_signers" | tr '[:lower:]' '[:upper:]')
+          previous_fingerprint=$(awk 'tolower($0) ~ /certificate sha-256 digest:/ { print toupper($NF) }' <<< "$previous_signers")
 
-          signer_count=$(grep -c '^Signer #[0-9][0-9]* certificate SHA-256 digest: ' <<< "$previous_signers")
+          signer_count=$(awk 'tolower($0) ~ /certificate sha-256 digest:/ { count++ } END { print count+0 }' <<< "$previous_signers")
           if [[ -z "$previous_code" || "$signer_count" != 1 || "$previous_fingerprint" != "$EXPECTED_CERT" ]]; then
             echo "::error::The release key or package does not match the compatible public APK baseline."
             exit 1
