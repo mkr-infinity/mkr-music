@@ -70,8 +70,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -245,7 +243,6 @@ import com.music.mkr.ui.screens.search.suggestions.SuggestionsViewModel
 import com.valentinilk.shimmer.LocalShimmerTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -1097,12 +1094,6 @@ class MainActivity : ComponentActivity() {
                                 enter = fadeIn(animationSpec = tween(durationMillis = 300)),
                                 exit = fadeOut(animationSpec = tween(durationMillis = 200))
                             ) {
-                                var logoClickCount by remember { mutableIntStateOf(0) }
-                                var lastClickTime by remember { mutableLongStateOf(0L) }
-                                val logoScope = rememberCoroutineScope()
-                                var resetJob by remember { mutableStateOf<Job?>(null) }
-                                var currentToast by remember { mutableStateOf<Toast?>(null) }
-
                                 val isHome = navBackStackEntry?.destination?.route == Screens.Home.route
                                 val isLibrary = navBackStackEntry?.destination?.route == Screens.Library.route
                                 val isTopBarImmersive = isHome || isLibrary
@@ -1136,52 +1127,8 @@ class MainActivity : ComponentActivity() {
                                                 ) {
                                                     ExpressiveIconButton(
                                                         onClick = {
-                                                            val currentTime = System.currentTimeMillis()
-                                                            // Debounce rapid bursts (< 180ms)
-                                                            if (currentTime - lastClickTime < 180L) {
-                                                                return@ExpressiveIconButton
-                                                            }
-                                                            if (currentTime - lastClickTime > 2500L) {
-                                                                logoClickCount = 1
-                                                            } else {
-                                                                logoClickCount++
-                                                            }
-                                                            lastClickTime = currentTime
-
-                                                            // Cancel previous inactivity timer
-                                                            resetJob?.cancel()
-
-                                                            // Easter egg triggers at 5 or more deliberate clicks
-                                                            if (logoClickCount >= 5) {
-                                                                currentToast?.cancel()
-                                                                val toastMessage = when (logoClickCount) {
-                                                                    5 -> "Hey, what are you doing?"
-                                                                    6 -> "Stop poking the MKR logo bro!"
-                                                                    7 -> "One more click and something wild might happen..."
-                                                                    8 -> "Bro please don't do it bro! What are you looking for?! There's no secret menu here!"
-                                                                    9 -> "Bro really has too much free time today!"
-                                                                    10 -> "MKR Music — MKR stands for Mohammad Kaif Raja"
-                                                                    else -> {
-                                                                        val funnyQuotes = listOf(
-                                                                            "Go listen to some bangers instead bro!",
-                                                                            "MKR Music loves you, but please spare the logo!",
-                                                                            "Still clicking?! You must really love this note!",
-                                                                            "Achievement unlocked: Professional Logo Tapper"
-                                                                        )
-                                                                        funnyQuotes[(logoClickCount - 11) % funnyQuotes.size]
-                                                                    }
-                                                                }
-
-                                                                currentToast = Toast.makeText(this@MainActivity, toastMessage, Toast.LENGTH_SHORT)
-                                                                currentToast?.show()
-                                                            }
-
-                                                            // Stop toast and reset clicks if user is not clicking for 2.5 seconds
-                                                            resetJob = logoScope.launch {
-                                                                delay(2500L)
-                                                                currentToast?.cancel()
-                                                                currentToast = null
-                                                                logoClickCount = 0
+                                                            if (navController.currentDestination?.route == Screens.Home.route) {
+                                                                navController.navigate("settings/about") { launchSingleTop = true }
                                                             }
                                                         },
                                                         size = 38.dp,
@@ -1189,7 +1136,10 @@ class MainActivity : ComponentActivity() {
                                                     ) {
                                                         Image(
                                                             painter = painterResource(R.drawable.icon),
-                                                            contentDescription = stringResource(R.string.app_name),
+                                                            contentDescription = stringResource(
+                                                                R.string.open_about_app,
+                                                                stringResource(R.string.app_name),
+                                                            ),
                                                             modifier = Modifier
                                                                 .fillMaxSize()
                                                                 .padding(5.dp)

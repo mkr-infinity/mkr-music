@@ -403,6 +403,7 @@
     <string name="setting_data_saver_desc">Restrict network usage</string>
     <string name="setting_backup_restore_desc">Import/export settings</string>
     <string name="setting_about_desc">App version and info</string>
+    <string name="open_about_app">Open About %1$s</string>
     <string name="setting_auto_update_desc">Automatically check for new app releases</string>
     <string name="setting_beta_updates_desc">Opt-in to experimental beta builds</string>
 
