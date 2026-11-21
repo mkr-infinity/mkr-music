@@ -7,7 +7,7 @@ package com.music.mkr.playback
 
 import com.music.mkr.constants.CrossfadeCurve
 
-internal const val CROSSFADE_PREPARE_LEAD_MS = 3_500L
+internal const val CROSSFADE_PREPARE_LEAD_MS = 8_000L
 internal const val CROSSFADE_MIN_OVERLAP_MS = 160L
 
 internal fun crossfadeLengthMs(configuredMs: Long, durationMs: Long, speed: Float): Long {
@@ -17,6 +17,12 @@ internal fun crossfadeLengthMs(configuredMs: Long, durationMs: Long, speed: Floa
 
 internal fun remainingPlaybackMs(durationMs: Long, positionMs: Long, speed: Float): Long =
     ((durationMs - positionMs).coerceAtLeast(0) / speed.toDouble()).toLong()
+
+internal fun crossfadePreparationDelayMs(remainingMs: Long, overlapMs: Long): Long =
+    (remainingMs - overlapMs - CROSSFADE_PREPARE_LEAD_MS).coerceAtLeast(0)
+
+internal fun crossfadeStartupBudgetMs(remainingMs: Long): Long =
+    (remainingMs - CROSSFADE_MIN_OVERLAP_MS).coerceAtLeast(0)
 
 internal fun crossfadeGains(curve: CrossfadeCurve, progress: Float): Pair<Float, Float> {
     if (progress <= 0f) return 1f to 0f

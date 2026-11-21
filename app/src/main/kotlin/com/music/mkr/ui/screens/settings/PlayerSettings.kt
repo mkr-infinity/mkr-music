@@ -57,6 +57,7 @@ import com.music.mkr.constants.AutoDownloadOnLikeKey
 import com.music.mkr.constants.CrossfadeCurve
 import com.music.mkr.constants.CrossfadeCurveKey
 import com.music.mkr.constants.CrossfadeDurationKey
+import com.music.mkr.constants.DefaultCrossfadeEnabled
 import com.music.mkr.constants.CrossfadeEnabledKey
 import com.music.mkr.constants.CrossfadeGaplessKey
 import com.music.mkr.constants.CrossfadeManualSkipKey
@@ -117,7 +118,7 @@ fun PlayerSettings(
     )
     val (crossfadeEnabled, onCrossfadeEnabledChange) = rememberPreference(
         CrossfadeEnabledKey,
-        defaultValue = false
+        defaultValue = DefaultCrossfadeEnabled
     )
     val (crossfadeDuration, onCrossfadeDurationChange) = rememberPreference(
         CrossfadeDurationKey,
@@ -129,7 +130,7 @@ fun PlayerSettings(
     )
     val (crossfadeGapless, onCrossfadeGaplessChange) = rememberPreference(
         CrossfadeGaplessKey,
-        defaultValue = true
+        defaultValue = false
     )
     val (crossfadeManualSkip, onCrossfadeManualSkipChange) = rememberPreference(
         CrossfadeManualSkipKey,

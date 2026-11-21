@@ -1,6 +1,7 @@
 package com.music.mkr.playback
 
 import com.music.mkr.constants.CrossfadeCurve
+import com.music.mkr.constants.DefaultCrossfadeEnabled
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
@@ -56,6 +57,15 @@ class PlaybackTransitionPolicyTest {
             val (out, incoming) = crossfadeGains(curve, 0.5f)
             assertTrue(out > 0f && incoming > 0f && out + incoming <= 1.00001f)
         }
+    }
+
+    @Test
+    fun crossfadePreparesEarlyAndLeavesTimeForTheHandoff() {
+        assertFalse(DefaultCrossfadeEnabled)
+        assertEquals(7_000L, crossfadePreparationDelayMs(20_000, 5_000))
+        assertEquals(0L, crossfadePreparationDelayMs(10_000, 5_000))
+        assertEquals(4_840L, crossfadeStartupBudgetMs(5_000))
+        assertEquals(0L, crossfadeStartupBudgetMs(100))
     }
 
     @Test

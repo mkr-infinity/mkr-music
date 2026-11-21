@@ -90,6 +90,7 @@ import com.music.mkr.constants.AutoSkipNextOnErrorKey
 import com.music.mkr.constants.CrossfadeCurve
 import com.music.mkr.constants.CrossfadeCurveKey
 import com.music.mkr.constants.CrossfadeDurationKey
+import com.music.mkr.constants.DefaultCrossfadeEnabled
 import com.music.mkr.constants.CrossfadeEnabledKey
 import com.music.mkr.constants.CrossfadeGaplessKey
 import com.music.mkr.constants.CrossfadeManualSkipKey
@@ -296,9 +297,9 @@ class MusicService :
     val activeAudioDevice get() = audioOutputResolver.activeAudioDevice
     fun refreshActiveDevice() = audioOutputResolver.refresh()
 
-    private var crossfadeEnabled = false
+    private var crossfadeEnabled = DefaultCrossfadeEnabled
     private var crossfadeDurationMs = 5_000L
-    private var crossfadeGapless = true
+    private var crossfadeGapless = false
     private var crossfadeManualSkipEnabled = false
     private var crossfadeCurve = CrossfadeCurve.EASE_OUT_QUAD
     private var crossfadeTriggerJob: Job? = null
@@ -974,7 +975,7 @@ class MusicService :
 
         combine(
             dataStore.data.map { it[AudioOffload] ?: false },
-            dataStore.data.map { it[CrossfadeEnabledKey] ?: false }
+            dataStore.data.map { it[CrossfadeEnabledKey] ?: DefaultCrossfadeEnabled }
         ) { offloadPref, crossfadeEnabled ->
              // Force disable offload if crossfade is enabled to prevent volume ramp issues
              if (crossfadeEnabled) false else offloadPref
@@ -1076,9 +1077,9 @@ class MusicService :
         combine(
             dataStore.data.map { prefs ->
                 CrossfadeSettings(
-                    enabled = prefs[CrossfadeEnabledKey] ?: false,
+                    enabled = prefs[CrossfadeEnabledKey] ?: DefaultCrossfadeEnabled,
                     durationSeconds = prefs[CrossfadeDurationKey] ?: 5f,
-                    gapless = prefs[CrossfadeGaplessKey] ?: true,
+                    gapless = prefs[CrossfadeGaplessKey] ?: false,
                     manualSkip = prefs[CrossfadeManualSkipKey] ?: false,
                     curve = prefs[CrossfadeCurveKey].toEnum(CrossfadeCurve.EASE_OUT_QUAD),
                 )
@@ -1232,7 +1233,7 @@ class MusicService :
         playerEqualizerProcessors[player] = eqProcessor
         equalizerService.addAudioProcessor(eqProcessor)
         val offload = dataStore.get(AudioOffload, false)
-        val crossfade = dataStore.get(CrossfadeEnabledKey, false)
+        val crossfade = dataStore.get(CrossfadeEnabledKey, DefaultCrossfadeEnabled)
         player.setOffloadEnabled(!forCrossfade && !crossfade && offload)
         player.skipSilenceEnabled = dataStore.get(SkipSilenceKey, false)
         if (forCrossfade) {
@@ -2752,6 +2753,7 @@ class MusicService :
         player: Player,
         events: Player.Events,
     ) {
+        if (player !== this.player) return
         if (events.containsAny(
                 Player.EVENT_PLAYBACK_STATE_CHANGED,
                 Player.EVENT_PLAY_WHEN_READY_CHANGED,
@@ -4220,11 +4222,11 @@ class MusicService :
     private fun automaticCrossfade(): AutomaticCrossfade? {
         if (sleepTimer.pauseWhenSongEnd) return null
         val source = currentCrossfadeSource() ?: return null
-        val repeat = source.player.repeatMode == REPEAT_MODE_ONE
-        val index = if (repeat) source.player.currentMediaItemIndex else source.player.nextMediaItemIndex
+        val repeatOne = source.player.repeatMode == REPEAT_MODE_ONE
+        val index = if (repeatOne) source.player.currentMediaItemIndex else source.player.nextMediaItemIndex
         val target = queuedTarget(index) ?: return null
         if (index != source.player.currentMediaItemIndex && shouldKeepGapless(target.item)) return null
-        return AutomaticCrossfade(source, target, repeat)
+        return AutomaticCrossfade(source, target, index == source.player.currentMediaItemIndex)
     }
 
     private fun shouldKeepGapless(item: MediaItem): Boolean {
@@ -4246,13 +4248,13 @@ class MusicService :
         automaticFade = plan
         launchCrossfadeRequest {
             val source = plan.source
-            delay((source.remainingMs() - source.overlap - CROSSFADE_PREPARE_LEAD_MS).coerceAtLeast(0))
+            delay(crossfadePreparationDelayMs(source.remainingMs(), source.overlap))
             if (automaticCrossfade() != plan) return@launchCrossfadeRequest
             prepareCrossfade(
                 source = source,
                 item = plan.target.item,
                 valid = { automaticCrossfade() == plan },
-                waitForBoundary = true,
+                automaticReason = if (plan.repeat) Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT else Player.MEDIA_ITEM_TRANSITION_REASON_AUTO,
             ) { next ->
                 copyCrossfadeQueue(next, plan.target.index)
             }
@@ -4355,7 +4357,7 @@ class MusicService :
         item: MediaItem,
         valid: () -> Boolean,
         position: Long = 0L,
-        waitForBoundary: Boolean = false,
+        automaticReason: Int? = null,
         beforeHandoff: () -> Unit = {},
         installQueue: (ExoPlayer) -> Unit,
     ): Boolean {
@@ -4376,7 +4378,8 @@ class MusicService :
             next.setMediaItem(item, position)
             next.prepare()
 
-            val readyTimeout = if (waitForBoundary) source.remainingMs() else minOf(source.remainingMs(), CROSSFADE_PREPARE_LEAD_MS)
+            val readyTimeout = if (automaticReason != null) crossfadeStartupBudgetMs(source.remainingMs())
+                else minOf(crossfadeStartupBudgetMs(source.remainingMs()), CROSSFADE_PREPARE_LEAD_MS)
             if (withTimeoutOrNull(readyTimeout) { pending.ready.await() } != true ||
                 !valid() || next.isCurrentMediaItemLive || next.duration <= 0
             ) return false
@@ -4384,24 +4387,25 @@ class MusicService :
             val incomingLength = (next.duration - next.currentPosition).coerceAtLeast(0)
             val overlap = crossfadeLengthMs(source.overlap, incomingLength, source.speed)
             if (overlap < CROSSFADE_MIN_OVERLAP_MS) return false
-            if (waitForBoundary) delay((source.remainingMs() - overlap).coerceAtLeast(0))
-            if (!valid() || source.remainingMs() < CROSSFADE_MIN_OVERLAP_MS || next.playbackState != Player.STATE_READY) return false
+            if (automaticReason != null) delay((source.remainingMs() - overlap).coerceAtLeast(0))
+            if (!valid() || next.playbackState != Player.STATE_READY) return false
 
+            val budget = crossfadeStartupBudgetMs(source.remainingMs())
+            if (budget == 0L) return false
+            // A prepared decoder may still need time to start rendering on some routes.
             next.play()
-            val audio = withTimeoutOrNull(minOf(source.remainingMs(), 1_000L)) { pending.audio.await() }
+            val startupTimeout = if (automaticReason != null) budget else minOf(budget, 1_000L)
+            val audio = withTimeoutOrNull(startupTimeout) { pending.audio.await() }
             if (audio == null || !valid() || !next.isPlaying || next.currentMediaItem != item) return false
+
+            installQueue(next)
+            if (!valid() || !next.isPlaying || next.currentMediaItem != item) return false
             val duration = minOf(overlap, source.remainingMs(), remainingPlaybackMs(next.duration, next.currentPosition, source.speed))
             if (duration < CROSSFADE_MIN_OVERLAP_MS) return false
 
-            installQueue(next)
             next.removeListener(pending.listener)
             next.removeAnalyticsListener(pending.analytics)
-            val reason = when {
-                !waitForBoundary -> Player.MEDIA_ITEM_TRANSITION_REASON_SEEK
-                next.currentMediaItemIndex == source.player.currentMediaItemIndex -> Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT
-                else -> Player.MEDIA_ITEM_TRANSITION_REASON_AUTO
-            }
-            performCrossfadeSwap(next, duration, audio, reason, beforeHandoff)
+            performCrossfadeSwap(next, duration, audio, automaticReason ?: Player.MEDIA_ITEM_TRANSITION_REASON_SEEK, beforeHandoff)
             return true
         } catch (error: CancellationException) {
             throw error
@@ -4471,7 +4475,7 @@ class MusicService :
                     val elapsed = (next.currentPosition - startPosition).coerceAtLeast(0) / speed
                     crossfadeProgress = (elapsed / overlapDuration).coerceIn(0f, 1f)
                     applyPlaybackVolume()
-                    if (crossfadeProgress >= 1f || outgoing.playbackState == Player.STATE_ENDED ||
+                    if (crossfadeProgress >= 1f || outgoing.playbackState != Player.STATE_READY ||
                         !outgoing.playWhenReady
                     ) break
                     delay(20)
