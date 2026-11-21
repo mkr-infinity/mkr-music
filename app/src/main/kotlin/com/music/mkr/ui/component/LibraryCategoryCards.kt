@@ -42,6 +42,9 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.music.mkr.LocalDatabase
 import com.music.mkr.R
@@ -70,6 +73,8 @@ fun LibraryCategoryCardsSection(
     val showDownloads by rememberPreference(ShowDownloadedPlaylistKey, true)
     val showCached by rememberPreference(ShowCachedPlaylistKey, true)
     val animationsEnabled by rememberPreference(InterfaceAnimationsKey, true)
+    val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
+    val animate = animationsEnabled && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
     val cookieShape = MaterialShapes.Cookie6Sided.toShape()
 
     val items = buildList {
@@ -126,7 +131,7 @@ fun LibraryCategoryCardsSection(
                     ShortcutCard(
                         item = item,
                         badgeShape = cookieShape,
-                        animationsEnabled = animationsEnabled,
+                        animationsEnabled = animate,
                         modifier = Modifier.weight(1f),
                         onClick = { navController.navigate(item.route) { launchSingleTop = true } },
                     )
@@ -147,10 +152,10 @@ private fun ShortcutCard(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale = animateFloatAsState(
-        targetValue = if (animationsEnabled && isPressed) 0.98f else 1f,
+    val badgeTilt = animateFloatAsState(
+        targetValue = if (animationsEnabled && isPressed) -5f else 0f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
-        label = "LibraryShortcutPress",
+        label = "LibraryShortcutBadgeTilt",
     )
     val colors = MaterialTheme.colorScheme
     val shape = MaterialTheme.shapes.extraLarge
@@ -160,10 +165,11 @@ private fun ShortcutCard(
             indication = ripple(),
             role = Role.Button,
             onClick = onClick,
-        ).graphicsLayer {
-            scaleX = if (animationsEnabled) scale.value else 1f
-            scaleY = scaleX
-        },
+        ).mkrPressFeedback(
+            scaleDown = 0.98f,
+            interactionSource = interactionSource,
+            animationsEnabled = animationsEnabled,
+        ),
         shape = shape,
         color = colors.surfaceContainer,
     ) {
@@ -172,7 +178,9 @@ private fun ShortcutCard(
             verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             Surface(
-                modifier = Modifier.size(38.dp),
+                modifier = Modifier.size(38.dp).graphicsLayer {
+                    rotationZ = if (animationsEnabled) badgeTilt.value else 0f
+                },
                 shape = badgeShape,
                 color = colors.primaryContainer,
                 contentColor = colors.onPrimaryContainer,

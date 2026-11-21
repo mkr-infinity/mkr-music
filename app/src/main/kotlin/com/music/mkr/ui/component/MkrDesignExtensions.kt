@@ -60,7 +60,7 @@ fun Modifier.mkrPressFeedback(
     animationsEnabled: Boolean = true,
 ): Modifier = composed {
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale by animateFloatAsState(
+    val scale = animateFloatAsState(
         targetValue = if (animationsEnabled && isPressed) scaleDown else 1f,
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioNoBouncy,
@@ -70,8 +70,8 @@ fun Modifier.mkrPressFeedback(
     )
 
     this.graphicsLayer {
-        scaleX = scale
-        scaleY = scale
+        scaleX = if (animationsEnabled) scale.value else 1f
+        scaleY = scaleX
     }
 }
 
