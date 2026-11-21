@@ -45,6 +45,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -108,6 +109,7 @@ import com.music.mkr.playback.ExoDownloadService
 import com.music.mkr.playback.queues.ListQueue
 import com.music.mkr.ui.component.DraggableScrollbar
 import com.music.mkr.ui.component.EmptyPlaceholder
+import com.music.mkr.ui.component.LibraryLoadError
 import com.music.mkr.ui.component.ExpandableText
 import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.LibraryTrackRow
@@ -123,7 +125,6 @@ import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.viewmodels.CachePlaylistViewModel
-import java.time.LocalDateTime
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
 @Composable
@@ -140,7 +141,8 @@ fun CachePlaylistScreen(
 
     val isPlaying by playerConnection.isEffectivelyPlaying.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
-    val cachedSongs by viewModel.cachedSongs.collectAsState()
+    val cacheState by viewModel.state.collectAsState()
+    val cachedSongs = (cacheState as? CachePlaylistViewModel.State.Ready)?.songs.orEmpty()
 
     val (sortType, onSortTypeChange) = rememberEnumPreference(
         SongSortTypeKey,
@@ -151,7 +153,7 @@ fun CachePlaylistScreen(
 
     val sortedSongs = remember(cachedSongs, sortType, sortDescending) {
         val sorted = when (sortType) {
-            SongSortType.CREATE_DATE -> cachedSongs.sortedBy { it.song.dateDownload ?: LocalDateTime.MIN }
+            SongSortType.CREATE_DATE -> cachedSongs.asReversed()
             SongSortType.NAME -> cachedSongs.sortedBy { it.song.title }
             SongSortType.ARTIST -> cachedSongs.sortedBy { song ->
                 song.artists.joinToString(separator = "") { it.name }
@@ -216,17 +218,26 @@ fun CachePlaylistScreen(
             state = lazyListState,
             contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
         ) {
-            if (filteredSongs.isEmpty() && !isSearching) {
-                item(key = "empty_placeholder") {
-                    EmptyPlaceholder(
-                        icon = R.drawable.music_note,
-                        text = stringResource(R.string.playlist_is_empty),
-                        modifier = Modifier.animateItem()
-                    )
+            when (cacheState) {
+                CachePlaylistViewModel.State.Loading -> item(key = "loading_cache") {
+                    LinearProgressIndicator(Modifier.fillMaxWidth())
+                }
+                CachePlaylistViewModel.State.Error -> item(key = "cache_error") {
+                    LibraryLoadError(stringResource(R.string.library_cache_error), viewModel::retry)
+                }
+                is CachePlaylistViewModel.State.Ready -> if (filteredSongs.isEmpty() && !isSearching) {
+                    item(key = "empty_placeholder") {
+                        EmptyPlaceholder(
+                            icon = R.drawable.cached,
+                            text = stringResource(R.string.playlist_is_empty),
+                            description = stringResource(R.string.library_cache_empty),
+                            modifier = Modifier.animateItem(),
+                        )
+                    }
                 }
             }
 
-            if (filteredSongs.isEmpty() && isSearching) {
+            if (cacheState is CachePlaylistViewModel.State.Ready && filteredSongs.isEmpty() && isSearching) {
                 item(key = "no_results") {
                     EmptyPlaceholder(
                         icon = R.drawable.search,

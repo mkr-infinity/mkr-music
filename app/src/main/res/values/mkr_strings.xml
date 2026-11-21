@@ -37,7 +37,7 @@
     <string name="liked">Liked</string>
     <string name="offline">Downloaded</string>
     <string name="my_top">My top</string>
-    <string name="cached_playlist">Cached</string>
+    <string name="cached_playlist">Cached songs</string>
     <string name="uploaded_playlist">Uploaded</string>
     <string name="filter_uploaded">Uploaded</string>
     <string name="sync_playlist">Sync playlist</string>
@@ -165,6 +165,17 @@
     <!-- Library 5-Category Cards -->
     <string name="library_liked_songs">Liked songs</string>
     <string name="library_liked_songs_desc">Your favorite tracks</string>
+    <string name="library_downloads">Downloads</string>
+    <string name="library_downloads_desc">Saved for offline listening</string>
+    <string name="library_cached_songs_desc">Automatically saved for offline listening</string>
+    <string name="library_history_desc">Your recent plays</string>
+    <string name="library_cache_empty">Fully cached songs appear here after streaming.</string>
+    <string name="library_cache_error">Couldn’t load cached songs.</string>
+    <string name="library_cache_remove_error">Couldn’t remove the cached song.</string>
+    <string name="library_downloads_error">Couldn’t load downloads.</string>
+    <string name="library_history_error">Couldn’t load history.</string>
+    <string name="library_downloads_empty">Completed downloads appear here.</string>
+    <string name="library_history_empty">Songs you play appear here.</string>
     <string name="library_offline">Offline</string>
     <string name="library_offline_desc">Downloaded for offline</string>
     <string name="library_cached">Cached</string>
@@ -206,7 +217,7 @@
     <string name="slim_navbar">Slim bottom navigation bar</string>
     <string name="auto_playlists">Auto playlists</string>
     <string name="show_liked_playlist">Show \"Liked\" playlist</string>
-    <string name="show_downloaded_playlist">Show \"Downloaded\" playlist</string>
+    <string name="show_downloaded_playlist">Show Downloads</string>
     <string name="show_top_playlist">Show \"Top\" playlist</string>
     <string name="show_cached_playlist">Show \"Cached\" playlist</string>
     <string name="show_uploaded_playlist">Show \"Uploaded\" playlist</string>

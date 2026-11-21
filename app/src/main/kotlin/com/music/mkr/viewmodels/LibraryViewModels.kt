@@ -51,6 +51,7 @@ import com.music.mkr.extensions.toEnum
 import com.music.mkr.playback.DownloadUtil
 import com.music.mkr.utils.SyncUtils
 import com.music.mkr.utils.dataStore
+import com.music.mkr.utils.reportException
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -62,6 +63,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -93,9 +95,14 @@ constructor(
                 when (filter) {
                     SongFilter.LIBRARY -> database.songs(sortType, descending).map { it.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs) }
                     SongFilter.LIKED -> database.likedSongs(sortType, descending).map { it.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs) }
-                    SongFilter.DOWNLOADED -> database.downloadedSongs(sortType, descending).map { it.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs) }
+                    SongFilter.DOWNLOADED -> downloadUtil.completedSongs(sortType, descending)
+                        .map { it.filterExplicit(hideExplicit).filterVideoSongs(hideVideoSongs) }
+                        .catch {
+                            reportException(it)
+                            emit(emptyList())
+                        }
                 }
-            }.stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+            }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     fun syncLikedSongs() {
         viewModelScope.launch(Dispatchers.IO) { syncUtils.syncLikedSongs() }
@@ -194,6 +201,7 @@ constructor(
     @ApplicationContext context: Context,
     database: MusicDatabase,
     private val syncUtils: SyncUtils,
+    downloadUtil: DownloadUtil,
 ) : ViewModel() {
     val allPlaylists =
         context.dataStore.data
@@ -225,9 +233,13 @@ constructor(
         .map { songs -> songs.take(3).mapNotNull { it.thumbnailUrl } }
         .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-    val recentDownloadedThumbnails = database.downloadedSongs(SongSortType.CREATE_DATE, true)
+    val recentDownloadedThumbnails = downloadUtil.completedSongs(SongSortType.CREATE_DATE, true)
         .map { songs -> songs.take(3).mapNotNull { it.thumbnailUrl } }
-        .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
+        .catch {
+            reportException(it)
+            emit(emptyList())
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     val recentAlbumsThumbnails = context.dataStore.data
         .map { it[HideExplicitKey] ?: false }

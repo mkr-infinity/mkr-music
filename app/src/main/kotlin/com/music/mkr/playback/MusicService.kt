@@ -18,7 +18,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.database.SQLException
 import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.media.audiofx.AudioEffect
@@ -50,9 +49,9 @@ import androidx.media3.datasource.DataSource
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.HttpDataSource
 import androidx.media3.datasource.ResolvingDataSource
+import androidx.media3.datasource.TransferListener
 import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.datasource.cache.CacheDataSource.FLAG_IGNORE_CACHE_ON_ERROR
-import androidx.media3.datasource.cache.ContentMetadata
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultRenderersFactory
@@ -159,7 +158,6 @@ import java.net.InetAddress
 import java.net.Inet4Address
 import java.net.Inet6Address
 import com.music.mkr.db.MusicDatabase
-import com.music.mkr.db.entities.Event
 import com.music.mkr.db.entities.FormatEntity
 import com.music.mkr.db.entities.LyricsEntity
 import com.music.mkr.db.entities.RelatedSongMap
@@ -209,6 +207,7 @@ import com.music.mkr.widget.mkrMusicWidgetManager
 import com.music.mkr.widget.MusicWidgetReceiver
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -455,7 +454,7 @@ class MusicService :
     private var prefetchJob: Job? = null
 
     // URL cache for stream URLs - class-level so it can be invalidated on errors
-    private val songUrlCache = HashMap<String, Pair<String, Long>>()
+    private val songUrlCache = StreamUrlCache()
 
     // Flag to bypass cache when quality changes - forces fresh stream fetch
     private val bypassCacheForQualityChange = mutableSetOf<String>()
@@ -703,6 +702,8 @@ class MusicService :
 
                     // Reload current song with new quality
                     val mediaId = player.currentMediaItem?.mediaId ?: return@collect
+                    val downloaded = withContext(Dispatchers.IO) { downloadCache.completeAudioCachedAt(mediaId) != null }
+                    if (downloaded || player.currentMediaItem?.mediaId != mediaId) return@collect
                     val currentPosition = player.currentPosition
                     val wasPlaying = player.isPlaying
                     val currentIndex = player.currentMediaItemIndex
@@ -710,14 +711,13 @@ class MusicService :
                     Timber.tag("MusicService").i("RELOADING STREAM: $mediaId at position ${currentPosition}ms")
 
                     // Clear cached URL to force fresh fetch
-                    songUrlCache.remove(mediaId)
+                    songUrlCache.invalidate(mediaId)
 
-                    // CRITICAL: Clear caches synchronously to prevent format parsing errors
+                    // Discard the old automatic stream before opening the new format.
                     runBlocking(Dispatchers.IO) {
                         try {
                             playerCache.removeResource(mediaId)
-                            downloadCache.removeResource(mediaId)
-                            Timber.tag("MusicService").d("Cleared player and download cache for $mediaId")
+                            Timber.tag("MusicService").d("Cleared player cache for $mediaId")
                         } catch (e: Exception) {
                             Timber.tag("MusicService").e(e, "Failed to clear cache for $mediaId")
                         }
@@ -757,7 +757,7 @@ class MusicService :
                     val wasPlaying = player.isPlaying
 
                     // Clear cached URL
-                    songUrlCache.remove(mediaId)
+                    songUrlCache.invalidate(mediaId)
 
                     // Reload player
                     player.stop()
@@ -1191,7 +1191,18 @@ class MusicService :
                     setOffloadEnabled(if (crossfade) false else offload)
                     skipSilenceEnabled = dataStore.get(SkipSilenceKey, false)
                 }
-                addAnalyticsListener(PlaybackStatsListener(false, this@MusicService))
+                lateinit var statsListener: PlaybackStatsListener
+                val history = PlaybackHistoryRecorder(
+                    database,
+                    isEnabled = { !dataStore.get(PauseListenHistoryKey, false) },
+                    activePlayTime = { statsListener.playbackStats?.totalPlayTimeMs ?: 0L },
+                )
+                statsListener = PlaybackStatsListener(false) { eventTime, stats ->
+                    history.finish(eventTime, stats.totalPlayTimeMs)
+                    onPlaybackStatsReady(eventTime, stats)
+                }
+                addAnalyticsListener(statsListener)
+                addAnalyticsListener(history)
 
                 // Cleanup handled manually in onDestroy/release
             }
@@ -2189,60 +2200,20 @@ class MusicService :
     }
 
     
-    /**
-     * Marks [mediaId] as belonging to the Cache Playlist by setting [dateDownload],
-     * but ONLY if the full file (byte 0 through contentLength) is actually present
-     * in playerCache. This must only be called from a genuine "track finished
-     * naturally" signal (see onMediaItemTransition's AUTO-reason handling) —
-     * never from raw dataSpec/chunk resolution, since the player's background
-     * prefetch can finish downloading a short file in seconds, long before the
-     * user has actually listened to it (or even if they skipped away early).
-     *
-     * No-op if already marked downloaded, or if we don't yet know the file's
-     * contentLength (FormatEntity not fetched yet).
-     */
+    private fun isFullyCached(mediaId: String): Boolean =
+        playerCache.completeAudioCachedAt(mediaId) != null ||
+            downloadCache.completeAudioCachedAt(mediaId) != null
 
-    private suspend fun isFullyCached(mediaId: String): Boolean {
-        val dlContentLength = ContentMetadata.getContentLength(downloadCache.getContentMetadata(mediaId))
-        if (dlContentLength > 0L && downloadCache.isCached(mediaId, 0L, dlContentLength)) return true
-
-        val plContentLength = ContentMetadata.getContentLength(playerCache.getContentMetadata(mediaId))
-        if (plContentLength > 0L && playerCache.isCached(mediaId, 0L, plContentLength)) return true
-
-        val storedLength = database.song(mediaId).first()?.format?.contentLength
-        if (storedLength != null && storedLength > 0L) {
-            if (downloadCache.isCached(mediaId, 0L, storedLength)) return true
-            if (playerCache.isCached(mediaId, 0L, storedLength)) return true
-        }
-        return false
-    }
-
-    private suspend fun markCachedIfFullyDownloaded(mediaId: String) {
+    private suspend fun markAutomaticallyCached(mediaId: String) {
         if (dataStore.get(DisableSongCacheKey, false)) {
             try {
                 playerCache.removeResource(mediaId)
             } catch (_: Exception) {}
             return
         }
-        var song = database.song(mediaId).first()
-        if (song == null) {
-            recoverSong(mediaId)
-            song = database.song(mediaId).first()
-        }
-        if (song == null) return
-        if (song.song.dateDownload != null || song.song.isDownloaded) return
-
-        val contentLength = song.format?.contentLength?.takeIf { it > 0 }
-            ?: ContentMetadata.getContentLength(playerCache.getContentMetadata(mediaId)).takeIf { it > 0 }
-            ?: ContentMetadata.getContentLength(downloadCache.getContentMetadata(mediaId)).takeIf { it > 0 }
-            ?: return
-
-        val isCached = playerCache.isCached(mediaId, 0, contentLength) || downloadCache.isCached(mediaId, 0, contentLength)
-        if (!isCached) return
-
-        database.query {
-            markSongCached(mediaId, java.time.LocalDateTime.now())
-        }
+        if (playerCache.completeAudioCachedAt(mediaId) == null) return
+        if (database.song(mediaId).first() == null) recoverSong(mediaId)
+        database.query { markSongCached(mediaId, LocalDateTime.now()) }
     }
 
     fun addToQueue(items: List<MediaItem>) {
@@ -2497,20 +2468,17 @@ class MusicService :
         currentMediaMetadata.value = nextMeta
         updateNotification()
         cancelPendingDelayedCacheTimer()
-        cancelPendingDelayedHistoryTimer()
-        currentRecordedHistoryMediaId = null
         if (player.isPlaying && mediaItem != null) {
             scheduleDelayedCache(mediaItem.mediaId)
         }
         if (mediaItem != null) {
-            scheduleDelayedHistory(mediaItem.mediaId)
             loadMoodRecommendations(mediaItem.mediaId)
         }
         // Force Repeat One if the player ignored it and auto-advanced
         if (reason == Player.MEDIA_ITEM_TRANSITION_REASON_AUTO) {
             if (previousMediaItemIndex != C.INDEX_UNSET && previousMediaItemIndex < player.mediaItemCount) {
                 val finishedMediaId = player.getMediaItemAt(previousMediaItemIndex).mediaId
-                scope.launch(Dispatchers.IO) { markCachedIfFullyDownloaded(finishedMediaId) }
+                scope.launch(Dispatchers.IO) { markAutomaticallyCached(finishedMediaId) }
             }
 
             val repeatMode = runBlocking { dataStore.get(RepeatModeKey, REPEAT_MODE_OFF) }
@@ -2645,11 +2613,12 @@ class MusicService :
                 }
 
                 val cachedEntry = songUrlCache[targetMediaId]
-                if (cachedEntry != null && cachedEntry.second > System.currentTimeMillis()) {
+                if (cachedEntry != null) {
                     continue
                 }
 
                 Timber.tag(TAG).d("[Prefetch] Resolving stream URL for queued track: $targetMediaId (index=$idx)")
+                val cacheGeneration = songUrlCache.generation(targetMediaId)
                 val result = runCatching {
                     YTPlayerUtils.playerResponseForPlayback(
                         videoId = targetMediaId,
@@ -2660,9 +2629,11 @@ class MusicService :
                 }
                 result.getOrNull()?.getOrNull()?.let { playbackData ->
                     if (isActive) {
-                        songUrlCache[targetMediaId] =
-                            playbackData.streamUrl to
-                                System.currentTimeMillis() + (playbackData.streamExpiresInSeconds * 1000L)
+                        songUrlCache.put(
+                            targetMediaId, playbackData.streamUrl, playbackData.streamHeaders,
+                            playbackData.streamClient, playbackData.streamExpiresInSeconds,
+                            expectedGeneration = cacheGeneration,
+                        )
                         Timber.tag(TAG).d("[Prefetch] Cached stream URL for $targetMediaId (expires in ${playbackData.streamExpiresInSeconds}s)")
 
                         playbackData.format?.let { format ->
@@ -2755,13 +2726,9 @@ class MusicService :
             val mediaId = player.currentMediaItem?.mediaId
             if (mediaId != null) {
                 scheduleDelayedCache(mediaId)
-                if (currentRecordedHistoryMediaId != mediaId) {
-                    scheduleDelayedHistory(mediaId)
-                }
             }
         } else {
             cancelPendingDelayedCacheTimer()
-            cancelPendingDelayedHistoryTimer()
         }
     }
 
@@ -3161,7 +3128,7 @@ class MusicService :
         Timber.tag(TAG).d("Performing aggressive cache clear for $mediaId")
 
         // Clear URL cache
-        songUrlCache.remove(mediaId)
+        songUrlCache.invalidate(mediaId)
 
         // Clear player cache
         try {
@@ -3369,7 +3336,7 @@ class MusicService :
         incrementRetryCount(mediaId)
 
         // Clear the cached URL
-        songUrlCache.remove(mediaId)
+        songUrlCache.invalidate(mediaId)
         Timber.tag(TAG).d("Cleared cached URL for $mediaId")
 
 
@@ -3445,7 +3412,7 @@ class MusicService :
         }
     }
 
-    private fun createCacheDataSource(): CacheDataSource.Factory {
+    private fun createCacheDataSource(): DataSource.Factory {
         val disableSongCache = dataStore.get(DisableSongCacheKey, false)
         val upstreamFactory = DefaultDataSource.Factory(
             this,
@@ -3474,26 +3441,42 @@ class MusicService :
             ),
         )
 
-        return if (disableSongCache) {
-            CacheDataSource
-                .Factory()
-                .setCache(downloadCache)
-                .setUpstreamDataSourceFactory(upstreamFactory)
-                .setCacheWriteDataSinkFactory(null)
-                .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
-        } else {
-            CacheDataSource
-                .Factory()
-                .setCache(downloadCache)
-                .setUpstreamDataSourceFactory(
-                    CacheDataSource
-                        .Factory()
-                        .setCache(playerCache)
-                        .setUpstreamDataSourceFactory(upstreamFactory)
-                        .setCacheWriteDataSinkFactory(null)
-                )
-                .setCacheWriteDataSinkFactory(null)
-                .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
+        val automatic = CacheDataSource.Factory()
+            .setCache(playerCache)
+            .setUpstreamDataSourceFactory(upstreamFactory)
+            .setCacheWriteDataSinkFactory(null)
+        val streaming: DataSource.Factory = if (disableSongCache) upstreamFactory else automatic
+        val downloads = CacheDataSource.Factory()
+            .setCache(downloadCache)
+            .setUpstreamDataSourceFactory(streaming)
+            .setCacheWriteDataSinkFactory(null)
+            .setFlags(FLAG_IGNORE_CACHE_ON_ERROR)
+        return DataSource.Factory {
+            val downloadSource = downloads.createDataSource()
+            val streamingSource = streaming.createDataSource()
+            object : DataSource {
+                private var active: DataSource = downloadSource
+
+                override fun addTransferListener(transferListener: TransferListener) {
+                    downloadSource.addTransferListener(transferListener)
+                    streamingSource.addTransferListener(transferListener)
+                }
+
+                override fun open(dataSpec: DataSpec): Long {
+                    // A partial download can use a different encoding from the automatic cache.
+                    val key = dataSpec.key
+                    active = if (key != null &&
+                        downloadCache.getCachedSpans(key).isNotEmpty() &&
+                        downloadCache.completeAudioCachedAt(key) == null
+                    ) streamingSource else downloadSource
+                    return active.open(dataSpec)
+                }
+
+                override fun read(buffer: ByteArray, offset: Int, length: Int) = active.read(buffer, offset, length)
+                override fun getUri() = active.uri
+                override fun getResponseHeaders() = active.responseHeaders
+                override fun close() = active.close()
+            }
         }
     }
 
@@ -3521,64 +3504,17 @@ class MusicService :
         }
     }
 
-    private var pendingHistoryTimerJob: Job? = null
-    private var currentRecordedHistoryMediaId: String? = null
-
-    private fun cancelPendingDelayedHistoryTimer() {
-        pendingHistoryTimerJob?.cancel()
-        pendingHistoryTimerJob = null
-    }
-
-    private fun scheduleDelayedHistory(mediaId: String) {
-        cancelPendingDelayedHistoryTimer()
-        if (dataStore.get(PauseListenHistoryKey, false)) return
-
-        val historySeconds = dataStore.get(HistoryDuration, 5f).toLong().coerceIn(1L, 100L)
-        pendingHistoryTimerJob = scope.launch(Dispatchers.IO) {
-            delay(historySeconds * 1000L)
-
-            val isStillPlaying = withContext(Dispatchers.Main) {
-                player.isPlaying && player.currentMediaItem?.mediaId == mediaId
-            }
-            if (!isStillPlaying) return@launch
-
-            currentRecordedHistoryMediaId = mediaId
-            val metadata = withContext(Dispatchers.Main) {
-                player.findMediaItemById(mediaId)?.metadata
-            }
-            val song = database.song(mediaId).first()
-            database.query {
-                if (song == null && metadata != null) {
-                    insert(metadata)
-                }
-                incrementTotalPlayTime(mediaId, historySeconds * 1000L)
-                try {
-                    insert(
-                        Event(
-                            songId = mediaId,
-                            timestamp = LocalDateTime.now(),
-                            playTime = historySeconds * 1000L,
-                        ),
-                    )
-                } catch (_: SQLException) {
-                }
-            }
-        }
-    }
-
     private fun cacheSongInBackground(mediaId: String) {
         if (dataStore.get(DisableSongCacheKey, false)) return
-        if (activeCacheJobs[mediaId]?.isActive == true) return
-
-        val job = scope.launch(Dispatchers.IO) {
+        val job = scope.launch(Dispatchers.IO, start = CoroutineStart.LAZY) {
             try {
                 if (isFullyCached(mediaId)) {
-                    markCachedIfFullyDownloaded(mediaId)
+                    markAutomaticallyCached(mediaId)
                     return@launch
                 }
 
-                val cachedUrl = songUrlCache[mediaId]?.takeIf { it.second > System.currentTimeMillis() }?.first
-                val playbackData = if (cachedUrl == null) {
+                val cachedStream = songUrlCache[mediaId]
+                val playbackData = if (cachedStream == null) {
                     try {
                         YTPlayerUtils.playerResponseForPlayback(
                             videoId = mediaId,
@@ -3612,7 +3548,8 @@ class MusicService :
                     recoverSong(mediaId, playbackData)
                 }
 
-                val streamUrl = cachedUrl ?: playbackData?.streamUrl ?: return@launch
+                val streamUrl = cachedStream?.url ?: playbackData?.streamUrl ?: return@launch
+                val headers = cachedStream?.requestHeaders ?: playbackData?.streamHeaders.orEmpty()
 
                 val upstreamFactory = OkHttpDataSource.Factory(
                     OkHttpClient.Builder()
@@ -3628,6 +3565,7 @@ class MusicService :
                 val dataSpec = DataSpec.Builder()
                     .setUri(streamUrl.toUri())
                     .setKey(mediaId)
+                    .setHttpRequestHeaders(headers)
                     .build()
 
                 val buffer = ByteArray(64 * 1024)
@@ -3635,16 +3573,16 @@ class MusicService :
                 writer.cache()
 
                 if (isFullyCached(mediaId)) {
-                    markCachedIfFullyDownloaded(mediaId)
+                    markAutomaticallyCached(mediaId)
                     Timber.tag("MusicService").d("Successfully background-cached and marked $mediaId")
                 }
             } catch (e: Exception) {
                 Timber.tag("MusicService").w(e, "Background cacheWriter failed for $mediaId")
             } finally {
-                activeCacheJobs.remove(mediaId)
+                activeCacheJobs.remove(mediaId, checkNotNull(coroutineContext[Job]))
             }
         }
-        activeCacheJobs[mediaId] = job
+        if (activeCacheJobs.putIfAbsent(mediaId, job) == null) job.start() else job.cancel()
     }
 
     // Flag to prevent queue saving during silence skip operations
@@ -3743,47 +3681,23 @@ class MusicService :
 
             if (!shouldBypassCache) {
                 val isCachingDisabled = dataStore.get(DisableSongCacheKey, false)
-                val dlContentLength = ContentMetadata.getContentLength(downloadCache.getContentMetadata(mediaId))
-                val plContentLength = ContentMetadata.getContentLength(playerCache.getContentMetadata(mediaId))
-                val dbFormat = runBlocking(Dispatchers.IO) { database.song(mediaId).first()?.format }
-                val contentLength = dbFormat?.contentLength?.takeIf { it > 0 }
-
-                val isFullyCachedInDownload = (dlContentLength > 0L && downloadCache.isCached(mediaId, 0L, dlContentLength)) ||
-                    (contentLength != null && downloadCache.isCached(mediaId, 0L, contentLength))
-
-                val isFullyCachedInPlayer = !isCachingDisabled && (
-                    (plContentLength > 0L && playerCache.isCached(mediaId, 0L, plContentLength)) ||
-                    (contentLength != null && playerCache.isCached(mediaId, 0L, contentLength))
-                )
-
-                // Prefer fully cached local audio first (works seamlessly offline)
-                if (isFullyCachedInDownload || isFullyCachedInPlayer) {
-                    scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
-                    return@Factory dataSpec
-                }
-
-                val requiredLength = when {
-                    dataSpec.length >= 0 -> dataSpec.length
-                    contentLength != null -> (contentLength - dataSpec.position).coerceAtLeast(1)
-                    else -> CHUNK_LENGTH
-                }
-
-                if (downloadCache.isCached(mediaId, dataSpec.position, requiredLength) ||
-                    (!isCachingDisabled && playerCache.isCached(mediaId, dataSpec.position, CHUNK_LENGTH))
+                if (downloadCache.completeAudioCachedAt(mediaId) != null ||
+                    (!isCachingDisabled && playerCache.completeAudioCachedAt(mediaId) != null)
                 ) {
-                    scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
                     return@Factory dataSpec
                 }
 
-                songUrlCache[mediaId]?.takeIf { it.second > System.currentTimeMillis() }?.let {
+                songUrlCache[mediaId]?.let { stream ->
                     scope.launch(Dispatchers.IO) { recoverSong(mediaId) }
-                    return@Factory dataSpec.withUri(it.first.toUri())
+                    return@Factory dataSpec.withUri(stream.url.toUri())
+                        .withRequestHeaders(dataSpec.httpRequestHeaders + stream.requestHeaders)
                 }
             } else {
                 Timber.tag("MusicService").i("BYPASSING CACHE for $mediaId due to quality change")
             }
 
             Timber.tag("MusicService").i("FETCHING STREAM: $mediaId | quality=$audioQuality")
+            val cacheGeneration = songUrlCache.generation(mediaId)
             val playbackData = runBlocking(Dispatchers.IO) {
                 YTPlayerUtils.playerResponseForPlayback(
                     mediaId,
@@ -3857,9 +3771,14 @@ class MusicService :
 
                 val streamUrl = nonNullPlayback.streamUrl
 
-                songUrlCache[mediaId] =
-                    streamUrl to System.currentTimeMillis() + (nonNullPlayback.streamExpiresInSeconds * 1000L)
-                return@Factory dataSpec.withUri(streamUrl.toUri()).subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
+                songUrlCache.put(
+                    mediaId, streamUrl, nonNullPlayback.streamHeaders,
+                    nonNullPlayback.streamClient, nonNullPlayback.streamExpiresInSeconds,
+                    expectedGeneration = cacheGeneration,
+                )
+                return@Factory dataSpec.withUri(streamUrl.toUri())
+                    .withRequestHeaders(dataSpec.httpRequestHeaders + nonNullPlayback.streamHeaders)
+                    .subrange(dataSpec.uriPositionOffset, CHUNK_LENGTH)
             }
         }
     }
@@ -3906,36 +3825,13 @@ class MusicService :
         eventTime: AnalyticsListener.EventTime,
         playbackStats: PlaybackStats,
     ) {
+        if (eventTime.timeline.isEmpty) return
         val mediaItem = eventTime.timeline.getWindow(eventTime.windowIndex, Timeline.Window()).mediaItem
-        val historyDurationMs = (dataStore[HistoryDuration]?.times(1000f) ?: 5000f).toLong()
+        val remoteHistoryMinimumMs = (dataStore[HistoryDuration]?.times(1000f) ?: 5000f).toLong()
 
-        if (playbackStats.totalPlayTimeMs >= historyDurationMs &&
+        if (playbackStats.totalPlayTimeMs >= remoteHistoryMinimumMs &&
             !dataStore.get(PauseListenHistoryKey, false)
         ) {
-            val wasAlreadyRecorded = currentRecordedHistoryMediaId == mediaItem.mediaId
-            database.query {
-                val incrementalTime = if (wasAlreadyRecorded) {
-                    (playbackStats.totalPlayTimeMs - historyDurationMs).coerceAtLeast(0L)
-                } else {
-                    playbackStats.totalPlayTimeMs
-                }
-                if (incrementalTime > 0) {
-                    incrementTotalPlayTime(mediaItem.mediaId, incrementalTime)
-                }
-                if (!wasAlreadyRecorded) {
-                    try {
-                        insert(
-                            Event(
-                                songId = mediaItem.mediaId,
-                                timestamp = LocalDateTime.now(),
-                                playTime = playbackStats.totalPlayTimeMs,
-                            ),
-                        )
-                    } catch (_: SQLException) {
-                    }
-                }
-            }
-
             // Transient playback caching: ensure played song is cached in playerCache without invoking explicit download workflow
             if (!dataStore.get(DisableSongCacheKey, false)) {
                 scope.launch(Dispatchers.IO) {
@@ -3944,7 +3840,7 @@ class MusicService :
                             cacheSongInBackground(mediaItem.mediaId)
                             Timber.tag(TAG).d("Scheduled background playerCache caching for ${mediaItem.mediaId}")
                         } else {
-                            markCachedIfFullyDownloaded(mediaItem.mediaId)
+                            markAutomaticallyCached(mediaItem.mediaId)
                         }
                     } catch (e: Exception) {
                         Timber.tag(TAG).w(e, "Could not background cache playback song ${mediaItem.mediaId}")
@@ -3953,7 +3849,7 @@ class MusicService :
             }
         }
 
-        if (playbackStats.totalPlayTimeMs >= historyDurationMs) {
+        if (playbackStats.totalPlayTimeMs >= remoteHistoryMinimumMs) {
             CoroutineScope(Dispatchers.IO).launch {
                 // Must fetch a FRESH playback tracking object. Cached `playbackUrl`s from the database
                 // have expired security nonces/signatures and will result in YouTube silently ignoring the

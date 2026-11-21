@@ -594,7 +594,7 @@ interface DatabaseDao {
 
     @Transaction
     @Query("SELECT * FROM song WHERE id IN (:songIds)")
-    suspend fun getSongsByIds(songIds: List<String>): List<Song>
+    fun observeSongsByIds(songIds: List<String>): Flow<List<Song>>
 
 
     @Transaction
@@ -1364,7 +1364,10 @@ interface DatabaseDao {
     fun insert(searchHistory: SearchHistory)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun insert(event: Event)
+    fun insert(event: Event): Long
+
+    @Query("UPDATE event SET playTime = :playTime WHERE id = :eventId")
+    fun updateEventPlayTime(eventId: Long, playTime: Long)
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     fun insert(map: RelatedSongMap)

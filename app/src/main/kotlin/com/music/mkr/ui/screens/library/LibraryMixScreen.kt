@@ -165,7 +165,7 @@ fun LibraryMixScreen(
         Playlist(
             playlist = PlaylistEntity(
                 id = UUID.randomUUID().toString(),
-                name = stringResource(R.string.offline)
+                name = stringResource(R.string.library_downloads)
             ),
             songCount = 0,
             songThumbnails = emptyList(),
@@ -397,7 +397,6 @@ fun LibraryMixScreen(
                         ) {
                             LibraryCategoryCardsSection(
                                 navController = navController,
-                                topSize = topSize,
                                 modifier = Modifier.animateItem()
                             )
                         }

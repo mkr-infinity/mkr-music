@@ -18,6 +18,7 @@ import com.music.mkr.db.InternalDatabase
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.listentogether.ListenTogetherClient
 import com.music.mkr.listentogether.ListenTogetherManager
+import com.music.mkr.playback.CacheSpanChanges
 import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.get
 import dagger.Module
@@ -73,18 +74,16 @@ object AppModule {
     fun providePlayerCache(
         @ApplicationContext context: Context,
         databaseProvider: DatabaseProvider,
+        cacheChanges: CacheSpanChanges,
     ): SimpleCache {
         val disableSongCache = context.dataStore[DisableSongCacheKey] ?: false
         val cacheSize = if (disableSongCache) 0 else (context.dataStore[MaxSongCacheSizeKey] ?: 1024)
-        return SimpleCache(
-            context.filesDir.resolve("exoplayer"),
-            when (cacheSize) {
-                0 -> LeastRecentlyUsedCacheEvictor(0)
-                -1 -> NoOpCacheEvictor()
-                else -> LeastRecentlyUsedCacheEvictor(cacheSize * 1024 * 1024L)
-            },
-            databaseProvider,
-        )
+        val evictor = when (cacheSize) {
+            0 -> LeastRecentlyUsedCacheEvictor(0)
+            -1 -> NoOpCacheEvictor()
+            else -> LeastRecentlyUsedCacheEvictor(cacheSize * 1024 * 1024L)
+        }
+        return SimpleCache(context.filesDir.resolve("exoplayer"), cacheChanges.observe(evictor), databaseProvider)
     }
 
     @Singleton
@@ -93,6 +92,7 @@ object AppModule {
     fun provideDownloadCache(
         @ApplicationContext context: Context,
         databaseProvider: DatabaseProvider,
+        cacheChanges: CacheSpanChanges,
     ): SimpleCache {
         val downloadDir = runCatching {
             val customPath = context.getSharedPreferences("mkr_storage_prefs", Context.MODE_PRIVATE)
@@ -109,7 +109,7 @@ object AppModule {
 
         return SimpleCache(
             downloadDir,
-            NoOpCacheEvictor(),
+            cacheChanges.observe(NoOpCacheEvictor()),
             databaseProvider
         )
     }

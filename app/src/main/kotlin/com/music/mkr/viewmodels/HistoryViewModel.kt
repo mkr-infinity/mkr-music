@@ -28,10 +28,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.onStart
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
@@ -53,20 +58,30 @@ constructor(
     }
     var historySource = MutableStateFlow(HistorySource.LOCAL)
 
-    private val today = LocalDate.now()
-    private val thisMonday = today.with(DayOfWeek.MONDAY)
-    private val lastMonday = thisMonday.minusDays(7)
+    enum class LocalStatus { Loading, Ready, Error }
+
+    private val localReload = MutableStateFlow(0)
+    private val _localStatus = MutableStateFlow(LocalStatus.Loading)
+    val localStatus = _localStatus.asStateFlow()
+
+    fun retryLocalHistory() {
+        localReload.update { it + 1 }
+    }
 
     val historyPage = MutableStateFlow<HistoryPage?>(null)
 
     val events =
-        context.dataStore.data
-            .map { it[HideVideoSongsKey] ?: false }
-            .distinctUntilChanged()
+        combine(
+            context.dataStore.data.map { it[HideVideoSongsKey] ?: false }.distinctUntilChanged(),
+            localReload,
+        ) { hideVideoSongs, _ -> hideVideoSongs }
             .flatMapLatest { hideVideoSongs ->
                 database
                     .events()
                     .map { events ->
+                        val today = LocalDate.now()
+                        val thisMonday = today.with(DayOfWeek.MONDAY)
+                        val lastMonday = thisMonday.minusDays(7)
                         events
                             .filter { !hideVideoSongs || !it.song.song.isVideo }
                             .groupBy {
@@ -92,6 +107,12 @@ constructor(
                             ).mapValues { entry ->
                                 entry.value.distinctBy { it.song.id }
                             }
+                    }
+                    .onStart { _localStatus.value = LocalStatus.Loading }
+                    .onEach { _localStatus.value = LocalStatus.Ready }
+                    .catch {
+                        reportException(it)
+                        _localStatus.value = LocalStatus.Error
                     }
             }
             .flowOn(Dispatchers.Default)

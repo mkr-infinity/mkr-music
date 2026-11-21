@@ -34,6 +34,7 @@ import java.net.Inet6Address
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.FormatEntity
 import com.music.mkr.db.entities.LyricsEntity
+import com.music.mkr.constants.SongSortType
 import com.music.mkr.db.entities.SongEntity
 import com.music.mkr.di.DownloadCache
 import com.music.mkr.di.LyricsHelperEntryPoint
@@ -52,7 +53,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -75,6 +79,7 @@ constructor(
     val databaseProvider: DatabaseProvider,
     @DownloadCache val downloadCache: SimpleCache,
     @PlayerCache val playerCache: SimpleCache,
+    private val cacheChanges: CacheSpanChanges,
 ) {
     private val connectivityManager = context.getSystemService<ConnectivityManager>()!!
     private val audioQuality by enumPreference(context, AudioQualityKey, AudioQuality.AUTO)
@@ -122,11 +127,10 @@ constructor(
                 ),
         ) { dataSpec ->
             val mediaId = dataSpec.key ?: error("No media id")
-            val length = if (dataSpec.length >= 0) dataSpec.length else 1
             Timber.tag("DownloadDiagnostics").d("dataSourceFactory triggered for mediaId=$mediaId, position=${dataSpec.position}, length=${dataSpec.length}")
 
-            if (playerCache.isCached(mediaId, dataSpec.position, length)) {
-                Timber.tag("DownloadDiagnostics").d("Stream already heavily cached in playerCache: $mediaId")
+            if (playerCache.completeAudioCachedAt(mediaId) != null) {
+                Timber.tag("DownloadDiagnostics").d("Complete stream available in playerCache: $mediaId")
                 return@Factory dataSpec
             }
 
@@ -345,6 +349,17 @@ constructor(
             }
         }
     }
+
+    fun completedSongs(sortType: SongSortType, descending: Boolean) =
+        combine(
+            database.downloadedSongs(sortType, descending),
+            downloads.map { items ->
+                items.values.filter { it.state == Download.STATE_COMPLETED }.mapTo(mutableSetOf()) { it.request.id }
+            }.distinctUntilChanged(),
+            cacheChanges.completeEntries(downloadCache),
+        ) { songs, completedIds, files ->
+            songs.filter { it.id in completedIds && it.id in files }
+        }.flowOn(Dispatchers.IO)
 
     fun getDownload(songId: String): Flow<Download?> = downloads.map { it[songId] }
 

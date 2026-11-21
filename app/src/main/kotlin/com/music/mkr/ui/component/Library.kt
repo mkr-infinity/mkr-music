@@ -8,11 +8,16 @@ package com.music.mkr.ui.component
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavController
 import com.music.innertube.models.PlaylistItem
 import com.music.innertube.models.WatchEndpoint
@@ -292,3 +297,12 @@ fun LibraryPlaylistGridItem(
             }
         )
 )
+
+
+@Composable
+internal fun LibraryLoadError(message: String, onRetry: () -> Unit) {
+    Column(Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+        EmptyPlaceholder(R.drawable.error, message)
+        TextButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
+    }
+}

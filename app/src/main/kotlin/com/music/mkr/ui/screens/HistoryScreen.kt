@@ -27,6 +27,7 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -75,6 +76,8 @@ import com.music.mkr.extensions.toMediaItem
 import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.playback.queues.ListQueue
 import com.music.mkr.playback.queues.YouTubeQueue
+import com.music.mkr.ui.component.EmptyPlaceholder
+import com.music.mkr.ui.component.LibraryLoadError
 import com.music.mkr.ui.component.ChipsRow
 import com.music.mkr.ui.component.ExpressiveIconButton
 import com.music.mkr.ui.component.HideOnScrollFAB
@@ -142,6 +145,7 @@ fun HistoryScreen(
 
     val historySource by viewModel.historySource.collectAsState()
 
+    val localStatus by viewModel.localStatus.collectAsState()
     val flatLocalItems by viewModel.flatLocalItems.collectAsState()
     val flatRemoteItems by viewModel.flatRemoteItems.collectAsState()
     val allEvents by viewModel.filteredFlatEvents.collectAsState()
@@ -281,8 +285,26 @@ fun HistoryScreen(
                     }
                 }
             } else {
+                when (localStatus) {
+                    HistoryViewModel.LocalStatus.Loading -> item(key = "loading_history") {
+                        LinearProgressIndicator(Modifier.fillMaxWidth())
+                    }
+                    HistoryViewModel.LocalStatus.Error -> item(key = "history_error") {
+                        LibraryLoadError(stringResource(R.string.library_history_error), viewModel::retryLocalHistory)
+                    }
+                    HistoryViewModel.LocalStatus.Ready -> if (flatLocalItems.isEmpty()) {
+                        item(key = "history_empty") {
+                            EmptyPlaceholder(
+                                icon = if (query.text.isBlank()) R.drawable.history else R.drawable.search,
+                                text = stringResource(
+                                    if (query.text.isBlank()) R.string.library_history_empty else R.string.no_results_found
+                                ),
+                            )
+                        }
+                    }
+                }
                 items(
-                    items = flatLocalItems,
+                    items = if (localStatus == HistoryViewModel.LocalStatus.Ready) flatLocalItems else emptyList(),
                     key = { item ->
                         when (item) {
                             is FlatHistoryItem.LocalHeader -> "local_header_${item.dateAgo}"
