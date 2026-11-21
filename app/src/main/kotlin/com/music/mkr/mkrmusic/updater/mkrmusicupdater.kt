@@ -87,7 +87,6 @@ import com.music.mkr.ui.component.ActionButtonEmphasis
 import com.music.mkr.ui.component.AnimatedActionButton
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.utils.rememberPreference
-import com.music.mkr.ui.component.ErrorSnackbar
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.withStyle
 import androidx.compose.foundation.lazy.LazyColumn
@@ -100,9 +99,9 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
@@ -150,7 +149,6 @@ fun UpdateScreen(navController: NavHostController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf<MkrUpdateStatus>(MkrUpdateStatus.NoUpdate(BuildConfig.VERSION_NAME)) }
-    val snackbarHostState = remember { SnackbarHostState() }
 
     val currentVersion = BuildConfig.VERSION_NAME
     val autoUpdateCheckEnabled = getAutoUpdateCheckSetting(context)
@@ -203,12 +201,7 @@ fun UpdateScreen(navController: NavHostController) {
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Icon(
-                        painter = painterResource(R.drawable.mobile_update),
-                        contentDescription = null,
-                        modifier = Modifier.size(26.dp),
-                        tint = colors.onSurfaceVariant
-                    )
+                    Text(stringResource(R.string.app_updates_title), style = MaterialTheme.typography.titleMedium)
                 },
                 navigationIcon = {
                     IconButton(
@@ -230,7 +223,8 @@ fun UpdateScreen(navController: NavHostController) {
         },
         bottomBar = {
             Surface(
-                color = colors.surfaceContainerLow,
+                color = colors.surfaceContainer,
+                shape = MaterialTheme.shapes.extraLarge,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -353,9 +347,10 @@ fun UpdateScreen(navController: NavHostController) {
                 }
             }
         },
-        snackbarHost = { ErrorSnackbar(hostState = snackbarHostState) },
         containerColor = colors.surface,
         modifier = Modifier
+            .fillMaxSize()
+            .wrapContentWidth()
             .widthIn(max = 700.dp)
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -371,40 +366,56 @@ fun UpdateScreen(navController: NavHostController) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 item {
-                    val titleText = when (status) {
-                        is MkrUpdateStatus.Checking -> "Checking for update..."
-                        is MkrUpdateStatus.Available -> "System update\navailable"
-                        is MkrUpdateStatus.NoUpdate -> "Your app is up to date"
-                        is MkrUpdateStatus.Error -> "Update error"
-                        else -> "System update"
-                    }
-                    UpdateStatusHeading(status, titleText, Modifier.padding(bottom = 20.dp))
-                    
-                    val currentStatus = status
-                    if (currentStatus is MkrUpdateStatus.Available) {
-                        val rawVersion = currentStatus.version
-                        val displayVer = when {
-                            rawVersion.startsWith("b", ignoreCase = true) -> rawVersion.uppercase()
-                            rawVersion.startsWith("v", ignoreCase = true) -> rawVersion.uppercase()
-                            else -> "V${rawVersion.uppercase()}"
+                    val title = stringResource(
+                        when (status) {
+                            MkrUpdateStatus.Idle -> R.string.system_update
+                            MkrUpdateStatus.Checking -> R.string.checking_for_updates
+                            is MkrUpdateStatus.Available -> R.string.update_available
+                            is MkrUpdateStatus.NoUpdate -> R.string.app_up_to_date
+                            is MkrUpdateStatus.Error -> R.string.update_check_error_title
                         }
-                        Text(
-                            text = "MKR MUSIC $displayVer",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = colors.onSurface,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 4.dp)
-                        )
-                        Text(
-                            text = "Size: ${currentStatus.size} MB",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp)
-                        )
+                    )
+                    UpdateStatusHeading(status, title, Modifier.padding(bottom = 12.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        shape = MaterialTheme.shapes.large,
+                        color = colors.surfaceContainerLow,
+                    ) {
+                        Column(
+                            Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                stringResource(R.string.current_version_v, currentVersion),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                stringResource(R.string.update_build_version, BuildConfig.VERSION_CODE),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colors.onSurfaceVariant,
+                            )
+                            val lastChecked = getLastCheckedTime(context)
+                            Text(
+                                if (lastChecked.isBlank()) stringResource(R.string.update_not_checked_yet)
+                                else stringResource(R.string.last_checked, lastChecked),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colors.onSurfaceVariant,
+                            )
+                            val available = status as? MkrUpdateStatus.Available
+                            if (available != null) {
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    stringResource(R.string.update_to_v, available.version),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = colors.primary,
+                                )
+                                Text(
+                                    stringResource(R.string.update_size, available.size.toString()),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colors.onSurfaceVariant,
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -463,60 +474,19 @@ fun UpdateScreen(navController: NavHostController) {
                         ) { currentStatus ->
                             when (currentStatus) {
                                 is MkrUpdateStatus.Checking -> {
-                                    Column(horizontalAlignment = Alignment.Start) {
-                                        Text(
-                                            text = "Please wait while we check for the latest features.",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
+                                    Text(
+                                        text = stringResource(R.string.update_checking_details),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colors.onSurfaceVariant,
+                                    )
                                 }
 
                                 is MkrUpdateStatus.NoUpdate -> {
-                                    val checkTime = remember { LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")) }
-                                    Column(
-                                        horizontalAlignment = Alignment.Start,
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        val rawVersion = currentStatus.version
-                                        val displayVer = when {
-                                            rawVersion.startsWith("b", ignoreCase = true) -> rawVersion.uppercase()
-                                            rawVersion.startsWith("v", ignoreCase = true) -> rawVersion.uppercase()
-                                            else -> "V${rawVersion.uppercase()}"
-                                        }
-                                        Text(
-                                            text = "MKR MUSIC VERSION $displayVer",
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = colors.onSurface
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = "Build version: ${BuildConfig.VERSION_CODE}",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Spacer(modifier = Modifier.height(20.dp))
-                                        Text(
-                                            text = "Last successful check for update:",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = checkTime,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = colors.onSurface
-                                        )
-                                        Spacer(modifier = Modifier.height(20.dp))
-                                        Text(
-                                            text = "\"Donations help make project development & updates faster!\"",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            fontStyle = FontStyle.Italic
-                                        )
-                                    }
+                                    Text(
+                                        text = stringResource(R.string.update_support_note),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colors.onSurfaceVariant,
+                                    )
                                 }
 
                                 is MkrUpdateStatus.Error -> {
@@ -526,13 +496,20 @@ fun UpdateScreen(navController: NavHostController) {
                                         contentColor = colors.onErrorContainer,
                                         modifier = Modifier.fillMaxWidth(),
                                     ) {
-                                        Text(
-                                            text = currentStatus.message,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            modifier = Modifier.padding(16.dp).semantics {
-                                                liveRegion = LiveRegionMode.Polite
-                                            },
-                                        )
+                                        Column(
+                                            Modifier.padding(16.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            Text(
+                                                text = currentStatus.message,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                                            )
+                                            Text(
+                                                stringResource(R.string.check_internet_connection),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                            )
+                                        }
                                     }
                                 }
 
@@ -594,7 +571,14 @@ fun UpdateScreen(navController: NavHostController) {
                                                 }
                                             }
                                         }
-                                        val desc = currentStatus.description ?: ""
+                                        val desc = currentStatus.description.orEmpty()
+                                        if (desc.isNotBlank() || currentStatus.changelog.isNotEmpty()) {
+                                            Text(
+                                                stringResource(R.string.whats_new),
+                                                style = MaterialTheme.typography.titleLarge,
+                                                modifier = Modifier.padding(top = 8.dp, bottom = 12.dp).semantics { heading() },
+                                            )
+                                        }
                                         if (desc.isNotBlank()) {
                                             val primaryColor = MaterialTheme.colorScheme.primary
                                             val annotatedText = desc.trim().parseMarkdownAndUrls(primaryColor)
