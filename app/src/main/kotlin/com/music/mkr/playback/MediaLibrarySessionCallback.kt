@@ -169,7 +169,7 @@ constructor(
         controller: MediaSession.ControllerInfo
     ): ListenableFuture<MediaItemsWithStartPosition> {
         if (!::service.isInitialized) return Futures.immediateFailedFuture(IllegalStateException("Playback unavailable"))
-        return scope.future { service.resumeSavedPlayback() }
+        return scope.requestPlaybackResumption { service.resumeSavedPlayback() }
     }
 
     override fun onGetLibraryRoot(

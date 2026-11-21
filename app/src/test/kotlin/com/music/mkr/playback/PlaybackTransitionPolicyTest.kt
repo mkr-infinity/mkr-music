@@ -1,14 +1,35 @@
 package com.music.mkr.playback
 
 import com.music.mkr.constants.CrossfadeCurve
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertThrows
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PlaybackTransitionPolicyTest {
+    @Test
+    fun playbackResumptionCompletesWithSavedPositionOrFailure() {
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
+        try {
+            val ready = scope.requestPlaybackResumption { 1 to 12_000L }
+            assertEquals(1 to 12_000L, ready.get(1, TimeUnit.SECONDS))
+            val missing = scope.requestPlaybackResumption { error("The saved queue is empty") }
+            val failure = assertThrows(ExecutionException::class.java) { missing.get(1, TimeUnit.SECONDS) }
+            assertTrue(failure.cause is IllegalStateException)
+        } finally {
+            scope.cancel()
+        }
+    }
+
     @Test
     fun deniedFocusAndMuteSilenceEvenWhenDucking() {
         assertEquals(0f, playbackOutputVolume(0.7f, muted = false, focusGranted = false, ducking = false), 0f)

@@ -1,5 +1,13 @@
 package com.music.mkr.playback
 
+import com.google.common.util.concurrent.ListenableFuture
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.guava.future
+import kotlinx.coroutines.withTimeout
+
+internal fun <T> CoroutineScope.requestPlaybackResumption(resolve: suspend () -> T): ListenableFuture<T> =
+    future { withTimeout(5_000L) { resolve() } }
+
 internal fun restoredQueueIndex(savedIndex: Int, retainedIndices: List<Int>): Int {
     require(retainedIndices.isNotEmpty())
     val next = retainedIndices.indexOfFirst { it >= savedIndex }
