@@ -13,16 +13,17 @@ import com.music.innertube.models.SongItem
 import com.music.mkr.db.entities.Song
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.models.toMediaMetadata
-import com.music.mkr.ui.utils.resize
 
 val MediaItem.metadata: MediaMetadata?
     get() = (localConfiguration?.tag as? MediaMetadata) ?: run {
         if (mediaId.isBlank()) return null
         val titleStr = mediaMetadata.title?.toString()?.takeIf { it.isNotBlank() } ?: return null
-        val artistStr = (mediaMetadata.artist ?: mediaMetadata.subtitle)?.toString() ?: ""
-        val artworkUriStr = mediaMetadata.artworkUri?.toString()
-            ?: mediaMetadata.extras?.getString("artwork_uri")
-        val durationMs = mediaMetadata.extras?.getLong("duration")?.takeIf { it > 0 }
+        val artistStr = mediaMetadata.artist?.toString()?.takeIf { it.isNotBlank() }
+            ?: mediaMetadata.subtitle?.toString().orEmpty()
+        val artworkUriStr = mediaMetadata.artworkUri?.toString()?.takeIf { it.isNotBlank() }
+            ?: mediaMetadata.extras?.getString("artwork_uri")?.takeIf { it.isNotBlank() }
+        val durationMs = mediaMetadata.durationMs?.takeIf { it > 0 }
+            ?: mediaMetadata.extras?.getLong("duration")?.takeIf { it > 0 }
             ?: mediaMetadata.extras?.getLong("android.media.metadata.DURATION")?.takeIf { it > 0 }
             ?: 0L
         MediaMetadata(
@@ -37,6 +38,13 @@ val MediaItem.metadata: MediaMetadata?
         )
     }
 
+internal val Song.sessionArtworkUrl: String?
+    get() {
+        val trackArtwork = song.thumbnailUrl?.takeIf { it.isNotBlank() }
+        val albumArtwork = album?.thumbnailUrl?.takeIf { it.isNotBlank() }
+        return if (song.isVideo) trackArtwork ?: albumArtwork else albumArtwork ?: trackArtwork
+    }
+
 fun Song.toMediaItem() = MediaItem.Builder()
     .setMediaId(song.id)
     .setUri(song.id)
@@ -47,8 +55,9 @@ fun Song.toMediaItem() = MediaItem.Builder()
             .setTitle(song.title)
             .setSubtitle(artists.joinToString { it.name })
             .setArtist(artists.joinToString { it.name })
-            .setArtworkUri(song.thumbnailUrl?.toUri())
-            .setAlbumTitle(song.albumName)
+            .setArtworkUri(sessionArtworkUrl?.toUri())
+            .setDurationMs(song.duration.takeIf { it > 0 }?.times(1000L))
+            .setAlbumTitle(song.albumName ?: album?.title)
             .setAlbumArtist(artists.firstOrNull()?.name)
             .setDisplayTitle(song.title)
             .setMediaType(MEDIA_TYPE_MUSIC)
@@ -75,7 +84,8 @@ fun SongItem.toMediaItem() = MediaItem.Builder()
             .setTitle(title)
             .setSubtitle(artists.joinToString { it.name })
             .setArtist(artists.joinToString { it.name })
-            .setArtworkUri(thumbnail.resize(1200, 1200).toUri())
+            .setArtworkUri(thumbnail.takeIf { it.isNotBlank() }?.toUri())
+            .setDurationMs(duration?.takeIf { it > 0 }?.times(1000L))
             .setAlbumTitle(album?.name)
             .setAlbumArtist(artists.firstOrNull()?.name)
             .setDisplayTitle(title)
@@ -83,7 +93,7 @@ fun SongItem.toMediaItem() = MediaItem.Builder()
             .setIsBrowsable(false)
             .setIsPlayable(true)
             .setExtras(Bundle().apply {
-                putString("artwork_uri", thumbnail.resize(1200, 1200))
+                putString("artwork_uri", thumbnail.takeIf { it.isNotBlank() })
                 duration?.let {
                     if (it > 0) {
                         putLong("duration", it * 1000L)
@@ -105,7 +115,8 @@ fun MediaMetadata.toMediaItem() = MediaItem.Builder()
             .setTitle(title)
             .setSubtitle(artists.joinToString { it.name })
             .setArtist(artists.joinToString { it.name })
-            .setArtworkUri(thumbnailUrl?.toUri())
+            .setArtworkUri(thumbnailUrl?.takeIf { it.isNotBlank() }?.toUri())
+            .setDurationMs(duration.takeIf { it > 0 }?.times(1000L))
             .setAlbumTitle(album?.title)
             .setAlbumArtist(artists.firstOrNull()?.name)
             .setDisplayTitle(title)
@@ -113,7 +124,7 @@ fun MediaMetadata.toMediaItem() = MediaItem.Builder()
             .setIsBrowsable(false)
             .setIsPlayable(true)
             .setExtras(Bundle().apply {
-                thumbnailUrl?.let { putString("artwork_uri", it) }
+                thumbnailUrl?.takeIf { it.isNotBlank() }?.let { putString("artwork_uri", it) }
                 if (duration > 0) {
                     putLong("duration", duration * 1000L)
                     putLong("android.media.metadata.DURATION", duration * 1000L)

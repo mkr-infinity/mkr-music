@@ -73,7 +73,7 @@ import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.MoreExecutors
+import com.google.common.util.concurrent.ListenableFuture
 import com.music.innertube.YouTube
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.WatchEndpoint
@@ -410,6 +410,8 @@ class MusicService :
     private var crossfadeJob: Job? = null
 
     private lateinit var mediaSession: MediaLibrarySession
+    private var notificationController: ListenableFuture<MediaController>? = null
+    private var mediaButtons = emptyList<CommandButton>()
 
     // Tracks if player has been properly initilized
     private val playerInitialized = MutableStateFlow(false)
@@ -549,10 +551,8 @@ class MusicService :
                 PendingIntent.FLAG_IMMUTABLE
             )
             val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(getString(R.string.music_player))
-                .setContentText("")
+                .setContentTitle(getString(R.string.app_name))
                 .setSmallIcon(R.drawable.mkrmusicnotification)
-                .setLargeIcon(android.graphics.BitmapFactory.decodeResource(resources, R.drawable.icon))
                 .setContentIntent(pending)
                 .setOngoing(true)
                 .build()
@@ -611,8 +611,7 @@ class MusicService :
 
         // Keep a connected controller so that notification works
         val sessionToken = SessionToken(this, ComponentName(this, MusicService::class.java))
-        val controllerFuture = MediaController.Builder(this, sessionToken).buildAsync()
-        controllerFuture.addListener({ controllerFuture.get() }, MoreExecutors.directExecutor())
+        notificationController = MediaController.Builder(this, sessionToken).buildAsync()
 
         connectivityManager = getSystemService()!!
         connectivityObserver = NetworkConnectivityObserver(this)
@@ -781,8 +780,10 @@ class MusicService :
             }
         }
 
-        currentSong.debounce(1000).collect(scope) { song ->
+        currentSong.map { song -> song?.id to song?.song?.liked }.distinctUntilChanged().collect(scope) {
             updateNotification()
+        }
+        currentSong.debounce(1000).collect(scope) {
             updateWidgetUI(player.isPlaying)
         }
 
@@ -1392,59 +1393,60 @@ class MusicService :
     }
 
     private fun updateNotification() {
-        mediaSession.setCustomLayout(
-            listOf(
-                CommandButton
-                    .Builder()
-                    .setDisplayName(
-                        getString(
-                            if (currentSong.value?.song?.liked ==
-                                true
-                            ) {
-                                R.string.action_remove_like
-                            } else {
-                                R.string.action_like
-                            },
-                        ),
-                    )
-                    .setIconResId(if (currentSong.value?.song?.liked == true) R.drawable.ic_heart else R.drawable.ic_heart_outline)
-                    .setSessionCommand(CommandToggleLike)
-                    .setEnabled(currentSong.value != null)
-                    .build(),
-                CommandButton
-                    .Builder()
-                    .setDisplayName(
-                        getString(
-                            when (player.repeatMode) {
-                                REPEAT_MODE_OFF -> R.string.repeat_mode_off
-                                REPEAT_MODE_ONE -> R.string.repeat_mode_one
-                                REPEAT_MODE_ALL -> R.string.repeat_mode_all
-                                else -> throw IllegalStateException()
-                            },
-                        ),
-                    ).setIconResId(
-                        when (player.repeatMode) {
-                            REPEAT_MODE_OFF -> R.drawable.repeat
-                            REPEAT_MODE_ONE -> R.drawable.repeat_one_on
-                            REPEAT_MODE_ALL -> R.drawable.repeat_on
-                            else -> throw IllegalStateException()
-                        },
-                    ).setSessionCommand(CommandToggleRepeatMode)
-                    .build(),
-                CommandButton
-                    .Builder()
-                    .setDisplayName(getString(if (player.shuffleModeEnabled) R.string.action_shuffle_off else R.string.action_shuffle_on))
-                    .setIconResId(if (player.shuffleModeEnabled) R.drawable.shuffle_on else R.drawable.shuffle)
-                    .setSessionCommand(CommandToggleShuffle)
-                    .build(),
+        if (!::mediaSession.isInitialized) return
+        val currentId = player.currentMediaItem?.mediaId
+        val song = currentSong.value?.takeIf { it.id == currentId }
+        val buttons = if (currentId == null) emptyList() else buildList {
+            if (song != null) {
+                val liked = song.song.liked
+                add(
+                    CommandButton.Builder()
+                        .setDisplayName(getString(if (liked) R.string.action_remove_like else R.string.action_like))
+                        .setIconResId(if (liked) R.drawable.ic_heart else R.drawable.ic_heart_outline)
+                        .setSessionCommand(CommandToggleLike)
+                        .setSlots(CommandButton.SLOT_OVERFLOW)
+                        .build()
+                )
+            }
+
+            val (repeatLabel, repeatIcon) = when (player.repeatMode) {
+                REPEAT_MODE_ONE -> R.string.repeat_mode_one to R.drawable.repeat_one_on
+                REPEAT_MODE_ALL -> R.string.repeat_mode_all to R.drawable.repeat_on
+                else -> R.string.repeat_mode_off to R.drawable.repeat
+            }
+            add(
                 CommandButton.Builder()
-                    .setDisplayName(getString(R.string.start_radio))
-                    .setIconResId(R.drawable.radio)
-                    .setSessionCommand(CommandToggleStartRadio)
-                    .setEnabled(currentSong.value != null)
-                    .build(),
-            ),
-        )
+                    .setDisplayName(getString(repeatLabel))
+                    .setIconResId(repeatIcon)
+                    .setSessionCommand(CommandToggleRepeatMode)
+                    .setSlots(CommandButton.SLOT_OVERFLOW)
+                    .build()
+            )
+            val shuffled = player.shuffleModeEnabled
+            add(
+                CommandButton.Builder()
+                    .setDisplayName(getString(if (shuffled) R.string.action_shuffle_off else R.string.action_shuffle_on))
+                    .setIconResId(if (shuffled) R.drawable.shuffle_on else R.drawable.shuffle)
+                    .setSessionCommand(CommandToggleShuffle)
+                    .setSlots(CommandButton.SLOT_OVERFLOW)
+                    .build()
+            )
+
+            if (song != null) {
+                add(
+                    CommandButton.Builder()
+                        .setDisplayName(getString(R.string.start_radio))
+                        .setIconResId(R.drawable.radio)
+                        .setSessionCommand(CommandToggleStartRadio)
+                        .setSlots(CommandButton.SLOT_OVERFLOW)
+                        .build()
+                )
+            }
+        }
+        if (buttons != mediaButtons) {
+            mediaButtons = buttons
+            mediaSession.setMediaButtonPreferences(buttons)
+        }
     }
 
     private suspend fun recoverSong(
@@ -2309,8 +2311,9 @@ class MusicService :
                     inLibrary = toggledSong.inLibrary
                 )
                 scope.launch(Dispatchers.Main) {
-                    currentMediaMetadata.value = updatedMetadata
-                    updateNotification()
+                    if (player.currentMediaItem?.mediaId == updatedMetadata.id) {
+                        currentMediaMetadata.value = updatedMetadata
+                    }
                 }
             } catch (e: Exception) {
                 Timber.tag(TAG).e(e, "Error in toggleLike for ${mediaMetadata.id}")
@@ -2756,7 +2759,6 @@ class MusicService :
         }
         if (events.containsAny(EVENT_TIMELINE_CHANGED, EVENT_POSITION_DISCONTINUITY)) {
             currentMediaMetadata.value = player.currentMetadata
-            updateNotification()
         }
 
         // Widget and Discord RPC updates
@@ -3973,6 +3975,8 @@ class MusicService :
         abandonAudioFocus()
         releaseLoudnessEnhancer()
         runCatching { equalizerController.release() }
+        notificationController?.let(MediaController::releaseFuture)
+        notificationController = null
         mediaSession.release()
         player.removeListener(this)
         player.removeListener(sleepTimer)

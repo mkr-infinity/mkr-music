@@ -43,6 +43,7 @@ import com.music.mkr.constants.SongSortType
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.PlaylistEntity
 import com.music.mkr.db.entities.Song
+import com.music.mkr.extensions.sessionArtworkUrl
 import com.music.mkr.extensions.toMediaItem
 import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.models.toMediaMetadata
@@ -79,16 +80,6 @@ constructor(
         controller: MediaSession.ControllerInfo,
     ): MediaSession.ConnectionResult {
         val connectionResult = super.onConnect(session, controller)
-        val availablePlayerCommands = connectionResult.availablePlayerCommands
-            .buildUpon()
-            .add(Player.COMMAND_SEEK_IN_CURRENT_MEDIA_ITEM)
-            .add(Player.COMMAND_SEEK_TO_MEDIA_ITEM)
-            .add(Player.COMMAND_SEEK_TO_NEXT)
-            .add(Player.COMMAND_SEEK_TO_NEXT_MEDIA_ITEM)
-            .add(Player.COMMAND_SEEK_TO_PREVIOUS)
-            .add(Player.COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM)
-            .add(Player.COMMAND_PLAY_PAUSE)
-            .build()
         return MediaSession.ConnectionResult.accept(
             connectionResult.availableSessionCommands
                 .buildUpon()
@@ -98,7 +89,7 @@ constructor(
                 .add(MediaSessionConstants.CommandToggleShuffle)
                 .add(MediaSessionConstants.CommandToggleRepeatMode)
                 .build(),
-            availablePlayerCommands,
+            connectionResult.availablePlayerCommands,
         )
     }
 
@@ -913,6 +904,7 @@ constructor(
 
     private fun Song.toMediaItem(path: String, isPlayable: Boolean = true, isBrowsable: Boolean = false): MediaItem {
         val extras = playableMediaItemExtras().apply {
+            putString("artwork_uri", song.thumbnailUrl)
             if (song.duration > 0) {
                 putLong("duration", song.duration * 1000L)
                 putLong("android.media.metadata.DURATION", song.duration * 1000L)
@@ -927,7 +919,10 @@ constructor(
                     .setTitle(song.title)
                     .setSubtitle(artists.joinToString { it.name })
                     .setArtist(artists.joinToString { it.name })
-                    .setArtworkUri(song.thumbnailUrl?.toUri())
+                    .setArtworkUri(sessionArtworkUrl?.toUri())
+                    .setAlbumTitle(song.albumName ?: album?.title)
+                    .setDisplayTitle(song.title)
+                    .setDurationMs(song.duration.takeIf { it > 0 }?.times(1000L))
                     .setIsPlayable(isPlayable)
                     .setIsBrowsable(isBrowsable)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
@@ -952,7 +947,10 @@ constructor(
                     .setTitle(title)
                     .setSubtitle(artists.joinToString(", ") { it.name })
                     .setArtist(artists.joinToString(", ") { it.name })
-                    .setArtworkUri(thumbnail.toUri())
+                    .setArtworkUri(thumbnail.takeIf { it.isNotBlank() }?.toUri())
+                    .setAlbumTitle(album?.name)
+                    .setDisplayTitle(title)
+                    .setDurationMs(duration?.takeIf { it > 0 }?.times(1000L))
                     .setIsPlayable(true)
                     .setIsBrowsable(false)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_MUSIC)
