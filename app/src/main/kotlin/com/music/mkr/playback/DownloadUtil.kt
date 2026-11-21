@@ -212,7 +212,7 @@ constructor(
                 // Pre-cache the high-res thumbnail immediately when download starts
                 updatedSong.thumbnailUrl?.let { url ->
                     val request = ImageRequest.Builder(context)
-                        .data(url)
+                        .data(url.resize(1200, 1200))
                         .memoryCachePolicy(CachePolicy.ENABLED)
                         .diskCachePolicy(CachePolicy.ENABLED)
                         .build()

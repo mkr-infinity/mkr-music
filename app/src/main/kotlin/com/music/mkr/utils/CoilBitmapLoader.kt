@@ -10,6 +10,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.core.graphics.createBitmap
+import androidx.core.net.toUri
 import androidx.media3.common.util.BitmapLoader
 import coil3.imageLoader
 import coil3.request.CachePolicy
@@ -17,10 +18,13 @@ import coil3.request.ErrorResult
 import coil3.request.ImageRequest
 import coil3.request.SuccessResult
 import coil3.request.allowHardware
+import coil3.size.Scale
 import coil3.toBitmap
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
-import com.music.mkr.ui.theme.PlayerColorExtractor
+import com.music.mkr.R
+import com.music.mkr.ui.utils.resize
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.guava.future
@@ -31,139 +35,88 @@ class CoilBitmapLoader(
     private val scope: CoroutineScope,
 ) : BitmapLoader {
 
-    companion object {
-        private const val MAX_BITMAP_CACHE_SIZE = 16
-        private val bitmapCache = object : LinkedHashMap<String, Bitmap>(MAX_BITMAP_CACHE_SIZE, 0.75f, true) {
-            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Bitmap>?): Boolean {
-                return size > MAX_BITMAP_CACHE_SIZE
-            }
-        }
-
-        @Synchronized
-        fun getCachedBitmap(key: String): Bitmap? {
-            val bmp = bitmapCache[key]
-            return if (bmp != null && !bmp.isRecycled) bmp else null
-        }
-
-        @Synchronized
-        fun putCachedBitmap(key: String, bitmap: Bitmap) {
-            if (key.isNotBlank() && !bitmap.isRecycled) {
-                bitmapCache[key] = bitmap
-            }
-        }
+    private companion object {
+        const val ARTWORK_SIZE = 512
     }
-    
+
+    private val bitmapCache = android.util.LruCache<String, Bitmap>(4)
+    private val fallbackBitmap by lazy {
+        BitmapFactory.decodeResource(context.resources, R.drawable.icon, BitmapFactory.Options().apply {
+            inScaled = false
+        }) ?: createBitmap(128, 128, Bitmap.Config.ARGB_8888)
+    }
+
     override fun supportsMimeType(mimeType: String): Boolean =
         mimeType.startsWith("image/") || mimeType.isEmpty() || mimeType == "*/*"
-
-    private fun createFallbackBitmap(): Bitmap =
-        try {
-            val bmp = BitmapFactory.decodeResource(context.resources, com.music.mkr.R.drawable.icon)
-            if (bmp != null && !bmp.isRecycled) {
-                bmp.copy(Bitmap.Config.ARGB_8888, false) ?: bmp
-            } else {
-                createBitmap(128, 128, Bitmap.Config.ARGB_8888)
-            }
-        } catch (_: Exception) {
-            createBitmap(128, 128, Bitmap.Config.ARGB_8888)
-        }
-
-    private fun Bitmap.copyIfNeeded(): Bitmap {
-        return if (isRecycled) {
-            createFallbackBitmap()
-        } else {
-            try {
-                copy(Bitmap.Config.ARGB_8888, false) ?: createFallbackBitmap()
-            } catch (e: Exception) {
-                createFallbackBitmap()
-            }
-        }
-    }
 
     override fun decodeBitmap(data: ByteArray): ListenableFuture<Bitmap> =
         scope.future(Dispatchers.IO) {
             try {
-                val bitmap = BitmapFactory.decodeByteArray(data, 0, data.size)
-                bitmap?.copyIfNeeded() ?: createFallbackBitmap()
+                val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+                BitmapFactory.decodeByteArray(data, 0, data.size, options)
+                val longestEdge = maxOf(options.outWidth, options.outHeight)
+                var sampleSize = 1
+                while (longestEdge / sampleSize > ARTWORK_SIZE) sampleSize *= 2
+                options.inSampleSize = sampleSize
+                options.inJustDecodeBounds = false
+                BitmapFactory.decodeByteArray(data, 0, data.size, options) ?: fallbackBitmap
             } catch (e: Exception) {
                 Timber.tag("CoilBitmapLoader").w(e, "Failed to decode bitmap data")
-                createFallbackBitmap()
+                fallbackBitmap
             }
         }
 
     override fun loadBitmap(uri: Uri): ListenableFuture<Bitmap> {
-        val uriString = uri.toString()
-        val cached = getCachedBitmap(uriString)
-        if (cached != null) {
-            return Futures.immediateFuture(cached)
+        val original = uri.toString()
+        val isNetworkArtwork = uri.scheme == "http" || uri.scheme == "https"
+        // Match the source URL used by the player and download prefetch. Coil still decodes at notification size.
+        val artworkUrl = if (isNetworkArtwork) original.resize(1200, 1200) else original
+        bitmapCache.get(artworkUrl)?.takeUnless { it.isRecycled }?.let {
+            return Futures.immediateFuture(it)
         }
-
         return scope.future(Dispatchers.IO) {
-            val request = ImageRequest.Builder(context)
-                .data(if (uri.scheme == "http" || uri.scheme == "https") uriString else uri)
-                .allowHardware(false)
-                .memoryCachePolicy(CachePolicy.ENABLED)
-                .diskCachePolicy(CachePolicy.ENABLED)
-                .build()
-
-            var result = try {
-                context.imageLoader.execute(request)
-            } catch (e: Exception) {
-                Timber.tag("CoilBitmapLoader").w(e, "Exception executing image request for $uri")
-                null
+            val bitmap = if (isNetworkArtwork) {
+                val alternate = artworkUrl.takeIf { artworkUrl.toUri().host == "i.ytimg.com" }
+                    ?.replace("/vi_webp/", "/vi/")
+                    ?.replace(".webp", ".jpg")
+                    ?.replace("maxresdefault.jpg", "hqdefault.jpg")
+                listOfNotNull(artworkUrl, original, alternate).distinct().firstNotNullOfOrNull { loadArtwork(it) }
+            } else {
+                loadArtwork(uri)
             }
-
-            // If maxresdefault 404s, fall back to hqdefault which is universally available on YouTube
-            if ((result == null || result is ErrorResult) && uriString.contains("maxresdefault")) {
-                val fallbackUri = uriString
-                    .replace("maxresdefault.webp", "hqdefault.webp")
-                    .replace("maxresdefault.jpg", "hqdefault.jpg")
-                val fallbackRequest = ImageRequest.Builder(context)
-                    .data(fallbackUri)
-                    .allowHardware(false)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .diskCachePolicy(CachePolicy.ENABLED)
-                    .build()
-                result = try {
-                    context.imageLoader.execute(fallbackRequest)
-                } catch (_: Exception) {
-                    null
-                }
-            }
-
-            when (result) {
-                is ErrorResult -> {
-                    Timber.tag("CoilBitmapLoader").w(result.throwable, "Failed to load bitmap from uri: $uri")
-                    createFallbackBitmap()
-                }
-                is SuccessResult -> {
-                    try {
-                        val bitmap = result.image.toBitmap().copyIfNeeded()
-                        putCachedBitmap(uriString, bitmap)
-                        try {
-                            val palette = PlayerColorExtractor.extractFromBitmap(bitmap)
-                            PlayerColorExtractor.putCachedPalette(uriString, palette)
-                        } catch (_: Exception) {}
-                        bitmap
-                    } catch (e: Exception) {
-                        Timber.tag("CoilBitmapLoader").w(e, "Failed to convert image to bitmap")
-                        createFallbackBitmap()
-                    }
-                }
-                null -> createFallbackBitmap()
-            }
+            if (bitmap == null) fallbackBitmap else bitmap.also { bitmapCache.put(artworkUrl, it) }
         }
     }
 
-    override fun loadBitmapFromMetadata(metadata: androidx.media3.common.MediaMetadata): ListenableFuture<Bitmap>? {
-        if (metadata.artworkData != null) {
-            return decodeBitmap(metadata.artworkData!!)
+    private suspend fun loadArtwork(data: Any): Bitmap? {
+        val request = ImageRequest.Builder(context)
+            .data(data)
+            .size(ARTWORK_SIZE, ARTWORK_SIZE)
+            .scale(Scale.FIT)
+            .allowHardware(false)
+            .memoryCachePolicy(CachePolicy.ENABLED)
+            .diskCachePolicy(CachePolicy.ENABLED)
+            .build()
+        return try {
+            when (val result = context.imageLoader.execute(request)) {
+                is SuccessResult -> result.image.toBitmap().takeUnless { it.isRecycled }
+                is ErrorResult -> {
+                    Timber.tag("CoilBitmapLoader").w(result.throwable, "Failed to load artwork")
+                    null
+                }
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Timber.tag("CoilBitmapLoader").w(e, "Failed to decode artwork")
+            null
         }
+    }
+
+    override fun loadBitmapFromMetadata(metadata: androidx.media3.common.MediaMetadata): ListenableFuture<Bitmap> {
+        metadata.artworkData?.let { return decodeBitmap(it) }
         val artworkUri = metadata.artworkUri
-            ?: metadata.extras?.getString("artwork_uri")?.let { Uri.parse(it) }
-        if (artworkUri != null) {
-            return loadBitmap(artworkUri)
-        }
-        return Futures.immediateFuture(createFallbackBitmap())
+            ?: metadata.extras?.getString("artwork_uri")?.takeIf { it.isNotBlank() }?.toUri()
+        return artworkUri?.let(::loadBitmap) ?: Futures.immediateFuture(fallbackBitmap)
     }
 }
