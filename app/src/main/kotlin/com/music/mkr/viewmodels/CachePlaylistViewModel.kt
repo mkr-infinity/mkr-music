@@ -64,17 +64,17 @@ class CachePlaylistViewModel @Inject constructor(
     val state = combine(reload, preferences) { _, settings -> settings }
         .flatMapLatest { (disabled, hideExplicit, hideVideoSongs) ->
             val entries = if (disabled) flowOf(emptyMap<String, Long>()) else cacheChanges.completeEntries(playerCache)
-            entries.flatMapLatest { complete ->
-                val queries = complete.keys.chunked(500).map(database::observeSongsByIds)
-                if (queries.isEmpty()) flowOf<State>(State.Ready(emptyList()))
-                else combine(queries) { chunks ->
-                    State.Ready(
-                        chunks.flatMap { it }
-                            .sortedByDescending { complete[it.id] }
-                            .filterExplicit(hideExplicit)
-                            .filterVideoSongs(hideVideoSongs)
-                    )
-                }
+            val songs = entries.map { it.keys }.distinctUntilChanged().flatMapLatest { ids ->
+                val queries = ids.chunked(500).map(database::observeSongsByIds)
+                if (queries.isEmpty()) flowOf(emptyList()) else combine(queries) { it.flatMap { songs -> songs } }
+            }
+            combine(songs, entries) { rows, complete ->
+                State.Ready(
+                    rows.filter { it.id in complete }
+                        .sortedByDescending { complete[it.id] }
+                        .filterExplicit(hideExplicit)
+                        .filterVideoSongs(hideVideoSongs),
+                ) as State
             }.onStart { emit(State.Loading) }
                 .catch {
                     reportException(it)

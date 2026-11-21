@@ -11,17 +11,27 @@ import androidx.media3.datasource.cache.CacheEvictor
 import androidx.media3.datasource.cache.CacheSpan
 import androidx.media3.datasource.cache.ContentMetadata
 import androidx.media3.datasource.cache.SimpleCache
+import com.music.mkr.di.ApplicationScope
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 
 @androidx.annotation.OptIn(UnstableApi::class)
 @Singleton
-class CacheSpanChanges @Inject constructor() {
+class CacheSpanChanges @Inject constructor(@ApplicationScope private val scope: CoroutineScope) {
     private val listeners = CopyOnWriteArrayList<(Cache, String) -> Unit>()
+    private val streams = mutableMapOf<SimpleCache, Flow<Result<Map<String, Long>>>>()
 
     fun observe(evictor: CacheEvictor): CacheEvictor = object : CacheEvictor by evictor {
         override fun onSpanAdded(cache: Cache, span: CacheSpan) {
@@ -35,8 +45,20 @@ class CacheSpanChanges @Inject constructor() {
         }
     }
 
-    // Each observer takes one snapshot, then rechecks only keys affected by span changes.
-    fun completeEntries(cache: SimpleCache) = flow {
+    fun completeEntries(cache: SimpleCache): Flow<Map<String, Long>> {
+        val stream = synchronized(streams) {
+            streams.getOrPut(cache) {
+                observeEntries(cache).map { Result.success(it) }
+                    .catch { emit(Result.failure(it)) }
+                    .flowOn(Dispatchers.IO)
+                    .shareIn(scope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
+            }
+        }
+        return stream.map { it.getOrThrow() }
+    }
+
+    // Take one snapshot per active cache, then recheck only keys whose spans changed.
+    private fun observeEntries(cache: SimpleCache) = flow {
         val pendingKeys = ConcurrentHashMap.newKeySet<String>()
         val changed = Channel<Unit>(Channel.CONFLATED)
         val listener: (Cache, String) -> Unit = { source, key ->

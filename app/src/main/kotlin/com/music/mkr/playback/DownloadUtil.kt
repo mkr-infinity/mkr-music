@@ -55,6 +55,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -409,6 +410,10 @@ constructor(
         ) { members, completed, files ->
             members.filterTo(mutableSetOf()) { isOfflineDownloadReady(it, completed, files) }
         }.distinctUntilChanged().flowOn(Dispatchers.IO)
+            .catch {
+                Timber.w(it, "Could not observe offline downloads")
+                emit(emptySet())
+            }
             .shareIn(scope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
     }
 

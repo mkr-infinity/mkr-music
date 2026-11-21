@@ -238,8 +238,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import timber.log.Timber
-import java.io.ObjectInputStream
-import java.io.ObjectOutputStream
 import java.time.LocalDateTime
 import javax.inject.Inject
 import kotlin.coroutines.coroutineContext
@@ -266,6 +264,9 @@ class MusicService :
 
     @Inject
     lateinit var mediaLibrarySessionCallback: MediaLibrarySessionCallback
+
+    @Inject
+    lateinit var queuePersistence: QueuePersistence
 
     @Inject
     lateinit var equalizerService: EqualizerService
@@ -371,6 +372,8 @@ class MusicService :
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
     private var queueLoadJob: Job? = null
     private var restoringQueue = false
+    private var queuePreviouslyAvailable = false
+    private var pendingResumeShuffle: RestoredSessionQueue? = null
     private var pendingQueueSwitch = false
 
     private val binder = MusicBinder()
@@ -1100,53 +1103,26 @@ class MusicService :
 
         if (dataStore.get(PersistentQueueKey, true)) {
             restoringQueue = true
-            loadSavedQueue()?.let { saved ->
-                savedPlaybackPosition(saved)?.let { restored ->
-                    adoptSavedQueue(saved)
-                    player.setMediaItems(restored.mediaItems, restored.startIndex, restored.startPositionMs)
-                    player.prepare()
+            try {
+                queuePersistence.readState()?.let { saved ->
+                    playerVolume.value = saved.volume.takeIf { it.isFinite() }?.coerceIn(0f, 1f) ?: playerVolume.value
                 }
-            }
-
-            val automixFile = filesDir.resolve(PERSISTENT_AUTOMIX_FILE)
-            if (automixFile.exists()) {
-                runCatching {
-                    automixFile.inputStream().use { fis ->
-                        ObjectInputStream(fis).use { oos ->
-                            oos.readObject() as PersistQueue
-                        }
-                    }
-                }.onSuccess { queue ->
-                    runCatching {
-                        automixItems.value = queue.items.map { it.toMediaItem() }
-                    }.onFailure { error ->
-                        Timber.tag(TAG).w(error, "Failed to restore automix queue, clearing data")
-                        clearPersistedQueueFiles()
-                    }
-                }.onFailure { error ->
-                    Timber.tag(TAG).w(error, "Failed to read automix queue, clearing data")
-                    clearPersistedQueueFiles()
+                queuePersistence.readAutomix()?.let { saved ->
+                    automixItems.value = saved.items.map { it.toMediaItem() }
                 }
-            }
-
-            // Restore player state
-            val playerStateFile = filesDir.resolve(PERSISTENT_PLAYER_STATE_FILE)
-            if (playerStateFile.exists()) {
-                runCatching {
-                    playerStateFile.inputStream().use { fis ->
-                        ObjectInputStream(fis).use { oos ->
-                            oos.readObject() as PersistPlayerState
-                        }
+                queuePersistence.readQueue()?.let { saved ->
+                    savedPlaybackPosition(saved)?.let { restored ->
+                        adoptSavedQueue(saved.queue)
+                        val media = restored.media
+                        player.setMediaItems(media.mediaItems, media.startIndex, media.startPositionMs)
+                        applyRestoredShuffle(restored.shuffle)
+                        player.prepare()
+                        refreshChipsForCurrentSong()
                     }
-                }.onSuccess { playerState ->
-                    playerVolume.value = playerState.volume.coerceIn(0f, 1f)
-                    if (player.mediaItemCount > 0) refreshChipsForCurrentSong()
-                }.onFailure { error ->
-                    Timber.tag(TAG).w(error, "Failed to read player state, clearing data")
-                    clearPersistedQueueFiles()
                 }
+            } finally {
+                restoringQueue = false
             }
-            restoringQueue = false
         }
 
         // Save queue periodically (30s) to preserve state without causing constant flash I/O churn
@@ -1160,15 +1136,13 @@ class MusicService :
         }
     }
 
-    private fun loadSavedQueue(): PersistQueue? {
-        val file = filesDir.resolve(PERSISTENT_QUEUE_FILE)
-        if (!file.isFile) return null
-        return runCatching { ObjectInputStream(file.inputStream()).use { it.readObject() as PersistQueue } }
-            .onFailure { Timber.w(it, "Could not read the saved playback queue") }
-            .getOrNull()
-    }
+    private data class RestoredSessionQueue(
+        val media: MediaSession.MediaItemsWithStartPosition,
+        val shuffle: IntArray?,
+    )
 
-    private fun savedPlaybackPosition(saved: PersistQueue): MediaSession.MediaItemsWithStartPosition? {
+    private fun savedPlaybackPosition(persisted: QueuePersistence.SavedQueue): RestoredSessionQueue? {
+        val saved = persisted.queue
         val hideExplicit = dataStore.get(HideExplicitKey, false)
         val hideVideos = dataStore.get(HideVideoSongsKey, false)
         val deduplicate = dataStore.get(PreventDuplicateTracksInQueueKey, true)
@@ -1187,23 +1161,41 @@ class MusicService :
         val index = maxOf(exact, sameSong).takeIf { it >= 0 }
             ?: restoredQueueIndex(saved.mediaItemIndex, kept.map { it.first })
         val position = if (kept[index].second.mediaId == savedId) saved.position.coerceAtLeast(0) else 0L
-        return MediaSession.MediaItemsWithStartPosition(kept.map { it.second }, index, position)
+        return RestoredSessionQueue(
+            MediaSession.MediaItemsWithStartPosition(kept.map { it.second }, index, position),
+            remapSavedShuffleOrder(persisted.shuffleOrder, kept.map { it.first }),
+        )
     }
 
     private fun adoptSavedQueue(saved: PersistQueue) {
         currentQueue = saved.toQueue()
         queueTitle = saved.title
         originalQueueSize = saved.items.size
+        queuePreviouslyAvailable = true
     }
 
     internal suspend fun resumeSavedPlayback(): MediaSession.MediaItemsWithStartPosition {
         check(dataStore.get(PersistentQueueKey, true)) { "Queue persistence is disabled" }
-        val saved = withContext(Dispatchers.IO) { loadSavedQueue() }
+        val saved = withContext(Dispatchers.IO) { queuePersistence.readQueue() }
         check(player.mediaItemCount == 0 && queueLoadJob?.isActive != true) { "Playback queue already being restored" }
         val persisted = checkNotNull(saved) { "No saved playback queue" }
         val restored = savedPlaybackPosition(persisted) ?: error("The saved queue is empty")
-        adoptSavedQueue(persisted)
-        return restored
+        adoptSavedQueue(persisted.queue)
+        pendingResumeShuffle = restored.takeIf { it.shuffle != null && player.shuffleModeEnabled }
+        return restored.media
+    }
+
+    private fun applyRestoredShuffle(order: IntArray?) {
+        if (order != null && player.shuffleModeEnabled) {
+            player.setShuffleOrder(DefaultShuffleOrder(order, System.currentTimeMillis()))
+        }
+    }
+
+    override fun onTimelineChanged(timeline: Timeline, reason: Int) {
+        if (reason != Player.TIMELINE_CHANGE_REASON_PLAYLIST_CHANGED) return
+        val pending = pendingResumeShuffle ?: return
+        pendingResumeShuffle = null
+        if (player.mediaItems.toList() == pending.media.mediaItems) applyRestoredShuffle(pending.shuffle)
     }
 
     private fun createExoPlayer(forCrossfade: Boolean = false): ExoPlayer {
@@ -1363,12 +1355,6 @@ class MusicService :
         resumeAfterFocusLoss = false
         lastAudioFocusState = AudioManager.AUDIOFOCUS_NONE
         applyPlaybackVolume()
-    }
-
-    private fun clearPersistedQueueFiles() {
-        runCatching { filesDir.resolve(PERSISTENT_QUEUE_FILE).delete() }
-        runCatching { filesDir.resolve(PERSISTENT_AUTOMIX_FILE).delete() }
-        runCatching { filesDir.resolve(PERSISTENT_PLAYER_STATE_FILE).delete() }
     }
 
     fun hasAudioFocusForPlayback(): Boolean {
@@ -3922,79 +3908,39 @@ class MusicService :
     }
 
     private fun saveQueueToDisk() {
-        if (restoringQueue) return
-        if (player.mediaItemCount == 0) {
-            Timber.tag(TAG).d("Skipping queue save - no media items")
-            return
-        }
+        if (restoringQueue || !::playerVolume.isInitialized) return
+        if (player.mediaItemCount == 0 && !queuePreviouslyAvailable) return
+        queuePreviouslyAvailable = player.mediaItemCount > 0
 
-        try {
-            // Save current queue with proper type information
-            val persistQueue = currentQueue.toPersistQueue(
-                title = queueTitle,
-                items = player.mediaItems.mapNotNull { it.metadata },
-                mediaItemIndex = player.currentMediaItemIndex,
-                position = player.currentPosition
-            )
-
-            val persistAutomix =
-                PersistQueue(
-                    title = "automix",
-                    items = automixItems.value.mapNotNull { it.metadata },
-                    mediaItemIndex = 0,
-                    position = 0,
-                )
-
-            // Save player state
-            val persistPlayerState = PersistPlayerState(
-                playWhenReady = player.playWhenReady,
-                repeatMode = player.repeatMode,
-                shuffleModeEnabled = player.shuffleModeEnabled,
-                volume = playerVolume.value,
-                currentPosition = player.currentPosition,
-                currentMediaItemIndex = player.currentMediaItemIndex,
-                playbackState = player.playbackState
-            )
-
-            runCatching {
-                filesDir.resolve(PERSISTENT_QUEUE_FILE).outputStream().use { fos ->
-                    ObjectOutputStream(fos).use { oos ->
-                        oos.writeObject(persistQueue)
-                    }
-                }
-                Timber.tag(TAG).d("Queue saved successfully")
-            }.onFailure {
-                Timber.tag(TAG).e(it, "Failed to save queue")
-                reportException(it)
-            }
-
-            runCatching {
-            filesDir.resolve(PERSISTENT_AUTOMIX_FILE).outputStream().use { fos ->
-                ObjectOutputStream(fos).use { oos ->
-                        oos.writeObject(persistAutomix)
-                    }
-                }
-                Timber.tag(TAG).d("Automix saved successfully")
-            }.onFailure {
-                Timber.tag(TAG).e(it, "Failed to save automix")
-                reportException(it)
-            }
-
-            runCatching {
-                filesDir.resolve(PERSISTENT_PLAYER_STATE_FILE).outputStream().use { fos ->
-                    ObjectOutputStream(fos).use { oos ->
-                        oos.writeObject(persistPlayerState)
-                    }
-                }
-                Timber.tag(TAG).d("Player state saved successfully")
-            }.onFailure {
-                Timber.tag(TAG).e(it, "Failed to save player state")
-                reportException(it)
-            }
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Error during queue save operation")
-            reportException(e)
-        }
+        val retained = player.mediaItems.mapIndexedNotNull { index, item -> item.metadata?.let { index to it } }
+        val indices = retained.map { it.first }
+        val index = if (retained.isEmpty()) 0 else restoredQueueIndex(player.currentMediaItemIndex, indices)
+        val position = if (indices.getOrNull(index) == player.currentMediaItemIndex) player.currentPosition else 0L
+        val queue = currentQueue.toPersistQueue(
+            title = queueTitle,
+            items = retained.map { it.second },
+            mediaItemIndex = index,
+            position = position,
+        )
+        val shuffle = if (player.shuffleModeEnabled) {
+            remapSavedShuffleOrder(getCurrentShuffleOrderIndices(player), indices)
+        } else null
+        val automix = PersistQueue(
+            title = "automix",
+            items = automixItems.value.mapNotNull { it.metadata },
+            mediaItemIndex = 0,
+            position = 0,
+        )
+        val state = PersistPlayerState(
+            playWhenReady = player.playWhenReady,
+            repeatMode = player.repeatMode,
+            shuffleModeEnabled = player.shuffleModeEnabled,
+            volume = playerVolume.value,
+            currentPosition = position,
+            currentMediaItemIndex = index,
+            playbackState = player.playbackState,
+        )
+        queuePersistence.save(QueuePersistence.Snapshot(QueuePersistence.SavedQueue(queue, shuffle), automix, state))
     }
 
     override fun onDestroy() {
