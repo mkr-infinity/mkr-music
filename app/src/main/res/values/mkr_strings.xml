@@ -1122,6 +1122,12 @@
     <string name="account_settings_desc_about">Version information and legal details</string>
     <string name="action_view_update">View</string>
     <string name="new_version_found">New version found</string>
+    <string name="support_mkr_title">Support MKR Music</string>
+    <string name="support_mkr_intro">Enjoying MKR Music? You can support its development using UPI.</string>
+    <string name="support_upi_id">UPI ID</string>
+    <string name="support_upi_helper">Copy the UPI ID and paste it into your preferred UPI app.</string>
+    <string name="support_upi_copy_failed">Couldn’t copy the UPI ID</string>
+    <string name="support_buy_me_a_coffee">Buy Me a Coffee</string>
     <string name="support">Support</string>
     <string name="support_desc">Support app development</string>
 
