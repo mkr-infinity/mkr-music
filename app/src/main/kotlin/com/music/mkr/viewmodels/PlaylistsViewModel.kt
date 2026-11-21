@@ -12,6 +12,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.music.innertube.YouTube
 import com.music.innertube.models.response.AddItemYouTubePlaylistResponse
+import com.music.innertube.utils.completed
 import com.music.mkr.R
 import com.music.mkr.constants.AddToPlaylistSortDescendingKey
 import com.music.mkr.constants.AddToPlaylistSortTypeKey
@@ -24,6 +25,7 @@ import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.SyncUtils
 import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.reportException
+import com.music.mkr.utils.unmatchedLocalPlaylistEntries
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.ktor.client.call.body
@@ -79,44 +81,62 @@ constructor(
             checkNotNull(database.getPlaylistEntity(destination.id))
             val songIds = prepare()
             check(songIds.isNotEmpty())
-            val (playlist, idsToAdd, duplicateCount) = database.appendSongsFromPicker(
-                destination.id,
-                songIds,
-                allowDuplicates = duplicateChoice?.let { it == DuplicateChoice.AddAnyway },
-            )
-            playlistName = playlist.name
-            if (duplicateCount > 0) return@async DuplicateSongs(songIds, duplicateCount)
-            if (idsToAdd.isEmpty()) {
-                show(R.string.playlist_add_already_present, R.drawable.info)
-                return@async null
-            }
-
-            savedLocally = true
-            val browseId = playlist.browseId
-            if (syncRemote && browseId != null && playlist.isEditable) {
-                for (batch in idsToAdd.chunked(50)) {
-                    if (database.getPlaylistEntity(playlist.id) == null) {
-                        show(R.string.playlist_add_failed, R.drawable.error)
-                        return@async null
+            return@async syncUtils.withPlaylistEdit(destination.id) {
+                val (playlist, idsToAdd, duplicateCount) = database.appendSongsFromPicker(
+                    destination.id,
+                    songIds,
+                    allowDuplicates = duplicateChoice?.let { it == DuplicateChoice.AddAnyway },
+                )
+                playlistName = playlist.name
+                if (duplicateCount > 0) return@withPlaylistEdit DuplicateSongs(songIds, duplicateCount)
+                val browseId = playlist.browseId
+                val canSync = syncRemote && browseId != null && playlist.isEditable
+                savedLocally = idsToAdd.isNotEmpty()
+                val requestedIds = songIds.toHashSet()
+                val retryIds = if (duplicateChoice == DuplicateChoice.Skip && canSync && browseId != null) {
+                    val local = database.playlistMappings(playlist.id)
+                    val possibleRetries = local.filter { it.setVideoId == null && it.songId in requestedIds }
+                        .map { it.songId }.filterNot { it in idsToAdd }.toSet()
+                    if (possibleRetries.isEmpty()) emptyList() else {
+                        savedLocally = true
+                        val remote = YouTube.playlist(browseId).completed(requireComplete = true).getOrThrow()
+                            .songs.map { it.id to it.setVideoId }
+                        unmatchedLocalPlaylistEntries(local, remote)
+                            .filter { it.songId in possibleRetries }.map { it.songId }
                     }
-                    val response = YouTube.addVideosToPlaylist(browseId, batch).body<AddItemYouTubePlaylistResponse>()
-                    val addedIds = response.playlistEditResults.map { it.playlistEditVideoAddedResultData.videoId }
-                    check(response.status == "STATUS_SUCCEEDED" && addedIds.sorted() == batch.sorted()) {
-                        "Remote playlist did not confirm all song additions"
+                } else emptyList()
+                val remoteIds = idsToAdd + retryIds
+                if (remoteIds.isEmpty()) {
+                    show(R.string.playlist_add_already_present, R.drawable.info)
+                    return@withPlaylistEdit null
+                }
+
+                if (canSync && browseId != null) {
+                    for (batch in remoteIds.chunked(50)) {
+                        if (database.getPlaylistEntity(playlist.id) == null) {
+                            show(R.string.playlist_add_failed, R.drawable.error)
+                            return@withPlaylistEdit null
+                        }
+                        val response = YouTube.addVideosToPlaylist(browseId, batch).body<AddItemYouTubePlaylistResponse>()
+                        val addedIds = response.playlistEditResults.map { it.playlistEditVideoAddedResultData.videoId }
+                        check(response.status == "STATUS_SUCCEEDED" && addedIds.sorted() == batch.sorted()) {
+                            "Remote playlist did not confirm all song additions"
+                        }
                     }
                 }
+                if (database.getPlaylistEntity(playlist.id) == null) {
+                    show(R.string.playlist_add_failed, R.drawable.error)
+                    return@withPlaylistEdit null
+                }
+                show(
+                    when {
+                        browseId != null && (!syncRemote || !playlist.isEditable) -> R.string.playlist_add_local_only
+                        else -> R.string.playlist_add_success
+                    },
+                    R.drawable.check,
+                )
+                null
             }
-            if (database.getPlaylistEntity(playlist.id) == null) {
-                show(R.string.playlist_add_failed, R.drawable.error)
-                return@async null
-            }
-            show(
-                when {
-                    browseId != null && (!syncRemote || !playlist.isEditable) -> R.string.playlist_add_local_only
-                    else -> R.string.playlist_add_success
-                },
-                R.drawable.check,
-            )
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

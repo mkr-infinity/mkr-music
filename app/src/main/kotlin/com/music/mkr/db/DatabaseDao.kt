@@ -1049,6 +1049,9 @@ interface DatabaseDao {
     @Query("SELECT COALESCE(MAX(position) + 1, 0) FROM playlist_song_map WHERE playlistId = :playlistId")
     fun nextPlaylistPosition(playlistId: String): Int
 
+    @Query("SELECT * FROM playlist_song_map WHERE playlistId = :playlistId ORDER BY position")
+    fun playlistMappings(playlistId: String): List<PlaylistSongMap>
+
     @Transaction
     fun addSongToPlaylist(playlist: Playlist, songIds: List<String>) {
         addSongsAtEnd(playlist.id, songIds)
@@ -1067,7 +1070,7 @@ interface DatabaseDao {
         if (allowDuplicates == null && existing.isNotEmpty()) {
             return Triple(playlist, emptyList(), existing.size)
         }
-        val idsToAdd = songIds.filterNot { it in existing }
+        val idsToAdd = if (allowDuplicates == true) songIds else songIds.distinct().filterNot { it in existing }
         if (idsToAdd.isNotEmpty()) addSongsAtEnd(playlistId, idsToAdd)
         return Triple(playlist, idsToAdd, 0)
     }
@@ -1122,6 +1125,9 @@ interface DatabaseDao {
 
     @Query("SELECT id FROM song WHERE isDownloaded = 1")
     fun downloadedSongIds(): List<String>
+
+    @Query("SELECT id FROM song WHERE isDownloaded = 1")
+    fun observeDownloadedSongIds(): Flow<List<String>>
 
     @Query("UPDATE song SET dateDownload = :date WHERE id = :songId AND isDownloaded = 0 AND dateDownload IS NULL")
     fun markSongCached(songId: String, date: LocalDateTime)

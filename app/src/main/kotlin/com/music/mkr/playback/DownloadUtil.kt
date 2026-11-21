@@ -59,6 +59,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -318,6 +319,8 @@ constructor(
                                             }
                                         }
                                         syncOfflineState(downloadId)
+                                    }
+                                    if (completionChecks.value[downloadId]?.stage == SongDownloadStage.Completed) {
                                         exportDownload(download)
                                     }
 
@@ -396,16 +399,25 @@ constructor(
         }
     }
 
-    fun completedSongs(sortType: SongSortType, descending: Boolean) =
+    private val offlineReadyIds by lazy {
         combine(
-            database.downloadedSongs(sortType, descending),
+            database.observeDownloadedSongIds(),
             downloads.map { items ->
-                items.values.filter { it.state == Download.STATE_COMPLETED }.mapTo(mutableSetOf()) { it.request.id }
+                items.values.filter { it.state == Download.STATE_COMPLETED }.associate { it.request.id to it.cacheKey() }
             }.distinctUntilChanged(),
             cacheChanges.completeEntries(downloadCache),
-        ) { songs, completedIds, files ->
-            songs.filter { it.id in completedIds && it.id in files }
+        ) { members, completed, files ->
+            members.filterTo(mutableSetOf()) { isOfflineDownloadReady(it, completed, files) }
+        }.distinctUntilChanged().flowOn(Dispatchers.IO)
+            .shareIn(scope, SharingStarted.WhileSubscribed(replayExpirationMillis = 0), replay = 1)
+    }
+
+    fun completedSongs(sortType: SongSortType, descending: Boolean) =
+        combine(database.downloadedSongs(sortType, descending), offlineReadyIds) { songs, ids ->
+            songs.filter { it.id in ids }
         }.flowOn(Dispatchers.IO)
+
+    private fun Download.cacheKey() = request.customCacheKey ?: request.uri.toString()
 
     fun getDownload(songId: String): Flow<Download?> = downloads.map { it[songId] }
 
@@ -415,7 +427,8 @@ constructor(
             getDownload(songId).distinctUntilChanged(),
             downloadsPaused,
             completionChecks.map { it[songId] }.distinctUntilChanged(),
-        ) { download, paused, completion ->
+            offlineReadyIds.map { songId in it }.distinctUntilChanged(),
+        ) { download, paused, completion, offlineReady ->
             if (download == null) return@combine flowOf<SongDownloadStatus?>(null)
             when (download.state) {
                 Download.STATE_QUEUED -> {
@@ -438,7 +451,12 @@ constructor(
                     }
                 }
                 Download.STATE_COMPLETED -> {
-                    val stage = completion?.takeIf { it.download === download }?.stage ?: SongDownloadStage.Saving
+                    val check = completion?.takeIf { it.download === download }?.stage
+                    val stage = when {
+                        offlineReady -> SongDownloadStage.Completed
+                        check == null || check == SongDownloadStage.Saving -> SongDownloadStage.Saving
+                        else -> SongDownloadStage.SaveFailed
+                    }
                     flowOf(
                         SongDownloadStatus(
                             download.startTimeMs,
@@ -466,12 +484,11 @@ constructor(
         val stage = try {
             save()
             val persisted = downloadManager.downloadIndex.getDownload(id)
-            val key = download.request.customCacheKey ?: download.request.uri.toString()
+            val key = download.cacheKey()
             if (persisted != null && persisted.state == Download.STATE_COMPLETED &&
                 persisted.updateTimeMs == download.updateTimeMs &&
                 downloadCache.completeAudioCachedAt(key) != null &&
-                database.getSongByIdBlocking(id)?.song?.isDownloaded == true &&
-                id !in exportFailures.value
+                database.getSongByIdBlocking(id)?.song?.isDownloaded == true
             ) SongDownloadStage.Completed else SongDownloadStage.SaveFailed
         } catch (e: CancellationException) {
             throw e
@@ -484,20 +501,14 @@ constructor(
         }
     }
 
-    fun hasExportFailure(songId: String): Flow<Boolean> = exportFailures.map { songId in it }
+    fun hasExportFailure(songId: String): Flow<Boolean> =
+        combine(exportFailures, offlineReadyIds) { failures, ready -> songId in failures && songId in ready }
+            .distinctUntilChanged()
 
     fun retryExport(songId: String) {
         scope.launch {
             val download = downloads.value[songId]?.takeIf { it.state == Download.STATE_COMPLETED } ?: return@launch
-            val saving = CompletionCheck(download, SongDownloadStage.Saving)
-            completionChecks.update { checks ->
-                val current = checks[songId]
-                if (current != null && current.download === download && current.stage == SongDownloadStage.SaveFailed) {
-                    checks + (songId to saving)
-                } else checks
-            }
-            if (completionChecks.value[songId] !== saving) return@launch
-            verifyCompletion(download) { exportDownload(download) }
+            if (songId in exportFailures.value && songId in offlineReadyIds.first()) exportDownload(download)
         }
     }
 
@@ -513,12 +524,7 @@ constructor(
     private suspend fun exportDownload(download: Download) {
         val songId = download.request.id
         if (downloads.value[songId] !== download) return
-        if (!activeExports.add(songId)) {
-            stateLock.withLock {
-                if (downloads.value[songId] === download) setExportFailed(songId, true)
-            }
-            return
-        }
+        if (!activeExports.add(songId)) return
         try {
             val written = DownloadDestinationWriter.writeCompletedDownload(context, downloadCache, database, songId)
             stateLock.withLock {

@@ -50,6 +50,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.time.LocalDateTime
@@ -944,58 +946,39 @@ class SyncUtils @Inject constructor(
         }
     }
 
+    private val playlistLocks = Array(32) { Mutex() }
+
+    internal suspend fun <T> withPlaylistEdit(playlistId: String, action: suspend () -> T): T =
+        playlistLocks[(playlistId.hashCode() and Int.MAX_VALUE) % playlistLocks.size].withLock { action() }
+
     private suspend fun executeSyncPlaylist(browseId: String, playlistId: String) = withContext(Dispatchers.IO) {
-        Timber.d("syncPlaylist: Starting sync for browseId=$browseId, playlistId=$playlistId")
-
-        withRetry {
-            YouTube.playlist(browseId).completed(requireComplete = true).getOrThrow()
-        }.onSuccess { page ->
+        withPlaylistEdit(playlistId) {
             try {
+                val page = withRetry {
+                    YouTube.playlist(browseId).completed(requireComplete = true).getOrThrow()
+                }.getOrThrow()
                 val songs = page.songs.map(SongItem::toMediaMetadata)
-                Timber.d("syncPlaylist: Fetched ${songs.size} songs from remote")
-
-                if (songs.isEmpty()) {
-                    Timber.w("syncPlaylist: Remote playlist is empty, clearing local playlist")
-                    database.withTransaction {
-                        database.clearPlaylist(playlistId)
-                    }
-                    return@onSuccess
-                }
-
-                val remoteIds = songs.map { it.id }
-                val localIds = database.playlistSongs(playlistId).first()
-                    .sortedBy { it.map.position }
-                    .map { it.song.id }
-
-                if (remoteIds == localIds) {
-                    Timber.d("syncPlaylist: Local and remote are in sync, no changes needed")
-                    return@onSuccess
-                }
-
-                Timber.d("syncPlaylist: Updating local playlist (remote: ${remoteIds.size}, local: ${localIds.size})")
-
+                val remote = songs.map { it.id to it.setVideoId }
                 database.withTransaction {
-                    database.clearPlaylist(playlistId)
-                    songs.forEachIndexed { idx, song ->
-                        if (database.getSongByIdBlocking(song.id) == null) {
-                            database.insert(song)
-                        }
-                        database.insert(
-                            PlaylistSongMap(
-                                songId = song.id,
-                                playlistId = playlistId,
-                                position = idx,
-                                setVideoId = song.setVideoId
-                            )
-                        )
+                    if (getPlaylistEntity(playlistId)?.browseId != browseId) return@withTransaction
+                    val local = playlistMappings(playlistId)
+                    val pending = unmatchedLocalPlaylistEntries(local, remote)
+                    val desired = remote + pending.map { it.songId to it.setVideoId }
+                    if (local.map { it.songId to it.setVideoId } == desired) return@withTransaction
+
+                    clearPlaylist(playlistId)
+                    songs.forEach { song ->
+                        if (getSongByIdBlocking(song.id) == null) insert(song)
+                    }
+                    desired.forEachIndexed { index, (songId, setVideoId) ->
+                        insert(PlaylistSongMap(playlistId = playlistId, songId = songId, position = index, setVideoId = setVideoId))
                     }
                 }
-                Timber.d("syncPlaylist: Successfully synced playlist")
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                Timber.e(e, "Error processing playlist sync")
+                Timber.e(e, "Could not synchronize playlist")
             }
-        }.onFailure { e ->
-            Timber.e(e, "syncPlaylist: Failed after retries")
         }
     }
 

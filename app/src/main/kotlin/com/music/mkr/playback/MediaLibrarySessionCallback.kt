@@ -16,7 +16,6 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
-import androidx.media3.exoplayer.offline.Download
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaConstants
 import androidx.media3.session.MediaLibraryService
@@ -54,7 +53,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.guava.future
 import kotlinx.coroutines.plus
@@ -219,7 +217,7 @@ constructor(
 
                     MusicService.PLAYLIST -> {
                         val likedSongCount = database.likedSongsCount().first()
-                        val downloadedSongCount = downloadUtil.downloads.value.size
+                        val downloadedSongCount = downloadUtil.completedSongs(SongSortType.CREATE_DATE, true).first().size
                         val youtubePlaylists = try {
                             YouTube.home().getOrNull()?.sections
                                 ?.flatMap { it.items }
@@ -265,22 +263,8 @@ constructor(
                                         true
                                     )
 
-                                    PlaylistEntity.DOWNLOADED_PLAYLIST_ID -> {
-                                        val downloads = downloadUtil.downloads.value
-                                        database
-                                            .allSongs()
-                                            .flowOn(Dispatchers.IO)
-                                            .map { songs ->
-                                                songs.filter {
-                                                    downloads[it.id]?.state == Download.STATE_COMPLETED
-                                                }
-                                            }.map { songs ->
-                                                songs
-                                                    .map { it to downloads[it.id] }
-                                                    .sortedBy { it.second?.updateTimeMs ?: 0L }
-                                                    .map { it.first }
-                                            }
-                                    }
+                                    PlaylistEntity.DOWNLOADED_PLAYLIST_ID ->
+                                        downloadUtil.completedSongs(SongSortType.CREATE_DATE, true)
 
                                     else ->
                                         database.playlistSongs(playlistId).map { list ->
@@ -473,27 +457,18 @@ constructor(
                     val playlistId = path.getOrNull(1) ?: return@future defaultResult
                     val songs = when (playlistId) {
                         PlaylistEntity.LIKED_PLAYLIST_ID -> database.likedSongs(SongSortType.CREATE_DATE, descending = true)
-                        PlaylistEntity.DOWNLOADED_PLAYLIST_ID -> {
-                            val downloads = downloadUtil.downloads.value
-                            database
-                                .allSongs()
-                                .flowOn(Dispatchers.IO)
-                                .map { songs ->
-                                    songs.filter {
-                                        downloads[it.id]?.state == Download.STATE_COMPLETED
-                                    }
-                                }.map { songs ->
-                                    songs
-                                        .map { it to downloads[it.id] }
-                                        .sortedBy { it.second?.updateTimeMs ?: 0L }
-                                        .map { it.first }
-                                }
-                        }
+                        PlaylistEntity.DOWNLOADED_PLAYLIST_ID ->
+                            downloadUtil.completedSongs(SongSortType.CREATE_DATE, true)
                         else -> database.playlistSongs(playlistId).map { list ->
                             list.map { it.song }
                         }
                     }.first()
 
+                    if (playlistId == PlaylistEntity.DOWNLOADED_PLAYLIST_ID &&
+                        (songs.isEmpty() || (songId != MusicService.SHUFFLE_ACTION && songs.none { it.id == songId }))
+                    ) {
+                        return@future MediaItemsWithStartPosition(emptyList(), C.INDEX_UNSET, C.TIME_UNSET)
+                    }
                     // Check if this is a shuffle action
                     if (songId == MusicService.SHUFFLE_ACTION) {
                         MediaItemsWithStartPosition(
@@ -744,6 +719,9 @@ constructor(
                     val songId = path.lastOrNull() ?: return null
                     if (songId == MusicService.SHUFFLE_ACTION) {
                         shuffleMediaItem("${MusicService.PLAYLIST}/$playlistId")
+                    } else if (playlistId == PlaylistEntity.DOWNLOADED_PLAYLIST_ID) {
+                        downloadUtil.completedSongs(SongSortType.CREATE_DATE, true).first()
+                            .firstOrNull { it.id == songId }?.toMediaItem("${MusicService.PLAYLIST}/$playlistId")
                     } else {
                         database.song(songId).first()?.toMediaItem("${MusicService.PLAYLIST}/$playlistId")
                     }
@@ -779,7 +757,7 @@ constructor(
     private suspend fun playlistMediaItem(playlistId: String): MediaItem? =
         when (playlistId) {
             PlaylistEntity.LIKED_PLAYLIST_ID -> likedSongsMediaItem(database.likedSongsCount().first())
-            PlaylistEntity.DOWNLOADED_PLAYLIST_ID -> downloadedSongsMediaItem(downloadUtil.downloads.value.size)
+            PlaylistEntity.DOWNLOADED_PLAYLIST_ID -> downloadedSongsMediaItem(downloadUtil.completedSongs(SongSortType.CREATE_DATE, true).first().size)
             else -> database.playlist(playlistId).first()?.toBrowsableMediaItem()
         }
 
