@@ -96,7 +96,9 @@ fun MusicSearchHeader(
         ) {
             // Leading Icon: Back button when active or forced, Search icon otherwise
             if (showBackButton || active) {
+                val backPressInteraction = remember { MutableInteractionSource() }
                 IconButton(
+                    interactionSource = backPressInteraction,
                     onClick = {
                         if (onBackClick != null) {
                             onBackClick()
@@ -106,7 +108,7 @@ fun MusicSearchHeader(
                     },
                     modifier = Modifier
                         .size(40.dp)
-                        .mkrPressFeedback()
+                        .mkrPressFeedback(interactionSource = backPressInteraction)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.arrow_back),
@@ -202,11 +204,13 @@ fun MusicSearchHeader(
                     enter = fadeIn() + scaleIn(),
                     exit = fadeOut() + scaleOut()
                 ) {
+                    val clearPressInteraction = remember { MutableInteractionSource() }
                     IconButton(
+                        interactionSource = clearPressInteraction,
                         onClick = { onQueryChange(TextFieldValue("")) },
                         modifier = Modifier
                             .size(34.dp)
-                            .mkrPressFeedback()
+                            .mkrPressFeedback(interactionSource = clearPressInteraction)
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.close),
@@ -218,7 +222,9 @@ fun MusicSearchHeader(
                 }
 
                 // Provider switcher pill (Cloud vs Local Library)
+                val switchSourcePressInteraction = remember { MutableInteractionSource() }
                 Surface(
+                    interactionSource = switchSourcePressInteraction,
                     onClick = {
                         val nextSource = if (searchSource == SearchSource.ONLINE) {
                             SearchSource.LOCAL
@@ -235,7 +241,7 @@ fun MusicSearchHeader(
                     },
                     modifier = Modifier
                         .size(34.dp)
-                        .mkrPressFeedback()
+                        .mkrPressFeedback(interactionSource = switchSourcePressInteraction)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(

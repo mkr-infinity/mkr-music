@@ -5,6 +5,7 @@
 
 package com.music.mkr.ui.screens
 
+import com.music.mkr.ui.component.mkrCombinedClickable
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -89,7 +90,6 @@ import com.music.mkr.ui.component.LocalMenuState
 import com.music.mkr.ui.component.MkrBadge
 import com.music.mkr.ui.component.NavigationTitle
 import com.music.mkr.ui.component.PlayingIndicator
-import com.music.mkr.ui.component.mkrPressFeedback
 import com.music.mkr.ui.menu.AlbumMenu
 import com.music.mkr.ui.menu.ArtistMenu
 import com.music.mkr.ui.menu.SongMenu
@@ -1115,8 +1115,7 @@ private fun StatsRankedSongCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp)
-            .mkrPressFeedback()
-            .combinedClickable(onClick = onClick, onLongClick = onLongClick),
+            .mkrCombinedClickable(onClick = onClick, onLongClick = onLongClick),
         shape = RoundedCornerShape(16.dp),
         color = if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerLow,
         border = BorderStroke(1.dp, if (isActive) MaterialTheme.colorScheme.primary.copy(alpha = 0.45f) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f))

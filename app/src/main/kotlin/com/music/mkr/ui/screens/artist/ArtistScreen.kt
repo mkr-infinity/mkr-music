@@ -5,6 +5,8 @@
 
 package com.music.mkr.ui.screens.artist
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.music.mkr.ui.component.mkrClickable
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -15,7 +17,6 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -693,7 +694,9 @@ fun ArtistScreen(
                     )
                     .padding(16.dp)
             ) {
+                val playPressInteraction = remember { MutableInteractionSource() }
                 FloatingActionButton(
+                    interactionSource = playPressInteraction,
                     onClick = {
                         if (showLocal) {
                             if (librarySongs.isNotEmpty()) {
@@ -744,7 +747,7 @@ fun ArtistScreen(
                     shape = RoundedCornerShape(20.dp),
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.mkrPressFeedback()
+                    modifier = Modifier.mkrPressFeedback(interactionSource = playPressInteraction)
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 20.dp, vertical = 12.dp),
@@ -1150,8 +1153,7 @@ private fun ArtistActionButtons(
                 modifier = Modifier
                     .weight(1.2f)
                     .height(48.dp)
-                    .mkrPressFeedback()
-                    .clickable(onClick = onSubscribeToggle),
+                    .mkrClickable(onClick = onSubscribeToggle),
                 shape = RoundedCornerShape(24.dp),
                 color = if (isSubscribed) {
                     MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f)
@@ -1195,8 +1197,7 @@ private fun ArtistActionButtons(
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
-                        .mkrPressFeedback()
-                        .clickable(onClick = onRadioClick),
+                        .mkrClickable(onClick = onRadioClick),
                     shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
                     contentColor = MaterialTheme.colorScheme.onSurface,
@@ -1230,8 +1231,7 @@ private fun ArtistActionButtons(
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
-                        .mkrPressFeedback()
-                        .clickable(onClick = onShuffleClick),
+                        .mkrClickable(onClick = onShuffleClick),
                     shape = RoundedCornerShape(24.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
                     contentColor = MaterialTheme.colorScheme.onSurface,
@@ -1270,8 +1270,7 @@ private fun ArtistActionButtons(
                 Surface(
                     modifier = Modifier
                         .height(38.dp)
-                        .mkrPressFeedback()
-                        .clickable(onClick = onToggleLocalView),
+                        .mkrClickable(onClick = onToggleLocalView),
                     shape = RoundedCornerShape(19.dp),
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
@@ -1391,10 +1390,12 @@ private fun ArtistTrackLeaderboardCard(
         else -> MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.12f)
     }
 
+    val actionPressInteraction = remember { MutableInteractionSource() }
     Surface(
+        interactionSource = actionPressInteraction,
         modifier = modifier
             .fillMaxWidth()
-            .mkrPressFeedback(),
+            .mkrPressFeedback(interactionSource = actionPressInteraction),
         shape = RoundedCornerShape(if (isTopOne) 18.dp else 16.dp),
         color = containerColor,
         border = BorderStroke(1.dp, borderColor)

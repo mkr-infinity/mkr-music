@@ -5,11 +5,11 @@
 
 package com.music.mkr.ui.screens.playlist
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -691,7 +691,9 @@ private fun CachePlaylistHeader(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Play Button
+            val playPressInteraction = remember { MutableInteractionSource() }
             Button(
+                interactionSource = playPressInteraction,
                 onClick = {
                     playerConnection.playQueue(
                         ListQueue(
@@ -709,7 +711,7 @@ private fun CachePlaylistHeader(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = playPressInteraction)
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -734,7 +736,9 @@ private fun CachePlaylistHeader(
             }
 
             // Shuffle Button (Liquid-style capsule)
+            val shufflePressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = shufflePressInteraction,
                 onClick = {
                     playerConnection.playQueue(
                         ListQueue(
@@ -750,7 +754,7 @@ private fun CachePlaylistHeader(
                 modifier = Modifier
                     .weight(1f)
                     .height(48.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = shufflePressInteraction)
             ) {
                 Row(
                     modifier = Modifier
@@ -781,14 +785,16 @@ private fun CachePlaylistHeader(
             }
 
             // Search Auxiliary Button
+            val searchPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = searchPressInteraction,
                 onClick = onStartSearch,
                 shape = CircleShape,
                 color = liquidContainer,
                 border = liquidBorder,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = searchPressInteraction)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(
@@ -801,7 +807,9 @@ private fun CachePlaylistHeader(
             }
 
             // Menu Auxiliary Button
+            val actionPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = actionPressInteraction,
                 onClick = {
                     menuState.show {
                         CachePlaylistMenu(
@@ -835,7 +843,7 @@ private fun CachePlaylistHeader(
                 border = liquidBorder,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback()
+                    .mkrPressFeedback(interactionSource = actionPressInteraction)
             ) {
                 Box(contentAlignment = Alignment.Center) {
                     Icon(

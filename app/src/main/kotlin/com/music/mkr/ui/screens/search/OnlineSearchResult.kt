@@ -5,6 +5,7 @@
 
 package com.music.mkr.ui.screens.search
 
+import com.music.mkr.ui.component.mkrCombinedClickable
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -120,7 +121,6 @@ import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.music.mkr.ui.component.PlayingIndicator
-import com.music.mkr.ui.component.mkrPressFeedback
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.dataStore
@@ -536,8 +536,7 @@ private fun SearchResultCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 14.dp, vertical = 3.dp)
-            .mkrPressFeedback()
-            .combinedClickable(
+            .mkrCombinedClickable(
                 onClick = onClick,
                 onLongClick = onLongClick
             ),

@@ -5,6 +5,7 @@
 
 package com.music.mkr.ui.screens.playlist
 
+import com.music.mkr.ui.component.mkrClickable
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -910,8 +911,7 @@ private fun PlaylistHeroArtwork(
                 shape = RoundedCornerShape(26.dp),
                 spotColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
             )
-            .mkrPressFeedback()
-            .clickable(onClick = onPlayClick),
+            .mkrClickable(onClick = onPlayClick),
         shape = RoundedCornerShape(26.dp),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
@@ -1133,8 +1133,7 @@ private fun PlaylistCommandDeck(
             modifier = Modifier
                 .weight(1f)
                 .height(46.dp)
-                .mkrPressFeedback()
-                .clickable(onClick = onPlay),
+                .mkrClickable(onClick = onPlay),
             shape = RoundedCornerShape(23.dp),
             color = MaterialTheme.colorScheme.primary,
             contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -1173,8 +1172,7 @@ private fun PlaylistCommandDeck(
             modifier = Modifier
                 .weight(1f)
                 .height(46.dp)
-                .mkrPressFeedback()
-                .clickable(onClick = onShuffle),
+                .mkrClickable(onClick = onShuffle),
             shape = RoundedCornerShape(23.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
             contentColor = MaterialTheme.colorScheme.onSurface,
@@ -1205,8 +1203,7 @@ private fun PlaylistCommandDeck(
         Surface(
             modifier = Modifier
                 .size(46.dp)
-                .mkrPressFeedback()
-                .clickable(onClick = onToggleBookmark),
+                .mkrClickable(onClick = onToggleBookmark),
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
@@ -1228,8 +1225,7 @@ private fun PlaylistCommandDeck(
         Surface(
             modifier = Modifier
                 .size(46.dp)
-                .mkrPressFeedback()
-                .clickable(onClick = onSearchTrigger),
+                .mkrClickable(onClick = onSearchTrigger),
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
@@ -1251,8 +1247,7 @@ private fun PlaylistCommandDeck(
         Surface(
             modifier = Modifier
                 .size(46.dp)
-                .mkrPressFeedback()
-                .clickable(onClick = onShareClick),
+                .mkrClickable(onClick = onShareClick),
             shape = RoundedCornerShape(16.dp),
             color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.85f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.2f))
@@ -1752,14 +1747,16 @@ private fun OnlinePlaylistStateCard(
 
                 if (onRetry != null) {
                     Spacer(modifier = Modifier.height(20.dp))
+                    val retryPressInteraction = remember { MutableInteractionSource() }
                     Button(
+                        interactionSource = retryPressInteraction,
                         onClick = onRetry,
                         shape = RoundedCornerShape(22.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
-                        modifier = Modifier.mkrPressFeedback()
+                        modifier = Modifier.mkrPressFeedback(interactionSource = retryPressInteraction)
                     ) {
                         Text(
                             text = stringResource(R.string.retry),

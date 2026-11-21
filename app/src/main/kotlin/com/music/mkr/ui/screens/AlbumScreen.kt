@@ -18,7 +18,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -1074,12 +1073,14 @@ private fun AlbumCommandDeck(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Prominent Play Button (Asymmetrical Primary Pill)
+            val playPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = playPressInteraction,
                 onClick = onPlay,
                 modifier = Modifier
                     .weight(1.15f)
                     .height(52.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = playPressInteraction),
                 shape = RoundedCornerShape(26.dp),
                 color = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -1116,12 +1117,14 @@ private fun AlbumCommandDeck(
             }
 
             // Shuffle Button (Tonal Pill)
+            val shufflePressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = shufflePressInteraction,
                 onClick = onShuffle,
                 modifier = Modifier
                     .weight(0.85f)
                     .height(52.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = shufflePressInteraction),
                 shape = RoundedCornerShape(26.dp),
                 color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.9f),
                 contentColor = MaterialTheme.colorScheme.onSurface,
@@ -1158,11 +1161,13 @@ private fun AlbumCommandDeck(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Bookmark / Add to Library
+            val bookmarkPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = bookmarkPressInteraction,
                 onClick = onToggleBookmark,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = bookmarkPressInteraction),
                 shape = CircleShape,
                 color = if (isBookmarked) MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f)
                        else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -1182,11 +1187,13 @@ private fun AlbumCommandDeck(
             }
 
             // Download Album Action
+            val downloadPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = downloadPressInteraction,
                 onClick = onDownloadClick,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = downloadPressInteraction),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
@@ -1224,11 +1231,13 @@ private fun AlbumCommandDeck(
             }
 
             // Download Queue Status
+            val downloadProgressPressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = downloadProgressPressInteraction,
                 onClick = onDownloadProgressClick,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = downloadProgressPressInteraction),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
@@ -1248,11 +1257,13 @@ private fun AlbumCommandDeck(
             }
 
             // More Options
+            val morePressInteraction = remember { MutableInteractionSource() }
             Surface(
+                interactionSource = morePressInteraction,
                 onClick = onMoreClick,
                 modifier = Modifier
                     .size(44.dp)
-                    .mkrPressFeedback(),
+                    .mkrPressFeedback(interactionSource = morePressInteraction),
                 shape = CircleShape,
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
@@ -1542,14 +1553,16 @@ private fun AlbumStateCard(
 
                 if (onRetry != null) {
                     Spacer(modifier = Modifier.height(20.dp))
+                    val retryPressInteraction = remember { MutableInteractionSource() }
                     Button(
+                        interactionSource = retryPressInteraction,
                         onClick = onRetry,
                         shape = RoundedCornerShape(22.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
                             contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
-                        modifier = Modifier.mkrPressFeedback()
+                        modifier = Modifier.mkrPressFeedback(interactionSource = retryPressInteraction)
                     ) {
                         Text(
                             text = stringResource(R.string.retry),

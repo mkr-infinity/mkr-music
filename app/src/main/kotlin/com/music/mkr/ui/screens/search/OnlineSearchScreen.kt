@@ -5,9 +5,11 @@
 
 package com.music.mkr.ui.screens.search
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.music.mkr.ui.component.mkrClickable
+import androidx.compose.runtime.remember
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -463,8 +465,7 @@ fun SearchSpotlightCard(
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 6.dp)
-            .mkrPressFeedback()
-            .clickable(onClick = onClick),
+            .mkrClickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         color = if (pureBlack) Color(0xFF16171B) else MaterialTheme.colorScheme.surfaceContainerHigh,
         border = BorderStroke(
@@ -495,9 +496,11 @@ fun SearchSpotlightCard(
                     contentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
 
+                val menuPressInteraction = remember { MutableInteractionSource() }
                 IconButton(
+                    interactionSource = menuPressInteraction,
                     onClick = onMenuClick,
-                    modifier = Modifier.size(32.dp).mkrPressFeedback()
+                    modifier = Modifier.size(32.dp).mkrPressFeedback(interactionSource = menuPressInteraction)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.more_vert),
@@ -576,12 +579,14 @@ fun SearchSpotlightCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
+                val playPressInteraction = remember { MutableInteractionSource() }
                 Surface(
+                    interactionSource = playPressInteraction,
                     onClick = onClick,
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(42.dp).mkrPressFeedback()
+                    modifier = Modifier.size(42.dp).mkrPressFeedback(interactionSource = playPressInteraction)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -617,8 +622,7 @@ fun SuggestionItem(
             .height(SuggestionItemHeight)
             .clip(shape)
             .background(if (pureBlack) Color(0xFF16171B) else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f))
-            .mkrPressFeedback()
-            .clickable(onClick = onClick)
+            .mkrClickable(onClick = onClick)
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)),
     ) {
         Icon(

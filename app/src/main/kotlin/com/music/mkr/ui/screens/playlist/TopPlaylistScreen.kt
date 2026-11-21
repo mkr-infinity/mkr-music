@@ -5,6 +5,7 @@
 
 package com.music.mkr.ui.screens.playlist
 
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -607,7 +608,9 @@ private fun TopPlaylistHeader(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 // Shuffle Button (Liquid-style capsule)
+                val shufflePressInteraction = remember { MutableInteractionSource() }
                 Surface(
+                    interactionSource = shufflePressInteraction,
                     onClick = {
                         playerConnection.playQueue(
                             ListQueue(
@@ -623,7 +626,7 @@ private fun TopPlaylistHeader(
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
-                        .mkrPressFeedback()
+                        .mkrPressFeedback(interactionSource = shufflePressInteraction)
                 ) {
                     Row(
                         modifier = Modifier
@@ -654,7 +657,9 @@ private fun TopPlaylistHeader(
                 }
 
                 // Play Button
+                val playPressInteraction = remember { MutableInteractionSource() }
                 Button(
+                    interactionSource = playPressInteraction,
                     onClick = {
                         playerConnection.playQueue(
                             ListQueue(
@@ -672,7 +677,7 @@ private fun TopPlaylistHeader(
                     modifier = Modifier
                         .weight(1f)
                         .height(48.dp)
-                        .mkrPressFeedback()
+                        .mkrPressFeedback(interactionSource = playPressInteraction)
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.Center,
@@ -698,7 +703,9 @@ private fun TopPlaylistHeader(
                 }
 
                 // More Button - circular
+                val searchPressInteraction = remember { MutableInteractionSource() }
                 Surface(
+                    interactionSource = searchPressInteraction,
                     onClick = {
                         menuState.show {
                             TopPlaylistMenu(
@@ -746,7 +753,7 @@ private fun TopPlaylistHeader(
                     border = liquidBorder,
                     modifier = Modifier
                         .size(44.dp)
-                        .mkrPressFeedback()
+                        .mkrPressFeedback(interactionSource = searchPressInteraction)
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
