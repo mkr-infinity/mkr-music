@@ -6,6 +6,19 @@
 
 ---
 
+## [Unreleased]
+
+- **Mini-player motion** — Add a micro equalizer, artwork fades, and a gentle capsule morph with separate switches.
+- **Liquid retirement** — Remove the water-wave overlay while keeping Classic, Expressive, and Apple-style mini-players.
+- **Player settings** — Find visual controls in Appearance and Audio Offload under Player & Audio → Advanced.
+- **Search discovery** — Highlight one confident song match with Play and shuffle-aware Play Next.
+- **Library and navigation** — Balance category rows across screen sizes and refine the capsule tab bar.
+- **Playlist feedback** — Close the picker after a successful add and show the result at the top.
+- **Playback lifecycle** — Improve crossfade startup and end idle media notifications after dismissal.
+- **Home and audio controls** — Refine Home buttons, make Listen Together opt-in, and simplify Audio Output.
+- **Updates and support** — Refresh update states and make the UPI ID easy to copy.
+- **README credits** — Simplify the credits and copyright footer.
+
 ## [v1.1.0] - 2026-11-01
 
 Milestone release delivering unified Material 3 Expressive library views, strengthened taste-based song recommendations, instant audio streaming, intelligent background caching, synchronized notification artwork, and universal lyrics animations.
