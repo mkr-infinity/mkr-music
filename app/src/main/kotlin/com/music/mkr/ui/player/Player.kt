@@ -44,6 +44,7 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
@@ -121,8 +122,6 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.rotate
-import androidx.compose.ui.graphics.toArgb
-import coil3.size.Size as CoilSize
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
@@ -153,6 +152,9 @@ import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.palette.graphics.Palette
 import coil3.compose.AsyncImage
 import coil3.imageLoader
@@ -227,6 +229,9 @@ import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.utils.rememberPreference
 import dagger.hilt.android.EntryPointAccessors
+import com.music.mkr.ui.theme.PlayerColorExtractor
+import kotlinx.coroutines.CancellationException
+import timber.log.Timber
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -401,11 +406,17 @@ fun BottomSheetPlayer(
     var lastManualSeekTime by remember { mutableLongStateOf(0L) }
     
     val artworkPalette = com.music.mkr.ui.theme.rememberArtworkPalette(mediaMetadata)
-    
-    var gradientColors by remember {
-        mutableStateOf<List<Color>>(artworkPalette.backgroundGradient)
+    val currentItem = playerConnection.player.currentMediaItem
+    val backgroundArtwork = playerBackgroundArtworkUrl(
+        mediaMetadata?.thumbnailUrl,
+        currentItem?.takeIf { it.mediaId == mediaMetadata?.id }?.mediaMetadata?.artworkUri?.toString(),
+    )
+    val backgroundVisible = !state.isCollapsed && !state.isDismissed
+    val fallbackGradient = PlayerColorExtractor.DefaultPalette.backgroundGradient
+    val gradientColorsCache = remember { android.util.LruCache<String, List<Color>>(32) }
+    var gradientColors by remember(backgroundArtwork, playerBackground) {
+        mutableStateOf(fallbackGradient)
     }
-    val gradientColorsCache = remember { mutableMapOf<String, List<Color>>() }
 
     if (!canSkipNext && automix.isNotEmpty()) {
         playerConnection.service.addToQueueAutomix(automix[0], 0)
@@ -493,63 +504,67 @@ fun BottomSheetPlayer(
         }
     }
 
-    val defaultGradientColors = listOf(MaterialTheme.colorScheme.surface, MaterialTheme.colorScheme.surfaceVariant)
-    val fallbackColor = MaterialTheme.colorScheme.surface.toArgb()
+    LaunchedEffect(backgroundArtwork, playerBackground, backgroundVisible) {
+        val url = backgroundArtwork ?: return@LaunchedEffect
+        if (!backgroundVisible) return@LaunchedEffect
 
-    LaunchedEffect(mediaMetadata?.id, playerBackground, artworkPalette) {
-        if (playerBackground == PlayerBackgroundStyle.GRADIENT) {
-            gradientColors = artworkPalette.backgroundGradient
-        } else if (playerBackground == PlayerBackgroundStyle.GLOW_ANIMATED) {
-            val currentMetadata = mediaMetadata
-            if (currentMetadata != null && currentMetadata.thumbnailUrl != null) {
-                val cachedColors = gradientColorsCache[currentMetadata.id]
+        when (playerBackground) {
+            PlayerBackgroundStyle.GRADIENT -> {
+                val palette = PlayerColorExtractor.extractPalette(context, url)
+                if (palette.isFallback) Timber.w("Full-player gradient artwork unavailable")
+                gradientColors = palette.backgroundGradient
+            }
+            PlayerBackgroundStyle.GLOW_ANIMATED -> {
+                val cachedColors = gradientColorsCache.get(url)
                 if (cachedColors != null) {
                     gradientColors = cachedColors
                     return@LaunchedEffect
                 }
-                withContext(Dispatchers.IO) {
-                    val request = ImageRequest.Builder(context)
-                        .data(currentMetadata.thumbnailUrl)
-                        .size(100, 100)
-                        .allowHardware(false)
-                        .memoryCacheKey("gradient_${currentMetadata.id}")
-                        .build()
 
-                    val result = runCatching { context.imageLoader.execute(request) }.getOrNull()
-                    if (result != null) {
-                        val bitmap = result.image?.toBitmap()
-                        if (bitmap != null) {
-                            val palette = withContext(Dispatchers.Default) {
-                                Palette.from(bitmap)
-                                    .maximumColorCount(8)
-                                    .resizeBitmapArea(100 * 100)
-                                    .generate()
-                            }
-                            val extractedColors = listOfNotNull(
-                                palette.getVibrantColor(fallbackColor).let { Color(it) },
-                                palette.getLightVibrantColor(fallbackColor).let { Color(it) },
-                                palette.getDarkVibrantColor(fallbackColor).let { Color(it) },
-                                palette.getMutedColor(fallbackColor).let { Color(it) },
-                                palette.getLightMutedColor(fallbackColor).let { Color(it) },
-                                palette.getDarkMutedColor(fallbackColor).let { Color(it) }
-                            ).distinct()
-                            gradientColorsCache[currentMetadata.id] = extractedColors
-                            withContext(Dispatchers.Main) { gradientColors = extractedColors }
+                val colors = try {
+                    val bitmap = withContext(Dispatchers.IO) {
+                        val request = ImageRequest.Builder(context)
+                            .data(url)
+                            .size(100, 100)
+                            .allowHardware(false)
+                            .build()
+                        context.imageLoader.execute(request).image?.toBitmap()
+                    }
+                    bitmap?.let {
+                        withContext(Dispatchers.Default) {
+                            val palette = Palette.from(it).maximumColorCount(8).generate()
+                            listOfNotNull(
+                                palette.vibrantSwatch,
+                                palette.lightVibrantSwatch,
+                                palette.darkVibrantSwatch,
+                                palette.mutedSwatch,
+                                palette.lightMutedSwatch,
+                                palette.darkMutedSwatch,
+                            ).map { swatch -> Color(swatch.rgb) }.distinct()
                         }
                     }
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Exception) {
+                    null
                 }
-            } else {
-                gradientColors = artworkPalette.backgroundGradient
+
+                if (colors.isNullOrEmpty()) {
+                    Timber.w("Full-player glow artwork unavailable")
+                    gradientColors = fallbackGradient
+                } else {
+                    gradientColorsCache.put(url, colors)
+                    gradientColors = colors
+                }
             }
-        } else {
-            gradientColors = emptyList()
+            else -> Unit
         }
     }
 
     val TextBackgroundColor by animateColorAsState(
         targetValue = when (playerBackground) {
             PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onBackground
-            else -> artworkPalette.textPrimary
+            else -> PlayerColorExtractor.DefaultPalette.textPrimary
         },
         label = "TextBackgroundColor"
     )
@@ -730,7 +745,7 @@ fun BottomSheetPlayer(
 
     val bottomSheetBackgroundColor = when (playerBackground) {
         PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.APPLE_MUSIC ->
-            MaterialTheme.colorScheme.surfaceContainer
+            PlayerColorExtractor.CharcoalDark
         PlayerBackgroundStyle.LIVE_MESH ->
             Color.Black
         else ->
@@ -738,6 +753,10 @@ fun BottomSheetPlayer(
             else MaterialTheme.colorScheme.surfaceContainer
     }
 
+    val backgroundLifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
+    val animateBackground = interfaceAnimations &&
+        backgroundLifecycle.isAtLeast(Lifecycle.State.RESUMED) &&
+        android.animation.ValueAnimator.areAnimatorsEnabled()
     val backgroundAlpha = state.progress.coerceIn(0f, 1f)
 
     BottomSheet(
@@ -749,49 +768,39 @@ fun BottomSheetPlayer(
                     .fillMaxSize()
                     .background(bottomSheetBackgroundColor)
             ) {
-                if (backgroundAlpha > 0.01f) {
+                if (backgroundVisible && backgroundAlpha > 0.01f) {
                     when (playerBackground) {
                     PlayerBackgroundStyle.BLUR -> {
                         AnimatedContent(
-                            targetState = mediaMetadata?.thumbnailUrl,
+                            targetState = backgroundArtwork,
+                            modifier = Modifier.fillMaxSize(),
                             transitionSpec = {
-                                fadeIn(tween(800)).togetherWith(fadeOut(tween(800)))
+                                val duration = if (animateBackground) 800 else 0
+                                fadeIn(tween(duration)).togetherWith(fadeOut(tween(duration)))
                             },
-                            label = "blurBackground"
-                        ) { thumbnailUrl ->
-                            if (thumbnailUrl != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .alpha(backgroundAlpha)
-                                ) {
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(context)
-                                            .data(thumbnailUrl)
-                                            .size(100, 100) // Lower resolution for better performance
-                                            .allowHardware(false)
-                                            .build(),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.FillBounds,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .blur(120.dp) // hardware-efficient native Compose blur on small image
-                                    )
-
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(Color.Black.copy(alpha = 0.30f))
-                                    )
-                                }
-                            }
+                            label = "blurBackground",
+                        ) { artworkUrl ->
+                            Image(
+                                painter = rememberPlayerBackgroundPainter(artworkUrl, 14, animateBackground),
+                                contentDescription = null,
+                                contentScale = ContentScale.FillBounds,
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .alpha(backgroundAlpha),
+                            )
+                            Box(
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Black.copy(alpha = 0.55f * backgroundAlpha))
+                            )
                         }
                     }
                     PlayerBackgroundStyle.GRADIENT -> {
                         AnimatedContent(
                             targetState = gradientColors,
                             transitionSpec = {
-                                fadeIn(tween(800)).togetherWith(fadeOut(tween(800)))
+                                val duration = if (animateBackground) 800 else 0
+                                fadeIn(tween(duration)).togetherWith(fadeOut(tween(duration)))
                             },
                             label = "gradientBackground"
                         ) { colors ->
@@ -823,85 +832,86 @@ fun BottomSheetPlayer(
                         AnimatedContent(
                             targetState = gradientColors,
                             transitionSpec = {
-                                fadeIn(tween(1200)) togetherWith fadeOut(tween(1200))
+                                val duration = if (animateBackground) 1200 else 0
+                                fadeIn(tween(duration)) togetherWith fadeOut(tween(duration))
                             },
                             label = "GlowAnimatedContent"
                         ) { colors ->
                             if (colors.isNotEmpty()) {
-                                val infiniteTransition =
-                                    rememberInfiniteTransition(label = "GlowAnimation")
-
-                                val progress by infiniteTransition.animateFloat(
-                                    initialValue = 0f,
-                                    targetValue = 1f,
-                                    animationSpec = infiniteRepeatable(
-                                        animation = tween(20000, easing = LinearEasing),
-                                        repeatMode = RepeatMode.Restart
-                                    ),
-                                    label = "glowProgress"
-                                )
-
-                                fun rotatedColorAt(index: Int): Color {
-                                    val size = colors.size
-                                    val idx = index.toFloat() + progress * size
-                                    val a = kotlin.math.floor(idx).toInt() % size
-                                    val b = (a + 1) % size
-                                    val frac = idx - kotlin.math.floor(idx)
-                                    return androidx.compose.ui.graphics.lerp(
-                                        colors.getOrElse(a) { Color.DarkGray },
-                                        colors.getOrElse(b) { Color.DarkGray },
-                                        frac
+                                val glowProgress = if (animateBackground) {
+                                    rememberInfiniteTransition(label = "GlowAnimation").animateFloat(
+                                        initialValue = 0f,
+                                        targetValue = 1f,
+                                        animationSpec = infiniteRepeatable(
+                                            animation = tween(20000, easing = LinearEasing),
+                                            repeatMode = RepeatMode.Restart
+                                        ),
+                                        label = "glowProgress"
                                     )
-                                }
-
-                                fun oscillate(
-                                    min: Float,
-                                    max: Float,
-                                    phase: Float,
-                                    speed: Float = 1f
-                                ): Float {
-                                    val v = kotlin.math.sin(
-                                        2f * kotlin.math.PI.toFloat() * (progress * speed + phase)
-                                    )
-                                    return min + (max - min) * ((v + 1f) * 0.5f)
-                                }
-
-                                val color1 = rotatedColorAt(0)
-                                val color2 = rotatedColorAt(1)
-                                val color3 = rotatedColorAt(2)
-                                val color4 = rotatedColorAt(3)
-                                val color5 = rotatedColorAt(4)
-                                val color6 = rotatedColorAt(5)
-
-                                val o1x = oscillate(0.0f, 1.0f, 0.00f, 1.0f)
-                                val o1y = oscillate(0.0f, 0.5f, 0.07f, 1.0f)
-                                val r1 = oscillate(0.8f, 1.6f, 0.12f, 1.0f)
-
-                                val o2x = oscillate(1.0f, 0.0f, 0.2f, 1.0f)
-                                val o2y = oscillate(0.5f, 1.0f, 0.25f, 1.0f)
-                                val r2 = oscillate(0.7f, 1.5f, 0.18f, 1.0f)
-
-                                val o3x = oscillate(0.2f, 0.8f, 0.33f, 1.0f)
-                                val o3y = oscillate(0.8f, 0.2f, 0.36f, 1.0f)
-                                val r3 = oscillate(0.6f, 1.4f, 0.29f, 1.0f)
-
-                                val o4x = oscillate(0.3f, 0.7f, 0.44f, 1.0f)
-                                val o4y = oscillate(0.2f, 0.8f, 0.41f, 1.0f)
-                                val r4 = oscillate(0.9f, 1.7f, 0.47f, 1.0f)
-
-                                val o5x = oscillate(0.4f, 0.6f, 0.55f, 1.0f)
-                                val o5y = oscillate(0.0f, 1.0f, 0.51f, 1.0f)
-                                val r5 = oscillate(0.7f, 1.5f, 0.58f, 1.0f)
-
-                                val o6x = oscillate(0.0f, 1.0f, 0.66f, 1.0f)
-                                val o6y = oscillate(0.5f, 0.7f, 0.62f, 1.0f)
-                                val r6 = oscillate(0.8f, 1.8f, 0.69f, 1.0f)
+                                } else null
 
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .alpha(backgroundAlpha)
                                         .drawWithCache {
+                                            val progress = glowProgress?.value ?: 0f
+                                            fun rotatedColorAt(index: Int): Color {
+                                                val size = colors.size
+                                                val idx = index.toFloat() + progress * size
+                                                val a = kotlin.math.floor(idx).toInt() % size
+                                                val b = (a + 1) % size
+                                                val frac = idx - kotlin.math.floor(idx)
+                                                return androidx.compose.ui.graphics.lerp(
+                                                    colors.getOrElse(a) { Color.DarkGray },
+                                                    colors.getOrElse(b) { Color.DarkGray },
+                                                    frac
+                                                )
+                                            }
+
+                                            fun oscillate(
+                                                min: Float,
+                                                max: Float,
+                                                phase: Float,
+                                                speed: Float = 1f
+                                            ): Float {
+                                                val v = kotlin.math.sin(
+                                                    2f * kotlin.math.PI.toFloat() * (progress * speed + phase)
+                                                )
+                                                return min + (max - min) * ((v + 1f) * 0.5f)
+                                            }
+
+                                            val color1 = rotatedColorAt(0)
+                                            val color2 = rotatedColorAt(1)
+                                            val color3 = rotatedColorAt(2)
+                                            val color4 = rotatedColorAt(3)
+                                            val color5 = rotatedColorAt(4)
+                                            val color6 = rotatedColorAt(5)
+
+                                            val o1x = oscillate(0.0f, 1.0f, 0.00f, 1.0f)
+                                            val o1y = oscillate(0.0f, 0.5f, 0.07f, 1.0f)
+                                            val r1 = oscillate(0.8f, 1.6f, 0.12f, 1.0f)
+
+                                            val o2x = oscillate(1.0f, 0.0f, 0.2f, 1.0f)
+                                            val o2y = oscillate(0.5f, 1.0f, 0.25f, 1.0f)
+                                            val r2 = oscillate(0.7f, 1.5f, 0.18f, 1.0f)
+
+                                            val o3x = oscillate(0.2f, 0.8f, 0.33f, 1.0f)
+                                            val o3y = oscillate(0.8f, 0.2f, 0.36f, 1.0f)
+                                            val r3 = oscillate(0.6f, 1.4f, 0.29f, 1.0f)
+
+                                            val o4x = oscillate(0.3f, 0.7f, 0.44f, 1.0f)
+                                            val o4y = oscillate(0.2f, 0.8f, 0.41f, 1.0f)
+                                            val r4 = oscillate(0.9f, 1.7f, 0.47f, 1.0f)
+
+                                            val o5x = oscillate(0.4f, 0.6f, 0.55f, 1.0f)
+                                            val o5y = oscillate(0.0f, 1.0f, 0.51f, 1.0f)
+                                            val r5 = oscillate(0.7f, 1.5f, 0.58f, 1.0f)
+
+                                            val o6x = oscillate(0.0f, 1.0f, 0.66f, 1.0f)
+                                            val o6y = oscillate(0.5f, 0.7f, 0.62f, 1.0f)
+                                            val r6 = oscillate(0.8f, 1.8f, 0.69f, 1.0f)
+
                                             val width = size.width
                                             val height = size.height
                                             val baseColor = Color(0xFF050505)
@@ -1021,138 +1031,101 @@ fun BottomSheetPlayer(
                         }
                     }
                     PlayerBackgroundStyle.LIVE_MESH -> {
-                        val infiniteTransition = rememberInfiniteTransition(label = "liveMeshRotation")
-                        
-                        val anchorRotation by infiniteTransition.animateFloat(
-                            initialValue = 0f,
-                            targetValue = -360f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(80000, easing = LinearEasing),
-                                repeatMode = RepeatMode.Restart
-                            ),
-                            label = "anchorRotation"
-                        )
-                        
-                        val fastRotation by infiniteTransition.animateFloat(
-                            initialValue = 0f,
-                            targetValue = 360f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(40000, easing = LinearEasing),
-                                repeatMode = RepeatMode.Restart
-                            ),
-                            label = "fastRotation"
-                        )
-                        
-                        val slowRotation by infiniteTransition.animateFloat(
-                            initialValue = 0f,
-                            targetValue = 360f,
-                            animationSpec = infiniteRepeatable(
-                                animation = tween(60000, easing = LinearEasing),
-                                repeatMode = RepeatMode.Restart
-                            ),
-                            label = "slowRotation"
-                        )
-
+                        // A shared clock wraps after whole turns for all three layers.
+                        val rotation = if (animateBackground) {
+                            rememberInfiniteTransition(label = "liveMeshRotation").animateFloat(
+                                initialValue = 0f,
+                                targetValue = 360f,
+                                animationSpec = infiniteRepeatable(tween(240000, easing = LinearEasing)),
+                                label = "meshCycle",
+                            )
+                        } else null
                         AnimatedContent(
-                            targetState = mediaMetadata?.thumbnailUrl,
+                            targetState = backgroundArtwork,
+                            modifier = Modifier.fillMaxSize(),
                             transitionSpec = {
-                                fadeIn(tween(1500)).togetherWith(fadeOut(tween(1500)))
+                                val duration = if (animateBackground) 1500 else 0
+                                fadeIn(tween(duration)).togetherWith(fadeOut(tween(duration)))
                             },
                             label = "liveMeshBackground"
-                        ) { thumbnailUrl ->
-                            if (thumbnailUrl != null) {
+                        ) { artworkUrl ->
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .alpha(backgroundAlpha)
+                                    .graphicsLayer {
+                                        // Scale up to avoid showing edges during rotation
+                                        scaleX = 1.7f
+                                        scaleY = 1.7f
+                                    }
+                            ) {
+                                val matrix = remember {
+                                    val m = ColorMatrix()
+                                    m.setToSaturation(1.8f) // Reduced to avoid neon look
+                                    m
+                                }
+                                val colorFilter = remember(matrix) { ColorFilter.colorMatrix(matrix) }
+                                val painter = rememberPlayerBackgroundPainter(artworkUrl, 15, animateBackground)
+
+                                // Layer 1: The Anchor (Full Image, Counter-Clockwise)
+                                Image(
+                                    painter = painter,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    colorFilter = colorFilter,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .graphicsLayer { rotationZ = -3f * (rotation?.value ?: 0f) }
+                                )
+
+                                // Layer 2: Fast Rotating Crop (Top-Left)
+                                Image(
+                                    painter = painter,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    colorFilter = colorFilter,
+                                    alignment = Alignment.TopStart,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .graphicsLayer {
+                                            rotationZ = 6f * (rotation?.value ?: 0f)
+                                            alpha = 0.6f
+                                        }
+                                )
+
+                                // Layer 3: Slow Rotating Crop (Bottom-Right)
+                                Image(
+                                    painter = painter,
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    colorFilter = colorFilter,
+                                    alignment = Alignment.BottomEnd,
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .graphicsLayer {
+                                            rotationZ = 4f * (rotation?.value ?: 0f)
+                                            alpha = 0.5f
+                                        }
+                                )
+
+                                // Global dark tint to prevent neon look + vertical gradient for depth
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .alpha(backgroundAlpha)
-                                        .graphicsLayer {
-                                            // Scale up to avoid showing edges during rotation
-                                            scaleX = 1.7f
-                                            scaleY = 1.7f
-                                        }
-                                ) {
-                                    val matrix = remember { 
-                                        val m = ColorMatrix()
-                                        m.setToSaturation(1.8f) // Reduced to avoid neon look
-                                        m
-                                    }
-                                    val colorFilter = ColorFilter.colorMatrix(matrix)
-
-                                    // Layer 1: The Anchor (Full Image, Counter-Clockwise)
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(context)
-                                            .data(thumbnailUrl)
-                                            .size(128, 128) // Downsample significantly for performance
-                                            .allowHardware(false)
-                                            .build(),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        colorFilter = colorFilter,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .blur(100.dp)
-                                            .graphicsLayer { rotationZ = anchorRotation }
-                                    )
-
-                                    // Layer 2: Fast Rotating Crop (Top-Left)
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(context)
-                                            .data(thumbnailUrl)
-                                            .size(128, 128) // Downsample significantly for performance
-                                            .allowHardware(false)
-                                            .build(),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        colorFilter = colorFilter,
-                                        alignment = Alignment.TopStart,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .blur(120.dp)
-                                            .graphicsLayer { 
-                                                rotationZ = fastRotation
-                                                alpha = 0.6f
-                                            }
-                                    )
-
-                                    // Layer 3: Slow Rotating Crop (Bottom-Right)
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(context)
-                                            .data(thumbnailUrl)
-                                            .size(128, 128) // Downsample significantly for performance
-                                            .allowHardware(false)
-                                            .build(),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        colorFilter = colorFilter,
-                                        alignment = Alignment.BottomEnd,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .blur(120.dp)
-                                            .graphicsLayer { 
-                                                rotationZ = slowRotation
-                                                alpha = 0.5f
-                                            }
-                                    )
-                                    
-                                    // Global dark tint to prevent neon look + vertical gradient for depth
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(Color.Black.copy(alpha = 0.2f))
-                                    )
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(
-                                                Brush.verticalGradient(
-                                                    listOf(
-                                                        Color.Transparent,
-                                                        Color.Black.copy(alpha = 0.25f)
-                                                    )
+                                        .background(Color.Black.copy(alpha = 0.2f))
+                                )
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .background(
+                                            Brush.verticalGradient(
+                                                listOf(
+                                                    Color.Transparent,
+                                                    Color.Black.copy(alpha = 0.25f)
                                                 )
                                             )
-                                    )
-                                }
+                                        )
+                                )
                             }
                         }
                     }
@@ -1442,6 +1415,8 @@ fun BottomSheetPlayer(
                         )
                         PlayerStyle.IMMERSIVE -> ImmersivePlayer(
                             mediaMetadata = metadata,
+                            backgroundArtwork = backgroundArtwork,
+                            animateBackground = animateBackground,
                             playbackState = playbackState,
                             isPlaying = isPlaying,
                             isLoading = isLoading,
@@ -1469,6 +1444,8 @@ fun BottomSheetPlayer(
                         )
                         PlayerStyle.IMMERSIVE_EXTENDED -> ImmersiveExtendedPlayer(
                             mediaMetadata = metadata,
+                            backgroundArtwork = backgroundArtwork,
+                            animateBackground = animateBackground,
                             playbackState = playbackState,
                             isPlaying = isPlaying,
                             isLoading = isLoading,

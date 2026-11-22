@@ -5,6 +5,7 @@
 
 package com.music.mkr.ui.player.styles
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
@@ -41,12 +42,10 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
@@ -54,13 +53,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.music.mkr.ui.player.rememberPlayerBackgroundPainter
 import com.music.mkr.ui.player.AudioQualityBadge
 import androidx.media3.common.Player
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.allowHardware
-import coil3.request.crossfade
 import com.music.mkr.R
 import com.music.mkr.db.entities.FormatEntity
 import com.music.mkr.models.MediaMetadata
@@ -84,6 +80,8 @@ import com.music.mkr.utils.makeTimeString
 @Composable
 fun ImmersiveExtendedPlayer(
     mediaMetadata: MediaMetadata,
+    backgroundArtwork: String?,
+    animateBackground: Boolean,
     playbackState: Int,
     isPlaying: Boolean,
     isLoading: Boolean,
@@ -120,19 +118,11 @@ fun ImmersiveExtendedPlayer(
     val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
 
     Box(modifier = modifier.fillMaxSize()) {
-        // High-blur ambient backdrop with hardware-efficient downsampled buffer
-        AsyncImage(
-            model = ImageRequest.Builder(LocalContext.current)
-                .data(mediaMetadata.thumbnailUrl)
-                .size(96, 96) // Downsampled to 96x96 for zero GPU overdraw and buttery-smooth 60/120fps motion
-                .allowHardware(false)
-                .crossfade(true)
-                .build(),
+        Image(
+            painter = rememberPlayerBackgroundPainter(backgroundArtwork, 6, animateBackground),
             contentDescription = null,
             contentScale = ContentScale.Crop,
-            modifier = Modifier
-                .fillMaxSize()
-                .blur(54.dp)
+            modifier = Modifier.fillMaxSize(),
         )
 
         // Multi-stop gradient scrim
