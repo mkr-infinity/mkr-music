@@ -299,6 +299,7 @@ fun CachePlaylistScreen(
                         song = song,
                         isActive = song.id == mediaMetadata?.id,
                         isPlaying = isPlaying,
+                        showPlayingIndicator = false,
                         isSelected = song.id in selection,
                         inSelectMode = inSelectMode,
                         onCheckedChange = onCheckedChange,

@@ -67,6 +67,7 @@ fun LibraryTrackRow(
     modifier: Modifier = Modifier,
     isSelected: Boolean = false,
     inSelectMode: Boolean = false,
+    showPlayingIndicator: Boolean = true,
     onCheckedChange: (Boolean) -> Unit = {},
     onClick: () -> Unit,
     onLongClick: () -> Unit = {},
@@ -119,7 +120,7 @@ fun LibraryTrackRow(
                         checked = isSelected,
                         onCheckedChange = onCheckedChange
                     )
-                } else if (isActive) {
+                } else if (isActive && (!isPlaying || showPlayingIndicator)) {
                     if (isPlaying) {
                         PlayingIndicator(
                             color = MaterialTheme.colorScheme.primary,
