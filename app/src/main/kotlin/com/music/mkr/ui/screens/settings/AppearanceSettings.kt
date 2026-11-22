@@ -1000,7 +1000,7 @@ fun AppearanceSettings(
             .padding(horizontal = 16.dp),
     ) {
         ExpressiveSettingGroup(
-            title = stringResource(R.string.theme),
+            title = stringResource(R.string.appearance_theme_colors),
             items = buildList {
                 add(
                     Material3SettingsItem(
@@ -1164,9 +1164,13 @@ fun AppearanceSettings(
         var showSensitivityDialog by rememberSaveable { mutableStateOf(false) }
         var showThumbnailCornerRadiusDialog by rememberSaveable { mutableStateOf(false) }
 
+        MiniPlayerAppearanceSettings()
+
+        Spacer(modifier = Modifier.height(27.dp))
+
         ExpressiveSettingGroup(
-            title = stringResource(R.string.player),
-            items = listOfNotNull(
+            title = stringResource(R.string.appearance_full_player),
+            items = fullPlayerAppearanceItems() + listOfNotNull(
                 Material3SettingsItem(
                     key = "appearance_audio_quality_badge",
                     icon = painterResource(R.drawable.tune),
@@ -2050,11 +2054,4 @@ enum class LyricsPosition {
 enum class PlayerTextAlignment {
     SIDED,
     CENTER,
-}
-
-
-enum class MiniPlayerDesignOption {
-    CLASSIC,
-    NEW,
-    APPLE
 }

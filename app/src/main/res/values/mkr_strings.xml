@@ -488,6 +488,14 @@
     <string name="advanced_desc">Change the song\'s tempo and pitch</string>
     <string name="equalizer_desc">Adjust the audio equalizer</string>
     <string name="enable_dynamic_icon">Enable dynamic app icon</string>
+    <string name="appearance_theme_colors">Theme &amp; Colors</string>
+    <string name="appearance_full_player">Full Player</string>
+    <string name="mini_player_micro_equalizer">Micro Equalizer</string>
+    <string name="mini_player_micro_equalizer_desc">Show subtle animated bars while music is playing.</string>
+    <string name="mini_player_artwork_transition">Artwork Transition</string>
+    <string name="mini_player_artwork_transition_desc">Smoothly transition artwork when songs change.</string>
+    <string name="mini_player_capsule_morph">Capsule Morph</string>
+    <string name="mini_player_capsule_morph_desc">Gently animate the mini-player shape during playback changes.</string>
     <string name="mini_player">Mini-player</string>
     <string name="miniplayer_background_style">Mini-player background style</string>
     <string name="pure_black_mini_player">Pure black mini-player</string>

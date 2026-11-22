@@ -116,6 +116,7 @@ import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalListenTogetherManager
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
+import com.music.mkr.constants.MiniPlayerDesignOption
 import com.music.mkr.constants.CropAlbumArtKey
 import com.music.mkr.constants.DarkModeKey
 import com.music.mkr.constants.MiniPlayerBackgroundStyleKey
@@ -180,32 +181,34 @@ fun MiniPlayer(
     visible: Boolean,
     modifier: Modifier = Modifier
 ) {
-    val useNewMiniPlayerDesign by rememberPreference(UseNewMiniPlayerDesignKey, true)
-    val useAppleMiniPlayer by rememberPreference(UseAppleMiniPlayerKey, false)
-    
+    val useNewMiniPlayerDesign by rememberPreference(
+        UseNewMiniPlayerDesignKey, MiniPlayerDesignOption.DefaultUseNewMiniPlayerDesign,
+    )
+    val useAppleMiniPlayer by rememberPreference(
+        UseAppleMiniPlayerKey, MiniPlayerDesignOption.DefaultUseAppleMiniPlayer,
+    )
+
     val motion = rememberMiniPlayerMotion(visible)
 
     // Create stable progress state - doesn't cause recomposition on position changes
     val progressState = remember(positionState, durationState) { ProgressState(positionState, durationState) }
 
-    if (useAppleMiniPlayer) {
-        AppleMiniPlayer(
+    when (MiniPlayerDesignOption.fromPreferences(useAppleMiniPlayer, useNewMiniPlayerDesign)) {
+        MiniPlayerDesignOption.APPLE -> AppleMiniPlayer(
             progressState = progressState,
             motion = motion,
-            modifier = modifier
+            modifier = modifier,
         )
-    } else if (useNewMiniPlayerDesign) {
-        NewMiniPlayer(
+        MiniPlayerDesignOption.NEW -> NewMiniPlayer(
             progressState = progressState,
             motion = motion,
-            modifier = modifier
+            modifier = modifier,
         )
-    } else {
-        Box(modifier = modifier.fillMaxWidth()) {
+        MiniPlayerDesignOption.CLASSIC -> Box(modifier = modifier.fillMaxWidth()) {
             LegacyMiniPlayer(
                 progressState = progressState,
                 motion = motion,
-                modifier = Modifier.align(Alignment.Center)
+                modifier = Modifier.align(Alignment.Center),
             )
         }
     }
