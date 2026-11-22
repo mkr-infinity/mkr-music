@@ -12,7 +12,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -52,7 +51,6 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
-import coil3.compose.AsyncImage
 import com.music.mkr.LocalListenTogetherManager
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
@@ -71,7 +69,8 @@ import com.music.mkr.ui.component.Icon as MIcon
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun AppleMiniPlayer(
+internal fun AppleMiniPlayer(
+    motion: MiniPlayerMotion,
     progressState: ProgressState,
     modifier: Modifier = Modifier
 ) {
@@ -296,9 +295,13 @@ fun AppleMiniPlayer(
                 .then(if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth())
                 .height(64.dp)
                 .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
-                .clip(RoundedCornerShape(16.dp))
-                .background(color = backgroundColor)
-                .border(1.dp, outlineColor.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
+                .miniPlayerCapsule(
+                    motion = motion,
+                    restingRadius = 16.dp,
+                    playingRadius = 20.dp,
+                    color = backgroundColor,
+                    borderColor = outlineColor.copy(alpha = 0.15f),
+                )
         ) {
             // Background Layers
             MiniPlayerBackgroundLayer(
@@ -333,23 +336,13 @@ fun AppleMiniPlayer(
                         .clip(RoundedCornerShape(10.dp))
                         .background(color = outlineColor.copy(alpha = 0.2f))
                 ) {
-                    if (mediaMetadata?.thumbnailUrl.isNullOrBlank()) {
-                        Icon(
-                            painter = painterResource(R.drawable.mkr_music_small_icon),
-                            contentDescription = null,
-                            tint = primaryColor.copy(alpha = 0.6f),
-                            modifier = Modifier.size(28.dp)
-                        )
-                    } else {
-                        mediaMetadata?.let { metadata ->
-                            AsyncImage(
-                                model = metadata.thumbnailUrl,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
+                    MiniPlayerArtwork(
+                        trackId = mediaMetadata?.id,
+                        url = mediaMetadata?.thumbnailUrl,
+                        motion = motion,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -372,16 +365,18 @@ fun AppleMiniPlayer(
                                 .joinToString(", ")
                         }
 
-                        Text(
-                            text = cleanTitle,
-                            color = onSurfaceColor,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            softWrap = false,
-                            modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
-                        )
+                        MiniPlayerTitle(motion, onSurfaceColor) {
+                            Text(
+                                text = cleanTitle,
+                                color = onSurfaceColor,
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                softWrap = false,
+                                modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                            )
+                        }
                         Spacer(modifier = Modifier.height(2.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),

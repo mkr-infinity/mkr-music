@@ -156,7 +156,6 @@ import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
 import kotlin.math.roundToInt
 import com.music.mkr.ui.component.Icon as MIcon
-import timber.log.Timber
 
 /**
  * Stable wrapper for progress state - reads values only during draw phase
@@ -178,28 +177,34 @@ class ProgressState(
 fun MiniPlayer(
     positionState: MutableLongState,
     durationState: MutableLongState,
+    visible: Boolean,
     modifier: Modifier = Modifier
 ) {
     val useNewMiniPlayerDesign by rememberPreference(UseNewMiniPlayerDesignKey, true)
     val useAppleMiniPlayer by rememberPreference(UseAppleMiniPlayerKey, false)
     
+    val motion = rememberMiniPlayerMotion(visible)
+
     // Create stable progress state - doesn't cause recomposition on position changes
     val progressState = remember(positionState, durationState) { ProgressState(positionState, durationState) }
 
     if (useAppleMiniPlayer) {
         AppleMiniPlayer(
             progressState = progressState,
+            motion = motion,
             modifier = modifier
         )
     } else if (useNewMiniPlayerDesign) {
         NewMiniPlayer(
             progressState = progressState,
+            motion = motion,
             modifier = modifier
         )
     } else {
         Box(modifier = modifier.fillMaxWidth()) {
             LegacyMiniPlayer(
                 progressState = progressState,
+                motion = motion,
                 modifier = Modifier.align(Alignment.Center)
             )
         }
@@ -212,6 +217,7 @@ fun MiniPlayer(
 
 @Composable
 private fun NewMiniPlayer(
+    motion: MiniPlayerMotion,
     progressState: ProgressState,
     modifier: Modifier = Modifier
 ) {
@@ -443,9 +449,13 @@ private fun NewMiniPlayer(
                 .then(if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth())
                 .height(64.dp)
                 .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
-                .clip(RoundedCornerShape(32.dp))
-                .background(color = backgroundColor)
-                .border(1.dp, outlineColor.copy(alpha = 0.15f), RoundedCornerShape(32.dp))
+                .miniPlayerCapsule(
+                    motion = motion,
+                    restingRadius = 32.dp,
+                    playingRadius = 27.dp,
+                    color = backgroundColor,
+                    borderColor = outlineColor.copy(alpha = 0.15f),
+                )
         ) {
             // Background Layers
             MiniPlayerBackgroundLayer(
@@ -460,6 +470,7 @@ private fun NewMiniPlayer(
             ) {
                 // Play button with progress - isolated composable
                 NewMiniPlayerPlayButton(
+                    motion = motion,
                     progressState = progressState,
                     playbackState = playbackState,
                     isCasting = isCasting,
@@ -475,6 +486,7 @@ private fun NewMiniPlayer(
 
                 // Song info - isolated composable
                 NewMiniPlayerSongInfo(
+                    motion = motion,
                     mediaMetadata = mediaMetadata,
                     onSurfaceColor = onSurfaceColor,
                     errorColor = errorColor,
@@ -598,6 +610,7 @@ private fun NewMiniPlayer(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun NewMiniPlayerPlayButton(
+    motion: MiniPlayerMotion,
     progressState: ProgressState,
     playbackState: Int,
     isCasting: Boolean,
@@ -670,20 +683,13 @@ private fun NewMiniPlayerPlayButton(
                     }
                 }
         ) {
-            mediaMetadata?.let { metadata ->
-                AsyncImage(
-                    model = metadata.thumbnailUrl?.resize(544, 544),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    onSuccess = {
-                        Timber.d("[Thumbnail] MiniPlayer play-button loaded: ${metadata.thumbnailUrl}")
-                    },
-                    onError = {
-                        Timber.e("[Thumbnail] MiniPlayer play-button FAILED: url=${metadata.thumbnailUrl} | error=${it.result.throwable}")
-                    },
-                    modifier = Modifier.fillMaxSize().clip(CircleShape)
-                )
-            }
+            MiniPlayerArtwork(
+                trackId = mediaMetadata?.id,
+                url = mediaMetadata?.thumbnailUrl?.resize(544, 544),
+                motion = motion,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize(),
+            )
 
             // Overlay for paused state or muted (guest)
             if (isListenTogetherGuest && isMuted || (!isListenTogetherGuest && (!effectiveIsPlaying || playbackState == Player.STATE_ENDED))) {
@@ -716,6 +722,7 @@ private fun NewMiniPlayerPlayButton(
  */
 @Composable
 private fun NewMiniPlayerSongInfo(
+    motion: MiniPlayerMotion,
     mediaMetadata: MediaMetadata?,
     onSurfaceColor: Color,
     errorColor: Color,
@@ -738,16 +745,18 @@ private fun NewMiniPlayerSongInfo(
                     .joinToString(", ")
             }
 
-            Text(
-                text = cleanTitle,
-                color = onSurfaceColor,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                softWrap = false,
-                modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
-            )
+            MiniPlayerTitle(motion, onSurfaceColor) {
+                Text(
+                    text = cleanTitle,
+                    color = onSurfaceColor,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    softWrap = false,
+                    modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                )
+            }
             Spacer(modifier = Modifier.height(2.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -789,6 +798,7 @@ private fun NewMiniPlayerSongInfo(
 
 @Composable
 private fun LegacyMiniPlayer(
+    motion: MiniPlayerMotion,
     progressState: ProgressState,
     modifier: Modifier = Modifier
 ) {
@@ -874,10 +884,13 @@ private fun LegacyMiniPlayer(
                     customActions = customActionsList
                 }
             }
-            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-            .background(
-                if (pureBlack && isSystemInDarkTheme()) Color.Black
-                else MaterialTheme.colorScheme.surfaceContainer
+            .miniPlayerCapsule(
+                motion = motion,
+                restingRadius = 16.dp,
+                playingRadius = 19.dp,
+                color = if (pureBlack && isSystemInDarkTheme()) Color.Black
+                    else MaterialTheme.colorScheme.surfaceContainer,
+                topOnly = true,
             )
             .let { baseModifier ->
                 if (swipeThumbnail) {
@@ -1006,6 +1019,7 @@ private fun LegacyMiniPlayer(
             Box(Modifier.weight(1f)) {
                 mediaMetadata?.let {
                     LegacyMiniMediaInfo(
+                        motion = motion,
                         mediaMetadata = it,
                         pureBlack = pureBlack,
                         modifier = Modifier.padding(horizontal = 6.dp),
@@ -1127,6 +1141,7 @@ private fun LegacyPlayPauseButton(
 
 @Composable
 private fun LegacyMiniMediaInfo(
+    motion: MiniPlayerMotion,
     mediaMetadata: MediaMetadata,
     pureBlack: Boolean,
     modifier: Modifier = Modifier,
@@ -1150,19 +1165,12 @@ private fun LegacyMiniMediaInfo(
                     .background(MaterialTheme.colorScheme.surfaceVariant)
             )
 
-            AsyncImage(
-                model = mediaMetadata.thumbnailUrl?.resize(544, 544),
-                contentDescription = null,
+            MiniPlayerArtwork(
+                trackId = mediaMetadata.id,
+                url = mediaMetadata.thumbnailUrl?.resize(544, 544),
+                motion = motion,
                 contentScale = if (cropAlbumArt) ContentScale.Crop else ContentScale.Fit,
-                onSuccess = {
-                    Timber.d("[Thumbnail] LegacyMiniPlayer loaded: ${mediaMetadata.thumbnailUrl}")
-                },
-                onError = {
-                    Timber.e("[Thumbnail] LegacyMiniPlayer FAILED: url=${mediaMetadata.thumbnailUrl} | error=${it.result.throwable}")
-                },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .clip(RoundedCornerShape(ThumbnailCornerRadius)),
+                modifier = Modifier.fillMaxSize(),
             )
 
             androidx.compose.animation.AnimatedVisibility(visible = error != null, enter = fadeIn(), exit = fadeOut()) {
@@ -1189,16 +1197,18 @@ private fun LegacyMiniMediaInfo(
                 .weight(1f)
                 .padding(horizontal = 6.dp),
         ) {
-            Text(
-                text = mediaMetadata.title,
-                color = MaterialTheme.colorScheme.onSurface,
-                fontSize = 15.sp,
-                fontWeight = FontWeight.Bold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                softWrap = false,
-                modifier = Modifier.fillMaxWidth().basicMarquee(),
-            )
+            MiniPlayerTitle(motion, MaterialTheme.colorScheme.onSurface) {
+                Text(
+                    text = mediaMetadata.title,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    softWrap = false,
+                    modifier = Modifier.fillMaxWidth().basicMarquee(),
+                )
+            }
 
             if (mediaMetadata.artists.any { it.name.isNotBlank() }) {
                 Text(
