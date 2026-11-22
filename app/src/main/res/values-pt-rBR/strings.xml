@@ -316,7 +316,6 @@
     <string name="theme_mode">Modo de Tema</string>
     <string name="color_palette">Paleta de Cores</string>
     <string name="use_system_colors">Usar cores do sistema</string>
-    <string name="apple_music">Apple Music</string>
     <string name="show_audio_quality_badge">Mostrar o crachá de qualidade de áudio</string>
     <string name="network_ip_version">Versão IP da rede</string>
     <string name="ip_version_auto">Automático</string>

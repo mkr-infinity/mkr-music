@@ -70,9 +70,6 @@ internal fun fullPlayerAppearanceItems(): List<Material3SettingsItem> {
             onDismiss = { showPlayerDesignDialog = false },
             onSelect = { selectedStyle ->
                 setPlayerStyleName(selectedStyle.name)
-                if (playerBackground == PlayerBackgroundStyle.APPLE_MUSIC) {
-                    onPlayerBackgroundChange(PlayerBackgroundStyle.DEFAULT)
-                }
                 showPlayerDesignDialog = false
             }
         )
@@ -87,14 +84,13 @@ internal fun fullPlayerAppearanceItems(): List<Material3SettingsItem> {
             },
             title = stringResource(R.string.player_background_style),
             current = playerBackground,
-            values = PlayerBackgroundStyle.values().toList(),
+            values = PlayerBackgroundStyle.entries,
             valueText = {
                 when (it) {
                     PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
                     PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
                     PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
                     PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
-                    PlayerBackgroundStyle.APPLE_MUSIC -> stringResource(R.string.apple_music)
                     PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
                 }
             }
@@ -116,7 +112,7 @@ internal fun fullPlayerAppearanceItems(): List<Material3SettingsItem> {
             key = "appearance_player_background",
             icon = painterResource(R.drawable.gradient),
             title = { Text(stringResource(R.string.player_background_style)) },
-            description = { Text("Apple Music fluid mesh, gradient, animated glow or theme") },
+            description = { Text(stringResource(R.string.player_background_style_description)) },
             trailingContent = {
                 Text(
                     when (playerBackground) {
@@ -124,7 +120,6 @@ internal fun fullPlayerAppearanceItems(): List<Material3SettingsItem> {
                         PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
                         PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
                         PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
-                        PlayerBackgroundStyle.APPLE_MUSIC -> stringResource(R.string.apple_music)
                         PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
                     }
                 )

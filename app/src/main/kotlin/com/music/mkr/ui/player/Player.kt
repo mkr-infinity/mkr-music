@@ -109,7 +109,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
@@ -156,7 +155,6 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.palette.graphics.Palette
-import coil3.compose.AsyncImage
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
@@ -286,7 +284,7 @@ fun BottomSheetPlayer(
 
     val shouldUseDarkButtonColors = remember(playerBackground, useDarkTheme) {
         when (playerBackground) {
-            PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.APPLE_MUSIC, PlayerBackgroundStyle.LIVE_MESH -> true
+            PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.LIVE_MESH -> true
             PlayerBackgroundStyle.DEFAULT -> useDarkTheme
         }
     }
@@ -303,7 +301,7 @@ fun BottomSheetPlayer(
             val insetsController = WindowCompat.getInsetsController(window, window.decorView)
             
             when (playerBackground) {
-                PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.APPLE_MUSIC, PlayerBackgroundStyle.LIVE_MESH -> {
+                PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.LIVE_MESH -> {
                     insetsController.isAppearanceLightStatusBars = false
                 }
                 PlayerBackgroundStyle.DEFAULT -> {
@@ -572,7 +570,6 @@ fun BottomSheetPlayer(
             PlayerBackgroundStyle.BLUR -> Color.Black
             PlayerBackgroundStyle.GRADIENT -> Color.Black
             PlayerBackgroundStyle.GLOW_ANIMATED -> Color.Black
-            PlayerBackgroundStyle.APPLE_MUSIC -> Color.Black
             PlayerBackgroundStyle.LIVE_MESH -> Color.Black
         },
         label = "icBackgroundColor"
@@ -582,7 +579,6 @@ fun BottomSheetPlayer(
         playerBackground == PlayerBackgroundStyle.BLUR || 
         playerBackground == PlayerBackgroundStyle.GRADIENT ||
         playerBackground == PlayerBackgroundStyle.GLOW_ANIMATED ||
-        playerBackground == PlayerBackgroundStyle.APPLE_MUSIC ||
         playerBackground == PlayerBackgroundStyle.LIVE_MESH -> {
             when (playerButtonsStyle) {
                 PlayerButtonsStyle.DEFAULT -> Pair(artworkPalette.primaryAccent, com.music.mkr.ui.theme.PlayerColorExtractor.CharcoalDark)
@@ -618,7 +614,6 @@ fun BottomSheetPlayer(
         playerBackground == PlayerBackgroundStyle.BLUR || 
         playerBackground == PlayerBackgroundStyle.GRADIENT ||
         playerBackground == PlayerBackgroundStyle.GLOW_ANIMATED ||
-        playerBackground == PlayerBackgroundStyle.APPLE_MUSIC ||
         playerBackground == PlayerBackgroundStyle.LIVE_MESH -> {
             when (playerButtonsStyle) {
                 PlayerButtonsStyle.DEFAULT -> Pair(
@@ -741,7 +736,7 @@ fun BottomSheetPlayer(
     )
 
     val bottomSheetBackgroundColor = when (playerBackground) {
-        PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.APPLE_MUSIC ->
+        PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED ->
             PlayerColorExtractor.CharcoalDark
         PlayerBackgroundStyle.LIVE_MESH ->
             Color.Black
@@ -979,51 +974,6 @@ fun BottomSheetPlayer(
                                             }
                                         }
                                 )
-                            }
-                        }
-                    }
-                    PlayerBackgroundStyle.APPLE_MUSIC -> {
-                        AnimatedContent(
-                            targetState = mediaMetadata?.thumbnailUrl,
-                            transitionSpec = {
-                                fadeIn(tween(1200)).togetherWith(fadeOut(tween(1200)))
-                            },
-                            label = "appleMusicBackground"
-                        ) { thumbnailUrl ->
-                            if (thumbnailUrl != null) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .alpha(backgroundAlpha)
-                                ) {
-                                    // Full-Screen Ambient Blurred Background (Apple Music fluid mesh)
-                                    AsyncImage(
-                                        model = ImageRequest.Builder(context)
-                                            .data(thumbnailUrl)
-                                            .size(128, 128) // Downsample significantly for performance
-                                            .allowHardware(false)
-                                            .build(),
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .blur(140.dp)
-                                    )
-
-                                    // Ambient gradient overlay for deep contrast and richness
-                                    Box(
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .background(
-                                                Brush.verticalGradient(
-                                                    listOf(
-                                                        Color.Black.copy(alpha = 0.15f),
-                                                        Color.Black.copy(alpha = 0.55f)
-                                                    )
-                                                )
-                                            )
-                                    )
-                                }
                             }
                         }
                     }
