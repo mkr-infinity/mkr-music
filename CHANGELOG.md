@@ -8,6 +8,8 @@
 
 ## [Unreleased]
 
+- **Player style picker** · *Settings → Appearance → Full Player → Player style* — Compare four visual previews and apply your choice. Retired layouts fall back to Cinematic.
+- **Artwork backgrounds** · *Settings → Appearance → Full Player → Player background style* — Restore artwork-driven effects with a safe fallback. Saved Apple Music backgrounds fall back to Follow theme.
 - **Mini-player motion** · *Settings → Appearance → Mini-player* — Turn Micro Equalizer, Artwork Transition, and Capsule Morph on or off separately.
 - **Liquid retirement** · *Settings → Appearance → Mini-player* — The wave overlay is gone. Classic, Expressive, and Apple-style remain available.
 - **Full-player appearance** · *Settings → Appearance → Full Player* — Find the full-player style and background together.
