@@ -106,7 +106,6 @@ fun AppleMiniPlayer(
     // Swipe settings
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnailPref by rememberPreference(SwipeThumbnailKey, true)
-    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = true)
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
     val haptic = LocalHapticFeedback.current
     var hasTriggeredHapticThreshold by remember { mutableStateOf(false) }
@@ -306,15 +305,6 @@ fun AppleMiniPlayer(
                 style = miniPlayerBackground,
                 mediaMetadata = mediaMetadata,
                 gradientColors = gradientColors
-            )
-
-            // Fluid liquid progress animation - reads progress in draw phase
-            LiquidProgressCanvas(
-                progress = { progressState.progress },
-                isPlaying = playbackState == Player.STATE_READY && playerConnection.player.playWhenReady,
-                enabled = liquidMiniPlayer,
-                interfaceAnimations = interfaceAnimations,
-                primaryColor = primaryColor
             )
 
             // Bottom Progress Bar

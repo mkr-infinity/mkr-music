@@ -127,7 +127,6 @@ import com.music.mkr.constants.SwipeThumbnailKey
 import com.music.mkr.constants.ThumbnailCornerRadius
 import com.music.mkr.constants.UseAppleMiniPlayerKey
 import com.music.mkr.constants.UseNewMiniPlayerDesignKey
-import com.music.mkr.constants.LiquidMiniPlayerKey
 import com.music.mkr.constants.InterfaceAnimationsKey
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -252,7 +251,6 @@ private fun NewMiniPlayer(
     // Swipe settings
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnailPref by rememberPreference(SwipeThumbnailKey, true)
-    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = true)
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
     val haptic = LocalHapticFeedback.current
     var hasTriggeredHapticThreshold by remember { mutableStateOf(false) }
@@ -454,15 +452,6 @@ private fun NewMiniPlayer(
                 style = miniPlayerBackground,
                 mediaMetadata = mediaMetadata,
                 gradientColors = gradientColors
-            )
-
-            // Fluid liquid progress animation - reads progress in draw phase
-            LiquidProgressCanvas(
-                progress = { progressState.progress },
-                isPlaying = playbackState == Player.STATE_READY && playerConnection.player.playWhenReady,
-                enabled = liquidMiniPlayer,
-                interfaceAnimations = interfaceAnimations,
-                primaryColor = primaryColor
             )
 
             Row(
@@ -822,7 +811,6 @@ private fun LegacyMiniPlayer(
 
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnailPref by rememberPreference(SwipeThumbnailKey, true)
-    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = true)
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
     val haptic = LocalHapticFeedback.current
     var hasTriggeredHapticThreshold by remember { mutableStateOf(false) }
@@ -993,15 +981,6 @@ private fun LegacyMiniPlayer(
             canSkipNext = playerConnection.player.nextMediaItemIndex != -1,
             accentColor = primaryColor,
             modifier = if (isTabletLandscape) Modifier.width(500.dp) else Modifier.fillMaxWidth()
-        )
-
-        // Fluid liquid progress animation - reads progress in draw phase
-        LiquidProgressCanvas(
-            progress = { progressState.progress },
-            isPlaying = playbackState == Player.STATE_READY && playerConnection.player.playWhenReady,
-            enabled = liquidMiniPlayer,
-            interfaceAnimations = interfaceAnimations,
-            primaryColor = primaryColor
         )
 
         // Progress bar - uses drawWithContent to avoid recomposition

@@ -1163,8 +1163,6 @@
     <string name="hide_speed_dial_desc">Hide the Speed dial section from the home screen</string>
 
     <!-- Liquid Mini-Player & Motion Settings -->
-    <string name="liquid_mini_player">Liquid mini-player</string>
-    <string name="liquid_mini_player_desc">Fill the mini-player with a fluid animation as your music plays.</string>
     <string name="interface_animations">Interface animations</string>
     <string name="interface_animations_desc">Enable smooth transitions and animated interface effects.</string>
     <string name="previous_track">Previous track</string>

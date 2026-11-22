@@ -444,16 +444,6 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             keywords = listOf("mini player", "apple mini player", "ios", "floating mini", "capsule mini")
         ),
         SearchableSettingItem(
-            id = "player_liquid_mini_player",
-            title = "Liquid Wave Mini Player",
-            description = "Fluid animated liquid wave progress canvas along the bottom edge of mini player",
-            category = "Player and Audio",
-            iconRes = R.drawable.linear_scale,
-            route = "settings/player",
-            targetKey = "appearance_liquid_mini_player",
-            keywords = listOf("liquid", "wave", "liquid mini player", "fluid progress", "animated mini player")
-        ),
-        SearchableSettingItem(
             id = "player_pure_black_mini_player",
             title = "Pure Black Mini Player",
             description = "Pitch-black background styling for the mini-player dock bar",

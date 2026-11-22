@@ -80,7 +80,6 @@ import com.music.mkr.constants.SimilarContent
 import com.music.mkr.constants.SkipSilenceInstantKey
 import com.music.mkr.constants.SkipSilenceKey
 import com.music.mkr.constants.StopMusicOnTaskClearKey
-import com.music.mkr.constants.LiquidMiniPlayerKey
 import com.music.mkr.constants.PureBlackMiniPlayerKey
 import com.music.mkr.constants.MiniPlayerBackgroundStyleKey
 import com.music.mkr.constants.PlayerBackgroundStyle
@@ -268,10 +267,6 @@ fun PlayerSettings(
     )
     val (useNewMiniPlayerDesign, onUseNewMiniPlayerDesignChange) = rememberPreference(
         UseNewMiniPlayerDesignKey,
-        defaultValue = true
-    )
-    val (liquidMiniPlayer, onLiquidMiniPlayerChange) = rememberPreference(
-        LiquidMiniPlayerKey,
         defaultValue = true
     )
     val (playerBackground, onPlayerBackgroundChange) = rememberEnumPreference(
@@ -546,28 +541,6 @@ fun PlayerSettings(
                         }
                     },
                     onClick = { showMiniPlayerDesignDialog = true }
-                ),
-                Material3SettingsItem(
-                    key = "appearance_liquid_mini_player",
-                    icon = painterResource(R.drawable.sparks),
-                    title = { Text("Liquid Mini-Player") },
-                    description = { Text("Fluid organic water progress animation on mini-player") },
-                    trailingContent = {
-                        Switch(
-                            checked = liquidMiniPlayer,
-                            onCheckedChange = onLiquidMiniPlayerChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (liquidMiniPlayer) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onLiquidMiniPlayerChange(!liquidMiniPlayer) }
                 ),
                 Material3SettingsItem(
                     key = "appearance_pure_black",
