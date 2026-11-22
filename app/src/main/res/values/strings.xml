@@ -286,9 +286,9 @@
     <string name="navigation_style">Navigation style</string>
     <string name="navigation_style_desc">Choose between four distinct bottom navigation layouts</string>
     <string name="nav_style_floating_glass">Floating Glass Navigation</string>
-    <string name="nav_style_floating_glass_desc">Refined floating dock with translucent frosted glass depth and illuminated active capsule</string>
+    <string name="nav_style_floating_glass_desc">Wide tonal capsule with evenly spaced destinations</string>
     <string name="nav_style_expressive_pill">Expressive Expanding Navigation</string>
-    <string name="nav_style_expressive_pill_desc">Compact centered dock with smooth horizontal expansion for the active destination</string>
+    <string name="nav_style_expressive_pill_desc">Compact tonal capsule that emphasizes the active destination</string>
     <string name="nav_style_clean_material">Material 3 Navigation</string>
     <string name="nav_style_clean_material_desc">Refined edge-aligned Material 3 bar with authentic indicator capsule and anchored ergonomics</string>
     <string name="nav_style_amber_dock">MKR Signature Navigation</string>

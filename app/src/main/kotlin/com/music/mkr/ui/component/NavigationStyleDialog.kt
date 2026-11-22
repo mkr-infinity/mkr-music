@@ -37,7 +37,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -248,45 +247,28 @@ private fun NavigationStyleMiniPreview(
                     Box(Modifier.width(12.dp).height(2.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
                 }
             }
-            NavigationStyle.FLOATING_GLASS -> {
-                // Frosted glass capsule with glow (3 destinations balanced spacing)
-                Box(
-                    modifier = Modifier
-                        .size(width = 46.dp, height = 22.dp)
-                        .clip(RoundedCornerShape(11.dp))
-                        .background(Color.White.copy(alpha = 0.15f))
-                        .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(11.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 7.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
-                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
-                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
-                    }
-                }
-            }
-            NavigationStyle.EXPRESSIVE_PILL -> {
-                // Pill with expanded active tab (3 destinations)
+            NavigationStyle.FLOATING_GLASS, NavigationStyle.EXPRESSIVE_PILL -> {
+                val compact = style == NavigationStyle.EXPRESSIVE_PILL
                 Row(
-                    modifier = Modifier.padding(horizontal = 4.dp),
+                    modifier = Modifier
+                        .size(width = if (compact) 37.dp else 46.dp, height = 19.dp)
+                        .clip(CircleShape)
+                        .background(MaterialTheme.colorScheme.surfaceContainer)
+                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                        .padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Box(
-                        modifier = Modifier
-                            .width(14.dp)
-                            .height(14.dp)
-                            .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                    )
-                    Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)))
-                    Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)))
+                        Modifier.size(width = if (compact) 14.dp else 11.dp, height = 11.dp)
+                            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(4.dp)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Box(Modifier.size(4.dp).background(MaterialTheme.colorScheme.onSecondaryContainer, CircleShape))
+                    }
+                    repeat(2) {
+                        Box(Modifier.size(4.dp).background(MaterialTheme.colorScheme.onSurfaceVariant, CircleShape))
+                    }
                 }
             }
             NavigationStyle.CLEAN_MATERIAL -> {
