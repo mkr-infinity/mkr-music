@@ -8,16 +8,22 @@
 
 ## [Unreleased]
 
-- **Mini-player motion** — Add a micro equalizer, artwork fades, and a gentle capsule morph with separate switches.
-- **Liquid retirement** — Remove the water-wave overlay while keeping Classic, Expressive, and Apple-style mini-players.
-- **Player settings** — Find visual controls in Appearance and Audio Offload under Player & Audio → Advanced.
-- **Search discovery** — Highlight one confident song match with Play and shuffle-aware Play Next.
-- **Library and navigation** — Balance category rows across screen sizes and refine the capsule tab bar.
-- **Playlist feedback** — Close the picker after a successful add and show the result at the top.
-- **Playback lifecycle** — Improve crossfade startup and end idle media notifications after dismissal.
-- **Home and audio controls** — Refine Home buttons, make Listen Together opt-in, and simplify Audio Output.
-- **Updates and support** — Refresh update states and make the UPI ID easy to copy.
-- **README credits** — Simplify the credits and copyright footer.
+- **Mini-player motion** · *Settings → Appearance → Mini-player* — Turn Micro Equalizer, Artwork Transition, and Capsule Morph on or off separately.
+- **Liquid retirement** · *Settings → Appearance → Mini-player* — The wave overlay is gone. Classic, Expressive, and Apple-style remain available.
+- **Full-player appearance** · *Settings → Appearance → Full Player* — Find the full-player style and background together.
+- **Audio offload** · *Settings → Player and Audio → Advanced → Enable offload* — Find the existing toggle in Advanced.
+- **Search discovery** · *Search → Top Song Match* — Play a confident match immediately or queue it to play next.
+- **Library layout** · *Library* — Category cards balance across screen sizes, including the final row.
+- **Capsule navigation** · *Bottom tab bar* — Selected tabs are easier to spot.
+- **Playlist feedback** · *Song menu → Add to playlist* — The picker closes after a successful add and confirms it at the top.
+- **Crossfade startup** · *Settings → Player and Audio → Crossfade* — Improve the start of automatic track transitions.
+- **Idle media notifications** · *Mini-player dismissal* — Clear the idle media notification when you dismiss playback.
+- **Home controls** · *Home* — Refreshed controls for Settings and History.
+- **Listen Together shortcut** · *Settings → Appearance → Auto playlists → Show Listen Together on Home Screen* — Opt in to the Home shortcut.
+- **Audio output** · *Full player → More options → Audio Output* — See the selected device in a simpler sheet.
+- **Update checker** · *Settings → System Updates (or Update Available)* — Refreshed status, version details, and actions.
+- **Support** · *Settings → About MKR Music → Donate & Support* — Copy the UPI ID to use in your preferred payment app.
+- **README credits** · *GitHub → README* — Simplified the credits and copyright footer.
 
 ## [v1.1.0] - 2026-11-01
 
