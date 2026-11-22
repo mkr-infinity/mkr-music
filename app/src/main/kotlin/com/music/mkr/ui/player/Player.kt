@@ -180,14 +180,11 @@ import com.music.mkr.constants.PlayerButtonsStyleKey
 import com.music.mkr.constants.PlayerHorizontalPadding
 import com.music.mkr.constants.PlayerStyle
 import com.music.mkr.constants.PlayerStyleKey
-import com.music.mkr.ui.player.styles.ClassicPlayer
-import com.music.mkr.ui.player.styles.ModernPlayer
 import com.music.mkr.ui.player.styles.MinimalPlayer
 import com.music.mkr.ui.player.styles.CinematicPlayer
 import com.music.mkr.ui.player.styles.ApplePlayer
 import com.music.mkr.ui.player.styles.ImmersivePlayer
 import com.music.mkr.ui.player.styles.ImmersiveExtendedPlayer
-import com.music.mkr.ui.player.styles.MaterialExtendedPlayer
 import com.music.mkr.constants.QueuePeekHeight
 import com.music.mkr.constants.SliderStyle
 import com.music.mkr.constants.SliderStyleKey
@@ -1145,10 +1142,8 @@ fun BottomSheetPlayer(
             )
         },
     ) {
-        val rawPlayerStyle by rememberEnumPreference(PlayerStyleKey, defaultValue = PlayerStyle.CINEMATIC)
-        val playerStyle = remember(rawPlayerStyle) {
-            if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.CINEMATIC else rawPlayerStyle
-        }
+        val playerStyleName by rememberPreference(PlayerStyleKey, PlayerStyle.DEFAULT.name)
+        val playerStyle = remember(playerStyleName) { PlayerStyle.fromString(playerStyleName) }
         val isLoading = playbackState == androidx.media3.common.Player.STATE_BUFFERING
 
         val onOpenMenu: (MediaMetadata) -> Unit = { metadata ->
@@ -1297,64 +1292,6 @@ fun BottomSheetPlayer(
                             modifier = Modifier.fillMaxSize(),
                             currentFormat = currentFormat
                         )
-                        PlayerStyle.CLASSIC -> ClassicPlayer(
-                            mediaMetadata = metadata,
-                            playbackState = playbackState,
-                            isPlaying = isPlaying,
-                            isLoading = isLoading,
-                            canSkipPrevious = canSkipPrevious,
-                            canSkipNext = canSkipNext,
-                            sliderPosition = sliderPosition,
-                            position = effectivePosition,
-                            duration = duration,
-                            repeatMode = repeatMode,
-                            shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
-                            isLiked = isCurrentTrackLiked,
-                            playerConnection = playerConnection,
-                            navController = navController,
-                            state = state,
-                            textButtonColor = textButtonColor,
-                            iconButtonColor = iconButtonColor,
-                            textBackgroundColor = TextBackgroundColor,
-                            onSliderValueChange = { sliderPosition = it },
-                            onSliderValueChangeFinished = {
-                                sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                sliderPosition = null
-                            },
-                            onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                            onShowQueue = { queueSheetState.expandSoft() },
-                            onShowMenu = { onOpenMenu(metadata) },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        PlayerStyle.MODERN -> ModernPlayer(
-                            mediaMetadata = metadata,
-                            playbackState = playbackState,
-                            isPlaying = isPlaying,
-                            isLoading = isLoading,
-                            canSkipPrevious = canSkipPrevious,
-                            canSkipNext = canSkipNext,
-                            sliderPosition = sliderPosition,
-                            position = effectivePosition,
-                            duration = duration,
-                            repeatMode = repeatMode,
-                            shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
-                            isLiked = isCurrentTrackLiked,
-                            playerConnection = playerConnection,
-                            navController = navController,
-                            state = state,
-                            textButtonColor = textButtonColor,
-                            iconButtonColor = iconButtonColor,
-                            textBackgroundColor = TextBackgroundColor,
-                            onSliderValueChange = { sliderPosition = it },
-                            onSliderValueChangeFinished = {
-                                sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                sliderPosition = null
-                            },
-                            onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                            onShowQueue = { queueSheetState.expandSoft() },
-                            onShowMenu = { onOpenMenu(metadata) },
-                            modifier = Modifier.fillMaxSize()
-                        )
                         PlayerStyle.MINIMAL -> MinimalPlayer(
                             mediaMetadata = metadata,
                             playbackState = playbackState,
@@ -1472,37 +1409,6 @@ fun BottomSheetPlayer(
                                 sliderPosition = null
                             },
                             onVolumeChange = { playerConnection.service.playerVolume.value = it },
-                            onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                            onShowQueue = { queueSheetState.expandSoft() },
-                            onShowMenu = { onOpenMenu(metadata) },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        PlayerStyle.MATERIAL_EXTENDED -> MaterialExtendedPlayer(
-                            mediaMetadata = metadata,
-                            playbackState = playbackState,
-                            isPlaying = isPlaying,
-                            isLoading = isLoading,
-                            canSkipPrevious = canSkipPrevious,
-                            canSkipNext = canSkipNext,
-                            sliderPosition = sliderPosition,
-                            position = effectivePosition,
-                            duration = duration,
-                            repeatMode = repeatMode,
-                            shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
-                            isLiked = isCurrentTrackLiked,
-                            playerConnection = playerConnection,
-                            navController = navController,
-                            state = state,
-                            textButtonColor = textButtonColor,
-                            iconButtonColor = iconButtonColor,
-                            sideButtonContainerColor = sideButtonContainerColor,
-                            sideButtonContentColor = sideButtonContentColor,
-                            textBackgroundColor = TextBackgroundColor,
-                            onSliderValueChange = { sliderPosition = it },
-                            onSliderValueChangeFinished = {
-                                sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                sliderPosition = null
-                            },
                             onShowLyrics = { showInlineLyrics = !showInlineLyrics },
                             onShowQueue = { queueSheetState.expandSoft() },
                             onShowMenu = { onOpenMenu(metadata) },

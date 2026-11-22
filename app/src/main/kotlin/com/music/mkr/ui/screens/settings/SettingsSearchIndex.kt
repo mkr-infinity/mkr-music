@@ -67,7 +67,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             iconRes = R.drawable.palette,
             route = "settings/appearance",
             targetKey = "appearance_player_style",
-            keywords = listOf("player style", "layout", "classic", "modern", "cinematic", "immersive", "material"),
+            keywords = listOf("player style", "layout", "minimal", "cinematic", "immersive", "immersive extended"),
         ),
         SearchableSettingItem(
             id = "appearance_player_background",

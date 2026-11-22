@@ -54,13 +54,8 @@ import com.music.mkr.utils.rememberPreference
 
 @Composable
 internal fun fullPlayerAppearanceItems(): List<Material3SettingsItem> {
-    val (rawPlayerStyle, onPlayerStyleChange) = rememberEnumPreference(
-        PlayerStyleKey,
-        defaultValue = PlayerStyle.CINEMATIC
-    )
-    val playerStyle = remember(rawPlayerStyle) {
-        if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.CINEMATIC else rawPlayerStyle
-    }
+    val (playerStyleName, setPlayerStyleName) = rememberPreference(PlayerStyleKey, PlayerStyle.DEFAULT.name)
+    val playerStyle = remember(playerStyleName) { PlayerStyle.fromString(playerStyleName) }
     val (playerBackground, onPlayerBackgroundChange) = rememberEnumPreference(
         PlayerBackgroundStyleKey,
         defaultValue = PlayerBackgroundStyle.DEFAULT
@@ -74,8 +69,8 @@ internal fun fullPlayerAppearanceItems(): List<Material3SettingsItem> {
             currentStyle = playerStyle,
             onDismiss = { showPlayerDesignDialog = false },
             onSelect = { selectedStyle ->
-                onPlayerStyleChange(selectedStyle)
-                if (selectedStyle != PlayerStyle.CLASSIC && selectedStyle != PlayerStyle.APPLE && playerBackground == PlayerBackgroundStyle.APPLE_MUSIC) {
+                setPlayerStyleName(selectedStyle.name)
+                if (playerBackground == PlayerBackgroundStyle.APPLE_MUSIC) {
                     onPlayerBackgroundChange(PlayerBackgroundStyle.DEFAULT)
                 }
                 showPlayerDesignDialog = false
@@ -111,7 +106,7 @@ internal fun fullPlayerAppearanceItems(): List<Material3SettingsItem> {
             key = "appearance_player_style",
             icon = painterResource(R.drawable.palette),
             title = { Text(stringResource(R.string.player_style)) },
-            description = { Text("Choose from 8 distinct player designs") },
+            description = { Text(stringResource(R.string.player_style_picker_description)) },
             trailingContent = {
                 Text(stringResource(playerStyle.titleRes))
             },

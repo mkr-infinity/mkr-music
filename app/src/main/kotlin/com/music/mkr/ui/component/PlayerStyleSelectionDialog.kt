@@ -59,7 +59,7 @@ private val MkrAmberAccent = Color(0xFFF59E0B)
 
 /**
  * Redesigned Player Style selection dialog featuring visual preview cards,
- * clear descriptions, and MKR charcoal-and-amber capsule styling for all 8 styles.
+ * clear descriptions, and MKR charcoal-and-amber capsule styling for the selectable styles.
  */
 @Composable
 fun PlayerStyleSelectionDialog(
@@ -96,7 +96,7 @@ fun PlayerStyleSelectionDialog(
                         color = MaterialTheme.colorScheme.onSurface
                     )
                     Text(
-                        text = "8 Playback Interfaces",
+                        text = stringResource(R.string.player_style_picker_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -274,28 +274,6 @@ private fun StylePreviewBadge(
                     Box(Modifier.size(width = 24.dp, height = 2.dp).clip(RoundedCornerShape(1.dp)).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)))
                 }
             }
-            PlayerStyle.CLASSIC -> {
-                // Classic circular control cluster
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(Modifier.size(6.dp).clip(CircleShape).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.onSurfaceVariant))
-                    Box(Modifier.size(14.dp).clip(CircleShape).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.primary))
-                    Box(Modifier.size(6.dp).clip(CircleShape).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.onSurfaceVariant))
-                }
-            }
-            PlayerStyle.MODERN -> {
-                // Modern tonal pill controls
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(3.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box(Modifier.size(width = 8.dp, height = 12.dp).clip(RoundedCornerShape(4.dp)).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.onSurfaceVariant))
-                    Box(Modifier.size(14.dp).clip(CircleShape).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.primary))
-                    Box(Modifier.size(width = 8.dp, height = 12.dp).clip(RoundedCornerShape(4.dp)).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.onSurfaceVariant))
-                }
-            }
             PlayerStyle.MINIMAL -> {
                 // Minimal sharp square controls
                 Row(
@@ -347,23 +325,6 @@ private fun StylePreviewBadge(
                         modifier = Modifier.size(14.dp)
                     )
                     Box(Modifier.size(width = 24.dp, height = 3.dp).clip(RoundedCornerShape(1.dp)).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.onSurfaceVariant))
-                }
-            }
-            PlayerStyle.MATERIAL_EXTENDED -> {
-                // Material 3 Expressive wavy slider and pills
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(3.dp)
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(2.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(Modifier.size(width = 6.dp, height = 10.dp).clip(RoundedCornerShape(3.dp)).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.onSurfaceVariant))
-                        Box(Modifier.size(12.dp).clip(CircleShape).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.primary))
-                        Box(Modifier.size(width = 6.dp, height = 10.dp).clip(RoundedCornerShape(3.dp)).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.onSurfaceVariant))
-                    }
-                    Box(Modifier.size(width = 26.dp, height = 2.dp).clip(RoundedCornerShape(1.dp)).background(if (isSelected) MkrAmberAccent else MaterialTheme.colorScheme.primary))
                 }
             }
         }

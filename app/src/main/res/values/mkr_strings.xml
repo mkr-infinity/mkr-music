@@ -159,10 +159,7 @@
     <string name="player_design">Player style</string>
     <!-- Player Styles (9 Native Styles) -->
     <string name="player_style">Player style</string>
-    <string name="player_style_classic">Classic</string>
-    <string name="player_style_classic_desc">Timeless playback layout with circular controls and quick action buttons</string>
-    <string name="player_style_modern">Modern</string>
-    <string name="player_style_modern_desc">Pill-shaped tonal controls with rounded touch geometry</string>
+    <string name="player_style_picker_description">Choose how the full player is laid out.</string>
     <string name="player_style_minimal">Minimal</string>
     <string name="player_style_minimal_desc">Clean compact square controls designed for focused listening</string>
     <string name="player_style_cinematic">Cinematic</string>
@@ -171,8 +168,6 @@
     <string name="player_style_immersive_desc">Edge-to-edge ambient artwork with audio format badge</string>
     <string name="player_style_immersive_extended">Immersive Extended</string>
     <string name="player_style_immersive_extended_desc">Extended ambient backdrop with integrated volume bar and queue peek</string>
-    <string name="player_style_material_extended">Material Extended</string>
-    <string name="player_style_material_extended_desc">Material 3 expressive player with animated spring controls and wavy progress</string>
     <!-- Library 5-Category Cards -->
     <string name="library_liked_songs">Liked songs</string>
     <string name="library_liked_songs_desc">Your favorite tracks</string>
