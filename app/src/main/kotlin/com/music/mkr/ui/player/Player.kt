@@ -830,7 +830,7 @@ fun BottomSheetPlayer(
                             label = "GlowAnimatedContent"
                         ) { colors ->
                             if (colors.isNotEmpty()) {
-                                val glowProgress = if (animateBackground) {
+                                val glowProgress = if (animateBackground && colors != fallbackGradient) {
                                     rememberInfiniteTransition(label = "GlowAnimation").animateFloat(
                                         initialValue = 0f,
                                         targetValue = 1f,
@@ -979,7 +979,7 @@ fun BottomSheetPlayer(
                     }
                     PlayerBackgroundStyle.LIVE_MESH -> {
                         // A shared clock wraps after whole turns for all three layers.
-                        val rotation = if (animateBackground) {
+                        val rotation = if (animateBackground && backgroundArtwork != null) {
                             rememberInfiniteTransition(label = "liveMeshRotation").animateFloat(
                                 initialValue = 0f,
                                 targetValue = 360f,
@@ -996,6 +996,7 @@ fun BottomSheetPlayer(
                             },
                             label = "liveMeshBackground"
                         ) { artworkUrl ->
+                            if (artworkUrl == null) return@AnimatedContent
                             Box(
                                 modifier = Modifier
                                     .fillMaxSize()
@@ -1059,7 +1060,7 @@ fun BottomSheetPlayer(
                                 Box(
                                     modifier = Modifier
                                         .fillMaxSize()
-                                        .background(Color.Black.copy(alpha = 0.2f))
+                                        .background(Color.Black.copy(alpha = 0.55f))
                                 )
                                 Box(
                                     modifier = Modifier
