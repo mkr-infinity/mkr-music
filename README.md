@@ -172,14 +172,10 @@ Crafted with dedication by **Mohammad Kaif Raja**:
 
 **MKR Music** is built upon the foundation of amazing open-source projects, visionary developers, and the broader FLOSS community:
 
-
-- **[ViMusic](https://github.com/vfsfitvnm/ViMusic)** by vfsfitvnm – For pioneering the original Android client and playback concepts.
-- **[ViVi Music](https://github.com/vivizzz007/vivi-music)** by vivizzz007 – For inspiring features, UI refinements, and dedicated contributions.
 - **[InnerTune](https://github.com/z-huang/InnerTune)** by Zion Huang – For the groundbreaking YouTube Music client architecture and Innertube integration foundation.
 - **[AM-Lyrics](https://github.com/Binimum)** – For the powerful synced TTML lyrics integration from Binimum.
 - **[Better Lyrics](https://github.com/Better-Lyrics)** – For beautiful synchronized lyrics and YouTube Music integration.
 - **[YouLyPlus](https://github.com/YouLyPlus)** – For smooth, expressive in-app lyrics styling.
-- **[Unison](https://github.com)** – For the premium Apple Music-style visualizer canvas.
 - **[SponsorBlock](https://sponsor.ajay.app/)** – For automatic skipping of sponsored and non-music segments.
 - **Spotify Integration** – For Spotify playlist discovery, search queries, and audio library synchronization.
 - **Innertube & NewPipe Extractor** – For YouTube Music streaming APIs, stream extraction, and search pipelines.
@@ -195,7 +191,5 @@ Crafted with dedication by **Mohammad Kaif Raja**:
 ## ⚖️ License
 
 MKR Music is open-source software licensed under the [GNU General Public License v3.0 (GPL-3.0)](LICENSE).
-
-*Copyright © 2026 Mohammad Kaif Raja ([@mkr-infinity](https://github.com/mkr-infinity))*
 
 </div>
