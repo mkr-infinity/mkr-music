@@ -35,3 +35,20 @@ internal fun shouldStopPlaybackOnTaskRemoval(
     isLoadingQueue: Boolean,
     isCasting: Boolean,
 ): Boolean = stopOnTaskClear || !(hasQueue || isLoadingQueue || isCasting)
+
+
+internal enum class SearchPlayNextResult { Added, AlreadyCurrent, AlreadyNext, QueueLoading, Blocked, Failed }
+
+internal fun shuffleOrderWithPlayNext(order: IntArray, insertionIndex: Int, count: Int): IntArray {
+    val currentIndex = insertionIndex - 1
+    val result = IntArray(order.size + count)
+    var next = 0
+    for (index in order) {
+        result[next++] = if (index >= insertionIndex) index + count else index
+        if (index == currentIndex) {
+            repeat(count) { offset -> result[next++] = insertionIndex + offset }
+        }
+    }
+    check(next == result.size)
+    return result
+}

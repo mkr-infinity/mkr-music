@@ -284,6 +284,17 @@ class PlayerConnection(
         }
     }
 
+    internal fun playSearchMatch(queue: Queue, songId: String): Boolean {
+        if (!allowInternalSync && shouldBlockPlaybackChanges?.invoke() == true) return false
+        if (player.currentMediaItem?.mediaId == songId) play() else playQueue(queue)
+        return true
+    }
+
+    internal fun playNextSearchMatch(item: MediaItem): SearchPlayNextResult {
+        if (!allowInternalSync && shouldBlockPlaybackChanges?.invoke() == true) return SearchPlayNextResult.Blocked
+        return service.playNextSearchMatch(item)
+    }
+
     fun addToQueue(item: MediaItem) = addToQueue(listOf(item))
 
     fun addToQueue(items: List<MediaItem>) {

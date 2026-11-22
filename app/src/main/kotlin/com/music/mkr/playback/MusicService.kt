@@ -2102,106 +2102,59 @@ class MusicService :
     }
 
     fun playNext(items: List<MediaItem>) {
-        val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
-        val distinctItems = if (preventDuplicates) {
-            val currentMediaId = player.currentMetadata?.id
-            items.filter { it.mediaId != currentMediaId }.distinctBy { it.mediaId }
-        } else {
-            items
-        }
-
-        if (distinctItems.isEmpty()) return
-
-        // If queue is empty or player is idle, play immediately instead
-        if (player.mediaItemCount == 0 || player.playbackState == STATE_IDLE) {
-            player.setMediaItems(distinctItems)
-            player.prepare()
-            // Don't start local playback if casting
-            if (castConnectionHandler?.isCasting?.value != true) {
-                player.play()
-            }
-            return
-        }
-
-        // Remove duplicates if enabled
-        if (preventDuplicates) {
-            val itemIds = distinctItems.map { it.mediaId }.toSet()
-            val indicesToRemove = mutableListOf<Int>()
-            val currentIndex = player.currentMediaItemIndex
-
-            for (i in 0 until player.mediaItemCount) {
-                if (i != currentIndex && player.getMediaItemAt(i).mediaId in itemIds) {
-                    indicesToRemove.add(i)
-                }
-            }
-
-            // Remove from highest index to lowest to maintain index stability
-            indicesToRemove.sortedDescending().forEach { index ->
-                player.removeMediaItem(index)
-            }
-        }
-
-        val insertIndex = player.currentMediaItemIndex + 1
-        val shuffleEnabled = player.shuffleModeEnabled
-
-        // Insert items immediately after the current item in the window/index space
-        player.addMediaItems(insertIndex, distinctItems)
-        player.prepare()
-
-        if (shuffleEnabled) {
-            // Rebuild shuffle order so that newly inserted items are played next
-            val timeline = player.currentTimeline
-            if (!timeline.isEmpty) {
-                val size = timeline.windowCount
-                val currentIndex = player.currentMediaItemIndex
-
-                // Newly inserted indices are a contiguous range [insertIndex, insertIndex + distinctItems.size)
-                val newIndices = (insertIndex until (insertIndex + distinctItems.size)).toSet()
-
-                // Collect existing shuffle traversal order excluding current index
-                val orderAfter = mutableListOf<Int>()
-                var idx = currentIndex
-                while (true) {
-                    idx = timeline.getNextWindowIndex(idx, Player.REPEAT_MODE_OFF, /*shuffleModeEnabled=*/true)
-                    if (idx == C.INDEX_UNSET) break
-                    if (idx != currentIndex) orderAfter.add(idx)
-                }
-
-                val prevList = mutableListOf<Int>()
-                var pIdx = currentIndex
-                while (true) {
-                    pIdx = timeline.getPreviousWindowIndex(pIdx, Player.REPEAT_MODE_OFF, /*shuffleModeEnabled=*/true)
-                    if (pIdx == C.INDEX_UNSET) break
-                    if (pIdx != currentIndex) prevList.add(pIdx)
-                }
-                prevList.reverse() // preserve original forward order
-
-                val existingOrder = (prevList + orderAfter).filter { it != currentIndex && it !in newIndices }
-
-                // Build new shuffle order: current -> newly inserted (in insertion order) -> rest
-                val nextBlock = (insertIndex until (insertIndex + distinctItems.size)).toList()
-                val finalOrder = IntArray(size)
-                var pos = 0
-                finalOrder[pos++] = currentIndex
-                nextBlock.forEach { if (it in 0 until size) finalOrder[pos++] = it }
-                existingOrder.forEach { if (pos < size) finalOrder[pos++] = it }
-
-                // Fill any missing indices (safety) to ensure a full permutation
-                if (pos < size) {
-                    for (i in 0 until size) {
-                        if (!finalOrder.contains(i)) {
-                            finalOrder[pos++] = i
-                            if (pos == size) break
-                        }
-                    }
-                }
-
-                player.setShuffleOrder(DefaultShuffleOrder(finalOrder, System.currentTimeMillis()))
-            }
-        }
+        insertPlayNext(items, preserveIdleQueue = false)
     }
 
-    
+    internal fun playNextSearchMatch(item: MediaItem): SearchPlayNextResult {
+        if (queueLoadJob?.isActive == true) return SearchPlayNextResult.QueueLoading
+        if (dataStore.get(PreventDuplicateTracksInQueueKey, true)) {
+            if (player.currentMediaItem?.mediaId == item.mediaId) return SearchPlayNextResult.AlreadyCurrent
+            if (player.nextMediaItemIndex != C.INDEX_UNSET &&
+                player.getMediaItemAt(player.nextMediaItemIndex).mediaId == item.mediaId
+            ) return SearchPlayNextResult.AlreadyNext
+        }
+        return if (insertPlayNext(listOf(item), preserveIdleQueue = true)) {
+            SearchPlayNextResult.Added
+        } else SearchPlayNextResult.Failed
+    }
+
+    private fun insertPlayNext(items: List<MediaItem>, preserveIdleQueue: Boolean): Boolean {
+        val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
+        val distinctItems = if (preventDuplicates) {
+            val currentId = player.currentMediaItem?.mediaId
+            items.filter { it.mediaId != currentId }.distinctBy { it.mediaId }
+        } else items
+        if (distinctItems.isEmpty()) return false
+
+        if (player.mediaItemCount == 0 || (!preserveIdleQueue && player.playbackState == STATE_IDLE)) {
+            player.setMediaItems(distinctItems)
+            player.prepare()
+            if (castConnectionHandler?.isCasting?.value != true) player.play()
+        } else {
+            if (preventDuplicates) {
+                val ids = distinctItems.mapTo(hashSetOf()) { it.mediaId }
+                val currentIndex = player.currentMediaItemIndex
+                for (index in player.mediaItemCount - 1 downTo 0) {
+                    if (index != currentIndex && player.getMediaItemAt(index).mediaId in ids) {
+                        player.removeMediaItem(index)
+                    }
+                }
+            }
+
+            val insertIndex = player.currentMediaItemIndex + 1
+            val order = if (player.shuffleModeEnabled) getCurrentShuffleOrderIndices(player) else null
+            player.addMediaItems(insertIndex, distinctItems)
+            if (!preserveIdleQueue) player.prepare()
+            if (order != null) {
+                val nextOrder = shuffleOrderWithPlayNext(order, insertIndex, distinctItems.size)
+                player.setShuffleOrder(DefaultShuffleOrder(nextOrder, System.currentTimeMillis()))
+            }
+        }
+
+        if (dataStore.get(PersistentQueueKey, true)) saveQueueToDisk()
+        return true
+    }
+
     private fun isFullyCached(mediaId: String): Boolean =
         playerCache.completeAudioCachedAt(mediaId) != null ||
             downloadCache.completeAudioCachedAt(mediaId) != null
