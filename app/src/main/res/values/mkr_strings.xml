@@ -160,6 +160,7 @@
     <string name="player_design">Player style</string>
     <!-- Player Styles (9 Native Styles) -->
     <string name="player_style">Player style</string>
+    <string name="player_style_apply">Apply</string>
     <string name="player_style_picker_description">Choose how the full player is laid out.</string>
     <string name="player_style_minimal">Minimal</string>
     <string name="player_style_minimal_desc">Clean compact square controls designed for focused listening</string>
