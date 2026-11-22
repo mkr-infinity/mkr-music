@@ -66,7 +66,11 @@ internal data class MiniPlayerMotion(
     val equalizer: Boolean,
     val artworkTransition: Boolean,
     val capsuleMorph: Boolean,
-)
+) {
+    val animateEqualizer: Boolean get() = allowed && equalizer && playing
+    val animateArtwork: Boolean get() = allowed && artworkTransition
+    val animateCapsule: Boolean get() = allowed && capsuleMorph
+}
 
 @Composable
 internal fun rememberMiniPlayerMotion(visible: Boolean): MiniPlayerMotion {
@@ -129,7 +133,7 @@ internal fun MiniPlayerTitle(
                 horizontalArrangement = Arrangement.spacedBy(5.dp),
             ) {
                 Box(Modifier.weight(1f)) { title() }
-                MicroEqualizer(color, animate = motion.allowed && motion.playing)
+                MicroEqualizer(color, animate = motion.animateEqualizer)
             }
         }
     }
@@ -178,7 +182,7 @@ internal fun MiniPlayerArtwork(
     modifier: Modifier = Modifier,
 ) {
     val artwork = MiniPlayerArtworkState(trackId, url?.takeIf { it.isNotBlank() })
-    if (motion.allowed && motion.artworkTransition) {
+    if (motion.animateArtwork) {
         AnimatedContent(
             targetState = artwork,
             modifier = modifier,
@@ -216,7 +220,7 @@ internal fun Modifier.miniPlayerCapsule(
     borderColor: Color? = null,
     topOnly: Boolean = false,
 ): Modifier {
-    if (!motion.allowed || !motion.capsuleMorph) {
+    if (!motion.animateCapsule) {
         val shape = if (topOnly) RoundedCornerShape(topStart = restingRadius, topEnd = restingRadius)
         else RoundedCornerShape(restingRadius)
         val surface = clip(shape).background(color)
@@ -241,7 +245,7 @@ internal fun Modifier.miniPlayerCapsule(
             drawRoundRect(
                 color = borderColor,
                 topLeft = Offset(inset, inset),
-                size = Size(size.width - stroke, size.height - stroke),
+                size = Size((size.width - stroke).coerceAtLeast(0f), (size.height - stroke).coerceAtLeast(0f)),
                 cornerRadius = CornerRadius((radius.value.toPx() - inset).coerceAtLeast(0f)),
                 style = Stroke(stroke),
             )
