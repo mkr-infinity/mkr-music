@@ -18,6 +18,15 @@ import org.junit.Test
 
 class PlaybackTransitionPolicyTest {
     @Test
+    fun removingTheTaskStopsIdlePlaybackButKeepsRetainedSessions() {
+        assertTrue(shouldStopPlaybackOnTaskRemoval(false, false, false, false))
+        assertFalse(shouldStopPlaybackOnTaskRemoval(false, true, false, false))
+        assertFalse(shouldStopPlaybackOnTaskRemoval(false, false, true, false))
+        assertFalse(shouldStopPlaybackOnTaskRemoval(false, false, false, true))
+        assertTrue(shouldStopPlaybackOnTaskRemoval(true, true, true, true))
+    }
+
+    @Test
     fun playbackResumptionCompletesWithSavedPositionOrFailure() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
         try {

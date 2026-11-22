@@ -7,14 +7,12 @@
 
 package com.music.mkr.playback
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.media.AudioDeviceCallback
 import android.media.AudioDeviceInfo
 import android.content.BroadcastReceiver
-import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -69,11 +67,8 @@ import androidx.media3.extractor.mp4.FragmentedMp4Extractor
 import androidx.media3.extractor.mp4.Mp4Extractor
 import androidx.media3.session.CommandButton
 import androidx.media3.session.DefaultMediaNotificationProvider
-import androidx.media3.session.MediaController
 import androidx.media3.session.MediaLibraryService
 import androidx.media3.session.MediaSession
-import androidx.media3.session.SessionToken
-import com.google.common.util.concurrent.ListenableFuture
 import com.music.innertube.YouTube
 import com.music.innertube.models.SongItem
 import com.music.innertube.models.WatchEndpoint
@@ -451,7 +446,7 @@ class MusicService :
     private var crossfadeJob: Job? = null
 
     private lateinit var mediaSession: MediaLibrarySession
-    private var notificationController: ListenableFuture<MediaController>? = null
+    private var mediaButtonStartupJob: Job? = null
     private var mediaButtons = emptyList<CommandButton>()
 
     // Tracks if player has been properly initilized
@@ -578,33 +573,6 @@ class MusicService :
         // 3. Connect the processor to the service
         // handled in createExoPlayer
 
-        try {
-            val nm = getSystemService(NotificationManager::class.java)
-            nm?.createNotificationChannel(
-                NotificationChannel(
-                    CHANNEL_ID,
-                    getString(R.string.music_player),
-                    NotificationManager.IMPORTANCE_LOW
-                )
-            )
-            val pending = PendingIntent.getActivity(
-                this,
-                0,
-                Intent(this, MainActivity::class.java),
-                PendingIntent.FLAG_IMMUTABLE
-            )
-            val notification: Notification = NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(getString(R.string.app_name))
-                .setSmallIcon(R.drawable.mkrmusicnotification)
-                .setContentIntent(pending)
-                .setOngoing(true)
-                .build()
-            startForeground(NOTIFICATION_ID, notification)
-        } catch (e: Exception) {
-            Timber.tag(TAG).e(e, "Failed to create foreground notification")
-            reportException(e)
-        }
-
         setMediaNotificationProvider(
             DefaultMediaNotificationProvider(
                 this,
@@ -653,9 +621,7 @@ class MusicService :
             player.shuffleModeEnabled = dataStore.get(ShuffleModeKey, false)
         }
 
-        // Keep a connected controller so that notification works
-        val sessionToken = SessionToken(this, ComponentName(this, MusicService::class.java))
-        notificationController = MediaController.Builder(this, sessionToken).buildAsync()
+        addSession(mediaSession)
 
         connectivityManager = getSystemService()!!
         connectivityObserver = NetworkConnectivityObserver(this)
@@ -2119,8 +2085,20 @@ class MusicService :
         playNext(listOf(item))
     }
 
-    fun clearAutomix() {
+    fun dismissPlayback() {
+        queueLoadJob?.cancel()
+        retryJob?.cancel()
+        waitingForNetworkConnection.value = false
+        mediaButtonStartupJob?.cancel()
+        castConnectionHandler?.pause()
         automixItems.value = emptyList()
+        player.pause()
+        player.stop()
+        player.clearMediaItems()
+        if (dataStore.get(PersistentQueueKey, true)) saveQueueToDisk()
+        abandonAudioFocus()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        stopSelf()
     }
 
     fun playNext(items: List<MediaItem>) {
@@ -3969,9 +3947,10 @@ class MusicService :
         abandonAudioFocus()
         releaseLoudnessEnhancer()
         runCatching { equalizerController.release() }
-        notificationController?.let(MediaController::releaseFuture)
-        notificationController = null
+        removeSession(mediaSession)
         mediaSession.release()
+        stopForeground(STOP_FOREGROUND_REMOVE)
+        getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
         player.removeListener(this)
         player.removeListener(sleepTimer)
         releaseCrossfadePlayers()
@@ -3982,14 +3961,21 @@ class MusicService :
     override fun onBind(intent: Intent?) = super.onBind(intent) ?: binder
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        if (!dataStore.get(StopMusicOnTaskClearKey, false)) return
+        if (!shouldStopPlaybackOnTaskRemoval(
+                stopOnTaskClear = dataStore.get(StopMusicOnTaskClearKey, false),
+                hasQueue = player.mediaItemCount > 0,
+                isLoadingQueue = queueLoadJob?.isActive == true,
+                isCasting = castConnectionHandler?.isCasting?.value == true,
+            )
+        ) return
 
         queueLoadJob?.cancel()
+        mediaButtonStartupJob?.cancel()
         castConnectionHandler?.pause()
         player.pause()
         releaseCrossfadePlayers()
+        pauseAllPlayersAndStopSelf()
         stopForeground(STOP_FOREGROUND_REMOVE)
-        stopSelf()
     }
 
     private fun cancelCrossfadePreparation() {
@@ -4051,6 +4037,9 @@ class MusicService :
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo) = mediaSession
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == Intent.ACTION_MEDIA_BUTTON && intent.hasExtra(Intent.EXTRA_KEY_EVENT) && !isPlaybackOngoing()) {
+            startMediaButtonForeground(startId)
+        }
         when (intent?.action) {
             MusicWidgetReceiver.ACTION_PLAY_PAUSE -> {
                 if (player.isPlaying) player.pause() else player.play()
@@ -4077,7 +4066,45 @@ class MusicService :
         }
 
         super.onStartCommand(intent, flags, startId)
-        return START_STICKY
+        if (intent?.action != Intent.ACTION_MEDIA_BUTTON &&
+            player.mediaItemCount == 0 && queueLoadJob?.isActive != true &&
+            castConnectionHandler?.isCasting?.value != true
+        ) {
+            stopSelf(startId)
+        }
+        return START_NOT_STICKY
+    }
+
+    private fun startMediaButtonForeground(startId: Int) {
+        // Media3's hardware receiver calls startForegroundService even before playback can resume.
+        getSystemService(NotificationManager::class.java)?.createNotificationChannel(
+            NotificationChannel(CHANNEL_ID, getString(R.string.music_player), NotificationManager.IMPORTANCE_LOW),
+        )
+        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.app_name))
+            .setSmallIcon(R.drawable.mkrmusicnotification)
+            .setContentIntent(mediaSession.sessionActivity)
+            .setOngoing(true)
+            .build()
+        try {
+            startForeground(NOTIFICATION_ID, notification)
+        } catch (error: IllegalStateException) {
+            Timber.w(error, "Foreground startup unavailable for media button")
+            stopSelf(startId)
+            return
+        } catch (error: SecurityException) {
+            Timber.w(error, "Foreground startup denied for media button")
+            stopSelf(startId)
+            return
+        }
+        mediaButtonStartupJob?.cancel()
+        mediaButtonStartupJob = scope.launch {
+            delay(5_000L)
+            if (!isPlaybackOngoing()) {
+                stopForeground(STOP_FOREGROUND_REMOVE)
+                stopSelf(startId)
+            }
+        }
     }
 
     /**

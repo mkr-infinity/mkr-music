@@ -1163,11 +1163,7 @@ fun BottomSheetPlayer(
             }
         }
         },
-        onDismiss = {
-            playerConnection.service.clearAutomix()
-            playerConnection.player.stop()
-            playerConnection.player.clearMediaItems()
-        },
+        onDismiss = playerConnection.service::dismissPlayback,
         collapsedContent = {
             MiniPlayer(
                 positionState = positionState,

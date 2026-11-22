@@ -293,6 +293,7 @@ class MainActivity : ComponentActivity() {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service is MusicBinder) {
+                playerConnection?.dispose()
                 try {
                     playerConnection = PlayerConnection(this@MainActivity, service, database, lifecycleScope)
                     Timber.tag("MainActivity").d("PlayerConnection created successfully")
@@ -331,13 +332,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Start and bind service so it remains active in background when task is detached
+        // Media3 starts the foreground service when the bound session begins playback.
         val serviceIntent = Intent(this, MusicService::class.java)
-        try {
-            startService(serviceIntent)
-        } catch (e: Exception) {
-            Timber.e(e, "Could not startService directly from Activity")
-        }
         isServiceBound = bindService(
             serviceIntent,
             serviceConnection,

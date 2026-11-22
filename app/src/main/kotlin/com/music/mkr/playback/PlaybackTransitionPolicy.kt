@@ -28,3 +28,10 @@ internal fun gaplessHistoryStart(matchesTrack: Boolean, terminalState: Boolean, 
         playingAudio -> GaplessHistoryStart.Record
         else -> GaplessHistoryStart.Wait
     }
+
+internal fun shouldStopPlaybackOnTaskRemoval(
+    stopOnTaskClear: Boolean,
+    hasQueue: Boolean,
+    isLoadingQueue: Boolean,
+    isCasting: Boolean,
+): Boolean = stopOnTaskClear || !(hasQueue || isLoadingQueue || isCasting)
