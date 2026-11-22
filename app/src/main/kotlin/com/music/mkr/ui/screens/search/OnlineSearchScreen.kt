@@ -91,7 +91,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import com.music.innertube.models.WatchEndpoint
-import com.music.innertube.utils.YouTubeUrlParser
 import com.music.mkr.ui.menu.YouTubeAlbumMenu
 import com.music.mkr.ui.menu.YouTubeArtistMenu
 import com.music.mkr.ui.menu.YouTubePlaylistMenu
@@ -99,7 +98,6 @@ import com.music.mkr.ui.menu.YouTubeSongMenu
 import com.music.mkr.viewmodels.OnlineSearchSuggestionViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
@@ -134,7 +132,9 @@ fun OnlineSearchScreen(
     val mediaMetadata by (playerConnection?.mediaMetadata ?: kotlinx.coroutines.flow.flowOf(null)).collectAsState(initial = null)
 
     val coroutineScope = rememberCoroutineScope()
-    val viewState by viewModel.viewState.collectAsState()
+    val loadedState by viewModel.viewState.collectAsState()
+    val lookupQuery = query.trim()
+    val viewState = loadedState.forQuery(lookupQuery)
 
     val lazyListState = rememberLazyListState()
 
@@ -146,15 +146,8 @@ fun OnlineSearchScreen(
             }
     }
 
-    LaunchedEffect(query) {
-        snapshotFlow { query }.collectLatest {
-            if (YouTubeUrlParser.isYouTubeUrl(it)) {
-                viewModel.query.value = it
-            } else {
-                kotlinx.coroutines.delay(300L)
-                viewModel.query.value = it
-            }
-        }
+    LaunchedEffect(lookupQuery) {
+        viewModel.query.value = lookupQuery
     }
 
     LazyColumn(
@@ -315,7 +308,7 @@ fun OnlineSearchScreen(
         if (viewState.items.isNotEmpty()) {
             item(key = "search_divider") {
                 Text(
-                    text = stringResource(if (viewState.isFromLink) R.string.parsed_from_link else R.string.top_result),
+                    text = stringResource(if (viewState.isFromLink) R.string.parsed_from_link else R.string.search_suggested_results),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,

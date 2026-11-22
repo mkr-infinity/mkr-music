@@ -286,7 +286,14 @@ class PlayerConnection(
 
     internal fun playSearchMatch(queue: Queue, songId: String): Boolean {
         if (!allowInternalSync && shouldBlockPlaybackChanges?.invoke() == true) return false
-        if (player.currentMediaItem?.mediaId == songId) play() else playQueue(queue)
+        if (player.currentMediaItem?.mediaId == songId) {
+            if (player.playbackState == STATE_ENDED && service.castConnectionHandler?.isCasting?.value != true) {
+                player.seekToDefaultPosition()
+            }
+            play()
+        } else {
+            playQueue(queue)
+        }
         return true
     }
 

@@ -22,7 +22,11 @@ import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.get
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+import kotlin.coroutines.coroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
@@ -50,25 +54,29 @@ constructor(
             combine(
                 query
                     .flatMapLatest { query ->
-                        if (query.isEmpty()) {
+                        if (query.isBlank()) {
                             database.searchHistory().map { history ->
                                 SearchSuggestionViewState(
+                                    query = query,
                                     history = history,
                                 )
                             }
                         } else {
-                            val parsedUrl = YouTubeUrlParser.parse(query)
+                            val parsedUrl = YouTubeUrlParser.parse(query.trim())
+                            if (parsedUrl == null) delay(300)
                             val parsedItem = if (parsedUrl != null) fetchParsedUrlItem(parsedUrl) else null
                             
-                            val result = if (parsedUrl != null) null else YouTube.searchSuggestions(query).getOrNull()
+                            val result = if (parsedUrl != null) null else YouTube.searchSuggestions(query.trim()).getOrNull()
+                            coroutineContext.ensureActive()
                             val hideExplicit = context.dataStore.get(HideExplicitKey, false)
                             val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
 
                             database
-                                .searchHistory(query)
+                                .searchHistory(query.trim())
                                 .map { it.take(3) }
                                 .map { history ->
                                     SearchSuggestionViewState(
+                                        query = query,
                                         history = history,
                                         suggestions =
                                         result
@@ -124,6 +132,8 @@ constructor(
             }
             println("[LINK_PARSE_DEBUG] Fetch successful: ${item?.id} (${item?.javaClass?.simpleName})")
             item
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             println("[LINK_PARSE_DEBUG] Fetch failed: ${e.message}")
             e.printStackTrace()
@@ -133,9 +143,13 @@ constructor(
 }
 
 data class SearchSuggestionViewState(
+    val query: String = "",
     val history: List<SearchHistory> = emptyList(),
     val suggestions: List<String> = emptyList(),
     val items: List<YTItem> = emptyList(),
     val recentEvents: List<EventWithSong> = emptyList(),
     val isFromLink: Boolean = false,
-)
+) {
+    fun forQuery(query: String): SearchSuggestionViewState =
+        if (this.query == query) this else SearchSuggestionViewState(query = query, recentEvents = recentEvents)
+}

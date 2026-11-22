@@ -14,19 +14,19 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.systemBars
-import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -40,8 +40,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
@@ -61,7 +61,6 @@ import com.music.mkr.extensions.toMediaItem
 import com.music.mkr.playback.queues.ListQueue
 import com.music.mkr.ui.component.AlbumListItem
 import com.music.mkr.ui.component.ArtistListItem
-import com.music.mkr.ui.component.ChipsRow
 import com.music.mkr.ui.component.EmptyPlaceholder
 import com.music.mkr.ui.component.LocalMenuState
 import com.music.mkr.ui.component.PlaylistListItem
@@ -93,7 +92,33 @@ fun LocalSearchScreen(
     val searchFilter by viewModel.filter.collectAsState()
     val result by viewModel.result.collectAsState()
 
-    val lazyListState = rememberLazyListState()
+    val lookupQuery = query.trim()
+    val visibleResult = result.takeIf { it.query == lookupQuery && it.filter == searchFilter }
+    val featured = visibleResult?.featured
+    val playFeatured = searchMatchPlayer(playerConnection)
+    val lazyListState = rememberLazyGridState()
+
+    fun songQueue(song: Song): ListQueue {
+        val items = visibleResult?.map?.get(LocalFilter.SONG).orEmpty()
+            .filterIsInstance<Song>().map { it.toMediaItem() }
+        return ListQueue(
+            title = context.getString(R.string.queue_searched_songs),
+            items = items,
+            startIndex = items.indexOfFirst { it.mediaId == song.id },
+        )
+    }
+
+    fun openSongMenu(song: Song) = menuState.show {
+        SongMenu(
+            originalSong = song,
+            navController = navController,
+            onDismiss = {
+                onDismiss()
+                menuState.dismiss()
+            },
+            isFromCache = isFromCache,
+        )
+    }
 
     LaunchedEffect(Unit) {
         snapshotFlow { lazyListState.firstVisibleItemScrollOffset }
@@ -103,202 +128,185 @@ fun LocalSearchScreen(
             }
     }
 
-    LaunchedEffect(query) {
-        viewModel.query.value = query
+    LaunchedEffect(lookupQuery) {
+        viewModel.query.value = lookupQuery
     }
 
-    val configuration = LocalWindowInfo.current
-    val isLandscape = configuration.containerSize.width > configuration.containerSize.height
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
+        LazyVerticalGrid(
+            columns = GridCells.Adaptive(320.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)),
+            state = lazyListState,
+            contentPadding = LocalPlayerAwareWindowInsets.current
+                .only(WindowInsetsSides.Bottom)
+                .asPaddingValues(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .widthIn(max = 960.dp)
+                .fillMaxSize()
+                .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
+        ) {
+            if (featured != null) {
+                val song = visibleResult?.map?.get(LocalFilter.SONG).orEmpty().filterIsInstance<Song>()
+                    .firstOrNull { it.id == featured.id }
+                if (song != null) {
+                    item(key = "top_song_match", span = { GridItemSpan(maxLineSpan) }) {
+                        Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            TopSongMatchCard(
+                                song = featured,
+                                onPlay = { playFeatured(songQueue(song), song.id) },
+                                onPlayNext = { enqueueSearchMatch(playerConnection, song.toMediaItem()) },
+                                onMenu = { openSongMenu(song) },
+                            )
+                        }
+                    }
+                }
+            }
+            stickyHeader(key = "local_filters") {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
+                ) {
+                    Spacer(modifier = Modifier.height(10.dp))
 
-    LazyColumn(
-        state = lazyListState,
-        contentPadding = LocalPlayerAwareWindowInsets.current
-            .only(WindowInsetsSides.Bottom)
-            .asPaddingValues(),
-        modifier = Modifier
-            .fillMaxSize()
-            .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
-            .let { base ->
-                if (isLandscape) {
-                    base.windowInsetsPadding(
-                        WindowInsets.systemBars.only(WindowInsetsSides.Horizontal)
+                    SearchCategoryFilters(
+                        labels = listOf(
+                            LocalFilter.ALL to R.string.filter_all,
+                            LocalFilter.SONG to R.string.filter_songs,
+                            LocalFilter.ALBUM to R.string.filter_albums,
+                            LocalFilter.ARTIST to R.string.filter_artists,
+                            LocalFilter.PLAYLIST to R.string.filter_playlists,
+                        ),
+                        selected = searchFilter,
+                        onSelect = { viewModel.filter.value = it },
                     )
-                } else base
+
+                    Spacer(modifier = Modifier.height(4.dp))
+                }
             }
-    ) {
-        stickyHeader {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
-            ) {
-                Spacer(modifier = Modifier.height(10.dp))
 
-                ChipsRow(
-                    chips = listOf(
-                        LocalFilter.ALL to stringResource(R.string.filter_all),
-                        LocalFilter.SONG to stringResource(R.string.filter_songs),
-                        LocalFilter.ALBUM to stringResource(R.string.filter_albums),
-                        LocalFilter.ARTIST to stringResource(R.string.filter_artists),
-                        LocalFilter.PLAYLIST to stringResource(R.string.filter_playlists),
-                    ),
-                    currentValue = searchFilter,
-                    onValueUpdate = { viewModel.filter.value = it },
-                )
+            visibleResult?.map?.forEach { (filter, sourceItems) ->
+                val items = sourceItems.distinctBy { it.id }.filterNot { it is Song && it.id == featured?.id }
+                if (items.isEmpty()) return@forEach
+                if (searchFilter == LocalFilter.ALL) {
+                    item(key = "local_section_${filter.name}", span = { GridItemSpan(maxLineSpan) }) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(ListItemHeight)
+                                .clickable { viewModel.filter.value = filter }
+                                .padding(start = 12.dp, end = 18.dp),
+                        ) {
+                            Text(
+                                text = stringResource(
+                                    when (filter) {
+                                        LocalFilter.SONG -> R.string.filter_songs
+                                        LocalFilter.ALBUM -> R.string.filter_albums
+                                        LocalFilter.ARTIST -> R.string.filter_artists
+                                        LocalFilter.PLAYLIST -> R.string.filter_playlists
+                                        LocalFilter.ALL -> error("")
+                                    }
+                                ),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.weight(1f),
+                            )
 
-                Spacer(modifier = Modifier.height(4.dp))
-            }
-        }
+                            Icon(
+                                painter = painterResource(R.drawable.navigate_next),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+                }
 
-        result.map.forEach { (filter, items) ->
-            if (result.filter == LocalFilter.ALL) {
-                item(key = filter) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(16.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(ListItemHeight)
-                            .clickable { viewModel.filter.value = filter }
-                            .padding(start = 12.dp, end = 18.dp),
-                    ) {
-                        Text(
-                            text = stringResource(
-                                when (filter) {
-                                    LocalFilter.SONG -> R.string.filter_songs
-                                    LocalFilter.ALBUM -> R.string.filter_albums
-                                    LocalFilter.ARTIST -> R.string.filter_artists
-                                    LocalFilter.PLAYLIST -> R.string.filter_playlists
-                                    LocalFilter.ALL -> error("")
+                items(
+                    items = items,
+                    key = { "${filter.name}/${it.id}" },
+                    contentType = { CONTENT_TYPE_LIST },
+                ) { item ->
+                    when (item) {
+                        is Song -> SongListItem(
+                            song = item,
+                            showInLibraryIcon = true,
+                            isActive = item.id == mediaMetadata?.id,
+                            isPlaying = isPlaying,
+                            shape = listItemShape(items.indexOfFirst { it.id == item.id }, items.size),
+                            trailingContent = {
+                                IconButton(
+                                    onClick = { openSongMenu(item) }
+                                ) {
+                                    Icon(
+                                        painter = painterResource(R.drawable.more_vert),
+                                        contentDescription = stringResource(R.string.more_options),
+                                    )
                                 }
-                            ),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.weight(1f),
+                            },
+                            modifier = Modifier
+                                .combinedClickable(
+                                    onClick = {
+                                        if (item.id == mediaMetadata?.id) {
+                                            playerConnection?.togglePlayPause()
+                                        } else {
+                                            playerConnection?.playQueue(songQueue(item))
+                                        }
+                                    },
+                                    onLongClick = { openSongMenu(item) },
+                                )
+                                .animateItem(),
                         )
 
-                        Icon(
-                            painter = painterResource(R.drawable.navigate_next),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.primary
+                        is Album -> AlbumListItem(
+                            album = item,
+                            isActive = item.id == mediaMetadata?.album?.id,
+                            isPlaying = isPlaying,
+                            modifier = Modifier
+                                .clickable {
+                                    onDismiss()
+                                    navController.navigate("album/${item.id}")
+                                }
+                                .animateItem(),
+                        )
+
+                        is Artist -> ArtistListItem(
+                            artist = item,
+                            modifier = Modifier
+                                .clickable {
+                                    onDismiss()
+                                    navController.navigate("artist/${item.id}")
+                                }
+                                .animateItem(),
+                        )
+
+                        is Playlist -> PlaylistListItem(
+                            playlist = item,
+                            modifier = Modifier
+                                .clickable {
+                                    onDismiss()
+                                    navController.navigate("local_playlist/${item.id}")
+                                }
+                                .animateItem(),
                         )
                     }
                 }
             }
 
-            items(
-                items = items.distinctBy { it.id },
-                key = { it.id },
-                contentType = { CONTENT_TYPE_LIST },
-            ) { item ->
-                when (item) {
-                    is Song -> SongListItem(
-                        song = item,
-                        showInLibraryIcon = true,
-                        isActive = item.id == mediaMetadata?.id,
-                        isPlaying = isPlaying,
-                        shape = listItemShape(items.indexOfFirst { it.id == item.id }, items.size),
-                        trailingContent = {
-                            IconButton(
-                                onClick = {
-                                    menuState.show {
-                                        SongMenu(
-                                            originalSong = item,
-                                            navController = navController,
-                                            onDismiss = {
-                                                onDismiss()
-                                                menuState.dismiss()
-                                            },
-                                            isFromCache = isFromCache
-                                        )
-                                    }
-                                }
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.more_vert),
-                                    contentDescription = null,
-                                )
-                            }
-                        },
-                        modifier = Modifier
-                            .combinedClickable(
-                                onClick = {
-                                    if (item.id == mediaMetadata?.id) {
-                                        playerConnection?.togglePlayPause()
-                                    } else {
-                                        val songs = result.map
-                                            .getOrDefault(LocalFilter.SONG, emptyList())
-                                            .filterIsInstance<Song>()
-                                            .map { it.toMediaItem() }
-                                        playerConnection?.playQueue(
-                                            ListQueue(
-                                                title = context.getString(R.string.queue_searched_songs),
-                                                items = songs,
-                                                startIndex = songs.indexOfFirst { it.mediaId == item.id },
-                                            )
-                                        )
-                                    }
-                                },
-                                onLongClick = {
-                                    menuState.show {
-                                        SongMenu(
-                                            originalSong = item,
-                                            navController = navController,
-                                            onDismiss = {
-                                                onDismiss()
-                                                menuState.dismiss()
-                                            },
-                                            isFromCache = isFromCache
-                                        )
-                                    }
-                                }
-                            )
-                            .animateItem(),
-                    )
-
-                    is Album -> AlbumListItem(
-                        album = item,
-                        isActive = item.id == mediaMetadata?.album?.id,
-                        isPlaying = isPlaying,
-                        modifier = Modifier
-                            .clickable {
-                                onDismiss()
-                                navController.navigate("album/${item.id}")
-                            }
-                            .animateItem(),
-                    )
-
-                    is Artist -> ArtistListItem(
-                        artist = item,
-                        modifier = Modifier
-                            .clickable {
-                                onDismiss()
-                                navController.navigate("artist/${item.id}")
-                            }
-                            .animateItem(),
-                    )
-
-                    is Playlist -> PlaylistListItem(
-                        playlist = item,
-                        modifier = Modifier
-                            .clickable {
-                                onDismiss()
-                                navController.navigate("local_playlist/${item.id}")
-                            }
-                            .animateItem(),
+            if (query.isNotBlank() && visibleResult == null) {
+                item(key = "local_loading", span = { GridItemSpan(maxLineSpan) }) {
+                    SearchLoadStatus(failed = false, onRetry = {})
+                }
+            } else if (query.isNotBlank() && visibleResult?.map?.isEmpty() == true) {
+                item(key = "no_result", span = { GridItemSpan(maxLineSpan) }) {
+                    EmptyPlaceholder(
+                        icon = R.drawable.search,
+                        text = stringResource(R.string.no_results_found),
+                        description = stringResource(R.string.search_no_match_hint),
                     )
                 }
-            }
-        }
-
-        if (result.query.isNotEmpty() && result.map.isEmpty()) {
-            item(key = "no_result") {
-                EmptyPlaceholder(
-                    icon = R.drawable.search,
-                    text = stringResource(R.string.no_results_found),
-                    description = "No local songs, albums, or artists match your search"
-                )
             }
         }
     }

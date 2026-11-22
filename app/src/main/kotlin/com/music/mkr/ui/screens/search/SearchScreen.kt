@@ -5,6 +5,7 @@
 
 package com.music.mkr.ui.screens.search
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.fadeIn
@@ -16,6 +17,10 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,12 +35,11 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -62,7 +66,6 @@ import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
-import java.net.URLEncoder
 
 @Composable
 fun SearchScreen(
@@ -85,7 +88,6 @@ fun SearchScreen(
     var searchActive by rememberSaveable { mutableStateOf(false) }
 
     val searchHistory by database.searchHistory().collectAsState(initial = emptyList())
-    val focusRequester = remember { FocusRequester() }
 
     // Dismiss active search overlay on back gesture
     BackHandler(enabled = searchActive) {
@@ -93,72 +95,24 @@ fun SearchScreen(
         focusManager.clearFocus()
     }
 
-    val onSearch: (String) -> Unit = remember {
-        { searchQuery ->
-            if (searchQuery.isNotBlank()) {
-                focusManager.clearFocus()
-                keyboardController?.hide()
+    fun submitSearch(input: String, source: SearchSource) {
+        val searchQuery = input.trim()
+        if (searchQuery.isNotEmpty()) {
+            focusManager.clearFocus()
+            keyboardController?.hide()
+            if (source == SearchSource.ONLINE) {
                 searchActive = false
-
                 when (val parsedUrl = YouTubeUrlParser.parse(searchQuery)) {
-                    is YouTubeUrlParser.ParsedUrl.Video -> {
-                        playerConnection?.playQueue(
-                            YouTubeQueue(
-                                WatchEndpoint(videoId = parsedUrl.id),
-                            ),
-                        )
-                    }
-
-                    is YouTubeUrlParser.ParsedUrl.Artist -> {
-                        navController.navigate("artist/${parsedUrl.id}")
-                    }
-
-                    null -> {
-                        navController.navigate("search/${URLEncoder.encode(searchQuery, "UTF-8")}")
+                    is YouTubeUrlParser.ParsedUrl.Video ->
+                        playerConnection?.playQueue(YouTubeQueue(WatchEndpoint(videoId = parsedUrl.id)))
+                    is YouTubeUrlParser.ParsedUrl.Artist -> navController.navigate("artist/${parsedUrl.id}")
+                    null -> navController.navigate("search/${Uri.encode(searchQuery)}") {
+                        launchSingleTop = true
                     }
                 }
-
                 if (!pauseSearchHistory) {
                     coroutineScope.launch(Dispatchers.IO) {
-                        database.query {
-                            insert(SearchHistory(query = searchQuery))
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    val onSearchFromSuggestion: (String) -> Unit = remember {
-        { searchQuery ->
-            if (searchQuery.isNotBlank()) {
-                focusManager.clearFocus()
-                keyboardController?.hide()
-                searchActive = false
-
-                when (val parsedUrl = YouTubeUrlParser.parse(searchQuery)) {
-                    is YouTubeUrlParser.ParsedUrl.Video -> {
-                        playerConnection?.playQueue(
-                            YouTubeQueue(
-                                WatchEndpoint(videoId = parsedUrl.id),
-                            ),
-                        )
-                    }
-
-                    is YouTubeUrlParser.ParsedUrl.Artist -> {
-                        navController.navigate("artist/${parsedUrl.id}")
-                    }
-
-                    null -> {
-                        navController.navigate("search/${URLEncoder.encode(searchQuery, "UTF-8")}")
-                    }
-                }
-
-                if (!pauseSearchHistory) {
-                    coroutineScope.launch(Dispatchers.IO) {
-                        database.query {
-                            insert(SearchHistory(query = searchQuery))
-                        }
+                        database.query { insert(SearchHistory(query = searchQuery)) }
                     }
                 }
             }
@@ -166,6 +120,7 @@ fun SearchScreen(
     }
 
     Scaffold(
+        modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
         topBar = {
             Column(
                 modifier = Modifier
@@ -177,13 +132,11 @@ fun SearchScreen(
                 MusicSearchHeader(
                     query = query,
                     onQueryChange = { query = it },
-                    onSearch = onSearch,
+                    onSearch = { submitSearch(it, searchSource) },
                     active = searchActive,
                     onActiveChange = { searchActive = it },
                     searchSource = searchSource,
                     onSearchSourceChange = { searchSource = it },
-                    pureBlack = pureBlack,
-                    focusRequester = focusRequester,
                     showBackButton = searchActive,
                     onBackClick = {
                         searchActive = false
@@ -201,11 +154,13 @@ fun SearchScreen(
         Box(
             modifier = Modifier
                 .padding(top = paddingValues.calculateTopPadding())
-                .fillMaxSize()
+                .fillMaxSize(),
+            contentAlignment = Alignment.TopCenter,
         ) {
-            val isSearchingWithQuery = searchActive && query.text.isNotEmpty()
+            val isSearchingWithQuery = searchActive && (query.text.isNotEmpty() || searchSource == SearchSource.ONLINE)
 
             AnimatedContent(
+                modifier = Modifier.widthIn(max = 1080.dp).fillMaxWidth(),
                 targetState = isSearchingWithQuery,
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
                 label = "SearchScreenContentTransition"
@@ -226,7 +181,7 @@ fun SearchScreen(
                             onQueryChange = { query = it },
                             navController = navController,
                             onSearch = {
-                                onSearchFromSuggestion(it)
+                                submitSearch(it, SearchSource.ONLINE)
                                 searchActive = false
                             },
                             onDismiss = {
@@ -248,7 +203,7 @@ fun SearchScreen(
                                         history = searchHistory,
                                         onQueryClick = { clickedQuery ->
                                             query = TextFieldValue(clickedQuery, TextRange(clickedQuery.length))
-                                            onSearch(clickedQuery)
+                                            submitSearch(clickedQuery, SearchSource.ONLINE)
                                         },
                                         onDelete = { item ->
                                             coroutineScope.launch(Dispatchers.IO) {
@@ -270,7 +225,7 @@ fun SearchScreen(
                                 ExploreGenresGrid(
                                     onGenreClick = { genreQuery ->
                                         query = TextFieldValue(genreQuery, TextRange(genreQuery.length))
-                                        onSearch(genreQuery)
+                                        submitSearch(genreQuery, SearchSource.ONLINE)
                                     }
                                 )
 

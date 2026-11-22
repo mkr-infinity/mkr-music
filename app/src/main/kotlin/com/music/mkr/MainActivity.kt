@@ -254,8 +254,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.net.URLDecoder
-import java.net.URLEncoder
 import java.util.Locale
 import com.music.mkr.github.GitHubViewModel
 import javax.inject.Inject
@@ -832,7 +830,7 @@ class MainActivity : ComponentActivity() {
                 val onSearch: (String) -> Unit = remember {
                     { searchQuery ->
                         if (searchQuery.isNotEmpty()) {
-                            navController.navigate("search/${URLEncoder.encode(searchQuery, "UTF-8")}")
+                            navController.navigate("search/${Uri.encode(searchQuery)}")
 
                             if (dataStore[PauseSearchHistoryKey] != true) {
                                 lifecycleScope.launch(Dispatchers.IO) {
@@ -927,14 +925,7 @@ class MainActivity : ComponentActivity() {
                 // Navigation tracking
                 LaunchedEffect(navBackStackEntry) {
                     if (inSearchResultScreen) {
-                        val searchQuery = withContext(Dispatchers.IO) {
-                            val rawQuery = navBackStackEntry?.arguments?.getString("query").orEmpty()
-                            try {
-                                URLDecoder.decode(rawQuery, "UTF-8")
-                            } catch (e: Exception) {
-                                rawQuery
-                            }
-                        }
+                        val searchQuery = navBackStackEntry?.arguments?.getString("query").orEmpty()
                         onQueryChange(
                             TextFieldValue(
                                 searchQuery,
@@ -1646,7 +1637,7 @@ class MainActivity : ComponentActivity() {
             "search" -> {
                 val q = uri.getQueryParameter("q")
                 if (!q.isNullOrEmpty()) {
-                    navController.navigate("search/${URLEncoder.encode(q, "UTF-8")}")
+                    navController.navigate("search/${Uri.encode(q)}")
                 } else {
                     navController.navigate(Screens.Search.route)
                 }
