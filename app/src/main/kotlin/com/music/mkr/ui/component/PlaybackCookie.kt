@@ -1,8 +1,12 @@
 package com.music.mkr.ui.component
 
+import android.animation.ValueAnimator
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialShapes
@@ -50,6 +54,7 @@ internal fun rememberPlaybackCookieAngle(connection: PlayerConnection?, visible:
         if (!active) return@LaunchedEffect
         val context = currentCoroutineContext()
         val durationScale = context[MotionDurationScale]
+        if (durationScale == null && !ValueAnimator.areAnimatorsEnabled()) return@LaunchedEffect
         while (context.isActive) {
             snapshotFlow { durationScale?.scaleFactor ?: 1f }.first { it > 0f }
             var previous = withFrameNanos { it }
@@ -71,15 +76,13 @@ internal fun rememberPlaybackCookieAngle(connection: PlayerConnection?, visible:
 @Composable
 internal fun PlaybackCookieFace(color: Color, angle: State<Float>? = LocalPlaybackCookieAngle.current) {
     val shape = MaterialShapes.Cookie12Sided.toShape()
-    Box(
-        Modifier.fillMaxSize()
-            .graphicsLayer {
-                rotationZ = angle?.value ?: 0f
-                scaleX = 0.88f
-                scaleY = 0.88f
-            }
-            .background(color, shape),
-    )
+    BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Box(
+            Modifier.size(minOf(maxWidth, maxHeight) * 0.88f)
+                .graphicsLayer { rotationZ = angle?.value ?: 0f }
+                .background(color, shape),
+        )
+    }
 }
 
 @Composable

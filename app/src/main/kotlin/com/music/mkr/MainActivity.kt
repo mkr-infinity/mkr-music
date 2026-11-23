@@ -1176,18 +1176,12 @@ class MainActivity : ComponentActivity() {
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                                 ) {
-                                                    ExpressiveIconButton(
-                                                        onClick = { },
-                                                        size = 38.dp,
-                                                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
-                                                    ) {
-                                                        Icon(
-                                                            painter = painterResource(R.drawable.library_music),
-                                                            contentDescription = stringResource(R.string.filter_library),
-                                                            tint = MaterialTheme.colorScheme.primary,
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    }
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.library_music),
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(22.dp),
+                                                    )
 
                                                     Text(
                                                         text = stringResource(R.string.filter_library),

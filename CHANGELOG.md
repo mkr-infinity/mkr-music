@@ -11,18 +11,19 @@
 ### Added
 
 - **Auto-hide navigation** — On by default. Scroll down to hide the bar and up to reveal it. · *Settings → Appearance → Misc → Auto-hide bottom navigation*
-- **Mini-player animations** — Toggle Micro Equalizer, Artwork Transition, and Capsule Morph separately. · *Settings → Appearance → Mini-player*
 - **Top Song Match** — Play the best match or queue it next. · *Search → Top Song Match*
 - **APK download progress** — Track the download in a notification and tap when ready to install. · *Settings → System Updates → Download APK*
 
 ### Changed
 
-- **Navigation styles** — Glass surfaces, clearer selection, and distinct tab animations. · *Settings → Appearance → Misc → Navigation style*
+- **Navigation styles** — Connected capsules with morphing selection and distinct tab animations. · *Settings → Appearance → Misc → Navigation style*
 - **Player style picker** — Preview four layouts before applying one. · *Settings → Appearance → Full Player → Player style*
 - **Full-player settings** — Style and background controls now sit together. · *Settings → Appearance → Full Player*
 - **Audio offload** — Moved to Advanced. · *Settings → Player and audio → Advanced → Enable offload*
-- **Library cards** — Adapt to screen width and fill the last row. · *Library*
-- **Home controls** — Refreshed Settings and History buttons. · *Home*
+- **Library cards and headers** — Two category columns, a full-width final card, and artwork-led collection headers. · *Library*
+- **Settings and playback controls** — Upright icons on expressive faces that rotate during playback. · *Home, Library, and player*
+- **Home shuffle** — Speed Dial, Keep Listening, and eligible shelves keep their order until the next app session. · *Settings → Content → Misc → Randomize Home Screen Order*
+- **Search landing** — History, personalized suggestions with album charts, then new releases. · *Search*
 - **Listen Together shortcut** — Opt in to show it on Home. · *Settings → Appearance → Auto playlists → Show Listen Together on Home Screen*
 - **Audio output** — A simpler sheet highlights the selected device. · *Full player → More options → Audio Output*
 - **Update checker** — Clearer version, status, and download actions. · *Settings → System Updates or Update Available*
@@ -31,6 +32,9 @@
 
 ### Fixed
 
+- **Settings entry** — Uses the current destination’s app bar from the first frame. · *Home or Library → Settings*
+- **Top Song Match placement** — Appears below the category filters and before results. · *Search → Results*
+- **Adaptive full player** — Artwork and controls adapt to tablets, foldables, and split-screen. · *Full player*
 - **Universal APK selection** — Downloads only the latest `mkr-music-universal.apk`. · *Settings → System Updates or Home → Update Available*
 - **Auto download on like** — Newly liked online songs queue once. · *Settings → Player and audio → Queue → Auto download on like*
 - **Backup export feedback** — Shows an error when the destination cannot be opened. · *Settings → Backup and restore → Backup*
@@ -41,6 +45,7 @@
 
 ### Removed
 
+- **Mini-player effects** — Removed Micro Equalizer, Artwork Transition, and Capsule Morph. · *Settings → Appearance → Mini-player*
 - **Liquid Mini Player** — Saved selections use the default mini-player. · *Settings → Appearance → Mini-player*
 - **Material Extended, Modern, and Classic** — Saved selections use Cinematic. · *Settings → Appearance → Full Player → Player style*
 - **Apple Music background** — Saved selections use Follow theme. · *Settings → Appearance → Full Player → Player background style*

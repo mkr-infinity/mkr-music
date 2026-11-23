@@ -198,26 +198,26 @@ fun SearchScreen(
                         contentPadding = tabPadding,
                         headerContent = if (searchHistory.isEmpty()) null else {
                             {
-                                    RecentSearchesSection(
-                                        history = searchHistory,
-                                        onQueryClick = { clickedQuery ->
-                                            query = TextFieldValue(clickedQuery, TextRange(clickedQuery.length))
-                                            submitSearch(clickedQuery, SearchSource.ONLINE)
-                                        },
-                                        onDelete = { item ->
-                                            coroutineScope.launch(Dispatchers.IO) {
-                                                database.query { delete(item) }
-                                            }
-                                        },
-                                        onClearAll = {
-                                            coroutineScope.launch(Dispatchers.IO) {
-                                                val items = database.searchHistory().first()
-                                                database.query {
-                                                    items.forEach(::delete)
-                                                }
+                                RecentSearchesSection(
+                                    history = searchHistory,
+                                    onQueryClick = { clickedQuery ->
+                                        query = TextFieldValue(clickedQuery, TextRange(clickedQuery.length))
+                                        submitSearch(clickedQuery, SearchSource.ONLINE)
+                                    },
+                                    onDelete = { item ->
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            database.query { delete(item) }
+                                        }
+                                    },
+                                    onClearAll = {
+                                        coroutineScope.launch(Dispatchers.IO) {
+                                            val items = database.searchHistory().first()
+                                            database.query {
+                                                items.forEach(::delete)
                                             }
                                         }
-                                    )
+                                    }
+                                )
                             }
                         }
                     )

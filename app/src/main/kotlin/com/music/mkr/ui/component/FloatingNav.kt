@@ -54,6 +54,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.center
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
@@ -67,6 +69,8 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
@@ -88,12 +92,17 @@ internal fun Modifier.navigationGlass(
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun navigationFace(progress: Float): Shape {
+internal fun navigationFace(progress: Float): Shape {
     val morph = remember { Morph(MaterialShapes.Cookie12Sided, MaterialShapes.Circle) }
     return remember(morph, progress) {
-        Shape { size, _, _ ->
-            val scale = Matrix().apply { scale(size.width, size.height) }
-            Outline.Generic(morph.toPath(progress.coerceIn(0f, 1f)).apply { transform(scale) })
+        object : Shape {
+            override fun createOutline(size: Size, layoutDirection: LayoutDirection, density: Density): Outline {
+                val scale = Matrix().apply { scale(size.width, size.height) }
+                val path = morph.toPath(progress.coerceIn(0f, 1f))
+                path.transform(scale)
+                path.translate(size.center - path.getBounds().center)
+                return Outline.Generic(path)
+            }
         }
     }
 }
@@ -385,6 +394,7 @@ private fun CapsuleNavigationBar(
                         showLabel = labelsFit && (!compact || isSelected),
                         inlineLabel = compact,
                         ownIndicator = compact || anchored,
+                        anchored = anchored,
                         animate = animate,
                         onClick = { onItemClick(screen, isSelected) },
                         onLongClick = onSearchLongClick.takeIf { screen == Screens.Search },
@@ -404,6 +414,7 @@ private fun CapsuleNavigationItem(
     showLabel: Boolean,
     inlineLabel: Boolean,
     ownIndicator: Boolean,
+    anchored: Boolean,
     animate: Boolean,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)?,
@@ -411,7 +422,7 @@ private fun CapsuleNavigationItem(
 ) {
     val colors = MaterialTheme.colorScheme
     val interaction = remember { MutableInteractionSource() }
-    val targetColor = if (ownIndicator && isSelected) colors.primaryContainer else Color.Transparent
+    val targetColor = if (ownIndicator && !anchored && isSelected) colors.primaryContainer else Color.Transparent
     val fill by animateColorAsState(targetColor, tween(150), label = "navigation_selection_color")
     val targetMorph = if (isSelected) 1f else 0f
     val morph by animateFloatAsState(targetMorph, tween(220), label = "navigation_selection_shape")
@@ -436,6 +447,16 @@ private fun CapsuleNavigationItem(
             ),
         contentAlignment = Alignment.Center,
     ) {
+        if (anchored) {
+            val width = if (animate) morph else targetMorph
+            Box(
+                Modifier.align(Alignment.Center)
+                    .width(70.dp)
+                    .fillMaxHeight(0.86f)
+                    .graphicsLayer { scaleX = width }
+                    .background(colors.primaryContainer, shape),
+            )
+        }
         val face = Modifier.fillMaxSize().padding(horizontal = 2.dp)
             .mkrPressFeedback(0.97f, interaction, animate)
             .background(if (animate) fill else targetColor, shape)

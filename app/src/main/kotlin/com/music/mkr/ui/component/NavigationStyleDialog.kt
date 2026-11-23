@@ -263,7 +263,7 @@ private fun NavigationStyleMiniPreview(
                 ) {
                     Box(
                         Modifier.size(width = if (compact) 14.dp else 11.dp, height = 11.dp)
-                            .background(indicator, RoundedCornerShape(4.dp)),
+                            .background(indicator, navigationFace(0.84f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(Modifier.size(4.dp).background(selectedInk, CircleShape))
@@ -274,24 +274,22 @@ private fun NavigationStyleMiniPreview(
                 }
             }
             NavigationStyle.CLEAN_MATERIAL -> {
-                // Full-width bar with pill indicator (3 destinations)
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 3.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 2.dp)
+                        .height(19.dp).navigationGlass(CircleShape, pureBlack = false),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        modifier = Modifier
-                            .width(14.dp)
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
+                        Modifier.size(width = 15.dp, height = 11.dp)
+                            .background(MaterialTheme.colorScheme.primaryContainer, navigationFace(1f)),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Box(Modifier.size(3.5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
+                        Box(Modifier.size(4.dp).background(MaterialTheme.colorScheme.onPrimaryContainer, CircleShape))
                     }
-                    Spacer(Modifier.height(3.dp))
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)))
+                    repeat(2) {
+                        Box(Modifier.size(4.dp).background(MaterialTheme.colorScheme.onSurfaceVariant, CircleShape))
+                    }
                 }
             }
         }

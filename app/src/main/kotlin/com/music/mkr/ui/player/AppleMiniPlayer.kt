@@ -427,7 +427,7 @@ internal fun AppleMiniPlayer(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .clickable(
                             role = Role.Button,
@@ -514,7 +514,7 @@ internal fun AppleMiniPlayer(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .clickable(
                             role = Role.Button,

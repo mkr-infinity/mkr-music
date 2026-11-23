@@ -151,15 +151,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.math.roundToInt
 import com.music.mkr.mkrmusic.isBluetoothHeadphoneConnected
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
-import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
-import kotlin.math.roundToInt
 import com.music.mkr.ui.component.Icon as MIcon
 
 /**
@@ -200,18 +193,18 @@ fun MiniPlayer(
         when (MiniPlayerDesignOption.fromPreferences(useAppleMiniPlayer, useNewMiniPlayerDesign)) {
             MiniPlayerDesignOption.APPLE -> AppleMiniPlayer(
                 progressState = progressState,
-    
+
                 modifier = modifier,
             )
             MiniPlayerDesignOption.NEW -> NewMiniPlayer(
                 progressState = progressState,
-    
+
                 modifier = modifier,
             )
             MiniPlayerDesignOption.CLASSIC -> Box(modifier = modifier.fillMaxWidth()) {
                 LegacyMiniPlayer(
                     progressState = progressState,
-    
+
                     modifier = Modifier.align(Alignment.Center),
                 )
             }
@@ -527,7 +520,7 @@ private fun NewMiniPlayer(
                             }
                         }
                     },
-                    modifier = Modifier.size(38.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.skip_previous),
@@ -553,7 +546,7 @@ private fun NewMiniPlayer(
                             }
                         }
                     },
-                    modifier = Modifier.size(42.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     val isPlaying by playerConnection.isPlaying.collectAsState()
                     val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
@@ -597,7 +590,7 @@ private fun NewMiniPlayer(
                             }
                         }
                     },
-                    modifier = Modifier.size(38.dp)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.skip_next),
@@ -1048,7 +1041,7 @@ private fun LegacyMiniPlayer(
                         }
                     }
                 },
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
                     painter = painterResource(R.drawable.skip_previous),
@@ -1078,7 +1071,7 @@ private fun LegacyMiniPlayer(
                         }
                     }
                 },
-                modifier = Modifier.size(44.dp)
+                modifier = Modifier.size(48.dp)
             ) {
                 Icon(
                     painter = painterResource(R.drawable.skip_next),
