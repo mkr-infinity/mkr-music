@@ -8,24 +8,42 @@
 
 ## [Unreleased]
 
-- **Player style picker** · *Settings → Appearance → Full Player → Player style* — Compare four visual previews and apply your choice. Retired layouts fall back to Cinematic.
-- **Artwork backgrounds** · *Settings → Appearance → Full Player → Player background style* — Restore artwork-driven effects with a safe fallback. Saved Apple Music backgrounds fall back to Follow theme.
-- **Mini-player motion** · *Settings → Appearance → Mini-player* — Turn Micro Equalizer, Artwork Transition, and Capsule Morph on or off separately.
-- **Liquid retirement** · *Settings → Appearance → Mini-player* — The wave overlay is gone. Classic, Expressive, and Apple-style remain available.
-- **Full-player appearance** · *Settings → Appearance → Full Player* — Find the full-player style and background together.
-- **Audio offload** · *Settings → Player and Audio → Advanced → Enable offload* — Find the existing toggle in Advanced.
-- **Search discovery** · *Search → Top Song Match* — Play a confident match immediately or queue it to play next.
-- **Library layout** · *Library* — Category cards balance across screen sizes, including the final row.
-- **Capsule navigation** · *Bottom tab bar* — Selected tabs are easier to spot.
-- **Playlist feedback** · *Song menu → Add to playlist* — The picker closes after a successful add and confirms it at the top.
-- **Crossfade startup** · *Settings → Player and Audio → Crossfade* — Improve the start of automatic track transitions.
-- **Idle media notifications** · *Mini-player dismissal* — Clear the idle media notification when you dismiss playback.
-- **Home controls** · *Home* — Refreshed controls for Settings and History.
-- **Listen Together shortcut** · *Settings → Appearance → Auto playlists → Show Listen Together on Home Screen* — Opt in to the Home shortcut.
-- **Audio output** · *Full player → More options → Audio Output* — See the selected device in a simpler sheet.
-- **Update checker** · *Settings → System Updates (or Update Available)* — Refreshed status, version details, and actions.
-- **Support** · *Settings → About MKR Music → Donate & Support* — Copy the UPI ID to use in your preferred payment app.
-- **README credits** · *GitHub → README* — Simplified the credits and copyright footer.
+### Added
+
+- **Auto-hide navigation** — On by default. Scroll down to hide the bar and up to reveal it. · *Settings → Appearance → Misc → Auto-hide bottom navigation*
+- **Mini-player animations** — Toggle Micro Equalizer, Artwork Transition, and Capsule Morph separately. · *Settings → Appearance → Mini-player*
+- **Top Song Match** — Play the best match or queue it next. · *Search → Top Song Match*
+- **APK download progress** — Track the download in a notification and tap when ready to install. · *Settings → System Updates → Download APK*
+
+### Changed
+
+- **Navigation styles** — Glass surfaces, clearer selection, and distinct tab animations. · *Settings → Appearance → Misc → Navigation style*
+- **Player style picker** — Preview four layouts before applying one. · *Settings → Appearance → Full Player → Player style*
+- **Full-player settings** — Style and background controls now sit together. · *Settings → Appearance → Full Player*
+- **Audio offload** — Moved to Advanced. · *Settings → Player and audio → Advanced → Enable offload*
+- **Library cards** — Adapt to screen width and fill the last row. · *Library*
+- **Home controls** — Refreshed Settings and History buttons. · *Home*
+- **Listen Together shortcut** — Opt in to show it on Home. · *Settings → Appearance → Auto playlists → Show Listen Together on Home Screen*
+- **Audio output** — A simpler sheet highlights the selected device. · *Full player → More options → Audio Output*
+- **Update checker** — Clearer version, status, and download actions. · *Settings → System Updates or Update Available*
+- **Support** — Copy the UPI ID and pay in your preferred app. · *Settings → About MKR Music → Donate & Support*
+- **README credits** — Simplified the credits and copyright footer. · *GitHub → README*
+
+### Fixed
+
+- **Universal APK selection** — Downloads only the latest `mkr-music-universal.apk`. · *Settings → System Updates or Home → Update Available*
+- **Auto download on like** — Newly liked online songs queue once. · *Settings → Player and audio → Queue → Auto download on like*
+- **Backup export feedback** — Shows an error when the destination cannot be opened. · *Settings → Backup and restore → Backup*
+- **Artwork backgrounds** — Restored artwork effects with a theme fallback. · *Settings → Appearance → Full Player → Player background style*
+- **Playlist feedback** — Closes the picker and confirms successful adds at the top. · *Song menu → Add to playlist*
+- **Crossfade startup** — Improved automatic track transitions. · *Settings → Player and audio → Crossfade*
+- **Idle media notification** — Clears when playback is dismissed. · *Mini-player → Close*
+
+### Removed
+
+- **Liquid Mini Player** — Saved selections use the default mini-player. · *Settings → Appearance → Mini-player*
+- **Material Extended, Modern, and Classic** — Saved selections use Cinematic. · *Settings → Appearance → Full Player → Player style*
+- **Apple Music background** — Saved selections use Follow theme. · *Settings → Appearance → Full Player → Player background style*
 
 ## [v1.1.0] - 2026-11-01
 
