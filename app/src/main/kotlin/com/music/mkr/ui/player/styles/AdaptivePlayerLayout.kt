@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -40,6 +41,7 @@ internal fun AdaptivePlayerLayout(
     artworkFraction: Float,
     artwork: @Composable (Dp) -> Unit,
     header: @Composable () -> Unit = {},
+    scrollStackedContent: Boolean = false,
     controls: @Composable () -> Unit,
 ) {
     val posture = currentWindowAdaptiveInfo().windowPosture
@@ -101,9 +103,22 @@ internal fun AdaptivePlayerLayout(
             }
             areaWidth >= 540.dp && (areaWidth > areaHeight || areaWidth >= 800.dp) -> {
                 Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                    cover(Modifier.weight(1f).fillMaxHeight(), minOf(areaWidth * 0.46f, areaHeight) * artworkFraction)
+                    val artworkWidth = if (scrollStackedContent) areaWidth / 2 else areaWidth * 0.46f
+                    cover(Modifier.weight(1f).fillMaxHeight(), minOf(artworkWidth, areaHeight) * artworkFraction)
                     controlPane(Modifier.weight(1f).fillMaxHeight().padding(start = 12.dp), true)
                 }
+            }
+            scrollStackedContent -> Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .heightIn(min = areaHeight),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
+            ) {
+                Column(Modifier.widthIn(max = 560.dp).fillMaxWidth()) { header() }
+                artwork(immersiveStackedArtworkSize(areaWidth, areaHeight, controlsHeight) * artworkFraction)
+                Column(Modifier.widthIn(max = 560.dp).fillMaxWidth()) { controls() }
             }
             else -> Column(
                 Modifier.fillMaxSize(),
@@ -119,4 +134,9 @@ internal fun AdaptivePlayerLayout(
             }
         }
     }
+}
+
+internal fun immersiveStackedArtworkSize(width: Dp, height: Dp, controlsHeight: Dp): Dp {
+    val comfortableMinimum = minOf(160.dp, height * 0.55f)
+    return (height - controlsHeight).coerceIn(comfortableMinimum, height * 0.55f).coerceAtMost(width)
 }

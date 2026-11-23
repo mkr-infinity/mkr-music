@@ -403,10 +403,9 @@ fun BottomSheetPlayer(
     
     val artworkPalette = com.music.mkr.ui.theme.rememberArtworkPalette(mediaMetadata)
     val currentItem = playerConnection.player.currentMediaItem
-    val backgroundArtwork = playerBackgroundArtworkUrl(
-        mediaMetadata?.thumbnailUrl,
-        currentItem?.takeIf { it.mediaId == mediaMetadata?.id }?.mediaMetadata?.artworkUri?.toString(),
-    )
+    val currentItemArtwork = currentItem?.takeIf { it.mediaId == mediaMetadata?.id }
+        ?.mediaMetadata?.artworkUri?.toString()
+    val backgroundArtwork = playerBackgroundArtworkUrl(mediaMetadata?.thumbnailUrl, currentItemArtwork)
     val backgroundVisible = !state.isCollapsed && !state.isDismissed
     val fallbackGradient = PlayerColorExtractor.DefaultPalette.backgroundGradient
     val gradientColorsCache = remember { android.util.LruCache<String, List<Color>>(32) }
@@ -751,6 +750,11 @@ fun BottomSheetPlayer(
         backgroundLifecycle.isAtLeast(Lifecycle.State.RESUMED) &&
         android.animation.ValueAnimator.areAnimatorsEnabled()
     val backgroundAlpha = state.progress.coerceIn(0f, 1f)
+    val immersiveArtworkBackground = playerBackground != PlayerBackgroundStyle.DEFAULT
+    val immersiveForeground = if (immersiveArtworkBackground) PlayerColorExtractor.TextPrimary
+        else MaterialTheme.colorScheme.onSurface
+    val immersiveControlsBackground = if (immersiveArtworkBackground) PlayerColorExtractor.CharcoalDark.copy(alpha = 0.65f)
+        else Color.Transparent
 
     BottomSheet(
         state = state,
@@ -1309,8 +1313,12 @@ fun BottomSheetPlayer(
                             )
                             PlayerStyle.IMMERSIVE -> ImmersivePlayer(
                                 mediaMetadata = metadata,
-                                backgroundArtwork = backgroundArtwork,
-                                animateBackground = animateBackground,
+                                itemArtwork = currentItemArtwork,
+                                animateArtwork = animateBackground,
+                                foreground = immersiveForeground,
+                                controlsBackground = immersiveControlsBackground,
+                                primaryButtonColor = textButtonColor,
+                                primaryIconColor = iconButtonColor,
                                 playbackState = playbackState,
                                 isPlaying = isPlaying,
                                 isLoading = isLoading,
@@ -1338,8 +1346,14 @@ fun BottomSheetPlayer(
                             )
                             PlayerStyle.IMMERSIVE_EXTENDED -> ImmersiveExtendedPlayer(
                                 mediaMetadata = metadata,
-                                backgroundArtwork = backgroundArtwork,
-                                animateBackground = animateBackground,
+                                itemArtwork = currentItemArtwork,
+                                animateArtwork = animateBackground,
+                                foreground = immersiveForeground,
+                                controlsBackground = immersiveControlsBackground,
+                                primaryButtonColor = textButtonColor,
+                                primaryIconColor = iconButtonColor,
+                                sideButtonColor = sideButtonContainerColor,
+                                sideIconColor = sideButtonContentColor,
                                 playbackState = playbackState,
                                 isPlaying = isPlaying,
                                 isLoading = isLoading,
@@ -1356,10 +1370,6 @@ fun BottomSheetPlayer(
                                 playerConnection = playerConnection,
                                 navController = navController,
                                 state = state,
-                                textButtonColor = textButtonColor,
-                                iconButtonColor = iconButtonColor,
-                                sideButtonContainerColor = sideButtonContainerColor,
-                                sideButtonContentColor = sideButtonContentColor,
                                 onSliderValueChange = { sliderPosition = it },
                                 onSliderValueChangeFinished = {
                                     sliderPosition?.let { playerConnection.player.seekTo(it) }

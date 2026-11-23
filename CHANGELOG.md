@@ -18,6 +18,7 @@
 
 - **Navigation styles** — Connected capsules with morphing selection and distinct tab animations. · *Settings → Appearance → Misc → Navigation style*
 - **Player style picker** — Preview four layouts before applying one. · *Settings → Appearance → Full Player → Player style*
+- **Immersive players** — Sharper covers, curved controls, and room to scroll in smaller windows. · *Settings → Appearance → Full Player → Player style*
 - **Full-player settings** — Style and background controls now sit together. · *Settings → Appearance → Full Player*
 - **Audio offload** — Moved to Advanced. · *Settings → Player and audio → Advanced → Enable offload*
 - **Library cards and headers** — Two category columns, a full-width final card, and artwork-led collection headers. · *Library*

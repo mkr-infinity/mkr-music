@@ -5,7 +5,6 @@
 
 package com.music.mkr.ui.player.styles
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
@@ -15,23 +14,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import com.music.mkr.constants.QueuePeekHeight
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,46 +33,50 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import com.music.mkr.ui.player.rememberPlayerBackgroundPainter
-import com.music.mkr.ui.player.AudioQualityBadge
 import androidx.media3.common.Player
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
 import com.music.mkr.R
+import com.music.mkr.constants.QueuePeekHeight
 import com.music.mkr.db.entities.FormatEntity
+import com.music.mkr.extensions.togglePlayPause
+import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.ui.component.BottomSheetState
 import com.music.mkr.ui.component.PlayerSliderTrack
 import com.music.mkr.ui.component.PlayerTransportRow
 import com.music.mkr.ui.component.TransportVariant
+import com.music.mkr.ui.player.AudioQualityBadge
 import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
-import com.music.mkr.ui.theme.PlayerSliderColors
-import com.music.mkr.constants.PlayerBackgroundStyle
-import com.music.mkr.extensions.togglePlayPause
-import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
  * Immersive Extended Player style:
- * Ambient blurred backdrop, queue subtitle context, integrated volume bar, and rich metadata.
+ * Framed artwork, album context, and an integrated volume row.
  */
 @Composable
 fun ImmersiveExtendedPlayer(
     mediaMetadata: MediaMetadata,
-    backgroundArtwork: String?,
-    animateBackground: Boolean,
+    itemArtwork: String?,
+    animateArtwork: Boolean,
+    foreground: Color,
+    controlsBackground: Color,
+    primaryButtonColor: Color,
+    primaryIconColor: Color,
+    sideButtonColor: Color,
+    sideIconColor: Color,
     playbackState: Int,
     isPlaying: Boolean,
     isLoading: Boolean,
@@ -99,10 +93,6 @@ fun ImmersiveExtendedPlayer(
     playerConnection: PlayerConnection,
     navController: NavController,
     state: BottomSheetState,
-    textButtonColor: Color = MaterialTheme.colorScheme.primary,
-    iconButtonColor: Color = MaterialTheme.colorScheme.onPrimary,
-    sideButtonContainerColor: Color = Color.Transparent,
-    sideButtonContentColor: Color = MaterialTheme.colorScheme.primary,
     onSliderValueChange: (Long) -> Unit,
     onSliderValueChangeFinished: () -> Unit,
     onVolumeChange: (Float) -> Unit,
@@ -114,132 +104,97 @@ fun ImmersiveExtendedPlayer(
     val haptic = LocalHapticFeedback.current
     val titleActions = rememberPlayerTitleActions(mediaMetadata, navController, state)
 
-    val foreground = Color.White
-    val secondaryForeground = foreground.copy(alpha = 0.72f)
+    val secondaryForeground = foreground.copy(alpha = 0.82f)
     val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
+    val panelShape = MaterialTheme.shapes.large
+    val controlPadding = if (controlsBackground == Color.Transparent) 0.dp else 12.dp
 
-    Box(modifier = modifier.fillMaxSize()) {
-        Image(
-            painter = rememberPlayerBackgroundPainter(backgroundArtwork, 6, animateBackground),
-            contentDescription = null,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize(),
-        )
-
-        // Multi-stop gradient scrim
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.Black.copy(alpha = 0.5f),
-                            Color.Black.copy(alpha = 0.7f),
-                            Color.Black.copy(alpha = 0.95f)
-                        )
-                    )
-                )
-        )
-
-        // Top-down gradient scrim specifically for status bar & header integration
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(140.dp)
-                .background(
-                    Brush.verticalGradient(
-                        listOf(
-                            Color.Black.copy(alpha = 0.55f),
-                            Color.Black.copy(alpha = 0.2f),
-                            Color.Transparent
-                        )
-                    )
-                )
-        )
-
-        val insets = WindowInsets.systemBars.asPaddingValues()
-        AdaptivePlayerLayout(
-            modifier = Modifier
-                .fillMaxSize()
-                .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
-                .padding(
-                    top = insets.calculateTopPadding() + 8.dp,
-                    bottom = QueuePeekHeight + insets.calculateBottomPadding() + 8.dp,
-                    start = 20.dp,
-                    end = 20.dp
-                ),
-            artworkFraction = 0.96f,
-            artwork = { size ->
-                AsyncImage(
-                    model = mediaMetadata.thumbnailUrl,
-                    contentDescription = mediaMetadata.title,
-                    contentScale = ContentScale.Fit,
-                    modifier = Modifier.size(size).clip(MaterialTheme.shapes.large),
-                )
-            },
-            header = {
-                // Header Top Bar with Context Subtitle
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+    AdaptivePlayerLayout(
+        modifier = modifier
+            .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.safeDrawing)
+            .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = QueuePeekHeight + 8.dp),
+        artworkFraction = 0.92f,
+        scrollStackedContent = true,
+        artwork = { size ->
+            ImmersiveArtwork(
+                trackId = mediaMetadata.id,
+                thumbnail = mediaMetadata.thumbnailUrl,
+                itemArtwork = itemArtwork,
+                animate = animateArtwork,
+                backgroundColor = foreground.copy(alpha = 0.10f),
+                modifier = Modifier.size(size).clip(MaterialTheme.shapes.small),
+            )
+        },
+        header = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(controlsBackground, panelShape)
+                    .padding(horizontal = controlPadding, vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = foreground.copy(alpha = 0.10f),
+                    onClick = { state.collapseSoft() },
+                    modifier = Modifier.size(48.dp)
                 ) {
-                    Surface(
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.14f),
-                        onClick = { state.collapseSoft() },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(R.drawable.expand_more),
-                                contentDescription = "Collapse",
-                                tint = foreground,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-
-                    Column(
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 12.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = stringResource(R.string.playing_from),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = secondaryForeground.copy(alpha = 0.7f)
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.expand_more),
+                            contentDescription = stringResource(R.string.close),
+                            tint = foreground,
+                            modifier = Modifier.size(24.dp)
                         )
-                        Text(
-                            text = subtitle,
-                            style = MaterialTheme.typography.labelMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = foreground,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-
-                    Surface(
-                        shape = CircleShape,
-                        color = Color.White.copy(alpha = 0.14f),
-                        onClick = onShowMenu,
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(R.drawable.more_vert),
-                                contentDescription = stringResource(R.string.more_label),
-                                tint = foreground,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
                     }
                 }
-            },
+
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .padding(horizontal = 12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = stringResource(R.string.playing_from),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = secondaryForeground
+                    )
+                    Text(
+                        text = subtitle,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = foreground,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+
+                Surface(
+                    shape = MaterialTheme.shapes.medium,
+                    color = foreground.copy(alpha = 0.10f),
+                    onClick = onShowMenu,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center) {
+                        Icon(
+                            painter = painterResource(R.drawable.more_vert),
+                            contentDescription = stringResource(R.string.more_label),
+                            tint = foreground,
+                            modifier = Modifier.size(22.dp)
+                        )
+                    }
+                }
+            }
+        },
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(controlsBackground, panelShape)
+                .padding(horizontal = controlPadding, vertical = 8.dp),
         ) {
             // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
             AudioQualityBadge(
@@ -258,14 +213,12 @@ fun ImmersiveExtendedPlayer(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = mediaMetadata.title,
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = foreground,
-                        maxLines = 1,
+                        maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier
-                            .basicMarquee()
-                            .clickable { titleActions.onTitleClick() }
+                        modifier = Modifier.clickable { titleActions.onTitleClick() }
                     )
                     Spacer(Modifier.height(4.dp))
                     ClickableArtists(
@@ -273,7 +226,7 @@ fun ImmersiveExtendedPlayer(
                         onArtistClick = titleActions.onArtistClick,
                         style = MaterialTheme.typography.titleMedium,
                         color = secondaryForeground,
-                        modifier = Modifier.basicMarquee()
+                        modifier = if (animateArtwork) Modifier.basicMarquee() else Modifier
                     )
                 }
 
@@ -286,7 +239,7 @@ fun ImmersiveExtendedPlayer(
                     Icon(
                         painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
                         contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
-                        tint = if (isLiked) MaterialTheme.colorScheme.primary else foreground,
+                        tint = if (isLiked) primaryButtonColor else foreground,
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -296,7 +249,12 @@ fun ImmersiveExtendedPlayer(
 
             // Progress Slider
             PlayerSliderTrack(
-                sliderColors = PlayerSliderColors.getSliderColors(PlayerBackgroundStyle.GRADIENT, true),
+                sliderColors = SliderDefaults.colors(
+                    thumbColor = foreground,
+                    activeTrackColor = foreground,
+                    inactiveTrackColor = foreground.copy(alpha = 0.36f),
+                ),
+                isPlaying = isPlaying && animateArtwork,
                 value = (sliderPosition ?: position).toFloat(),
                 onValueChange = { onSliderValueChange(it.toLong()) },
                 onValueChangeFinished = onSliderValueChangeFinished,
@@ -341,34 +299,40 @@ fun ImmersiveExtendedPlayer(
                 },
                 onSkipPrevious = { playerConnection.seekToPrevious() },
                 onSkipNext = { playerConnection.seekToNext() },
-                variant = TransportVariant.CIRCLE,
-                primaryContainerColor = textButtonColor,
-                primaryContentColor = iconButtonColor,
-                secondaryContainerColor = Color.Transparent,
-                secondaryContentColor = if (sideButtonContentColor != Color.White && sideButtonContentColor != Color.Transparent) sideButtonContentColor else MaterialTheme.colorScheme.primary,
+                variant = TransportVariant.IMMERSIVE_EXTENDED,
+                primaryContainerColor = primaryButtonColor,
+                primaryContentColor = primaryIconColor,
+                secondaryContainerColor = sideButtonColor,
+                secondaryContentColor = sideIconColor,
                 playButtonSize = 72.dp,
-                sideButtonSize = 52.dp,
-                playIconSize = 36.dp,
-                sideIconSize = 32.dp,
+                sideButtonSize = 56.dp,
+                playIconSize = 48.dp,
+                sideIconSize = 36.dp,
                 haptic = haptic,
                 leadingControl = {
-                    IconButton(onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
-                    }) {
+                    IconButton(
+                        modifier = Modifier.semantics { selected = shuffleModeEnabled },
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
+                        },
+                    ) {
                         Icon(
                             painter = painterResource(R.drawable.shuffle),
                             contentDescription = stringResource(R.string.shuffle),
-                            tint = if (shuffleModeEnabled) MaterialTheme.colorScheme.primary else foreground.copy(alpha = 0.5f),
+                            tint = if (shuffleModeEnabled) primaryButtonColor else secondaryForeground,
                             modifier = Modifier.size(22.dp)
                         )
                     }
                 },
                 trailingControl = {
-                    IconButton(onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.player.toggleRepeatMode()
-                    }) {
+                    IconButton(
+                        modifier = Modifier.semantics { selected = repeatMode != Player.REPEAT_MODE_OFF },
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            playerConnection.player.toggleRepeatMode()
+                        },
+                    ) {
                         Icon(
                             painter = painterResource(
                                 when (repeatMode) {
@@ -377,7 +341,7 @@ fun ImmersiveExtendedPlayer(
                                 }
                             ),
                             contentDescription = stringResource(R.string.repeat),
-                            tint = if (repeatMode != Player.REPEAT_MODE_OFF) MaterialTheme.colorScheme.primary else foreground.copy(alpha = 0.5f),
+                            tint = if (repeatMode != Player.REPEAT_MODE_OFF) primaryButtonColor else secondaryForeground,
                             modifier = Modifier.size(22.dp)
                         )
                     }
@@ -400,6 +364,7 @@ fun ImmersiveExtendedPlayer(
                     modifier = Modifier.size(18.dp)
                 )
 
+                val volumeLabel = stringResource(R.string.volume)
                 Slider(
                     value = playerVolume.coerceIn(0f, 1f),
                     onValueChange = onVolumeChange,
@@ -411,6 +376,7 @@ fun ImmersiveExtendedPlayer(
                     modifier = Modifier
                         .weight(1f)
                         .padding(horizontal = 10.dp)
+                        .semantics { contentDescription = volumeLabel },
                 )
 
                 Icon(

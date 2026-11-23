@@ -17,12 +17,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -53,6 +56,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
@@ -70,7 +75,9 @@ enum class TransportVariant {
     /** Proportional pill buttons used by Modern player */
     PILL,
     /** Smooth rounded squircle used by MaterialExtended and Apple player */
-    EXPRESSIVE
+    EXPRESSIVE,
+    IMMERSIVE,
+    IMMERSIVE_EXTENDED,
 }
 
 /**
@@ -83,6 +90,7 @@ enum class TransportVariant {
  * - Parameterized design tokens for container and content palettes
  * - Optional leading and trailing action slots (shuffle, repeat, like, lyrics)
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PlayerTransportRow(
     isPlaying: Boolean,
@@ -112,6 +120,13 @@ fun PlayerTransportRow(
     trailingControl: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
+    val immersive = variant == TransportVariant.IMMERSIVE || variant == TransportVariant.IMMERSIVE_EXTENDED
+    val playShape = when (variant) {
+        TransportVariant.IMMERSIVE -> CircleShape
+        TransportVariant.IMMERSIVE_EXTENDED -> RoundedCornerShape(26.dp)
+        else -> CircleShape
+    }
+    val skipShape = if (variant == TransportVariant.IMMERSIVE_EXTENDED) RoundedCornerShape(20.dp) else CircleShape
 
     val effectivePlayWidth = playButtonWidth ?: if (variant == TransportVariant.PILL) playButtonSize * 1.55f else playButtonSize
     val effectivePlayHeight = playButtonHeight ?: playButtonSize
@@ -171,15 +186,22 @@ fun PlayerTransportRow(
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val auxiliaryCount = listOfNotNull(leadingControl, trailingControl).size
         val inlineAuxiliary = maxWidth >= effectivePlayWidth + effectiveSideWidth * 2 + 48.dp * auxiliaryCount + 24.dp
+        val wrapTransport = immersive && maxWidth < 152.dp
         val gap = if (inlineAuxiliary) 12.dp else 4.dp
         val widthBudget = (maxWidth - gap * 2 - if (inlineAuxiliary) 48.dp * auxiliaryCount else 0.dp)
             .coerceAtLeast(144.dp)
+        val sideWidth = minOf(effectiveSideWidth, widthBudget * 0.30f).coerceAtLeast(48.dp)
+        val playWidthLimit = if (immersive && !wrapTransport) {
+            minOf(widthBudget * 0.40f, widthBudget - sideWidth * 2)
+        } else {
+            widthBudget * 0.40f
+        }
+        val playWidth = minOf(effectivePlayWidth, playWidthLimit).coerceAtLeast(48.dp)
+        val actualPlayIconSize = if (immersive) minOf(playIconSize, playWidth - 12.dp) else playIconSize
+        val actualSideIconSize = if (immersive) minOf(sideIconSize, sideWidth - 12.dp) else sideIconSize
+        val playLabel = stringResource(if (isPlaying) R.string.pause else R.string.play)
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+            val transport: @Composable RowScope.() -> Unit = {
                 if (inlineAuxiliary) leadingControl?.invoke(this)
 
                 // Skip Previous
@@ -189,28 +211,31 @@ fun PlayerTransportRow(
                         onSkipPrevious()
                     },
                     enabled = canSkipPrevious,
-                    shape = CircleShape,
+                    shape = skipShape,
                     color = Color.Transparent,
                     interactionSource = prevInteractionSource,
                     modifier = Modifier
-                        .scale(prevScale)
-                        .size(width = minOf(effectiveSideWidth, widthBudget * 0.30f).coerceAtLeast(48.dp), height = effectiveSideHeight.coerceAtLeast(48.dp))
+                        .scale(if (immersive) 1f else prevScale)
+                        .size(width = sideWidth, height = effectiveSideHeight.coerceAtLeast(48.dp))
                 ) {
+                    val face = sideFace.copy(alpha = if (canSkipPrevious) sideFace.alpha else sideFace.alpha * 0.4f)
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize().then(
+                            if (immersive) Modifier.scale(prevScale).background(face, skipShape) else Modifier
+                        )
                     ) {
-                        PlaybackCookieFace(sideFace.copy(alpha = if (canSkipPrevious) sideFace.alpha else sideFace.alpha * 0.4f))
+                        if (!immersive) PlaybackCookieFace(face)
                         Icon(
                             painter = painterResource(R.drawable.skip_previous),
                             contentDescription = stringResource(R.string.previous_track),
                             tint = secondaryContentColor.copy(alpha = if (canSkipPrevious) 1f else 0.38f),
-                            modifier = Modifier.size(sideIconSize)
+                            modifier = Modifier.size(actualSideIconSize)
                         )
                     }
                 }
 
-                Spacer(Modifier.width(gap))
+                if (!wrapTransport) Spacer(Modifier.width(gap))
 
                 // Play / Pause / Replay Central Button
                 Surface(
@@ -218,18 +243,21 @@ fun PlayerTransportRow(
                         haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                         onPlayPause()
                     },
-                    shape = CircleShape,
+                    shape = playShape,
                     color = Color.Transparent,
                     interactionSource = playInteractionSource,
                     modifier = Modifier
-                        .scale(playScale)
-                        .size(width = minOf(effectivePlayWidth, widthBudget * 0.40f).coerceAtLeast(48.dp), height = effectivePlayHeight.coerceAtLeast(48.dp))
+                        .scale(if (immersive) 1f else playScale)
+                        .size(width = playWidth, height = effectivePlayHeight.coerceAtLeast(48.dp))
+                        .then(if (immersive && isLoading) Modifier.semantics { contentDescription = playLabel } else Modifier)
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize().then(
+                            if (immersive) Modifier.scale(playScale).background(primaryContainerColor, playShape) else Modifier
+                        )
                     ) {
-                        PlaybackCookieFace(primaryContainerColor)
+                        if (!immersive) PlaybackCookieFace(primaryContainerColor)
                         AnimatedContent(
                             targetState = Triple(isLoading, playbackState == Player.STATE_ENDED, isPlaying),
                             transitionSpec = {
@@ -246,7 +274,7 @@ fun PlayerTransportRow(
                                 CircularProgressIndicator(
                                     color = primaryContentColor,
                                     strokeWidth = 3.dp,
-                                    modifier = Modifier.size(playIconSize * 0.85f)
+                                    modifier = Modifier.size(actualPlayIconSize * 0.85f)
                                 )
                             } else {
                                 Icon(
@@ -259,14 +287,14 @@ fun PlayerTransportRow(
                                     ),
                                     contentDescription = stringResource(if (playing) R.string.pause else R.string.play),
                                     tint = primaryContentColor,
-                                    modifier = Modifier.size(playIconSize)
+                                    modifier = Modifier.size(actualPlayIconSize)
                                 )
                             }
                         }
                     }
                 }
 
-                Spacer(Modifier.width(gap))
+                if (!wrapTransport) Spacer(Modifier.width(gap))
 
                 // Skip Next
                 Surface(
@@ -275,28 +303,45 @@ fun PlayerTransportRow(
                         onSkipNext()
                     },
                     enabled = canSkipNext,
-                    shape = CircleShape,
+                    shape = skipShape,
                     color = Color.Transparent,
                     interactionSource = nextInteractionSource,
                     modifier = Modifier
-                        .scale(nextScale)
-                        .size(width = minOf(effectiveSideWidth, widthBudget * 0.30f).coerceAtLeast(48.dp), height = effectiveSideHeight.coerceAtLeast(48.dp))
+                        .scale(if (immersive) 1f else nextScale)
+                        .size(width = sideWidth, height = effectiveSideHeight.coerceAtLeast(48.dp))
                 ) {
+                    val face = sideFace.copy(alpha = if (canSkipNext) sideFace.alpha else sideFace.alpha * 0.4f)
                     Box(
                         contentAlignment = Alignment.Center,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize().then(
+                            if (immersive) Modifier.scale(nextScale).background(face, skipShape) else Modifier
+                        )
                     ) {
-                        PlaybackCookieFace(sideFace.copy(alpha = if (canSkipNext) sideFace.alpha else sideFace.alpha * 0.4f))
+                        if (!immersive) PlaybackCookieFace(face)
                         Icon(
                             painter = painterResource(R.drawable.skip_next),
                             contentDescription = stringResource(R.string.next_track),
                             tint = secondaryContentColor.copy(alpha = if (canSkipNext) 1f else 0.38f),
-                            modifier = Modifier.size(sideIconSize)
+                            modifier = Modifier.size(actualSideIconSize)
                         )
                     }
                 }
 
                 if (inlineAuxiliary) trailingControl?.invoke(this)
+            }
+            if (wrapTransport) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(gap, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(gap),
+                ) { transport() }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = transport,
+                )
             }
             if (!inlineAuxiliary && auxiliaryCount > 0) {
                 Row(

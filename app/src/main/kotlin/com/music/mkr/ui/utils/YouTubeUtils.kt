@@ -17,6 +17,7 @@ import timber.log.Timber
 fun String.resize(
     width: Int? = null,
     height: Int? = null,
+    isDataSaverEnabled: Boolean = MkrPrefCache.get(DataSaverKey) == true,
 ): String {
     // Detect Google CDN URLs (including googleusercontent.com, ggpht.com, or any domain using Google parameter format like '=w120')
     val isGoogleCdn = this.contains("googleusercontent.com") || 
@@ -25,8 +26,6 @@ fun String.resize(
 
     // Detect YouTube video thumbnails (containing i.ytimg.com, img.youtube.com, or path segment /vi/)
     val isYtimg = this.contains("ytimg") || this.contains("youtube.com") || this.contains("/vi/")
-
-    val isDataSaverEnabled = MkrPrefCache.get(DataSaverKey) == true
 
     return when {
         isGoogleCdn -> resizeGoogleCdn(width, height, isDataSaverEnabled)
