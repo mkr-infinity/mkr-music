@@ -1190,4 +1190,7 @@
     <string name="search_load_failed">Could not load search results.</string>
     <string name="spotify_import_incomplete_fetch">Spotify returned %1$d of %2$d tracks. The playlist was kept unchanged.</string>
     <string name="spotify_import_skipped">Skipped %1$d empty or incomplete playlists. Existing playlists were preserved.</string>
+    <string name="search_personalized_suggestions">Personalized Suggestions</string>
+    <string name="search_browse_album_charts">Browse album charts</string>
+    <string name="search_hide_album_charts">Hide album charts</string>
 </resources>

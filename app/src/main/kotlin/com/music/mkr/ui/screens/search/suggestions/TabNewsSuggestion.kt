@@ -40,6 +40,10 @@ import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.compose.SubcomposeAsyncImage
 import com.music.mkr.R
+import com.music.mkr.models.toMediaMetadata
+import com.music.mkr.playback.queues.YouTubeQueue
+import com.music.mkr.viewmodels.HomeViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.mkr.constants.SuggestionRegionKey
 import com.music.mkr.constants.SuggestionRegionSlugToName
 import com.music.mkr.utils.rememberPreference
@@ -53,6 +57,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInRoot
@@ -74,10 +79,13 @@ fun SuggestionsTabContent(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     headerContent: (@Composable () -> Unit)? = null
 ) {
-    val suggestionTracks by viewModel.suggestionTracks.collectAsState()
-    val suggestionArtists by viewModel.suggestionArtists.collectAsState()
-    val suggestionAlbums by viewModel.suggestionAlbums.collectAsState()
-    val suggestionVideos by viewModel.suggestionVideos.collectAsState()
+    val home: HomeViewModel = (LocalActivity.current as? ViewModelStoreOwner)?.let { hiltViewModel(it) }
+        ?: hiltViewModel()
+    val quickPicks by home.quickPicks.collectAsStateWithLifecycle()
+    val hasListeningHistory by home.hasListeningHistory.collectAsStateWithLifecycle()
+    val personalTracks = if (hasListeningHistory) quickPicks.orEmpty().take(8) else emptyList()
+    val trendingAlbums by viewModel.suggestionAlbums.collectAsStateWithLifecycle()
+    var showAlbumCharts by rememberSaveable { mutableStateOf(false) }
     val youtubeNewReleases by viewModel.youtubeNewReleases.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isManualLoading by viewModel.isManualLoading.collectAsState()
@@ -95,8 +103,6 @@ fun SuggestionsTabContent(
     )
 
     val pullToRefreshState = rememberPullToRefreshState()
-    val scope = rememberCoroutineScope()
-
     PullToRefreshBox(
         isRefreshing = isManualLoading,
         onRefresh = {
@@ -121,130 +127,88 @@ fun SuggestionsTabContent(
                     headerContent()
                 }
             }
-        if ((isLoading && !isManualLoading) || (suggestionTracks == null && suggestionArtists == null && suggestionAlbums == null && suggestionVideos == null && youtubeNewReleases == null)) {
-            item {
-                SkeletonSuggestions()
-            }
-        }
-
-        suggestionTracks?.let { tracks ->
-                item {
-                    TrendingAppleMusicSection(
-                        tracks = suggestionTracks!!,
-                        countryCode = regionCode,
-                        onTrackClick = { track ->
-                            SnackbarManager.show("Loading ${track.title}...")
-                            viewModel.playTrack(track, playerConnection)
-                        },
-                        onMoreClick = {
-                            val code = if (regionCode == "system") java.util.Locale.getDefault().country.lowercase() else regionCode.lowercase()
-                            uriHandler.openUri("https://music.apple.com/$code/charts")
-                        }
-                    )
-                }
-            }
-
-            youtubeNewReleases?.let { albums ->
-                item {
-                    YouTubeLatestAlbumsSection(
-                        albums = albums,
-                        onAlbumClick = { album ->
-                            SnackbarManager.show("Loading ${album.title}...")
-                            navController.navigate("album/${album.id}")
-                        },
-                        onMoreClick = {
-                            navController.navigate("new_release")
-                        }
-                    )
-                }
-            }
-
-            suggestionArtists?.let { artists ->
-                item {
-                    TopArtistsSection(
-                        artists = artists,
-                        onArtistClick = { artist ->
-                            SnackbarManager.show("Loading ${artist.name}...")
-                            viewModel.navigateToArtist(artist, navController)
-                        }
-                    )
-                }
-            }
-
-            suggestionAlbums?.let { albums ->
-                item {
-                    TrendingAlbumsSection(
-                        albums = albums,
-                        onAlbumClick = { album ->
-                            SnackbarManager.show("Loading ${album.title}...")
-                            viewModel.navigateToAlbum(album, navController)
-                        },
-                        onMoreClick = {
-                            val code = if (regionCode == "system") java.util.Locale.getDefault().country.lowercase() else regionCode.lowercase()
-                            uriHandler.openUri("https://music.apple.com/$code/charts/albums")
-                        }
-                    )
-                }
-            }
-
-            suggestionVideos?.let { videos ->
-                item {
-                    TrendingVideosSection(
-                        videos = videos,
-                        onVideoClick = { video ->
-                            SnackbarManager.show("Loading video ${video.title}...")
-                            viewModel.playVideo(video, playerConnection)
-                        },
-                        onMoreClick = {
-                            val code = if (regionCode == "system") java.util.Locale.getDefault().country.lowercase() else regionCode.lowercase()
-                            uriHandler.openUri("https://music.apple.com/$code/charts/videos")
-                        }
-                    )
-                }
-            }
-
-            if (suggestionTracks == null && suggestionArtists == null && suggestionAlbums == null && suggestionVideos == null && !isLoading) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(top = 100.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "No suggestions available at the moment.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            OutlinedButton(onClick = { viewModel.refresh(regionCode, force = true) }) {
-                                Text("Refresh")
+            if (personalTracks.isNotEmpty() || !trendingAlbums.isNullOrEmpty()) {
+                item(key = "personalized_suggestions") {
+                    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                        val columns = if (maxWidth >= 640.dp) 2 else 1
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(R.string.search_personalized_suggestions), style = MaterialTheme.typography.titleLarge)
+                            personalTracks.chunked(columns).forEach { row ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    row.forEach { song ->
+                                        val metadata = song.toMediaMetadata()
+                                        Surface(
+                                            onClick = {
+                                                val connection = playerConnection
+                                                if (connection == null) SnackbarManager.show(R.string.error_playback_failed)
+                                                else connection.playQueue(YouTubeQueue.radio(metadata))
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            shape = MaterialTheme.shapes.medium,
+                                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                        ) {
+                                            Row(
+                                                Modifier.padding(10.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                AsyncImage(
+                                                    model = metadata.thumbnailUrl,
+                                                    contentDescription = null,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier.size(48.dp).clip(MaterialTheme.shapes.small),
+                                                )
+                                                Column(Modifier.weight(1f)) {
+                                                    Text(metadata.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                                    Text(metadata.artists.joinToString { it.name }, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                                Icon(painterResource(R.drawable.play), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                            }
+                                        }
+                                    }
+                                    if (row.size < columns) Spacer(Modifier.weight(1f))
+                                }
+                            }
+                            if (!trendingAlbums.isNullOrEmpty()) {
+                                TextButton(onClick = { showAlbumCharts = !showAlbumCharts }) {
+                                    Text(stringResource(if (showAlbumCharts) R.string.search_hide_album_charts else R.string.search_browse_album_charts))
+                                }
+                                if (showAlbumCharts) {
+                                    TrendingAlbumsSection(
+                                        albums = trendingAlbums.orEmpty(),
+                                        onAlbumClick = { viewModel.navigateToAlbum(it, navController) },
+                                        onMoreClick = {
+                                            val code = if (regionCode == "system") java.util.Locale.getDefault().country.lowercase() else regionCode.lowercase()
+                                            uriHandler.openUri("https://music.apple.com/$code/charts/albums")
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
-
-            // Footer at the very bottom
-            if (suggestionTracks != null || suggestionArtists != null || suggestionAlbums != null || suggestionVideos != null) {
-                item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Data from Apple Music",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
-                        Text(
-                            text = "mkr-music",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            fontWeight = FontWeight.Bold
-                        )
+            val releases = youtubeNewReleases.orEmpty()
+            if (releases.isNotEmpty()) {
+                item(key = "new_releases") {
+                    YouTubeLatestAlbumsSection(
+                        albums = releases,
+                        onAlbumClick = { navController.navigate("album/${it.id}") },
+                        onMoreClick = { navController.navigate("new_release") },
+                    )
+                }
+            }
+            val hasDiscoveries = personalTracks.isNotEmpty() || !trendingAlbums.isNullOrEmpty() || releases.isNotEmpty()
+            if (!hasDiscoveries && isLoading && !isManualLoading) {
+                item(key = "loading_discovery") { SkeletonSuggestions() }
+            } else if (!hasDiscoveries && !isLoading) {
+                item(key = "retry_discovery") {
+                    TextButton(onClick = { viewModel.refresh(regionCode, force = true) }) {
+                        Text(stringResource(R.string.try_again))
                     }
                 }
             }
+
         }
     }
 }

@@ -192,13 +192,12 @@ fun SearchScreen(
                         )
                     }
                 } else {
-                    val tabPadding = PaddingValues(bottom = bottomPadding + 88.dp)
+                    val tabPadding = PaddingValues(bottom = bottomPadding + 12.dp)
                     SuggestionsTabContent(
                         navController = navController,
                         contentPadding = tabPadding,
-                        headerContent = {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                if (searchHistory.isNotEmpty()) {
+                        headerContent = if (searchHistory.isEmpty()) null else {
+                            {
                                     RecentSearchesSection(
                                         history = searchHistory,
                                         onQueryClick = { clickedQuery ->
@@ -219,17 +218,6 @@ fun SearchScreen(
                                             }
                                         }
                                     )
-                                    Spacer(modifier = Modifier.height(10.dp))
-                                }
-
-                                ExploreGenresGrid(
-                                    onGenreClick = { genreQuery ->
-                                        query = TextFieldValue(genreQuery, TextRange(genreQuery.length))
-                                        submitSearch(genreQuery, SearchSource.ONLINE)
-                                    }
-                                )
-
-                                Spacer(modifier = Modifier.height(14.dp))
                             }
                         }
                     )
