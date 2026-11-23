@@ -116,6 +116,7 @@ fun PlayerTransportRow(
     playIconSize: Dp = 36.dp,
     sideIconSize: Dp = 32.dp,
     haptic: HapticFeedback = LocalHapticFeedback.current,
+    fitCompactWidth: Boolean = false,
     leadingControl: (@Composable RowScope.() -> Unit)? = null,
     trailingControl: (@Composable RowScope.() -> Unit)? = null,
 ) {
@@ -186,12 +187,13 @@ fun PlayerTransportRow(
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val auxiliaryCount = listOfNotNull(leadingControl, trailingControl).size
         val inlineAuxiliary = maxWidth >= effectivePlayWidth + effectiveSideWidth * 2 + 48.dp * auxiliaryCount + 24.dp
-        val wrapTransport = immersive && maxWidth < 152.dp
         val gap = if (inlineAuxiliary) 12.dp else 4.dp
+        val fitTransport = immersive || fitCompactWidth
+        val wrapTransport = fitTransport && maxWidth < 48.dp * 3 + gap * 2
         val widthBudget = (maxWidth - gap * 2 - if (inlineAuxiliary) 48.dp * auxiliaryCount else 0.dp)
             .coerceAtLeast(144.dp)
         val sideWidth = minOf(effectiveSideWidth, widthBudget * 0.30f).coerceAtLeast(48.dp)
-        val playWidthLimit = if (immersive && !wrapTransport) {
+        val playWidthLimit = if (fitTransport && !wrapTransport) {
             minOf(widthBudget * 0.40f, widthBudget - sideWidth * 2)
         } else {
             widthBudget * 0.40f

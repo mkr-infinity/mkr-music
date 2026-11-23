@@ -117,12 +117,18 @@ internal fun AdaptivePlayerLayout(
                 val controlsPanel = subcompose("controls") {
                     Column(Modifier.fillMaxWidth()) { controls() }
                 }.single().measure(contentConstraints)
-                val gap = (if (immersive) 8.dp else 20.dp).roundToPx()
-                val remaining = areaHeight.roundToPx() - topBar.height - controlsPanel.height - gap
                 val minimum = minOf(160.dp, areaHeight * 0.55f, areaWidth)
+                val topGap = if (immersive) 8.dp.roundToPx() else 0
+                val availableArtworkHeight = areaHeight.roundToPx() - topBar.height - controlsPanel.height - topGap
+                val gap = when {
+                    !immersive -> 20.dp
+                    availableArtworkHeight >= minimum.roundToPx() + 16.dp.roundToPx() -> 16.dp
+                    else -> 8.dp
+                }.roundToPx()
+                val remaining = availableArtworkHeight - gap
                 val coverSize = if (immersive) {
                     immersiveStackedArtworkSize(
-                        areaWidth, areaHeight, (topBar.height + controlsPanel.height + gap * 2).toDp(),
+                        areaWidth, areaHeight, (topBar.height + controlsPanel.height + topGap + gap).toDp(),
                     )
                 } else {
                     remaining.toDp().coerceIn(minimum, areaWidth)
@@ -130,8 +136,7 @@ internal fun AdaptivePlayerLayout(
                 val cover = subcompose("artwork") {
                     Box(contentAlignment = Alignment.Center) { artwork(coverSize * artworkFraction) }
                 }.single().measure(contentConstraints)
-                val artworkSlot = maxOf(remaining - (if (immersive) gap else 0), cover.height)
-                val topGap = if (immersive) gap else 0
+                val artworkSlot = maxOf(remaining, cover.height)
                 val height = topBar.height + topGap + artworkSlot + gap + controlsPanel.height
                 layout(constraints.maxWidth, maxOf(constraints.minHeight, height)) {
                     topBar.placeRelative((constraints.maxWidth - topBar.width) / 2, 0)

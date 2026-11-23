@@ -256,6 +256,7 @@ fun CinematicPlayer(
             onSkipPrevious = { playerConnection.seekToPrevious() },
             onSkipNext = { playerConnection.seekToNext() },
             variant = TransportVariant.EXPRESSIVE,
+            fitCompactWidth = true,
             primaryContainerColor = textButtonColor,
             primaryContentColor = iconButtonColor,
             secondaryContainerColor = Color.Transparent,
