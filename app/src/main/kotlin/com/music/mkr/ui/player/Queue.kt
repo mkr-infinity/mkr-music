@@ -99,12 +99,12 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -535,7 +535,7 @@ fun Queue(
             if (selection.uids.isNotEmpty()) selection.uids = selection.uids.intersect(queueOrder)
         }
         val automix by playerConnection.service.automixItems.collectAsState()
-        val mutableQueueWindows = remember { mutableStateListOf<Timeline.Window>() }
+        val mutableQueueWindows = remember(playerConnection) { queueWindows.toMutableStateList() }
         val queueLength = remember(queueWindows) {
             var seconds = 0L
             for (window in queueWindows) {
@@ -615,7 +615,8 @@ fun Queue(
 
         LaunchedEffect(queueWindows, shuffleModeEnabled) {
             val drag = dragInfo
-            if (drag == null || queueOrder != drag.order || shuffleModeEnabled != drag.shuffled) {
+            val keepDragPreview = drag != null && queueOrder == drag.order && shuffleModeEnabled == drag.shuffled
+            if (!keepDragPreview && mutableQueueWindows.toList() != queueWindows) {
                 mutableQueueWindows.clear()
                 mutableQueueWindows.addAll(queueWindows)
             }
@@ -1485,10 +1486,13 @@ private fun QueueViewport(
         }
 
         val availableWidth = right - left
-        val panelWidth = if (availableWidth >= 800.dp) {
-            (availableWidth * 0.5f).coerceIn(360.dp, 500.dp)
-        } else availableWidth
         val panelHeight = bottom - top
+        val fontScale = density.fontScale.coerceAtLeast(1f)
+        val minimumPanelWidth = (360.dp * fontScale).coerceAtMost(500.dp)
+        val trailingPanelWidth = (availableWidth * 0.5f).coerceIn(minimumPanelWidth, 500.dp)
+        val fitsMediumWindow = availableWidth >= 600.dp && panelHeight >= 400.dp &&
+            availableWidth - trailingPanelWidth >= 180.dp
+        val panelWidth = if (availableWidth >= 800.dp || fitsMediumWindow) trailingPanelWidth else availableWidth
         val bounded = panelWidth < safeRight - safeLeft || panelHeight < safeBottom - safeTop
         val panelLeft = if (direction == LayoutDirection.Rtl) left else right - panelWidth
         val closeLabel = stringResource(R.string.close)
@@ -1507,7 +1511,7 @@ private fun QueueViewport(
             color = background,
         ) {
             Column(Modifier.fillMaxSize()) {
-                content(panelHeight < 420.dp * density.fontScale.coerceAtLeast(1f), bounded)
+                content(panelHeight < 420.dp * fontScale, bounded)
             }
         }
     }
