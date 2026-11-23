@@ -14,6 +14,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -56,6 +57,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.geometry.center
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
@@ -88,6 +90,18 @@ internal fun Modifier.navigationGlass(
     val colors = MaterialTheme.colorScheme
     val surface = if (pureBlack) Color.Black else colors.surfaceContainerHigh.copy(alpha = 0.96f)
     return background(surface, shape).border(1.dp, rim, shape)
+}
+
+@Composable
+internal fun Modifier.frostedNavigationCapsule(pureBlack: Boolean): Modifier {
+    val colors = MaterialTheme.colorScheme
+    val top = if (pureBlack) colors.background else colors.surfaceContainerHighest.copy(alpha = 0.92f)
+    val bottom = if (pureBlack) colors.background else colors.surfaceContainerHigh.copy(alpha = 0.82f)
+    val highlight = colors.onSurface.copy(alpha = 0.22f)
+    val edge = colors.outlineVariant.copy(alpha = 0.52f)
+    val fillBrush = remember(top, bottom) { Brush.verticalGradient(listOf(top, bottom)) }
+    val rimBrush = remember(highlight, edge) { Brush.verticalGradient(listOf(highlight, edge)) }
+    return background(fillBrush, CircleShape).border(1.dp, rimBrush, CircleShape)
 }
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
@@ -343,6 +357,8 @@ private fun CapsuleNavigationBar(
     }
     val capsuleHeight = if (floatingGlass) floatingGlassCapsuleHeight(slimNav)
         else if (slimNav || compact) 56.dp else 66.dp
+    val capsuleSurface = if (floatingGlass) Modifier.frostedNavigationCapsule(pureBlack)
+        else Modifier.navigationGlass(CircleShape, pureBlack)
     BoxWithConstraints(
         modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = bottomInset + bottomPadding),
         contentAlignment = Alignment.Center,
@@ -355,7 +371,7 @@ private fun CapsuleNavigationBar(
                 .fillMaxWidth()
                 .height(capsuleHeight)
                 .shadow(if (floatingGlass) 2.dp else 3.dp, CircleShape)
-                .navigationGlass(CircleShape, pureBlack)
+                .then(capsuleSurface)
                 .padding(horizontal = 6.dp, vertical = if (floatingGlass) 2.dp else 4.dp),
         ) {
             val selectedIndex = navigationItems.indexOfFirst {
@@ -364,24 +380,26 @@ private fun CapsuleNavigationBar(
             if (floatingGlass && selectedIndex >= 0) {
                 val cellWidth = (maxWidth - 4.dp * (navigationItems.size - 1)) / navigationItems.size
                 val targetOffset = (cellWidth + 4.dp) * selectedIndex + 2.dp
+                val indicatorWidth = (cellWidth - 4.dp).coerceAtLeast(0.dp)
+                val maxOffset = (maxWidth - indicatorWidth).coerceAtLeast(0.dp)
                 val indicatorOffset by animateDpAsState(
                     targetOffset,
-                    spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+                    if (animate) spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMedium) else snap(),
                     label = "glass_indicator_slide",
                 )
                 val morph = remember { Animatable(1f) }
                 LaunchedEffect(selectedIndex, animate) {
                     if (animate) {
-                        morph.snapTo(0.55f)
-                        morph.animateTo(1f, tween(260))
+                        morph.snapTo(0.66f)
+                        morph.animateTo(1f, tween(150, easing = FastOutSlowInEasing))
                     } else {
                         morph.snapTo(1f)
                     }
                 }
                 val indicatorShape = navigationFace(morph.value)
                 Box(
-                    Modifier.offset { IntOffset((if (animate) indicatorOffset else targetOffset).roundToPx(), 0) }
-                        .width((cellWidth - 4.dp).coerceAtLeast(0.dp))
+                    Modifier.offset { IntOffset(indicatorOffset.coerceIn(0.dp, maxOffset).roundToPx(), 0) }
+                        .width(indicatorWidth)
                         .fillMaxHeight(0.92f)
                         .align(Alignment.CenterStart)
                         .background(colors.secondaryContainer, indicatorShape),
@@ -437,10 +455,14 @@ private fun CapsuleNavigationItem(
     val colors = MaterialTheme.colorScheme
     val interaction = remember { MutableInteractionSource() }
     val targetColor = if (ownIndicator && !anchored && isSelected) colors.primaryContainer else Color.Transparent
-    val fill by animateColorAsState(targetColor, tween(150), label = "navigation_selection_color")
+    val fill = if (ownIndicator && !anchored) {
+        animateColorAsState(targetColor, tween(150), label = "navigation_selection_color").value
+    } else targetColor
     val targetMorph = if (isSelected) 1f else 0f
-    val morph by animateFloatAsState(targetMorph, tween(220), label = "navigation_selection_shape")
-    val shape = navigationFace(if (animate) morph else targetMorph)
+    val morph = if (ownIndicator) {
+        animateFloatAsState(targetMorph, tween(220), label = "navigation_selection_shape").value
+    } else targetMorph
+    val shape = if (ownIndicator) navigationFace(if (animate) morph else targetMorph) else CircleShape
     val label = stringResource(screen.titleId)
     val ink = when {
         !isSelected -> colors.onSurfaceVariant
@@ -473,7 +495,7 @@ private fun CapsuleNavigationItem(
         }
         val face = Modifier.fillMaxSize().padding(horizontal = 2.dp)
             .mkrPressFeedback(0.97f, interaction, animate)
-            .background(if (animate) fill else targetColor, shape)
+            .then(if (ownIndicator) Modifier.background(if (animate) fill else targetColor, shape) else Modifier)
             .padding(horizontal = 5.dp)
         val icon: @Composable () -> Unit = {
             Icon(

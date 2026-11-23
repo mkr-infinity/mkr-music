@@ -252,11 +252,13 @@ private fun NavigationStyleMiniPreview(
                 val colors = MaterialTheme.colorScheme
                 val indicator = if (compact) colors.primaryContainer else colors.secondaryContainer
                 val selectedInk = if (compact) colors.onPrimaryContainer else colors.onSecondaryContainer
+                val capsuleSurface = if (compact) Modifier.navigationGlass(CircleShape, pureBlack = false)
+                    else Modifier.frostedNavigationCapsule(pureBlack = false)
                 Row(
                     modifier = Modifier
                         .size(width = if (compact) 37.dp else 46.dp, height = 19.dp)
                         .clip(CircleShape)
-                        .navigationGlass(CircleShape, pureBlack = false)
+                        .then(capsuleSurface)
                         .padding(horizontal = 4.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
