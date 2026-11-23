@@ -18,7 +18,7 @@
 
 - **Navigation styles** — Connected capsules with distinct tab animations. Floating Glass takes up less space. · *Settings → Appearance → Misc → Navigation style*
 - **Player style picker** — Preview three layouts before applying one. · *Settings → Appearance → Full Player → Player style*
-- **Immersive players** — Sharper covers, curved controls, and room to scroll in smaller windows. · *Settings → Appearance → Full Player → Player style*
+- **Immersive player** — Centered artwork, curved playback controls, and a layout that adapts to smaller windows. · *Settings → Appearance → Full Player → Player style → Immersive*
 - **Full-player settings** — Style and background controls now sit together. · *Settings → Appearance → Full Player*
 - **Audio offload** — Moved to Advanced. · *Settings → Player and audio → Advanced → Enable offload*
 - **Library cards and headers** — Two category columns and collection headers with artwork beside the song details. · *Library*
@@ -41,6 +41,8 @@
 - **Adaptive full player** — Artwork stays visible when the window is short. Scroll to reach all controls. · *Full player*
 - **Minimal player** — Swipe down at the top to collapse the player. Artwork effects fill the background. · *Full player → Minimal*
 - **Cinematic player** — Swipe down to collapse and a seek bar that follows the selected background. · *Full player → Cinematic*
+- **Cast controls** — Play, pause, and seek from the full player while casting. · *Full player*
+- **Mini-player motion** — Glow Motion and Live Mesh respect animation settings. · *Settings → Appearance → Mini-player*
 - **Universal APK selection** — Downloads only the latest `mkr-music-universal.apk`. · *Settings → System Updates or Home → Update Available*
 - **Auto download on like** — Newly liked online songs queue once. · *Settings → Player and audio → Queue → Auto download on like*
 - **Backup export feedback** — Shows an error when the destination cannot be opened. · *Settings → Backup and restore → Backup*
@@ -51,6 +53,7 @@
 
 ### Removed
 
+- **Cached Songs scrollbar** — Scroll and fling directly on the song list. · *Library → Cached Songs*
 - **Mini-player effects** — Removed Micro Equalizer, Artwork Transition, and Capsule Morph. · *Settings → Appearance → Mini-player*
 - **Liquid Mini Player** — Saved selections use the default mini-player. · *Settings → Appearance → Mini-player*
 - **Material Extended, Modern, and Classic** — Saved selections use Cinematic. · *Settings → Appearance → Full Player → Player style*

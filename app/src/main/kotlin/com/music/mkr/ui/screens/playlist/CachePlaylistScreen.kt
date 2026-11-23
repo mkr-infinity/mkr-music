@@ -16,16 +16,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -106,7 +103,6 @@ import com.music.mkr.db.entities.Song
 import com.music.mkr.extensions.toMediaItem
 import com.music.mkr.playback.ExoDownloadService
 import com.music.mkr.playback.queues.ListQueue
-import com.music.mkr.ui.component.DraggableScrollbar
 import com.music.mkr.ui.component.EmptyPlaceholder
 import com.music.mkr.ui.component.LibraryLoadError
 import com.music.mkr.ui.component.ExpandableText
@@ -360,17 +356,6 @@ fun CachePlaylistScreen(
                 }
             }
         }
-
-        DraggableScrollbar(
-            modifier = Modifier
-                .padding(
-                    LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime)
-                        .asPaddingValues()
-                )
-                .align(Alignment.CenterEnd),
-            scrollState = lazyListState,
-            headerItems = 2
-        )
 
         TopAppBar(
             title = {

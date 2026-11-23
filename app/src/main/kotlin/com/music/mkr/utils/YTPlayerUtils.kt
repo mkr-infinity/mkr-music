@@ -33,7 +33,6 @@ import com.music.mkr.utils.PlaybackLogManager
 import com.music.innertube.models.IpVersion
 import com.music.innertube.models.WatchEndpoint
 import com.music.innertube.models.YouTubeClient.Companion.VISIONOS
-import com.music.innertube.strategy.ContentAwareFallbackStrategy
 import com.music.innertube.strategy.ContentHints
 import okhttp3.Dns
 import okhttp3.OkHttpClient
@@ -98,7 +97,6 @@ object YTPlayerUtils {
      * logged in. This ensures remote YouTube history is correctly updated.
      */
     private val METADATA_CLIENT: YouTubeClient = WEB_REMIX
-    private val fallbackStrategy = ContentAwareFallbackStrategy()
 
     private val STREAM_FALLBACK_CLIENTS: Array<YouTubeClient> = arrayOf(
         IOS,

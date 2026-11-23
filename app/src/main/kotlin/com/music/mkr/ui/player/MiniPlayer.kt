@@ -108,12 +108,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import androidx.palette.graphics.Palette
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
 import coil3.toBitmap
-import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalListenTogetherManager
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.ui.component.LocalPlaybackCookieAngle
@@ -462,7 +464,8 @@ private fun NewMiniPlayer(
             MiniPlayerBackgroundLayer(
                 style = miniPlayerBackground,
                 mediaMetadata = mediaMetadata,
-                gradientColors = gradientColors
+                gradientColors = gradientColors,
+                interfaceAnimations = interfaceAnimations,
             )
 
             Row(
@@ -1226,48 +1229,6 @@ private fun LegacyMiniMediaInfo(
     }
 }
 
-// ============================================================================
-// ISOLATED BUTTON COMPOSABLES - Prevent parent recomposition
-// ============================================================================
-
-
-@Composable
-private fun FavoriteButton(
-    songId: String,
-    onSurfaceColor: Color,
-    errorColor: Color,
-    outlineColor: Color
-) {
-    val database = LocalDatabase.current
-    val playerConnection = LocalPlayerConnection.current ?: return
-    val librarySong by database.song(songId).collectAsState(initial = null)
-    val currentMetadata by playerConnection.mediaMetadata.collectAsState()
-    val isLiked = librarySong?.song?.liked ?: (currentMetadata?.takeIf { it.id == songId }?.liked == true)
-    
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier = Modifier
-            .size(40.dp)
-            .clip(CircleShape)
-            .border(
-                width = 1.dp,
-                color = if (isLiked) errorColor.copy(alpha = 0.5f) else outlineColor.copy(alpha = 0.3f),
-                shape = CircleShape
-            )
-            .background(
-                color = if (isLiked) errorColor.copy(alpha = 0.1f) else Color.Transparent,
-                shape = CircleShape
-            )
-            .clickable { playerConnection.toggleLike() }
-    ) {
-        Icon(
-            painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
-            contentDescription = if (isLiked) stringResource(R.string.action_remove_like) else stringResource(R.string.action_like),
-            tint = if (isLiked) errorColor else onSurfaceColor.copy(alpha = 0.7f),
-            modifier = Modifier.size(20.dp)
-        )
-    }
-}
 @Composable
 internal fun MiniPlayerColorExtractor(
     mediaMetadata: MediaMetadata?,
@@ -1327,9 +1288,17 @@ internal fun MiniPlayerColorExtractor(
 internal fun MiniPlayerBackgroundLayer(
     style: PlayerBackgroundStyle,
     mediaMetadata: MediaMetadata?,
-    gradientColors: List<Color>
+    gradientColors: List<Color>,
+    interfaceAnimations: Boolean,
 ) {
     val context = LocalContext.current
+    val hasMotion = style == PlayerBackgroundStyle.GLOW_ANIMATED || style == PlayerBackgroundStyle.LIVE_MESH
+    val animate = if (hasMotion && interfaceAnimations) {
+        val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
+        lifecycle.isAtLeast(Lifecycle.State.RESUMED) && android.animation.ValueAnimator.areAnimatorsEnabled()
+    } else {
+        false
+    }
     
     when (style) {
         PlayerBackgroundStyle.BLUR -> {
@@ -1365,23 +1334,24 @@ internal fun MiniPlayerBackgroundLayer(
         }
         PlayerBackgroundStyle.GLOW_ANIMATED -> {
             if (gradientColors.isNotEmpty()) {
-                val infiniteTransition = rememberInfiniteTransition(label = "GlowAnimation")
-                val progress = infiniteTransition.animateFloat(
-                    initialValue = 0f,
-                    targetValue = 1f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(20000, easing = LinearEasing),
-                        repeatMode = RepeatMode.Restart
-                    ),
-                    label = "glowProgress"
-                )
+                val progress = if (animate) {
+                    rememberInfiniteTransition(label = "GlowAnimation").animateFloat(
+                        initialValue = 0f,
+                        targetValue = 1f,
+                        animationSpec = infiniteRepeatable(
+                            animation = tween(20000, easing = LinearEasing),
+                            repeatMode = RepeatMode.Restart
+                        ),
+                        label = "glowProgress"
+                    )
+                } else null
 
                 val colors = gradientColors
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
                         .drawBehind {
-                            val p = progress.value
+                            val p = progress?.value ?: 0f
                             val width = size.width
                             val height = size.height
                             
@@ -1426,16 +1396,17 @@ internal fun MiniPlayerBackgroundLayer(
             }
         }
         PlayerBackgroundStyle.LIVE_MESH -> {
-            val infiniteTransition = rememberInfiniteTransition(label = "liveMesh")
-            val rotation = infiniteTransition.animateFloat(
-                initialValue = 0f,
-                targetValue = 360f,
-                animationSpec = infiniteRepeatable(
-                    animation = tween(60000, easing = LinearEasing),
-                    repeatMode = RepeatMode.Restart
-                ),
-                label = "rotation"
-            )
+            val rotation = if (animate) {
+                rememberInfiniteTransition(label = "liveMesh").animateFloat(
+                    initialValue = 0f,
+                    targetValue = 360f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(60000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart
+                    ),
+                    label = "rotation"
+                )
+            } else null
 
             Box(
                 modifier = Modifier
@@ -1458,7 +1429,7 @@ internal fun MiniPlayerBackgroundLayer(
                     modifier = Modifier
                         .fillMaxSize()
                         .blur(40.dp)
-                        .graphicsLayer { rotationZ = rotation.value }
+                        .graphicsLayer { rotationZ = rotation?.value ?: 0f }
                 )
                 Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.3f)))
             }

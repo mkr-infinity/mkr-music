@@ -174,19 +174,39 @@ fun PlayerTransportRow(
 
     BoxWithConstraints(modifier.fillMaxWidth()) {
         val auxiliaryCount = listOfNotNull(leadingControl, trailingControl).size
-        val inlineAuxiliary = maxWidth >= effectivePlayWidth + effectiveSideWidth * 2 + 48.dp * auxiliaryCount + 24.dp
-        val gap = if (inlineAuxiliary) 12.dp else 4.dp
+        val inlineAuxiliary = !immersive &&
+            maxWidth >= effectivePlayWidth + effectiveSideWidth * 2 + 48.dp * auxiliaryCount + 24.dp
+        val gap = when {
+            immersive -> 8.dp
+            inlineAuxiliary -> 12.dp
+            else -> 4.dp
+        }
         val fitTransport = immersive || fitCompactWidth
         val wrapTransport = fitTransport && maxWidth < 48.dp * 3 + gap * 2
         val widthBudget = (maxWidth - gap * 2 - if (inlineAuxiliary) 48.dp * auxiliaryCount else 0.dp)
             .coerceAtLeast(144.dp)
-        val sideWidth = minOf(effectiveSideWidth, widthBudget * 0.30f).coerceAtLeast(48.dp)
+        val defaultSideWidth = minOf(effectiveSideWidth, widthBudget * 0.30f).coerceAtLeast(48.dp)
         val playWidthLimit = if (fitTransport && !wrapTransport) {
-            minOf(widthBudget * 0.40f, widthBudget - sideWidth * 2)
+            minOf(widthBudget * 0.40f, widthBudget - defaultSideWidth * 2)
         } else {
             widthBudget * 0.40f
         }
-        val playWidth = minOf(effectivePlayWidth, playWidthLimit).coerceAtLeast(48.dp)
+        val useImmersiveRow = immersive && !wrapTransport
+        val immersiveWidth = widthBudget.coerceAtMost(328.dp)
+        val playWidth = if (useImmersiveRow) {
+            val animateWidth = interfaceAnimations && android.animation.ValueAnimator.areAnimatorsEnabled()
+            val playShare = if (isPlayPressed && animateWidth) 0.66f else 0.58f
+            val targetWidth = (immersiveWidth * playShare)
+                .coerceIn(48.dp, immersiveWidth - 96.dp)
+            animateDpAsState(
+                targetValue = targetWidth,
+                animationSpec = if (animateWidth) spring(dampingRatio = 0.8f, stiffness = 400f) else snap(),
+                label = "immersiveTransportWidth",
+            ).value.coerceIn(48.dp, immersiveWidth - 96.dp)
+        } else {
+            minOf(effectivePlayWidth, playWidthLimit).coerceAtLeast(48.dp)
+        }
+        val sideWidth = if (useImmersiveRow) (immersiveWidth - playWidth) / 2 else defaultSideWidth
         val actualPlayIconSize = if (immersive) minOf(playIconSize, playWidth - 12.dp) else playIconSize
         val actualSideIconSize = if (immersive) minOf(sideIconSize, sideWidth - 12.dp) else sideIconSize
         val playLabel = stringResource(if (isPlaying) R.string.pause else R.string.play)

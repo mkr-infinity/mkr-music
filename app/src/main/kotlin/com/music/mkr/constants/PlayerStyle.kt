@@ -12,10 +12,6 @@ enum class PlayerStyle(
     @StringRes val titleRes: Int,
     @StringRes val descriptionRes: Int
 ) {
-    APPLE(
-        titleRes = R.string.apple_player,
-        descriptionRes = R.string.apple_player_desc
-    ),
     MINIMAL(
         titleRes = R.string.player_style_minimal,
         descriptionRes = R.string.player_style_minimal_desc
@@ -31,12 +27,11 @@ enum class PlayerStyle(
 
     companion object {
         val DEFAULT = CINEMATIC
-        val selectableStyles: List<PlayerStyle> = entries.filter { it != APPLE }
+        val selectableStyles: List<PlayerStyle> = entries
 
         fun fromString(name: String?): PlayerStyle {
             if (name.equals("IMMERSIVE_EXTENDED", ignoreCase = true)) return CINEMATIC
-            val style = entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: DEFAULT
-            return if (style == APPLE) DEFAULT else style
+            return entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: DEFAULT
         }
     }
 }

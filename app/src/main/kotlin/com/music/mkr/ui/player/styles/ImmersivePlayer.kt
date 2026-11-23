@@ -10,6 +10,7 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -22,21 +23,24 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SliderDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -47,7 +51,6 @@ import androidx.navigation.NavController
 import com.music.mkr.R
 import com.music.mkr.constants.QueuePeekHeight
 import com.music.mkr.db.entities.FormatEntity
-import com.music.mkr.extensions.togglePlayPause
 import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.PlayerConnection
@@ -70,7 +73,6 @@ fun ImmersivePlayer(
     itemArtwork: String?,
     animateArtwork: Boolean,
     foreground: Color,
-    controlsBackground: Color,
     primaryButtonColor: Color,
     primaryIconColor: Color,
     playbackState: Int,
@@ -90,8 +92,6 @@ fun ImmersivePlayer(
     state: BottomSheetState,
     onSliderValueChange: (Long) -> Unit,
     onSliderValueChangeFinished: () -> Unit,
-    onShowLyrics: () -> Unit,
-    onShowQueue: () -> Unit,
     onShowMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -100,15 +100,16 @@ fun ImmersivePlayer(
 
     val secondaryForeground = foreground.copy(alpha = 0.82f)
     val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
-    val panelShape = MaterialTheme.shapes.extraLarge
-    val controlPadding = if (controlsBackground == Color.Transparent) 0.dp else 12.dp
+    val closeLabel = stringResource(R.string.close)
+    val sheetScrollConnection = remember(state) { state.preUpPostDownNestedScrollConnection }
 
     AdaptivePlayerLayout(
         modifier = modifier
             .fillMaxSize()
+            .nestedScroll(sheetScrollConnection)
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = QueuePeekHeight + 8.dp),
-        artworkFraction = 0.98f,
+        artworkFraction = 1f,
         immersive = true,
         artwork = { size ->
             ImmersiveArtwork(
@@ -118,87 +119,40 @@ fun ImmersivePlayer(
                 animate = animateArtwork,
                 backgroundColor = foreground.copy(alpha = 0.05f),
                 modifier = Modifier.size(size).clip(MaterialTheme.shapes.large),
+                contentDescription = mediaMetadata.title,
             )
         },
         header = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(controlsBackground, panelShape)
-                    .padding(horizontal = controlPadding, vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    shape = MaterialTheme.shapes.medium,
-                    color = foreground.copy(alpha = 0.10f),
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                IconButton(
                     onClick = { state.collapseSoft() },
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(R.drawable.expand_more),
-                            contentDescription = stringResource(R.string.close),
-                            tint = foreground,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-
-                Column(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .align(if (maxWidth < 144.dp) Alignment.CenterStart else Alignment.Center)
+                        .size(48.dp)
+                        .semantics { contentDescription = closeLabel },
                 ) {
-                    Text(
-                        text = stringResource(R.string.playing_from),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = secondaryForeground
-                    )
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = foreground,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
+                    Box(
+                        Modifier
+                            .size(width = 32.dp, height = 4.dp)
+                            .background(secondaryForeground, CircleShape)
                     )
                 }
 
-                Surface(
-                    shape = MaterialTheme.shapes.medium,
-                    color = foreground.copy(alpha = 0.10f),
+                IconButton(
                     onClick = onShowMenu,
-                    modifier = Modifier.size(48.dp)
+                    modifier = Modifier.align(Alignment.CenterEnd).size(48.dp),
                 ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(R.drawable.more_vert),
-                            contentDescription = stringResource(R.string.more_label),
-                            tint = foreground,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
+                    Icon(
+                        painter = painterResource(R.drawable.more_vert),
+                        contentDescription = stringResource(R.string.more_label),
+                        tint = foreground,
+                        modifier = Modifier.size(22.dp)
+                    )
                 }
             }
         },
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(controlsBackground, panelShape)
-                .padding(horizontal = controlPadding, vertical = 8.dp),
-        ) {
-            // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
-            AudioQualityBadge(
-                videoId = mediaMetadata.id,
-                explicitFormat = currentFormat,
-                contentColor = foreground,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
-
-            // Title & Artist Section
+        Column(Modifier.fillMaxWidth()) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
@@ -207,7 +161,7 @@ fun ImmersivePlayer(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = mediaMetadata.title,
-                        style = MaterialTheme.typography.headlineMedium,
+                        style = MaterialTheme.typography.headlineSmall,
                         fontWeight = FontWeight.Bold,
                         color = foreground,
                         maxLines = 2,
@@ -221,6 +175,14 @@ fun ImmersivePlayer(
                         style = MaterialTheme.typography.titleMedium,
                         color = secondaryForeground,
                         modifier = if (animateArtwork) Modifier.basicMarquee() else Modifier
+                    )
+                    Text(
+                        text = "${stringResource(R.string.playing_from)} · $subtitle",
+                        style = MaterialTheme.typography.labelMedium,
+                        color = secondaryForeground,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(top = 4.dp),
                     )
                 }
 
@@ -238,6 +200,13 @@ fun ImmersivePlayer(
                     )
                 }
             }
+
+            AudioQualityBadge(
+                videoId = mediaMetadata.id,
+                explicitFormat = currentFormat,
+                contentColor = foreground,
+                modifier = Modifier.padding(top = 8.dp)
+            )
 
             Spacer(Modifier.height(14.dp))
 
@@ -283,14 +252,7 @@ fun ImmersivePlayer(
                 playbackState = playbackState,
                 canSkipPrevious = canSkipPrevious,
                 canSkipNext = canSkipNext,
-                onPlayPause = {
-                    if (playbackState == Player.STATE_ENDED) {
-                        playerConnection.player.seekTo(0, 0)
-                        playerConnection.player.playWhenReady = true
-                    } else {
-                        playerConnection.player.togglePlayPause()
-                    }
-                },
+                onPlayPause = { playerConnection.togglePlayPause(restartIfEnded = true) },
                 onSkipPrevious = { playerConnection.seekToPrevious() },
                 onSkipNext = { playerConnection.seekToNext() },
                 variant = TransportVariant.IMMERSIVE,

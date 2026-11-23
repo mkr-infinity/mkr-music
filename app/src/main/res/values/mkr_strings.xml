@@ -155,8 +155,6 @@
     <string name="gradient">Gradient</string>
     <string name="glow_animated">Glow motion</string>
     <string name="live_mesh">Live Mesh</string>
-    <string name="apple_player">Apple Player</string>
-    <string name="apple_player_desc">Original fluid layout with dynamic background and system volume</string>
     <string name="player_design">Player style</string>
     <!-- Player Styles (9 Native Styles) -->
     <string name="player_style">Player style</string>

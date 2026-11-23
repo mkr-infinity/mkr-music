@@ -13,7 +13,6 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -69,7 +68,6 @@ import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
 import com.music.mkr.ui.theme.PlayerSliderColors
 import com.music.mkr.constants.PlayerBackgroundStyle
-import com.music.mkr.extensions.togglePlayPause
 import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
@@ -103,8 +101,6 @@ fun MinimalPlayer(
     useDarkTheme: Boolean,
     onSliderValueChange: (Long) -> Unit,
     onSliderValueChangeFinished: () -> Unit,
-    onShowLyrics: () -> Unit,
-    onShowQueue: () -> Unit,
     onShowMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -255,14 +251,7 @@ fun MinimalPlayer(
             playbackState = playbackState,
             canSkipPrevious = canSkipPrevious,
             canSkipNext = canSkipNext,
-            onPlayPause = {
-                if (playbackState == Player.STATE_ENDED) {
-                    playerConnection.player.seekTo(0, 0)
-                    playerConnection.player.playWhenReady = true
-                } else {
-                    playerConnection.player.togglePlayPause()
-                }
-            },
+            onPlayPause = { playerConnection.togglePlayPause(restartIfEnded = true) },
             onSkipPrevious = { playerConnection.seekToPrevious() },
             onSkipNext = { playerConnection.seekToNext() },
             variant = TransportVariant.EXPRESSIVE,

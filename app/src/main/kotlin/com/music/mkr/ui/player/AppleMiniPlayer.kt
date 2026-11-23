@@ -308,7 +308,8 @@ internal fun AppleMiniPlayer(
             MiniPlayerBackgroundLayer(
                 style = miniPlayerBackground,
                 mediaMetadata = mediaMetadata,
-                gradientColors = gradientColors
+                gradientColors = gradientColors,
+                interfaceAnimations = interfaceAnimations,
             )
 
             // Bottom Progress Bar

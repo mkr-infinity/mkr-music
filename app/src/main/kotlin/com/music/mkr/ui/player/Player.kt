@@ -98,7 +98,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -146,7 +145,6 @@ import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.media3.common.C
 import androidx.media3.common.Player
-import androidx.media3.common.Player.STATE_ENDED
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
@@ -180,7 +178,6 @@ import com.music.mkr.constants.PlayerStyle
 import com.music.mkr.constants.PlayerStyleKey
 import com.music.mkr.ui.player.styles.MinimalPlayer
 import com.music.mkr.ui.player.styles.CinematicPlayer
-import com.music.mkr.ui.player.styles.ApplePlayer
 import com.music.mkr.ui.player.styles.ImmersivePlayer
 import com.music.mkr.constants.QueuePeekHeight
 import com.music.mkr.constants.SliderStyle
@@ -369,7 +366,7 @@ fun BottomSheetPlayer(
     val castPosition by castHandler?.castPosition?.collectAsState() ?: remember { mutableLongStateOf(0L) }
     val castDuration by castHandler?.castDuration?.collectAsState() ?: remember { mutableLongStateOf(0L) }
     val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
-    val castVolume by castHandler?.castVolume?.collectAsState() ?: remember { mutableFloatStateOf(1f) }
+    val castIsBuffering by castHandler?.castIsBuffering?.collectAsState() ?: remember { mutableStateOf(false) }
     
     // Use Cast state when casting, otherwise local player
     val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
@@ -396,8 +393,6 @@ fun BottomSheetPlayer(
     var sliderPosition by remember {
         mutableStateOf<Long?>(null)
     }
-    // Track when we last manually set position to avoid Cast overwriting it
-    var lastManualSeekTime by remember { mutableLongStateOf(0L) }
     
     val artworkPalette = com.music.mkr.ui.theme.rememberArtworkPalette(mediaMetadata)
     val currentItem = playerConnection.player.currentMediaItem
@@ -665,23 +660,17 @@ fun BottomSheetPlayer(
     }
     
     // Also update position when playback state changes (e.g., song change, seek)
-    LaunchedEffect(playbackState, mediaMetadata?.id) {
+    LaunchedEffect(playbackState, mediaMetadata?.id, isCasting) {
         if (!isCasting) {
             position = playerConnection.player.currentPosition
             duration = playerConnection.player.duration
         }
     }
-    
-    // When casting, use Cast position/duration directly
-    // But wait a bit after manual seeks to let Cast catch up
+
     LaunchedEffect(isCasting, castPosition, castDuration) {
         if (isCasting && sliderPosition == null) {
-            val timeSinceManualSeek = System.currentTimeMillis() - lastManualSeekTime
-            if (timeSinceManualSeek > 1500) {
-                // Only update from Cast if we haven't manually seeked recently
-                position = castPosition
-                if (castDuration > 0) duration = castDuration
-            }
+            position = castPosition
+            if (castDuration > 0) duration = castDuration
         }
     }
 
@@ -712,8 +701,6 @@ fun BottomSheetPlayer(
     val immersiveArtworkBackground = playerBackground != PlayerBackgroundStyle.DEFAULT
     val immersiveForeground = if (immersiveArtworkBackground) PlayerColorExtractor.TextPrimary
         else MaterialTheme.colorScheme.onSurface
-    val immersiveControlsBackground = if (immersiveArtworkBackground) PlayerColorExtractor.CharcoalDark.copy(alpha = 0.65f)
-        else Color.Transparent
 
     BottomSheet(
         state = state,
@@ -1058,7 +1045,13 @@ fun BottomSheetPlayer(
     ) {
         val playerStyleName by rememberPreference(PlayerStyleKey, PlayerStyle.DEFAULT.name)
         val playerStyle = remember(playerStyleName) { PlayerStyle.fromString(playerStyleName) }
-        val isLoading = playbackState == androidx.media3.common.Player.STATE_BUFFERING
+        val transportState = if (isCasting) Player.STATE_READY else playbackState
+        val isLoading = if (isCasting) castIsBuffering else playbackState == Player.STATE_BUFFERING
+        val effectiveDuration = if (isCasting) castDuration else duration
+        val finishSeek: () -> Unit = {
+            sliderPosition?.let(playerConnection::seekTo)
+            sliderPosition = null
+        }
 
         val onOpenMenu: (MediaMetadata) -> Unit = { metadata ->
             menuState.show {
@@ -1181,48 +1174,18 @@ fun BottomSheetPlayer(
                             label = "PlayerStyleCrossfade"
                         ) { currentStyle ->
                             when (currentStyle) {
-                            PlayerStyle.APPLE -> ApplePlayer(
-                                mediaMetadata = metadata,
-                                playbackState = playbackState,
-                                isPlaying = isPlaying,
-                                isLoading = isLoading,
-                                canSkipPrevious = canSkipPrevious,
-                                canSkipNext = canSkipNext,
-                                sliderPosition = sliderPosition,
-                                position = effectivePosition,
-                                duration = duration,
-                                repeatMode = repeatMode,
-                                shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
-                                isLiked = isCurrentTrackLiked,
-                                playerConnection = playerConnection,
-                                navController = navController,
-                                state = state,
-                                textButtonColor = textButtonColor,
-                                iconButtonColor = iconButtonColor,
-                                textBackgroundColor = TextBackgroundColor,
-                                onSliderValueChange = { sliderPosition = it },
-                                onSliderValueChangeFinished = {
-                                    sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                    sliderPosition = null
-                                },
-                                onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                                onShowQueue = { queueSheetState.expandSoft() },
-                                onShowMenu = { onOpenMenu(metadata) },
-                                modifier = Modifier.fillMaxSize(),
-                                currentFormat = currentFormat
-                            )
                             PlayerStyle.MINIMAL -> MinimalPlayer(
                                 mediaMetadata = metadata,
                                 itemArtwork = currentItemArtwork,
                                 animateArtwork = animateBackground,
-                                playbackState = playbackState,
-                                isPlaying = isPlaying,
+                                playbackState = transportState,
+                                isPlaying = effectiveIsPlaying,
                                 isLoading = isLoading,
                                 canSkipPrevious = canSkipPrevious,
                                 canSkipNext = canSkipNext,
                                 sliderPosition = sliderPosition,
                                 position = effectivePosition,
-                                duration = duration,
+                                duration = effectiveDuration,
                                 repeatMode = repeatMode,
                                 shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
                                 isLiked = isCurrentTrackLiked,
@@ -1235,12 +1198,7 @@ fun BottomSheetPlayer(
                                 playerBackground = playerBackground,
                                 useDarkTheme = useDarkTheme,
                                 onSliderValueChange = { sliderPosition = it },
-                                onSliderValueChangeFinished = {
-                                    sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                    sliderPosition = null
-                                },
-                                onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                                onShowQueue = { queueSheetState.expandSoft() },
+                                onSliderValueChangeFinished = finishSeek,
                                 onShowMenu = { onOpenMenu(metadata) },
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -1248,14 +1206,14 @@ fun BottomSheetPlayer(
                                 mediaMetadata = metadata,
                                 itemArtwork = currentItemArtwork,
                                 animateArtwork = animateBackground,
-                                playbackState = playbackState,
-                                isPlaying = isPlaying,
+                                playbackState = transportState,
+                                isPlaying = effectiveIsPlaying,
                                 isLoading = isLoading,
                                 canSkipPrevious = canSkipPrevious,
                                 canSkipNext = canSkipNext,
                                 sliderPosition = sliderPosition,
                                 position = effectivePosition,
-                                duration = duration,
+                                duration = effectiveDuration,
                                 repeatMode = repeatMode,
                                 shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
                                 isLiked = isCurrentTrackLiked,
@@ -1268,12 +1226,7 @@ fun BottomSheetPlayer(
                                 playerBackground = playerBackground,
                                 useDarkTheme = useDarkTheme,
                                 onSliderValueChange = { sliderPosition = it },
-                                onSliderValueChangeFinished = {
-                                    sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                    sliderPosition = null
-                                },
-                                onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                                onShowQueue = { queueSheetState.expandSoft() },
+                                onSliderValueChangeFinished = finishSeek,
                                 onShowMenu = { onOpenMenu(metadata) },
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -1282,17 +1235,16 @@ fun BottomSheetPlayer(
                                 itemArtwork = currentItemArtwork,
                                 animateArtwork = animateBackground,
                                 foreground = immersiveForeground,
-                                controlsBackground = immersiveControlsBackground,
                                 primaryButtonColor = textButtonColor,
                                 primaryIconColor = iconButtonColor,
-                                playbackState = playbackState,
-                                isPlaying = isPlaying,
+                                playbackState = transportState,
+                                isPlaying = effectiveIsPlaying,
                                 isLoading = isLoading,
                                 canSkipPrevious = canSkipPrevious,
                                 canSkipNext = canSkipNext,
                                 sliderPosition = sliderPosition,
                                 position = effectivePosition,
-                                duration = duration,
+                                duration = effectiveDuration,
                                 repeatMode = repeatMode,
                                 shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
                                 isLiked = isCurrentTrackLiked,
@@ -1301,12 +1253,7 @@ fun BottomSheetPlayer(
                                 navController = navController,
                                 state = state,
                                 onSliderValueChange = { sliderPosition = it },
-                                onSliderValueChangeFinished = {
-                                    sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                    sliderPosition = null
-                                },
-                                onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                                onShowQueue = { queueSheetState.expandSoft() },
+                                onSliderValueChangeFinished = finishSeek,
                                 onShowMenu = { onOpenMenu(metadata) },
                                 modifier = Modifier.fillMaxSize()
                             )
@@ -1401,50 +1348,6 @@ fun MoreActionsButton(
             painter = painterResource(R.drawable.more_vert),
             contentDescription = null,
             colorFilter = ColorFilter.tint(iconButtonColor)
-        )
-    }
-}
-
-@Composable
-private fun PlayerMoreMenuButton(
-    mediaMetadata: MediaMetadata,
-    navController: NavController,
-    state: BottomSheetState,
-    textButtonColor: Color,
-    iconButtonColor: Color,
-) {
-    val menuState = LocalMenuState.current
-    val bottomSheetPageState = LocalBottomSheetPageState.current
-
-    Box(
-        contentAlignment = Alignment.Center,
-        modifier =
-        Modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(textButtonColor)
-            .clickable {
-                menuState.show {
-                    PlayerMenu(
-                        mediaMetadata = mediaMetadata,
-                        navController = navController,
-                        playerBottomSheetState = state,
-                        onShowDetailsDialog = {
-                            mediaMetadata.id.let {
-                                bottomSheetPageState.show {
-                                    ShowMediaInfo(it)
-                                }
-                            }
-                        },
-                        onDismiss = menuState::dismiss,
-                    )
-                }
-            },
-    ) {
-        Image(
-            painter = painterResource(R.drawable.more_horiz),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(iconButtonColor),
         )
     }
 }

@@ -4105,20 +4105,6 @@ class MusicService :
         widgetUpdateJob = null
     }
 
-    private fun shareSong() {
-        val songData = currentSong.value
-        val songId = songData?.song?.id ?: return
-
-        val shareIntent = Intent(Intent.ACTION_SEND).apply {
-            type = "text/plain"
-            putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/watch?v=$songId")
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        startActivity(Intent.createChooser(shareIntent, null).apply {
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        })
-    }
-
     /**
      * Get the stream URL for a given media ID.
      * This is used for Google Cast to send the audio URL to Chromecast.

@@ -48,7 +48,6 @@ class PlayerConnection(
 ) : Player.Listener {
     private companion object {
         private const val TAG = "PlayerConnection"
-        private const val PLAYER_INIT_TIMEOUT_MS = 5000L // 5 second timeout for player initialization
     }
 
     val service = binder.service
@@ -367,7 +366,7 @@ class PlayerConnection(
     /**
      * Toggle play/pause - handles Cast when active
      */
-    fun togglePlayPause() {
+    fun togglePlayPause(restartIfEnded: Boolean = false) {
         // Block if Listen Together guest (unless internal sync)
         if (!allowInternalSync && shouldBlockPlaybackChanges?.invoke() == true) {
             Timber.tag(TAG).d("togglePlayPause blocked - Listen Together guest")
@@ -381,6 +380,9 @@ class PlayerConnection(
                 } else {
                     castHandler.play()
                 }
+            } else if (restartIfEnded && player.playbackState == STATE_ENDED) {
+                player.seekTo(0, 0)
+                player.playWhenReady = true
             } else {
                 player.togglePlayPause()
             }

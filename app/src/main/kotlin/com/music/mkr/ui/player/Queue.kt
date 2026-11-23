@@ -24,8 +24,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.Spring
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -126,10 +124,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -1545,76 +1541,3 @@ private fun MediaItem.queueDisplayMetadata(unknownTrack: String): MediaMetadata 
         duration = -1,
         thumbnailUrl = mediaMetadata.artworkUri?.toString(),
     )
-
-@Composable
-private fun PlayerQueueButton(
-    icon: Int,
-    onClick: () -> Unit,
-    isActive: Boolean,
-    enabled: Boolean = true,
-    shape: RoundedCornerShape,
-    modifier: Modifier = Modifier,
-    text: String? = null,
-    textButtonColor: Color,
-    iconButtonColor: Color,
-    iconSize: androidx.compose.ui.unit.Dp,
-    textBackgroundColor: Color,
-    playerBackground: PlayerBackgroundStyle
-) {
-    val buttonModifier = Modifier
-        .clip(shape)
-        .clickable(enabled = enabled, onClick = onClick)
-
-    val alphaFactor = if (enabled) 1f else 0.35f
-
-    val appliedModifier = if (isActive) {
-        modifier.then(buttonModifier.background(textButtonColor)).alpha(alphaFactor)
-    } else {
-        modifier.then(
-            buttonModifier
-                .background(textButtonColor.copy(alpha = 0.08f), shape)
-                .border(
-                    width = 1.dp,
-                    color = textButtonColor.copy(alpha = 0.2f),
-                    shape = shape
-                )
-        ).alpha(alphaFactor)
-    }
-
-    Box(
-        modifier = appliedModifier,
-        contentAlignment = Alignment.Center
-    ) {
-        if (text != null) {
-            Text(
-                text = text,
-                color = iconButtonColor.copy(alpha = if (enabled) 1f else 0.6f),
-                fontSize = 10.sp,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .basicMarquee()
-            )
-        } else {
-            val baseTint = if (isActive) {
-                iconButtonColor
-            } else {
-                when (playerBackground) {
-                    PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.LIVE_MESH ->
-                        Color.White
-                    PlayerBackgroundStyle.DEFAULT ->
-                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
-                }
-            }
-            val finalTint = if (enabled) baseTint else baseTint.copy(alpha = 0.5f)
-            Icon(
-                painter = painterResource(id = icon),
-                contentDescription = null,
-                modifier = Modifier.size(iconSize),
-                tint = finalTint
-            )
-        }
-    }
-}
