@@ -31,12 +31,14 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
-import androidx.compose.foundation.layout.add
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,6 +46,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
@@ -86,6 +89,9 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.material3.rememberTooltipState
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.separatingHorizontalHingeBounds
+import androidx.compose.material3.adaptive.separatingVerticalHingeBounds
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -96,7 +102,6 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -105,13 +110,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -120,6 +131,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
 import androidx.media3.exoplayer.source.ShuffleOrder.DefaultShuffleOrder
@@ -131,6 +144,7 @@ import com.music.mkr.constants.ListItemHeight
 import com.music.mkr.constants.PlayerBackgroundStyle
 import com.music.mkr.constants.QueueEditLockKey
 import com.music.mkr.constants.ShowCommentButtonKey
+import com.music.mkr.extensions.getQueueWindows
 import com.music.mkr.extensions.metadata
 import com.music.mkr.extensions.move
 import com.music.mkr.extensions.toggleRepeatMode
@@ -260,10 +274,9 @@ fun Queue(
         inSelectMode = false
         selection.clear()
     }
-    if (inSelectMode) {
-        BackHandler(onBack = onExitSelectionMode)
+    LaunchedEffect(state.isCollapsed) {
+        if (state.isCollapsed) onExitSelectionMode()
     }
-
     var locked by rememberPreference(QueueEditLockKey, defaultValue = true)
 
     val (showCommentButton) = rememberPreference(
@@ -514,18 +527,23 @@ fun Queue(
             }
         },
     ) {
+        BackHandler(enabled = inSelectMode && state.isExpanded, onBack = onExitSelectionMode)
+        val unknownTrack = stringResource(R.string.unknown)
         val queueTitle by playerConnection.queueTitle.collectAsState()
         val radioChips by playerConnection.radioChips.collectAsState()
         val queueWindows by playerConnection.queueWindows.collectAsState()
+        val queueOrder = remember(queueWindows) { queueWindows.map { it.uid } }
         val automix by playerConnection.service.automixItems.collectAsState()
         val mutableQueueWindows = remember { mutableStateListOf<Timeline.Window>() }
-        val queueLength =
-            remember(queueWindows) {
-                queueWindows.sumOf { it.mediaItem.metadata!!.duration }
+        val queueLength = remember(queueWindows) {
+            var seconds = 0L
+            for (window in queueWindows) {
+                val duration = window.mediaItem.metadata?.duration?.takeIf { it > 0 } ?: return@remember null
+                seconds += duration
             }
-
-        val headerItems = 1
-        var dragInfo by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+            seconds
+        }
+        var dragInfo by remember { mutableStateOf<QueueDrag?>(null) }
 
         val currentPlayingUid = remember(currentWindowIndex, queueWindows) {
             if (currentWindowIndex in queueWindows.indices) {
@@ -535,85 +553,79 @@ fun Queue(
 
         val reorderableState = rememberReorderableLazyListState(
             lazyListState = lazyListState,
-            scrollThresholdPadding = WindowInsets.systemBars.add(
-                WindowInsets(
-                    top = ListItemHeight,
-                    bottom = ListItemHeight
-                )
-            ).asPaddingValues()
-        ) { from, to ->
-            val currentDragInfo = dragInfo
-            dragInfo = if (currentDragInfo == null) {
-                from.index to to.index
-            } else {
-                currentDragInfo.first to to.index
+            scrollThresholdPadding = PaddingValues(vertical = ListItemHeight),
+        ) onMove@{ from, to ->
+            val player = playerConnection.player
+            if (locked || isListenTogetherGuest || !player.isCommandAvailable(Player.COMMAND_CHANGE_MEDIA_ITEMS)) {
+                return@onMove
             }
+            val fromIndex = mutableQueueWindows.indexOfFirst { it.uid.hashCode() == from.key }
+            val toIndex = mutableQueueWindows.indexOfFirst { it.uid.hashCode() == to.key }
+            if (fromIndex < 0 || toIndex < 0 || fromIndex == toIndex) return@onMove
 
-            val safeFrom = (from.index - headerItems).coerceIn(0, mutableQueueWindows.lastIndex)
-            val safeTo = (to.index - headerItems).coerceIn(0, mutableQueueWindows.lastIndex)
+            if (dragInfo == null && mutableQueueWindows.map { it.uid } != queueOrder) return@onMove
+            val drag = dragInfo ?: QueueDrag(
+                player,
+                player.shuffleModeEnabled,
+                queueOrder,
+                mutableQueueWindows[fromIndex].uid,
+            ).also { dragInfo = it }
+            if (player !== drag.player || player.shuffleModeEnabled != drag.shuffled ||
+                queueOrder != drag.order || mutableQueueWindows[fromIndex].uid != drag.moved
+            ) return@onMove
 
-            if (safeFrom != safeTo) {
-                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                mutableQueueWindows.move(safeFrom, safeTo)
-            }
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+            mutableQueueWindows.move(fromIndex, toIndex)
         }
 
         LaunchedEffect(reorderableState.isAnyItemDragging) {
             if (reorderableState.isAnyItemDragging) {
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
             } else {
-                dragInfo?.let { (from, to) ->
-                    val safeFrom = (from - headerItems).coerceIn(0, queueWindows.lastIndex)
-                    val safeTo = (to - headerItems).coerceIn(0, queueWindows.lastIndex)
-
-                    if (!playerConnection.player.shuffleModeEnabled) {
-                        playerConnection.player.moveMediaItem(safeFrom, safeTo)
+                dragInfo?.let { drag ->
+                    val player = playerConnection.player
+                    val from = drag.order.indexOf(drag.moved)
+                    val to = mutableQueueWindows.indexOfFirst { it.uid == drag.moved }
+                    val valid = !locked && !isListenTogetherGuest && player === drag.player &&
+                        player.isCommandAvailable(Player.COMMAND_CHANGE_MEDIA_ITEMS) &&
+                        player.shuffleModeEnabled == drag.shuffled &&
+                        player.currentMediaItemIndex in 0 until player.currentTimeline.windowCount &&
+                        player.getQueueWindows().map { it.uid } == drag.order
+                    if (valid && from >= 0 && to >= 0 && from != to) {
+                        if (!drag.shuffled) {
+                            player.moveMediaItem(from, to)
+                        } else {
+                            val timeline = player.currentTimeline
+                            val window = Timeline.Window()
+                            val indices = (0 until timeline.windowCount).associateBy { timeline.getWindow(it, window).uid }
+                            val order = mutableQueueWindows.mapNotNull { indices[it.uid] }
+                            if (order.size == timeline.windowCount) {
+                                player.setShuffleOrder(DefaultShuffleOrder(order.toIntArray(), System.currentTimeMillis()))
+                            }
+                        }
                     } else {
-                        playerConnection.player.setShuffleOrder(
-                            DefaultShuffleOrder(
-                                queueWindows.map { it.firstPeriodIndex }
-                                    .toMutableList()
-                                    .move(safeFrom, safeTo)
-                                    .toIntArray(),
-                                System.currentTimeMillis()
-                            )
-                        )
+                        mutableQueueWindows.clear()
+                        mutableQueueWindows.addAll(playerConnection.queueWindows.value)
                     }
                     dragInfo = null
                 }
             }
         }
 
-        LaunchedEffect(queueWindows) {
-            mutableQueueWindows.apply {
-                clear()
-                addAll(queueWindows)
+        LaunchedEffect(queueWindows, shuffleModeEnabled) {
+            val drag = dragInfo
+            if (drag == null || queueOrder != drag.order || shuffleModeEnabled != drag.shuffled) {
+                mutableQueueWindows.clear()
+                mutableQueueWindows.addAll(queueWindows)
             }
         }
 
-        LaunchedEffect(mutableQueueWindows, currentWindowIndex) {
-            if (currentWindowIndex != -1) {
-                lazyListState.scrollToItem(currentWindowIndex)
-            }
-        }
-
-        Column(
-            modifier =
-            Modifier
-                .fillMaxSize()
-                .background(background),
-        ) {
+        val header: @Composable (Boolean) -> Unit = { bounded ->
             Column(
-                modifier =
-                Modifier
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) { }
-                    .windowInsetsPadding(
-                        WindowInsets.systemBars
-                            .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-                    ),
+                modifier = Modifier.clickable(
+                    indication = null,
+                    interactionSource = remember { MutableInteractionSource() }
+                ) { },
             ) {
                 // Drag handle pill
                 Box(
@@ -629,6 +641,17 @@ fun Queue(
                             .clip(RoundedCornerShape(2.5.dp))
                             .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)),
                     )
+                    if (bounded) {
+                        IconButton(
+                            onClick = { state.collapseSoft() },
+                            modifier = Modifier.align(Alignment.CenterEnd).padding(end = 8.dp),
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.close),
+                                contentDescription = stringResource(R.string.close),
+                            )
+                        }
+                    }
                 }
 
                 // Current song track row
@@ -738,16 +761,17 @@ fun Queue(
                             )
                         }
                         IconButton(
+                            enabled = !isListenTogetherGuest,
                             onClick = {
-                                val windowsToRemove = if (currentWindowIndex in queueWindows.indices) {
-                                    queueWindows.filterIndexed { index, _ -> index != currentWindowIndex }
-                                } else {
-                                    emptyList()
-                                }
-                                if (windowsToRemove.isNotEmpty()) {
-                                    windowsToRemove.reversed().forEach { window ->
-                                        playerConnection.player.removeMediaItem(window.firstPeriodIndex)
+                                val player = playerConnection.player
+                                val active = player.currentMediaItemIndex
+                                if (active in 0 until player.mediaItemCount &&
+                                    player.isCommandAvailable(Player.COMMAND_CHANGE_MEDIA_ITEMS)
+                                ) {
+                                    if (active + 1 < player.mediaItemCount) {
+                                        player.removeMediaItems(active + 1, player.mediaItemCount)
                                     }
+                                    if (active > 0) player.removeMediaItems(0, active)
                                     selection.clear()
                                     inSelectMode = false
                                 }
@@ -764,7 +788,8 @@ fun Queue(
                     }
 
                     Text(
-                        text = pluralStringResource(R.plurals.n_song, queueWindows.size, queueWindows.size) + "  •  " + makeTimeString(queueLength * 1000L),
+                        text = pluralStringResource(R.plurals.n_song, queueWindows.size, queueWindows.size) +
+                            (queueLength?.takeIf { it > 0 }?.let { "  •  " + makeTimeString(it * 1000L) } ?: ""),
                         style = MaterialTheme.typography.labelMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(end = 12.dp),
@@ -782,12 +807,9 @@ fun Queue(
                     ToggleButton(
                         checked = shuffleModeEnabled,
                         onCheckedChange = { checked ->
-                            coroutineScope.launch {
-                                lazyListState.animateScrollToItem(
-                                    if (shuffleModeEnabled) currentWindowIndex else 0,
-                                )
-                            }.invokeOnCompletion {
-                                playerConnection.player.shuffleModeEnabled = checked
+                            val player = playerConnection.player
+                            if (player.isCommandAvailable(Player.COMMAND_SET_SHUFFLE_MODE)) {
+                                player.shuffleModeEnabled = checked
                             }
                         },
                         enabled = !isListenTogetherGuest,
@@ -1002,22 +1024,28 @@ fun Queue(
                 }
             }
 
+        }
+
+        QueueViewport(state, background) { scrollHeader, bounded ->
+            LaunchedEffect(currentPlayingUid, currentWindowIndex, scrollHeader, mutableQueueWindows.size) {
+                if (dragInfo == null && currentPlayingUid != null) {
+                    val index = mutableQueueWindows.indexOfFirst { it.uid == currentPlayingUid }
+                    if (index >= 0) {
+                        lazyListState.scrollToItem(if (scrollHeader && index > 0) index + 1 else index)
+                    }
+                }
+            }
+            if (!scrollHeader) header(bounded)
+
             Box(modifier = Modifier.weight(1f)) {
                 LazyColumn(
                     state = lazyListState,
-                    contentPadding =
-                        WindowInsets.systemBars
-                            .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom)
-                            .add(
-                                WindowInsets(
-                                    top = 8.dp,
-                                    bottom = ListItemHeight + 8.dp,
-                                ),
-                            ).asPaddingValues(),
+                    contentPadding = PaddingValues(top = 8.dp, bottom = ListItemHeight + 8.dp),
                     modifier = Modifier
                         .fillMaxSize()
                         .nestedScroll(state.preUpPostDownNestedScrollConnection)
                 ) {
+                    if (scrollHeader) item(key = "queue_header") { header(bounded) }
                     item(key = "queue_top_spacer") {
                         Spacer(
                             modifier =
@@ -1046,7 +1074,8 @@ fun Queue(
                             state = reorderableState,
                             key = window.uid.hashCode(),
                         ) { isDragging ->
-                            val currentItem by rememberUpdatedState(window)
+                            val metadata = window.mediaItem.metadata
+                            val displayMetadata = metadata ?: window.mediaItem.queueDisplayMetadata(unknownTrack)
                             val isActive = window.uid == currentPlayingUid
                             val dragScale by animateFloatAsState(
                                 targetValue = if (isDragging) 1.02f else 1.0f,
@@ -1069,29 +1098,44 @@ fun Queue(
                             var processedDismiss by remember { mutableStateOf(false) }
                             LaunchedEffect(dismissBoxState.currentValue) {
                                 val dv = dismissBoxState.currentValue
-                                if (!processedDismiss && !isListenTogetherGuest && (
+                                if (!processedDismiss && !locked && !isListenTogetherGuest && (
                                             dv == SwipeToDismissBoxValue.StartToEnd ||
                                                     dv == SwipeToDismissBoxValue.EndToStart
                                             )
                                 ) {
                                     processedDismiss = true
-                                    playerConnection.player.removeMediaItem(currentItem.firstPeriodIndex)
+                                    val player = playerConnection.player
+                                    val itemIndex = player.queueWindowIndices(setOf(window.uid)).singleOrNull()
+                                    if (itemIndex == null || !player.isCommandAvailable(Player.COMMAND_CHANGE_MEDIA_ITEMS)) {
+                                        dismissBoxState.reset()
+                                        return@LaunchedEffect
+                                    }
+                                    val removed = window.mediaItem
+                                    val timeline = player.currentTimeline
+                                    val neighbor = Timeline.Window()
+                                    val previousUid = if (itemIndex > 0) timeline.getWindow(itemIndex - 1, neighbor).uid else null
+                                    val nextUid = if (itemIndex + 1 < timeline.windowCount) {
+                                        timeline.getWindow(itemIndex + 1, neighbor).uid
+                                    } else null
+                                    player.removeMediaItem(itemIndex)
                                     dismissJob?.cancel()
                                     dismissJob = coroutineScope.launch {
                                         val snackbarResult = snackbarHostState.showSnackbar(
                                             message = context.getString(
                                                 R.string.removed_song_from_playlist,
-                                                currentItem.mediaItem.metadata?.title,
+                                                displayMetadata.title,
                                             ),
                                             actionLabel = context.getString(R.string.undo),
                                             duration = SnackbarDuration.Short,
                                         )
-                                        if (snackbarResult == SnackbarResult.ActionPerformed) {
-                                            playerConnection.player.addMediaItem(currentItem.mediaItem)
-                                            playerConnection.player.moveMediaItem(
-                                                mutableQueueWindows.size,
-                                                currentItem.firstPeriodIndex,
-                                            )
+                                        if (snackbarResult == SnackbarResult.ActionPerformed &&
+                                            playerConnection.player === player &&
+                                            player.isCommandAvailable(Player.COMMAND_CHANGE_MEDIA_ITEMS)
+                                        ) {
+                                            val insertion = nextUid?.let { player.queueWindowIndices(setOf(it)).singleOrNull() }
+                                                ?: previousUid?.let { player.queueWindowIndices(setOf(it)).singleOrNull()?.plus(1) }
+                                                ?: 0.takeIf { player.mediaItemCount == 0 }
+                                            if (insertion != null) player.addMediaItem(insertion, removed)
                                         }
                                     }
                                 }
@@ -1120,7 +1164,7 @@ fun Queue(
                                     },
                                 ) {
                                     MediaMetadataListItem(
-                                        mediaMetadata = window.mediaItem.metadata!!,
+                                        mediaMetadata = displayMetadata,
                                         isSelected = false,
                                         isActive = isActive,
                                         isPlaying = isPlaying && isActive,
@@ -1132,12 +1176,12 @@ fun Queue(
                                                     onCheckedChange = onCheckedChange
                                                 )
                                             } else {
-                                                if (!isListenTogetherGuest) {
+                                                if (!isListenTogetherGuest && metadata != null) {
                                                     IconButton(
                                                         onClick = {
                                                             menuState.show {
                                                                 QueueMenu(
-                                                                    mediaMetadata = window.mediaItem.metadata!!,
+                                                                    mediaMetadata = metadata,
                                                                     navController = navController,
                                                                     playerBottomSheetState = playerBottomSheetState,
                                                                     onShowDetailsDialog = {
@@ -1180,7 +1224,10 @@ fun Queue(
                                                         if (inSelectMode) {
                                                             onCheckedChange(window.mediaItem.mediaId !in selection)
                                                         } else if (!isListenTogetherGuest) {
-                                                            if (index == currentWindowIndex) {
+                                                            val player = playerConnection.player
+                                                            val target = player.queueWindowIndices(setOf(window.uid)).singleOrNull()
+                                                                ?: return@combinedClickable
+                                                            if (target == player.currentMediaItemIndex) {
                                                                 if (isCasting) {
                                                                     if (castIsPlaying) {
                                                                         castHandler?.pause()
@@ -1199,17 +1246,12 @@ fun Queue(
                                                                             mediaId
                                                                         ) ?: false
                                                                     if (!navigated) {
-                                                                        playerConnection.player.seekToDefaultPosition(
-                                                                            window.firstPeriodIndex
-                                                                        )
+                                                                        player.seekToDefaultPosition(target)
                                                                     }
                                                                 } else {
-                                                                    if (!playerConnection.service.manualSeekToIndexWithCrossfade(window.firstPeriodIndex)) {
-                                                                        playerConnection.player.seekToDefaultPosition(
-                                                                            window.firstPeriodIndex,
-                                                                        )
-                                                                        playerConnection.player.playWhenReady =
-                                                                            true
+                                                                    if (!playerConnection.service.manualSeekToIndexWithCrossfade(target)) {
+                                                                        player.seekToDefaultPosition(target)
+                                                                        player.playWhenReady = true
                                                                     }
                                                                 }
                                                             }
@@ -1299,11 +1341,12 @@ fun Queue(
                             items = automix,
                             key = { _, it -> it.mediaId },
                         ) { index, item ->
+                            val metadata = item.metadata
                             Row(
                                 horizontalArrangement = Arrangement.Center,
                             ) {
                                 MediaMetadataListItem(
-                                    mediaMetadata = item.metadata!!,
+                                    mediaMetadata = metadata ?: item.queueDisplayMetadata(unknownTrack),
                                     shape = listItemShape(index, automix.size),
                                     trailingContent = {
                                         if (!isListenTogetherGuest) {
@@ -1348,9 +1391,9 @@ fun Queue(
                                                     }
                                                 },
                                                 onLongClick = {
-                                                    menuState.show {
+                                                    if (metadata != null) menuState.show {
                                                         QueueMenu(
-                                                            mediaMetadata = item.metadata!!,
+                                                            mediaMetadata = metadata,
                                                             navController = navController,
                                                             playerBottomSheetState = playerBottomSheetState,
                                                             onShowDetailsDialog = {
@@ -1376,13 +1419,7 @@ fun Queue(
                     hostState = snackbarHostState,
                     modifier =
                     Modifier
-                        .padding(
-                            bottom =
-                            ListItemHeight +
-                                    WindowInsets.systemBars
-                                        .asPaddingValues()
-                                        .calculateBottomPadding(),
-                        )
+                        .padding(bottom = ListItemHeight)
                         .align(Alignment.BottomCenter),
                 )
             }
@@ -1396,6 +1433,114 @@ fun Queue(
         )
     }
 }
+
+@Composable
+private fun QueueViewport(
+    state: BottomSheetState,
+    background: Color,
+    content: @Composable ColumnScope.(scrollHeader: Boolean, bounded: Boolean) -> Unit,
+) {
+    val posture = currentWindowAdaptiveInfo().windowPosture
+    val verticalHinge = posture.separatingVerticalHingeBounds.firstOrNull()
+    val horizontalHinge = posture.separatingHorizontalHingeBounds.firstOrNull()
+    val density = LocalDensity.current
+    val direction = LocalLayoutDirection.current
+    val insets = WindowInsets.safeDrawing.asPaddingValues()
+    var origin by remember { mutableStateOf(Offset.Zero) }
+    val locate = if (verticalHinge != null || horizontalHinge != null) Modifier.onGloballyPositioned {
+        val position = it.positionInWindow()
+        val slide = with(density) { (state.expandedBound - state.value).toPx() }
+        origin = Offset(position.x, position.y - slide)
+    } else Modifier
+
+    BoxWithConstraints(Modifier.fillMaxSize().then(locate)) {
+        val safeLeft = insets.calculateLeftPadding(direction).coerceAtMost(maxWidth)
+        val safeRight = (maxWidth - insets.calculateRightPadding(direction)).coerceAtLeast(safeLeft)
+        val safeTop = insets.calculateTopPadding().coerceAtMost(maxHeight)
+        val safeBottom = (maxHeight - insets.calculateBottomPadding()).coerceAtLeast(safeTop)
+        var left = safeLeft
+        var right = safeRight
+        var top = safeTop
+        var bottom = safeBottom
+
+        if (verticalHinge != null) {
+            val hingeLeft = with(density) { (verticalHinge.left - origin.x).toDp() }
+            val hingeRight = with(density) { (verticalHinge.right - origin.x).toDp() }
+            if (hingeLeft < right && hingeRight > left) {
+                val leftEdge = hingeLeft.coerceIn(left, right)
+                val rightEdge = hingeRight.coerceIn(left, right)
+                val leftWidth = leftEdge - left
+                val rightWidth = right - rightEdge
+                val rtl = direction == LayoutDirection.Rtl
+                val endWidth = if (rtl) leftWidth else rightWidth
+                val startWidth = if (rtl) rightWidth else leftWidth
+                val preferEnd = endWidth >= 320.dp || endWidth >= startWidth
+                if (preferEnd != rtl) left = rightEdge else right = leftEdge
+            }
+        }
+        if (horizontalHinge != null) {
+            val hingeTop = with(density) { (horizontalHinge.top - origin.y).toDp() }
+            val hingeBottom = with(density) { (horizontalHinge.bottom - origin.y).toDp() }
+            if (hingeTop < bottom && hingeBottom > top) {
+                val topEdge = hingeTop.coerceIn(top, bottom)
+                val bottomEdge = hingeBottom.coerceIn(top, bottom)
+                val lowerHeight = bottom - bottomEdge
+                if (lowerHeight >= 300.dp || lowerHeight >= topEdge - top) top = bottomEdge else bottom = topEdge
+            }
+        }
+
+        val availableWidth = right - left
+        val panelWidth = if (availableWidth >= 800.dp) {
+            (availableWidth * 0.5f).coerceIn(360.dp, 500.dp)
+        } else availableWidth
+        val panelHeight = bottom - top
+        val bounded = panelWidth < safeRight - safeLeft || panelHeight < safeBottom - safeTop
+        val panelLeft = if (direction == LayoutDirection.Rtl) left else right - panelWidth
+        val closeLabel = stringResource(R.string.close)
+        val backdrop = if (bounded) {
+            Modifier.clickable(
+                interactionSource = null,
+                indication = null,
+                onClickLabel = closeLabel,
+            ) { state.collapseSoft() }.background(MaterialTheme.colorScheme.scrim.copy(alpha = 0.32f))
+        } else Modifier.background(background)
+        Box(Modifier.fillMaxSize().then(backdrop))
+
+        Surface(
+            modifier = Modifier.absoluteOffset(x = panelLeft, y = top).size(panelWidth, panelHeight),
+            shape = if (bounded) RoundedCornerShape(20.dp) else RectangleShape,
+            color = background,
+        ) {
+            Column(Modifier.fillMaxSize()) {
+                content(panelHeight < 420.dp * density.fontScale.coerceAtLeast(1f), bounded)
+            }
+        }
+    }
+}
+
+private data class QueueDrag(
+    val player: Player,
+    val shuffled: Boolean,
+    val order: List<Any>,
+    val moved: Any,
+)
+
+internal fun Player.queueWindowIndices(uids: Set<Any>): List<Int> {
+    val timeline = currentTimeline
+    val window = Timeline.Window()
+    // Resolve against the current timeline in descending order so removals cannot shift later indices.
+    return (timeline.windowCount - 1 downTo 0).filter { timeline.getWindow(it, window).uid in uids }
+}
+
+private fun MediaItem.queueDisplayMetadata(unknownTrack: String): MediaMetadata =
+    MediaMetadata(
+        id = mediaId,
+        title = mediaMetadata.title?.toString()?.takeIf { it.isNotBlank() } ?: unknownTrack,
+        artists = mediaMetadata.artist?.toString()?.takeIf { it.isNotBlank() }
+            ?.let { listOf(MediaMetadata.Artist(id = null, name = it)) }.orEmpty(),
+        duration = -1,
+        thumbnailUrl = mediaMetadata.artworkUri?.toString(),
+    )
 
 @Composable
 private fun PlayerQueueButton(

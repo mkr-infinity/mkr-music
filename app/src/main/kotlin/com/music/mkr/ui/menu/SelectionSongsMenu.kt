@@ -61,6 +61,7 @@ import com.music.mkr.ui.component.Material3MenuGroup
 import com.music.mkr.ui.component.Material3MenuItemData
 import com.music.mkr.ui.component.NewAction
 import com.music.mkr.ui.component.NewActionGrid
+import com.music.mkr.ui.player.queueWindowIndices
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -643,14 +644,10 @@ fun SelectionMediaMetadataMenu(
                                 },
                                 onClick = {
                                     onDismiss()
-                                    var i = 0
-                                    currentItems.forEach { cur ->
-                                        if (playerConnection.player.availableCommands.contains(
-                                                Player.COMMAND_CHANGE_MEDIA_ITEMS
-                                            )
-                                        ) {
-                                            playerConnection.player.removeMediaItem(cur.firstPeriodIndex - i++)
-                                        }
+                                    val player = playerConnection.player
+                                    if (player.isCommandAvailable(Player.COMMAND_CHANGE_MEDIA_ITEMS)) {
+                                        val windowUids = currentItems.mapTo(hashSetOf()) { it.uid }
+                                        player.queueWindowIndices(windowUids).forEach(player::removeMediaItem)
                                     }
                                     clearAction()
                                 }
