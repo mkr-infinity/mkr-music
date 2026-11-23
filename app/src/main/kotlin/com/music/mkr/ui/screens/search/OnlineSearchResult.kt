@@ -325,7 +325,7 @@ fun OnlineSearchResult(
                                 item(key = "top_song_match", span = { GridItemSpan(maxLineSpan) }) {
                                     TopSongMatchCard(
                                         song = featured,
-                                        modifier = Modifier.padding(top = 8.dp),
+                                        modifier = Modifier.padding(top = if (keepFiltersVisible) 12.dp else 4.dp),
                                         onPlay = { playSong(featured, fromHero = true) },
                                         onPlayNext = { enqueueSearchMatch(connection, featured.toMediaItem()) },
                                         onMenu = { openMenu(featured) },

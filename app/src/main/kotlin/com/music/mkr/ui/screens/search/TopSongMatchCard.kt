@@ -37,6 +37,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -71,28 +72,36 @@ internal fun TopSongMatchCard(
 
     Box(modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
         Surface(
-            modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
+            modifier = Modifier.widthIn(max = 480.dp).fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
             color = colors.surfaceContainer,
         ) {
             Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text(
-                    stringResource(R.string.search_top_song_match),
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.semantics { heading() },
-                )
-
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                 ) {
-                    SearchArtwork(song, Modifier.size(52.dp), MaterialTheme.shapes.medium, pixels = 256)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(song.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+                    SearchArtwork(song, Modifier.size(48.dp), MaterialTheme.shapes.medium, pixels = 256)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                            stringResource(R.string.search_top_song_match),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = colors.onSurfaceVariant,
+                            modifier = Modifier.semantics { heading() },
+                        )
+                        Text(
+                            song.title,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                        )
                         Text(
                             song.artists.joinToString { it.name },
                             style = MaterialTheme.typography.bodyMedium,
                             color = colors.onSurfaceVariant,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
                         )
                     }
                     IconButton(onClick = onMenu) {

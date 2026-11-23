@@ -68,17 +68,7 @@ constructor(
 
     init {
         viewModelScope.launch {
-            filter.collectLatest { selected ->
-                if (selected == null && summaryPage == null ||
-                    selected != null && viewStateMap[selected.value] == null
-                ) loadInitial(selected)
-                if (selected == null && summaryPage != null && summaryMatch == null &&
-                    viewStateMap[YouTube.SearchFilter.FILTER_SONG.value] == null &&
-                    !initialFailed(YouTube.SearchFilter.FILTER_SONG)
-                ) {
-                    loadInitial(YouTube.SearchFilter.FILTER_SONG)
-                }
-            }
+            filter.collectLatest { loadFirstResults(it) }
         }
     }
 
@@ -91,7 +81,19 @@ constructor(
         val selected = filter.value
         if (!initialFailed(selected)) return
         failedInitial.remove(selected)
-        viewModelScope.launch { loadInitial(selected) }
+        viewModelScope.launch { loadFirstResults(selected) }
+    }
+
+    private suspend fun loadFirstResults(selected: YouTube.SearchFilter?) {
+        val firstPageMissing = if (selected == null) summaryPage == null else viewStateMap[selected.value] == null
+        if (firstPageMissing) loadInitial(selected)
+
+        val songs = YouTube.SearchFilter.FILTER_SONG
+        if (selected == null && filter.value == null && summaryPage != null && summaryMatch == null &&
+            viewStateMap[songs.value] == null && !initialFailed(songs)
+        ) {
+            loadInitial(songs)
+        }
     }
 
     private suspend fun loadInitial(selected: YouTube.SearchFilter?) {
