@@ -160,16 +160,10 @@ fun PlayerTransportRow(
         label = "nextPressScale"
     )
 
-    val playShape: Shape = when (variant) {
-        TransportVariant.CIRCLE -> CircleShape
-        TransportVariant.PILL -> RoundedCornerShape(32.dp)
-        TransportVariant.EXPRESSIVE -> RoundedCornerShape(26.dp)
-    }
-
-    val sideShape: Shape = when (variant) {
-        TransportVariant.CIRCLE -> CircleShape
-        TransportVariant.PILL -> RoundedCornerShape(24.dp)
-        TransportVariant.EXPRESSIVE -> CircleShape
+    val sideFace = if (secondaryContainerColor == Color.Transparent) {
+        secondaryContentColor.copy(alpha = 0.12f)
+    } else {
+        secondaryContainerColor
     }
 
     Row(
@@ -188,8 +182,8 @@ fun PlayerTransportRow(
                 onSkipPrevious()
             },
             enabled = canSkipPrevious,
-            shape = sideShape,
-            color = if (secondaryContainerColor == Color.Transparent) Color.Transparent else secondaryContainerColor.copy(alpha = if (canSkipPrevious) 1f else 0.40f),
+            shape = CircleShape,
+            color = Color.Transparent,
             interactionSource = prevInteractionSource,
             modifier = Modifier
                 .scale(prevScale)
@@ -199,6 +193,7 @@ fun PlayerTransportRow(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxSize()
             ) {
+                PlaybackCookieFace(sideFace.copy(alpha = if (canSkipPrevious) sideFace.alpha else sideFace.alpha * 0.4f))
                 Icon(
                     painter = painterResource(R.drawable.skip_previous),
                     contentDescription = stringResource(R.string.previous_track),
@@ -216,9 +211,8 @@ fun PlayerTransportRow(
                 haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                 onPlayPause()
             },
-            shape = playShape,
-            color = primaryContainerColor,
-            shadowElevation = if (variant == TransportVariant.PILL) 4.dp else 6.dp,
+            shape = CircleShape,
+            color = Color.Transparent,
             interactionSource = playInteractionSource,
             modifier = Modifier
                 .scale(playScale)
@@ -228,6 +222,7 @@ fun PlayerTransportRow(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxSize()
             ) {
+                PlaybackCookieFace(primaryContainerColor)
                 AnimatedContent(
                     targetState = Triple(isLoading, playbackState == Player.STATE_ENDED, isPlaying),
                     transitionSpec = {
@@ -273,8 +268,8 @@ fun PlayerTransportRow(
                 onSkipNext()
             },
             enabled = canSkipNext,
-            shape = sideShape,
-            color = if (secondaryContainerColor == Color.Transparent) Color.Transparent else secondaryContainerColor.copy(alpha = if (canSkipNext) 1f else 0.40f),
+            shape = CircleShape,
+            color = Color.Transparent,
             interactionSource = nextInteractionSource,
             modifier = Modifier
                 .scale(nextScale)
@@ -284,6 +279,7 @@ fun PlayerTransportRow(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.fillMaxSize()
             ) {
+                PlaybackCookieFace(sideFace.copy(alpha = if (canSkipNext) sideFace.alpha else sideFace.alpha * 0.4f))
                 Icon(
                     painter = painterResource(R.drawable.skip_next),
                     contentDescription = stringResource(R.string.next_track),

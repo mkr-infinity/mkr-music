@@ -222,6 +222,8 @@ import com.music.mkr.ui.component.AppNavigationBar
 import com.music.mkr.ui.component.AppNavigationRail
 import com.music.mkr.ui.component.BottomSheetMenu
 import com.music.mkr.ui.component.BottomSheetPage
+import com.music.mkr.ui.component.PlaybackCookieButton
+import com.music.mkr.ui.component.rememberPlaybackCookieAngle
 import com.music.mkr.ui.component.ExpressiveIconButton
 import com.music.mkr.ui.component.LocalBottomSheetPageState
 import com.music.mkr.ui.component.LocalMenuState
@@ -1272,19 +1274,19 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                 }
 
-                                                // Settings navigation action (expressive squircle capsule)
-                                                val settingsDesc = stringResource(R.string.settings)
-                                                ExpressiveIconButton(
+                                                val settingsAngle = rememberPlaybackCookieAngle(
+                                                    playerConnection,
+                                                    visible = shouldShowTopBar && !playerBottomSheetState.isExpanded,
+                                                )
+                                                PlaybackCookieButton(
                                                     onClick = { navController.navigate("settings") },
-                                                    animateShape = isHome,
-                                                    animationsEnabled = !isHome || animateHomeControls,
-                                                    shape = if (isHome) CircleShape else RoundedCornerShape(13.dp),
-                                                    containerColor = if (isHome) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.52f),
-                                                    contentColor = if (isHome) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface
+                                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                                    angle = settingsAngle,
                                                 ) {
                                                     Icon(
                                                         painter = painterResource(R.drawable.settings),
-                                                        contentDescription = settingsDesc,
+                                                        contentDescription = stringResource(R.string.settings),
+                                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
                                                         modifier = Modifier.size(20.dp)
                                                     )
                                                 }

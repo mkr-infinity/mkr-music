@@ -57,6 +57,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableLongState
@@ -115,6 +116,9 @@ import coil3.toBitmap
 import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalListenTogetherManager
 import com.music.mkr.LocalPlayerConnection
+import com.music.mkr.ui.component.LocalPlaybackCookieAngle
+import com.music.mkr.ui.component.PlaybackCookieButton
+import com.music.mkr.ui.component.rememberPlaybackCookieAngle
 import com.music.mkr.R
 import com.music.mkr.constants.MiniPlayerDesignOption
 import com.music.mkr.constants.CropAlbumArtKey
@@ -178,6 +182,7 @@ class ProgressState(
 fun MiniPlayer(
     positionState: MutableLongState,
     durationState: MutableLongState,
+    visible: Boolean,
     modifier: Modifier = Modifier
 ) {
     val useNewMiniPlayerDesign by rememberPreference(
@@ -190,23 +195,26 @@ fun MiniPlayer(
     // Create stable progress state - doesn't cause recomposition on position changes
     val progressState = remember(positionState, durationState) { ProgressState(positionState, durationState) }
 
-    when (MiniPlayerDesignOption.fromPreferences(useAppleMiniPlayer, useNewMiniPlayerDesign)) {
-        MiniPlayerDesignOption.APPLE -> AppleMiniPlayer(
-            progressState = progressState,
-
-            modifier = modifier,
-        )
-        MiniPlayerDesignOption.NEW -> NewMiniPlayer(
-            progressState = progressState,
-
-            modifier = modifier,
-        )
-        MiniPlayerDesignOption.CLASSIC -> Box(modifier = modifier.fillMaxWidth()) {
-            LegacyMiniPlayer(
+    val cookieAngle = rememberPlaybackCookieAngle(LocalPlayerConnection.current, visible)
+    CompositionLocalProvider(LocalPlaybackCookieAngle provides cookieAngle) {
+        when (MiniPlayerDesignOption.fromPreferences(useAppleMiniPlayer, useNewMiniPlayerDesign)) {
+            MiniPlayerDesignOption.APPLE -> AppleMiniPlayer(
                 progressState = progressState,
-
-                modifier = Modifier.align(Alignment.Center),
+    
+                modifier = modifier,
             )
+            MiniPlayerDesignOption.NEW -> NewMiniPlayer(
+                progressState = progressState,
+    
+                modifier = modifier,
+            )
+            MiniPlayerDesignOption.CLASSIC -> Box(modifier = modifier.fillMaxWidth()) {
+                LegacyMiniPlayer(
+                    progressState = progressState,
+    
+                    modifier = Modifier.align(Alignment.Center),
+                )
+            }
         }
     }
 }
@@ -507,7 +515,8 @@ private fun NewMiniPlayer(
                 }
 
                 // Transport controls: Previous, Play/Pause, Next
-                IconButton(
+                PlaybackCookieButton(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
                     enabled = canSkipPrevious && !isListenTogetherGuest,
                     onClick = {
                         val now = android.os.SystemClock.uptimeMillis()
@@ -523,12 +532,13 @@ private fun NewMiniPlayer(
                     Icon(
                         painter = painterResource(R.drawable.skip_previous),
                         contentDescription = stringResource(R.string.previous_track),
-                        tint = if (canSkipPrevious && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
+                        tint = if (canSkipPrevious && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
                         modifier = Modifier.size(20.dp)
                     )
                 }
 
-                IconButton(
+                PlaybackCookieButton(
+                    color = MaterialTheme.colorScheme.primaryContainer,
                     onClick = {
                         val now = android.os.SystemClock.uptimeMillis()
                         if (now - lastPlayPauseClickTime >= 300L) {
@@ -569,13 +579,14 @@ private fun NewMiniPlayer(
                             } else {
                                 if (playing) stringResource(R.string.pause) else stringResource(R.string.play)
                             },
-                            tint = onSurfaceColor,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(24.dp)
                         )
                     }
                 }
 
-                IconButton(
+                PlaybackCookieButton(
+                    color = MaterialTheme.colorScheme.secondaryContainer,
                     enabled = canSkipNext && !isListenTogetherGuest,
                     onClick = {
                         val now = android.os.SystemClock.uptimeMillis()
@@ -591,7 +602,7 @@ private fun NewMiniPlayer(
                     Icon(
                         painter = painterResource(R.drawable.skip_next),
                         contentDescription = stringResource(R.string.next),
-                        tint = if (canSkipNext && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
+                        tint = if (canSkipNext && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -1025,7 +1036,8 @@ private fun LegacyMiniPlayer(
                 }
             }
 
-            IconButton(
+            PlaybackCookieButton(
+                color = MaterialTheme.colorScheme.secondaryContainer,
                 enabled = canSkipPrevious && !isListenTogetherGuest,
                 onClick = {
                     val now = android.os.SystemClock.uptimeMillis()
@@ -1041,7 +1053,7 @@ private fun LegacyMiniPlayer(
                 Icon(
                     painter = painterResource(R.drawable.skip_previous),
                     contentDescription = stringResource(R.string.previous_track),
-                    tint = if (canSkipPrevious && !isListenTogetherGuest) primaryColor else primaryColor.copy(alpha = 0.3f),
+                    tint = if (canSkipPrevious && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -1054,7 +1066,8 @@ private fun LegacyMiniPlayer(
                 listenTogetherManager = listenTogetherManager
             )
 
-            IconButton(
+            PlaybackCookieButton(
+                color = MaterialTheme.colorScheme.secondaryContainer,
                 enabled = canSkipNext && !isListenTogetherGuest,
                 onClick = {
                     val now = android.os.SystemClock.uptimeMillis()
@@ -1070,7 +1083,7 @@ private fun LegacyMiniPlayer(
                 Icon(
                     painter = painterResource(R.drawable.skip_next),
                     contentDescription = stringResource(R.string.next),
-                    tint = if (canSkipNext && !isListenTogetherGuest) primaryColor else primaryColor.copy(alpha = 0.3f),
+                    tint = if (canSkipNext && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
                     modifier = Modifier.size(22.dp)
                 )
             }
@@ -1095,7 +1108,8 @@ private fun LegacyPlayPauseButton(
     val isMuted by playerConnection.isMuted.collectAsState()
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
 
-    IconButton(
+    PlaybackCookieButton(
+        color = MaterialTheme.colorScheme.primaryContainer,
         onClick = {
             if (isListenTogetherGuest) {
                 playerConnection.toggleMute()

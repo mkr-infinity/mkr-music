@@ -53,6 +53,7 @@ import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
 import com.music.mkr.LocalListenTogetherManager
 import com.music.mkr.LocalPlayerConnection
+import com.music.mkr.ui.component.PlaybackCookieFace
 import com.music.mkr.R
 import com.music.mkr.constants.*
 import com.music.mkr.listentogether.ListenTogetherManager
@@ -439,10 +440,11 @@ internal fun AppleMiniPlayer(
                             }
                         }
                 ) {
+                    PlaybackCookieFace(MaterialTheme.colorScheme.secondaryContainer)
                     Icon(
                         painter = painterResource(R.drawable.skip_previous),
                         contentDescription = stringResource(R.string.previous_track),
-                        tint = if (canSkipPrevious && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
+                        tint = if (canSkipPrevious && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
                         modifier = Modifier.size(28.dp)
                     )
                 }
@@ -480,6 +482,7 @@ internal fun AppleMiniPlayer(
                     val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
                     val isMuted by playerConnection.isMuted.collectAsState()
 
+                    PlaybackCookieFace(MaterialTheme.colorScheme.primaryContainer)
                     Crossfade(
                         targetState = effectiveIsPlaying,
                         animationSpec = if (interfaceAnimations) tween(150) else snap(),
@@ -499,7 +502,7 @@ internal fun AppleMiniPlayer(
                             } else {
                                 if (playing) stringResource(R.string.pause) else stringResource(R.string.play)
                             },
-                            tint = onSurfaceColor,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(28.dp)
                         )
                     }
@@ -524,10 +527,11 @@ internal fun AppleMiniPlayer(
                             }
                         }
                 ) {
+                    PlaybackCookieFace(MaterialTheme.colorScheme.secondaryContainer)
                     Icon(
                         painter = painterResource(R.drawable.skip_next),
                         contentDescription = stringResource(R.string.next),
-                        tint = if (canSkipNext && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
+                        tint = if (canSkipNext && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
                         modifier = Modifier.size(28.dp)
                     )
                 }

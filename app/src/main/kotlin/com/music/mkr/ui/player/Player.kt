@@ -92,6 +92,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -202,6 +203,8 @@ import com.music.mkr.mkrmusic.getConnectedBluetoothDeviceName
 import com.music.mkr.mkrmusic.isBuds
 import com.music.mkr.mkrmusic.isSpeaker
 import com.music.mkr.mkrmusic.AudioDeviceBottomSheet
+import com.music.mkr.ui.component.LocalPlaybackCookieAngle
+import com.music.mkr.ui.component.rememberPlaybackCookieAngle
 import com.music.mkr.ui.component.BottomSheet
 import com.music.mkr.ui.component.BottomSheetState
 import com.music.mkr.ui.component.LocalBottomSheetPageState
@@ -1088,6 +1091,7 @@ fun BottomSheetPlayer(
             MiniPlayer(
                 positionState = positionState,
                 durationState = durationState,
+                visible = state.isCollapsed,
             )
         },
     ) {
@@ -1205,166 +1209,172 @@ fun BottomSheetPlayer(
                     } else {
                         metadata.liked
                     }
-                    Crossfade(
-                        targetState = playerStyle,
-                        animationSpec = if (interfaceAnimations) tween(durationMillis = 240) else snap(),
-                        label = "PlayerStyleCrossfade"
-                    ) { currentStyle ->
-                        when (currentStyle) {
-                        PlayerStyle.APPLE -> ApplePlayer(
-                            mediaMetadata = metadata,
-                            playbackState = playbackState,
-                            isPlaying = isPlaying,
-                            isLoading = isLoading,
-                            canSkipPrevious = canSkipPrevious,
-                            canSkipNext = canSkipNext,
-                            sliderPosition = sliderPosition,
-                            position = effectivePosition,
-                            duration = duration,
-                            repeatMode = repeatMode,
-                            shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
-                            isLiked = isCurrentTrackLiked,
-                            playerConnection = playerConnection,
-                            navController = navController,
-                            state = state,
-                            textButtonColor = textButtonColor,
-                            iconButtonColor = iconButtonColor,
-                            textBackgroundColor = TextBackgroundColor,
-                            onSliderValueChange = { sliderPosition = it },
-                            onSliderValueChangeFinished = {
-                                sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                sliderPosition = null
-                            },
-                            onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                            onShowQueue = { queueSheetState.expandSoft() },
-                            onShowMenu = { onOpenMenu(metadata) },
-                            modifier = Modifier.fillMaxSize(),
-                            currentFormat = currentFormat
-                        )
-                        PlayerStyle.MINIMAL -> MinimalPlayer(
-                            mediaMetadata = metadata,
-                            playbackState = playbackState,
-                            isPlaying = isPlaying,
-                            isLoading = isLoading,
-                            canSkipPrevious = canSkipPrevious,
-                            canSkipNext = canSkipNext,
-                            sliderPosition = sliderPosition,
-                            position = effectivePosition,
-                            duration = duration,
-                            repeatMode = repeatMode,
-                            shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
-                            isLiked = isCurrentTrackLiked,
-                            playerConnection = playerConnection,
-                            navController = navController,
-                            state = state,
-                            textButtonColor = textButtonColor,
-                            iconButtonColor = iconButtonColor,
-                            textBackgroundColor = TextBackgroundColor,
-                            onSliderValueChange = { sliderPosition = it },
-                            onSliderValueChangeFinished = {
-                                sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                sliderPosition = null
-                            },
-                            onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                            onShowQueue = { queueSheetState.expandSoft() },
-                            onShowMenu = { onOpenMenu(metadata) },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        PlayerStyle.CINEMATIC -> CinematicPlayer(
-                            mediaMetadata = metadata,
-                            playbackState = playbackState,
-                            isPlaying = isPlaying,
-                            isLoading = isLoading,
-                            canSkipPrevious = canSkipPrevious,
-                            canSkipNext = canSkipNext,
-                            sliderPosition = sliderPosition,
-                            position = effectivePosition,
-                            duration = duration,
-                            repeatMode = repeatMode,
-                            shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
-                            isLiked = isCurrentTrackLiked,
-                            playerConnection = playerConnection,
-                            navController = navController,
-                            state = state,
-                            textButtonColor = textButtonColor,
-                            iconButtonColor = iconButtonColor,
-                            textBackgroundColor = TextBackgroundColor,
-                            onSliderValueChange = { sliderPosition = it },
-                            onSliderValueChangeFinished = {
-                                sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                sliderPosition = null
-                            },
-                            onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                            onShowQueue = { queueSheetState.expandSoft() },
-                            onShowMenu = { onOpenMenu(metadata) },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        PlayerStyle.IMMERSIVE -> ImmersivePlayer(
-                            mediaMetadata = metadata,
-                            backgroundArtwork = backgroundArtwork,
-                            animateBackground = animateBackground,
-                            playbackState = playbackState,
-                            isPlaying = isPlaying,
-                            isLoading = isLoading,
-                            canSkipPrevious = canSkipPrevious,
-                            canSkipNext = canSkipNext,
-                            sliderPosition = sliderPosition,
-                            position = effectivePosition,
-                            duration = duration,
-                            repeatMode = repeatMode,
-                            shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
-                            isLiked = isCurrentTrackLiked,
-                            currentFormat = currentFormat,
-                            playerConnection = playerConnection,
-                            navController = navController,
-                            state = state,
-                            onSliderValueChange = { sliderPosition = it },
-                            onSliderValueChangeFinished = {
-                                sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                sliderPosition = null
-                            },
-                            onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                            onShowQueue = { queueSheetState.expandSoft() },
-                            onShowMenu = { onOpenMenu(metadata) },
-                            modifier = Modifier.fillMaxSize()
-                        )
-                        PlayerStyle.IMMERSIVE_EXTENDED -> ImmersiveExtendedPlayer(
-                            mediaMetadata = metadata,
-                            backgroundArtwork = backgroundArtwork,
-                            animateBackground = animateBackground,
-                            playbackState = playbackState,
-                            isPlaying = isPlaying,
-                            isLoading = isLoading,
-                            canSkipPrevious = canSkipPrevious,
-                            canSkipNext = canSkipNext,
-                            sliderPosition = sliderPosition,
-                            position = effectivePosition,
-                            duration = duration,
-                            repeatMode = repeatMode,
-                            shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
-                            isLiked = isCurrentTrackLiked,
-                            playerVolume = playerVolume,
-                            currentFormat = currentFormat,
-                            playerConnection = playerConnection,
-                            navController = navController,
-                            state = state,
-                            textButtonColor = textButtonColor,
-                            iconButtonColor = iconButtonColor,
-                            sideButtonContainerColor = sideButtonContainerColor,
-                            sideButtonContentColor = sideButtonContentColor,
-                            onSliderValueChange = { sliderPosition = it },
-                            onSliderValueChangeFinished = {
-                                sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                sliderPosition = null
-                            },
-                            onVolumeChange = { playerConnection.service.playerVolume.value = it },
-                            onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                            onShowQueue = { queueSheetState.expandSoft() },
-                            onShowMenu = { onOpenMenu(metadata) },
-                            modifier = Modifier.fillMaxSize()
-                        )
+                    val cookieAngle = rememberPlaybackCookieAngle(
+                        playerConnection,
+                        visible = state.isExpanded && !queueSheetState.isExpanded && !showInlineLyrics,
+                    )
+                    CompositionLocalProvider(LocalPlaybackCookieAngle provides cookieAngle) {
+                        Crossfade(
+                            targetState = playerStyle,
+                            animationSpec = if (interfaceAnimations) tween(durationMillis = 240) else snap(),
+                            label = "PlayerStyleCrossfade"
+                        ) { currentStyle ->
+                            when (currentStyle) {
+                            PlayerStyle.APPLE -> ApplePlayer(
+                                mediaMetadata = metadata,
+                                playbackState = playbackState,
+                                isPlaying = isPlaying,
+                                isLoading = isLoading,
+                                canSkipPrevious = canSkipPrevious,
+                                canSkipNext = canSkipNext,
+                                sliderPosition = sliderPosition,
+                                position = effectivePosition,
+                                duration = duration,
+                                repeatMode = repeatMode,
+                                shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
+                                isLiked = isCurrentTrackLiked,
+                                playerConnection = playerConnection,
+                                navController = navController,
+                                state = state,
+                                textButtonColor = textButtonColor,
+                                iconButtonColor = iconButtonColor,
+                                textBackgroundColor = TextBackgroundColor,
+                                onSliderValueChange = { sliderPosition = it },
+                                onSliderValueChangeFinished = {
+                                    sliderPosition?.let { playerConnection.player.seekTo(it) }
+                                    sliderPosition = null
+                                },
+                                onShowLyrics = { showInlineLyrics = !showInlineLyrics },
+                                onShowQueue = { queueSheetState.expandSoft() },
+                                onShowMenu = { onOpenMenu(metadata) },
+                                modifier = Modifier.fillMaxSize(),
+                                currentFormat = currentFormat
+                            )
+                            PlayerStyle.MINIMAL -> MinimalPlayer(
+                                mediaMetadata = metadata,
+                                playbackState = playbackState,
+                                isPlaying = isPlaying,
+                                isLoading = isLoading,
+                                canSkipPrevious = canSkipPrevious,
+                                canSkipNext = canSkipNext,
+                                sliderPosition = sliderPosition,
+                                position = effectivePosition,
+                                duration = duration,
+                                repeatMode = repeatMode,
+                                shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
+                                isLiked = isCurrentTrackLiked,
+                                playerConnection = playerConnection,
+                                navController = navController,
+                                state = state,
+                                textButtonColor = textButtonColor,
+                                iconButtonColor = iconButtonColor,
+                                textBackgroundColor = TextBackgroundColor,
+                                onSliderValueChange = { sliderPosition = it },
+                                onSliderValueChangeFinished = {
+                                    sliderPosition?.let { playerConnection.player.seekTo(it) }
+                                    sliderPosition = null
+                                },
+                                onShowLyrics = { showInlineLyrics = !showInlineLyrics },
+                                onShowQueue = { queueSheetState.expandSoft() },
+                                onShowMenu = { onOpenMenu(metadata) },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            PlayerStyle.CINEMATIC -> CinematicPlayer(
+                                mediaMetadata = metadata,
+                                playbackState = playbackState,
+                                isPlaying = isPlaying,
+                                isLoading = isLoading,
+                                canSkipPrevious = canSkipPrevious,
+                                canSkipNext = canSkipNext,
+                                sliderPosition = sliderPosition,
+                                position = effectivePosition,
+                                duration = duration,
+                                repeatMode = repeatMode,
+                                shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
+                                isLiked = isCurrentTrackLiked,
+                                playerConnection = playerConnection,
+                                navController = navController,
+                                state = state,
+                                textButtonColor = textButtonColor,
+                                iconButtonColor = iconButtonColor,
+                                textBackgroundColor = TextBackgroundColor,
+                                onSliderValueChange = { sliderPosition = it },
+                                onSliderValueChangeFinished = {
+                                    sliderPosition?.let { playerConnection.player.seekTo(it) }
+                                    sliderPosition = null
+                                },
+                                onShowLyrics = { showInlineLyrics = !showInlineLyrics },
+                                onShowQueue = { queueSheetState.expandSoft() },
+                                onShowMenu = { onOpenMenu(metadata) },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            PlayerStyle.IMMERSIVE -> ImmersivePlayer(
+                                mediaMetadata = metadata,
+                                backgroundArtwork = backgroundArtwork,
+                                animateBackground = animateBackground,
+                                playbackState = playbackState,
+                                isPlaying = isPlaying,
+                                isLoading = isLoading,
+                                canSkipPrevious = canSkipPrevious,
+                                canSkipNext = canSkipNext,
+                                sliderPosition = sliderPosition,
+                                position = effectivePosition,
+                                duration = duration,
+                                repeatMode = repeatMode,
+                                shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
+                                isLiked = isCurrentTrackLiked,
+                                currentFormat = currentFormat,
+                                playerConnection = playerConnection,
+                                navController = navController,
+                                state = state,
+                                onSliderValueChange = { sliderPosition = it },
+                                onSliderValueChangeFinished = {
+                                    sliderPosition?.let { playerConnection.player.seekTo(it) }
+                                    sliderPosition = null
+                                },
+                                onShowLyrics = { showInlineLyrics = !showInlineLyrics },
+                                onShowQueue = { queueSheetState.expandSoft() },
+                                onShowMenu = { onOpenMenu(metadata) },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                            PlayerStyle.IMMERSIVE_EXTENDED -> ImmersiveExtendedPlayer(
+                                mediaMetadata = metadata,
+                                backgroundArtwork = backgroundArtwork,
+                                animateBackground = animateBackground,
+                                playbackState = playbackState,
+                                isPlaying = isPlaying,
+                                isLoading = isLoading,
+                                canSkipPrevious = canSkipPrevious,
+                                canSkipNext = canSkipNext,
+                                sliderPosition = sliderPosition,
+                                position = effectivePosition,
+                                duration = duration,
+                                repeatMode = repeatMode,
+                                shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
+                                isLiked = isCurrentTrackLiked,
+                                playerVolume = playerVolume,
+                                currentFormat = currentFormat,
+                                playerConnection = playerConnection,
+                                navController = navController,
+                                state = state,
+                                textButtonColor = textButtonColor,
+                                iconButtonColor = iconButtonColor,
+                                sideButtonContainerColor = sideButtonContainerColor,
+                                sideButtonContentColor = sideButtonContentColor,
+                                onSliderValueChange = { sliderPosition = it },
+                                onSliderValueChangeFinished = {
+                                    sliderPosition?.let { playerConnection.player.seekTo(it) }
+                                    sliderPosition = null
+                                },
+                                onVolumeChange = { playerConnection.service.playerVolume.value = it },
+                                onShowLyrics = { showInlineLyrics = !showInlineLyrics },
+                                onShowQueue = { queueSheetState.expandSoft() },
+                                onShowMenu = { onOpenMenu(metadata) },
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        }
                     }
-                }
+                    }
             }
         }
     }
