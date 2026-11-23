@@ -137,6 +137,8 @@ fun SettingsScreen(
 
     Column(
         Modifier
+            .fillMaxSize()
+            .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface)
             .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
             .verticalScroll(rememberScrollState())
             .padding(horizontal = 16.dp),

@@ -1013,18 +1013,13 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                var shouldShowTopBar by rememberSaveable { mutableStateOf(false) }
-
-                LaunchedEffect(navBackStackEntry, listenTogetherInTopBar) {
-                    val currentRoute = navBackStackEntry?.destination?.route
-                    val isListenTogetherScreen = currentRoute == Screens.ListenTogether.route || 
-                        currentRoute == "listen_together_from_topbar"
-                    shouldShowTopBar = currentRoute in topLevelScreens &&
-                        currentRoute != "settings" &&
-                        currentRoute != Screens.Search.route &&
-                        currentRoute != "search" &&
-                        !(isListenTogetherScreen && listenTogetherInTopBar)
-                }
+                val isListenTogetherScreen = currentRoute == Screens.ListenTogether.route ||
+                    currentRoute == "listen_together_from_topbar"
+                val shouldShowTopBar = currentRoute in topLevelScreens &&
+                    currentRoute != "settings" &&
+                    currentRoute != Screens.Search.route &&
+                    currentRoute != "search" &&
+                    !(isListenTogetherScreen && listenTogetherInTopBar)
 
                 val sharedPrefs = context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
                 val isUpdateAvailable = remember {
@@ -1103,7 +1098,7 @@ class MainActivity : ComponentActivity() {
                     Scaffold(
                         containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
                         topBar = {
-                            AnimatedVisibility(
+                            if (currentRoute != "settings") AnimatedVisibility(
                                 visible = shouldShowTopBar,
                                 enter = fadeIn(animationSpec = tween(durationMillis = 300)),
                                 exit = fadeOut(animationSpec = tween(durationMillis = 200))
