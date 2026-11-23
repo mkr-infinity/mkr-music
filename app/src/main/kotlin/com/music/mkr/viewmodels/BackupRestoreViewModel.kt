@@ -53,7 +53,10 @@ class BackupRestoreViewModel @Inject constructor(
 ) : ViewModel() {
     fun backup(context: Context, uri: Uri) {
         runCatching {
-            context.applicationContext.contentResolver.openOutputStream(uri)?.use {
+            val destination = checkNotNull(context.applicationContext.contentResolver.openOutputStream(uri)) {
+                "Backup destination could not be opened"
+            }
+            destination.use {
                 it.buffered().zipOutputStream().use { outputStream ->
                     (context.filesDir / "datastore" / SETTINGS_FILENAME).inputStream().buffered()
                         .use { inputStream ->
