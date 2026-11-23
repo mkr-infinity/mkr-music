@@ -109,6 +109,7 @@ app/src/main/java/com/music/mkr/listentogether/proto/*
 mkr-music-web/
 
 # TODO and task tracking files
+/HANDOFF.md
 TODO.md
 TODO*
 todo*
