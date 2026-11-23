@@ -70,7 +70,7 @@ import com.music.mkr.ui.component.Icon as MIcon
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun AppleMiniPlayer(
-    motion: MiniPlayerMotion,
+
     progressState: ProgressState,
     modifier: Modifier = Modifier
 ) {
@@ -296,9 +296,9 @@ internal fun AppleMiniPlayer(
                 .height(64.dp)
                 .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
                 .miniPlayerCapsule(
-                    motion = motion,
+
                     restingRadius = 16.dp,
-                    playingRadius = 20.dp,
+
                     color = backgroundColor,
                     borderColor = outlineColor.copy(alpha = 0.15f),
                 )
@@ -337,9 +337,9 @@ internal fun AppleMiniPlayer(
                         .background(color = outlineColor.copy(alpha = 0.2f))
                 ) {
                     MiniPlayerArtwork(
-                        trackId = mediaMetadata?.id,
+
                         url = mediaMetadata?.thumbnailUrl,
-                        motion = motion,
+
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                     )
@@ -365,18 +365,16 @@ internal fun AppleMiniPlayer(
                                 .joinToString(", ")
                         }
 
-                        MiniPlayerTitle(motion, onSurfaceColor) {
-                            Text(
-                                text = cleanTitle,
-                                color = onSurfaceColor,
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                softWrap = false,
-                                modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
-                            )
-                        }
+                        Text(
+                            text = cleanTitle,
+                            color = onSurfaceColor,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            softWrap = false,
+                            modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                        )
                         Spacer(modifier = Modifier.height(2.dp))
                         Row(
                             modifier = Modifier.fillMaxWidth(),

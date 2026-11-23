@@ -1088,7 +1088,6 @@ fun BottomSheetPlayer(
             MiniPlayer(
                 positionState = positionState,
                 durationState = durationState,
-                visible = state.isCollapsed,
             )
         },
     ) {

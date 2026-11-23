@@ -178,7 +178,6 @@ class ProgressState(
 fun MiniPlayer(
     positionState: MutableLongState,
     durationState: MutableLongState,
-    visible: Boolean,
     modifier: Modifier = Modifier
 ) {
     val useNewMiniPlayerDesign by rememberPreference(
@@ -188,26 +187,24 @@ fun MiniPlayer(
         UseAppleMiniPlayerKey, MiniPlayerDesignOption.DefaultUseAppleMiniPlayer,
     )
 
-    val motion = rememberMiniPlayerMotion(visible)
-
     // Create stable progress state - doesn't cause recomposition on position changes
     val progressState = remember(positionState, durationState) { ProgressState(positionState, durationState) }
 
     when (MiniPlayerDesignOption.fromPreferences(useAppleMiniPlayer, useNewMiniPlayerDesign)) {
         MiniPlayerDesignOption.APPLE -> AppleMiniPlayer(
             progressState = progressState,
-            motion = motion,
+
             modifier = modifier,
         )
         MiniPlayerDesignOption.NEW -> NewMiniPlayer(
             progressState = progressState,
-            motion = motion,
+
             modifier = modifier,
         )
         MiniPlayerDesignOption.CLASSIC -> Box(modifier = modifier.fillMaxWidth()) {
             LegacyMiniPlayer(
                 progressState = progressState,
-                motion = motion,
+
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -220,7 +217,7 @@ fun MiniPlayer(
 
 @Composable
 private fun NewMiniPlayer(
-    motion: MiniPlayerMotion,
+
     progressState: ProgressState,
     modifier: Modifier = Modifier
 ) {
@@ -453,9 +450,9 @@ private fun NewMiniPlayer(
                 .height(64.dp)
                 .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
                 .miniPlayerCapsule(
-                    motion = motion,
+
                     restingRadius = 32.dp,
-                    playingRadius = 27.dp,
+
                     color = backgroundColor,
                     borderColor = outlineColor.copy(alpha = 0.15f),
                 )
@@ -473,7 +470,7 @@ private fun NewMiniPlayer(
             ) {
                 // Play button with progress - isolated composable
                 NewMiniPlayerPlayButton(
-                    motion = motion,
+
                     progressState = progressState,
                     playbackState = playbackState,
                     isCasting = isCasting,
@@ -489,7 +486,7 @@ private fun NewMiniPlayer(
 
                 // Song info - isolated composable
                 NewMiniPlayerSongInfo(
-                    motion = motion,
+
                     mediaMetadata = mediaMetadata,
                     onSurfaceColor = onSurfaceColor,
                     errorColor = errorColor,
@@ -613,7 +610,7 @@ private fun NewMiniPlayer(
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun NewMiniPlayerPlayButton(
-    motion: MiniPlayerMotion,
+
     progressState: ProgressState,
     playbackState: Int,
     isCasting: Boolean,
@@ -687,9 +684,9 @@ private fun NewMiniPlayerPlayButton(
                 }
         ) {
             MiniPlayerArtwork(
-                trackId = mediaMetadata?.id,
+
                 url = mediaMetadata?.thumbnailUrl?.resize(544, 544),
-                motion = motion,
+
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
@@ -725,7 +722,7 @@ private fun NewMiniPlayerPlayButton(
  */
 @Composable
 private fun NewMiniPlayerSongInfo(
-    motion: MiniPlayerMotion,
+
     mediaMetadata: MediaMetadata?,
     onSurfaceColor: Color,
     errorColor: Color,
@@ -748,18 +745,16 @@ private fun NewMiniPlayerSongInfo(
                     .joinToString(", ")
             }
 
-            MiniPlayerTitle(motion, onSurfaceColor) {
-                Text(
-                    text = cleanTitle,
-                    color = onSurfaceColor,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    softWrap = false,
-                    modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
-                )
-            }
+            Text(
+                text = cleanTitle,
+                color = onSurfaceColor,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = false,
+                modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+            )
             Spacer(modifier = Modifier.height(2.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -801,7 +796,7 @@ private fun NewMiniPlayerSongInfo(
 
 @Composable
 private fun LegacyMiniPlayer(
-    motion: MiniPlayerMotion,
+
     progressState: ProgressState,
     modifier: Modifier = Modifier
 ) {
@@ -888,9 +883,9 @@ private fun LegacyMiniPlayer(
                 }
             }
             .miniPlayerCapsule(
-                motion = motion,
+
                 restingRadius = 16.dp,
-                playingRadius = 19.dp,
+
                 color = if (pureBlack && isSystemInDarkTheme()) Color.Black
                     else MaterialTheme.colorScheme.surfaceContainer,
                 topOnly = true,
@@ -1022,7 +1017,7 @@ private fun LegacyMiniPlayer(
             Box(Modifier.weight(1f)) {
                 mediaMetadata?.let {
                     LegacyMiniMediaInfo(
-                        motion = motion,
+
                         mediaMetadata = it,
                         pureBlack = pureBlack,
                         modifier = Modifier.padding(horizontal = 6.dp),
@@ -1144,7 +1139,7 @@ private fun LegacyPlayPauseButton(
 
 @Composable
 private fun LegacyMiniMediaInfo(
-    motion: MiniPlayerMotion,
+
     mediaMetadata: MediaMetadata,
     pureBlack: Boolean,
     modifier: Modifier = Modifier,
@@ -1169,9 +1164,9 @@ private fun LegacyMiniMediaInfo(
             )
 
             MiniPlayerArtwork(
-                trackId = mediaMetadata.id,
+
                 url = mediaMetadata.thumbnailUrl?.resize(544, 544),
-                motion = motion,
+
                 contentScale = if (cropAlbumArt) ContentScale.Crop else ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),
             )
@@ -1200,18 +1195,16 @@ private fun LegacyMiniMediaInfo(
                 .weight(1f)
                 .padding(horizontal = 6.dp),
         ) {
-            MiniPlayerTitle(motion, MaterialTheme.colorScheme.onSurface) {
-                Text(
-                    text = mediaMetadata.title,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    softWrap = false,
-                    modifier = Modifier.fillMaxWidth().basicMarquee(),
-                )
-            }
+            Text(
+                text = mediaMetadata.title,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                softWrap = false,
+                modifier = Modifier.fillMaxWidth().basicMarquee(),
+            )
 
             if (mediaMetadata.artists.any { it.name.isNotBlank() }) {
                 Text(
