@@ -304,10 +304,12 @@ fun ImmersiveExtendedPlayer(
                 primaryContentColor = primaryIconColor,
                 secondaryContainerColor = sideButtonColor,
                 secondaryContentColor = sideIconColor,
-                playButtonSize = 72.dp,
-                sideButtonSize = 56.dp,
-                playIconSize = 48.dp,
-                sideIconSize = 36.dp,
+                playButtonWidth = 88.dp,
+                playButtonHeight = 64.dp,
+                sideButtonWidth = 48.dp,
+                sideButtonHeight = 64.dp,
+                playIconSize = 32.dp,
+                sideIconSize = 28.dp,
                 haptic = haptic,
                 leadingControl = {
                     IconButton(

@@ -298,10 +298,12 @@ fun ImmersivePlayer(
                 primaryContentColor = primaryIconColor,
                 secondaryContainerColor = foreground.copy(alpha = 0.06f),
                 secondaryContentColor = foreground,
-                playButtonSize = 84.dp,
-                sideButtonSize = 64.dp,
-                playIconSize = 54.dp,
-                sideIconSize = 42.dp,
+                playButtonWidth = 100.dp,
+                playButtonHeight = 68.dp,
+                sideButtonWidth = 56.dp,
+                sideButtonHeight = 68.dp,
+                playIconSize = 34.dp,
+                sideIconSize = 30.dp,
                 haptic = haptic,
                 leadingControl = {
                     IconButton(

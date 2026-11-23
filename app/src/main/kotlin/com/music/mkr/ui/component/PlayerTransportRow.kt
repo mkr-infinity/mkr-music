@@ -8,6 +8,7 @@ package com.music.mkr.ui.component
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
@@ -122,59 +123,47 @@ fun PlayerTransportRow(
 ) {
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
     val immersive = variant == TransportVariant.IMMERSIVE || variant == TransportVariant.IMMERSIVE_EXTENDED
-    val playShape = when (variant) {
-        TransportVariant.IMMERSIVE -> CircleShape
-        TransportVariant.IMMERSIVE_EXTENDED -> RoundedCornerShape(26.dp)
-        else -> CircleShape
-    }
-    val skipShape = if (variant == TransportVariant.IMMERSIVE_EXTENDED) RoundedCornerShape(20.dp) else CircleShape
-
     val effectivePlayWidth = playButtonWidth ?: if (variant == TransportVariant.PILL) playButtonSize * 1.55f else playButtonSize
     val effectivePlayHeight = playButtonHeight ?: playButtonSize
     val effectiveSideWidth = sideButtonWidth ?: if (variant == TransportVariant.PILL) sideButtonSize * 1.30f else sideButtonSize
     val effectiveSideHeight = sideButtonHeight ?: sideButtonSize
+    val playShape = if (immersive) {
+        val corner by animateDpAsState(
+            targetValue = if (isPlaying) 20.dp else effectivePlayHeight / 2,
+            animationSpec = if (interfaceAnimations) spring(dampingRatio = 0.9f, stiffness = 400f) else snap(),
+            label = "immersiveTransportCorner",
+        )
+        RoundedCornerShape(corner)
+    } else CircleShape
+    val skipShape = if (immersive) RoundedCornerShape(effectiveSideHeight / 2) else CircleShape
+    val pressSpec = if (interfaceAnimations) {
+        spring<Float>(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = if (immersive) 400f else Spring.StiffnessMediumLow,
+        )
+    } else snap<Float>()
+
     val playInteractionSource = remember { MutableInteractionSource() }
     val isPlayPressed by playInteractionSource.collectIsPressedAsState()
     val playScale by animateFloatAsState(
-        targetValue = if (isPlayPressed && interfaceAnimations) 0.92f else 1.0f,
-        animationSpec = if (interfaceAnimations) {
-            spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
-        } else {
-            snap()
-        },
+        targetValue = if (isPlayPressed && interfaceAnimations) (if (immersive) 0.96f else 0.92f) else 1f,
+        animationSpec = pressSpec,
         label = "playPressScale"
     )
 
     val prevInteractionSource = remember { MutableInteractionSource() }
     val isPrevPressed by prevInteractionSource.collectIsPressedAsState()
     val prevScale by animateFloatAsState(
-        targetValue = if (isPrevPressed && canSkipPrevious && interfaceAnimations) 0.90f else 1.0f,
-        animationSpec = if (interfaceAnimations) {
-            spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
-        } else {
-            snap()
-        },
+        targetValue = if (isPrevPressed && canSkipPrevious && interfaceAnimations) (if (immersive) 0.94f else 0.90f) else 1f,
+        animationSpec = pressSpec,
         label = "prevPressScale"
     )
 
     val nextInteractionSource = remember { MutableInteractionSource() }
     val isNextPressed by nextInteractionSource.collectIsPressedAsState()
     val nextScale by animateFloatAsState(
-        targetValue = if (isNextPressed && canSkipNext && interfaceAnimations) 0.90f else 1.0f,
-        animationSpec = if (interfaceAnimations) {
-            spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
-        } else {
-            snap()
-        },
+        targetValue = if (isNextPressed && canSkipNext && interfaceAnimations) (if (immersive) 0.94f else 0.90f) else 1f,
+        animationSpec = pressSpec,
         label = "nextPressScale"
     )
 
@@ -264,8 +253,11 @@ fun PlayerTransportRow(
                             targetState = Triple(isLoading, playbackState == Player.STATE_ENDED, isPlaying),
                             transitionSpec = {
                                 if (interfaceAnimations) {
-                                    (fadeIn(animationSpec = tween(180, easing = LinearEasing)) + scaleIn(initialScale = 0.85f, animationSpec = tween(180)))
-                                        .togetherWith(fadeOut(animationSpec = tween(140, easing = LinearEasing)) + scaleOut(targetScale = 0.85f, animationSpec = tween(140)))
+                                    val enterMs = if (immersive) 150 else 180
+                                    val exitMs = if (immersive) 110 else 140
+                                    val iconScale = if (immersive) 0.94f else 0.85f
+                                    (fadeIn(animationSpec = tween(enterMs, easing = LinearEasing)) + scaleIn(initialScale = iconScale, animationSpec = tween(enterMs)))
+                                        .togetherWith(fadeOut(animationSpec = tween(exitMs, easing = LinearEasing)) + scaleOut(targetScale = iconScale, animationSpec = tween(exitMs)))
                                 } else {
                                     fadeIn(animationSpec = snap()).togetherWith(fadeOut(animationSpec = snap()))
                                 }
