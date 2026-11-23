@@ -17,7 +17,7 @@
 ### Changed
 
 - **Navigation styles** — Connected capsules with distinct tab animations. Floating Glass takes up less space. · *Settings → Appearance → Misc → Navigation style*
-- **Player style picker** — Preview four layouts before applying one. · *Settings → Appearance → Full Player → Player style*
+- **Player style picker** — Preview three layouts before applying one. · *Settings → Appearance → Full Player → Player style*
 - **Immersive players** — Sharper covers, curved controls, and room to scroll in smaller windows. · *Settings → Appearance → Full Player → Player style*
 - **Full-player settings** — Style and background controls now sit together. · *Settings → Appearance → Full Player*
 - **Audio offload** — Moved to Advanced. · *Settings → Player and audio → Advanced → Enable offload*
@@ -37,6 +37,7 @@
 - **Top Song Match placement** — A smaller card appears below the filters in All and Songs when there’s a match. · *Search → Results*
 - **Queue reliability** — Reorder and remove tracks more safely. Wide screens get a side panel. · *Full player → Queue*
 - **Adaptive full player** — Artwork stays visible when the window is short. Scroll to reach all controls. · *Full player*
+- **Minimal player** — Swipe down at the top to collapse the player. Artwork effects fill the background. · *Full player → Minimal*
 - **Universal APK selection** — Downloads only the latest `mkr-music-universal.apk`. · *Settings → System Updates or Home → Update Available*
 - **Auto download on like** — Newly liked online songs queue once. · *Settings → Player and audio → Queue → Auto download on like*
 - **Backup export feedback** — Shows an error when the destination cannot be opened. · *Settings → Backup and restore → Backup*
@@ -50,6 +51,7 @@
 - **Mini-player effects** — Removed Micro Equalizer, Artwork Transition, and Capsule Morph. · *Settings → Appearance → Mini-player*
 - **Liquid Mini Player** — Saved selections use the default mini-player. · *Settings → Appearance → Mini-player*
 - **Material Extended, Modern, and Classic** — Saved selections use Cinematic. · *Settings → Appearance → Full Player → Player style*
+- **Immersive Extended** — Saved selections use Cinematic. · *Settings → Appearance → Full Player → Player style*
 - **Apple Music background** — Saved selections use Follow theme. · *Settings → Appearance → Full Player → Player background style*
 
 ## [v1.1.0] - 2026-11-01

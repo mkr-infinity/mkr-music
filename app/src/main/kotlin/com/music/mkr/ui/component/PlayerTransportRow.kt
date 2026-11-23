@@ -78,7 +78,6 @@ enum class TransportVariant {
     /** Smooth rounded squircle used by MaterialExtended and Apple player */
     EXPRESSIVE,
     IMMERSIVE,
-    IMMERSIVE_EXTENDED,
 }
 
 /**
@@ -122,7 +121,7 @@ fun PlayerTransportRow(
     trailingControl: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
-    val immersive = variant == TransportVariant.IMMERSIVE || variant == TransportVariant.IMMERSIVE_EXTENDED
+    val immersive = variant == TransportVariant.IMMERSIVE
     val effectivePlayWidth = playButtonWidth ?: if (variant == TransportVariant.PILL) playButtonSize * 1.55f else playButtonSize
     val effectivePlayHeight = playButtonHeight ?: playButtonSize
     val effectiveSideWidth = sideButtonWidth ?: if (variant == TransportVariant.PILL) sideButtonSize * 1.30f else sideButtonSize

@@ -182,8 +182,7 @@ private fun PlayerStyleCard(
 /** Static miniatures use the same artwork placement and controls as the live layouts. */
 @Composable
 private fun PlayerStylePreview(style: PlayerStyle, modifier: Modifier) {
-    val immersive = style == PlayerStyle.IMMERSIVE || style == PlayerStyle.IMMERSIVE_EXTENDED
-    val extended = style == PlayerStyle.IMMERSIVE_EXTENDED
+    val immersive = style == PlayerStyle.IMMERSIVE
     val cinematic = style == PlayerStyle.CINEMATIC
     val colors = MaterialTheme.colorScheme
     val base = if (immersive) PlayerColorExtractor.CharcoalDark else colors.surfaceContainerLowest
@@ -214,7 +213,7 @@ private fun PlayerStylePreview(style: PlayerStyle, modifier: Modifier) {
                 block(0.09f, 0.08f, 0.10f, 0.07f, depth, 0.05f)
                 block(0.35f, 0.10f, 0.30f, 0.025f, detail.copy(alpha = 0.56f))
                 block(0.81f, 0.08f, 0.10f, 0.07f, depth, 0.05f)
-                block(0.12f, if (extended) 0.48f else 0.55f, 0.18f, 0.033f, depth)
+                block(0.12f, 0.55f, 0.18f, 0.033f, depth)
             } else {
                 val artWidth = if (cinematic) 0.72f else 0.66f
                 val artLeft = (1f - artWidth) / 2f
@@ -223,11 +222,7 @@ private fun PlayerStylePreview(style: PlayerStyle, modifier: Modifier) {
                 drawCircle(accent, w * 0.053f, Offset(w * 0.50f, h * 0.045f + w * artWidth / 2f))
             }
 
-            val titleY = when {
-                extended -> 0.55f
-                immersive -> 0.62f
-                else -> 0.69f
-            }
+            val titleY = if (immersive) 0.62f else 0.69f
             block(0.12f, titleY, 0.46f, 0.028f, detail)
             block(0.12f, titleY + 0.048f, 0.28f, 0.018f, detail.copy(alpha = 0.55f))
             block(0.12f, titleY + 0.092f, 0.76f, 0.018f, depth)
@@ -246,7 +241,6 @@ private fun PlayerStylePreview(style: PlayerStyle, modifier: Modifier) {
             block(0.675f, transportY, 0.065f, 0.027f, detail)
             block(0.12f, transportY, 0.043f, 0.027f, detail.copy(alpha = 0.55f))
             block(0.837f, transportY, 0.043f, 0.027f, detail.copy(alpha = 0.55f))
-            if (extended) block(0.21f, 0.91f, 0.58f, 0.015f, detail.copy(alpha = 0.5f))
         }
     }
 }

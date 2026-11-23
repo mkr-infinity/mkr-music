@@ -27,10 +27,6 @@ enum class PlayerStyle(
     IMMERSIVE(
         titleRes = R.string.player_style_immersive,
         descriptionRes = R.string.player_style_immersive_desc
-    ),
-    IMMERSIVE_EXTENDED(
-        titleRes = R.string.player_style_immersive_extended,
-        descriptionRes = R.string.player_style_immersive_extended_desc
     );
 
     companion object {
@@ -38,6 +34,7 @@ enum class PlayerStyle(
         val selectableStyles: List<PlayerStyle> = entries.filter { it != APPLE }
 
         fun fromString(name: String?): PlayerStyle {
+            if (name.equals("IMMERSIVE_EXTENDED", ignoreCase = true)) return CINEMATIC
             val style = entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: DEFAULT
             return if (style == APPLE) DEFAULT else style
         }

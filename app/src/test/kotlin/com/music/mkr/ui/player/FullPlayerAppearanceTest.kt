@@ -16,14 +16,14 @@ import org.junit.Test
 class FullPlayerAppearanceTest {
     @Test
     fun retiredStylesAndPreviouslyHiddenAppleSelectionResolveToCinematic() {
-        for (saved in listOf("MATERIAL_EXTENDED", "MODERN", "CLASSIC", "APPLE", null)) {
+        for (saved in listOf("MATERIAL_EXTENDED", "MODERN", "CLASSIC", "APPLE", "IMMERSIVE_EXTENDED", null)) {
             assertEquals(PlayerStyle.CINEMATIC, PlayerStyle.fromString(saved))
         }
     }
 
     @Test
-    fun theFourSelectableStyleIdsStillRoundTrip() {
-        val ids = listOf("MINIMAL", "CINEMATIC", "IMMERSIVE", "IMMERSIVE_EXTENDED")
+    fun theThreeSelectableStyleIdsStillRoundTrip() {
+        val ids = listOf("MINIMAL", "CINEMATIC", "IMMERSIVE")
         assertEquals(ids, PlayerStyle.selectableStyles.map { it.name })
         for (id in ids) {
             assertEquals(id, PlayerStyle.fromString(id).name)

@@ -182,7 +182,6 @@ import com.music.mkr.ui.player.styles.MinimalPlayer
 import com.music.mkr.ui.player.styles.CinematicPlayer
 import com.music.mkr.ui.player.styles.ApplePlayer
 import com.music.mkr.ui.player.styles.ImmersivePlayer
-import com.music.mkr.ui.player.styles.ImmersiveExtendedPlayer
 import com.music.mkr.constants.QueuePeekHeight
 import com.music.mkr.constants.SliderStyle
 import com.music.mkr.constants.SliderStyleKey
@@ -345,7 +344,6 @@ fun BottomSheetPlayer(
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
     val isMuted by playerConnection.isMuted.collectAsState()
-    val playerVolume by playerConnection.service.playerVolume.collectAsState()
 
     val (audioQuality) = rememberEnumPreference(
         AudioQualityKey,
@@ -609,45 +607,6 @@ fun BottomSheetPlayer(
         }
     }
 
-    // Separate colors for Previous/Next buttons in PRIMARY/TERTIARY/DEFAULT modes
-    val (sideButtonContainerColor, sideButtonContentColor) = when {
-        playerBackground == PlayerBackgroundStyle.BLUR || 
-        playerBackground == PlayerBackgroundStyle.GRADIENT ||
-        playerBackground == PlayerBackgroundStyle.GLOW_ANIMATED ||
-        playerBackground == PlayerBackgroundStyle.LIVE_MESH -> {
-            when (playerButtonsStyle) {
-                PlayerButtonsStyle.DEFAULT -> Pair(
-                    artworkPalette.primaryAccent.copy(alpha = 0.22f), 
-                    artworkPalette.primaryAccent
-                )
-                PlayerButtonsStyle.PRIMARY -> Pair(
-                    MaterialTheme.colorScheme.primaryContainer,
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                PlayerButtonsStyle.TERTIARY -> Pair(
-                    MaterialTheme.colorScheme.tertiaryContainer,
-                    MaterialTheme.colorScheme.onTertiaryContainer
-                )
-            }
-        }
-        else -> {
-            when (playerButtonsStyle) {
-                PlayerButtonsStyle.DEFAULT -> Pair(
-                    MaterialTheme.colorScheme.secondaryContainer,
-                    MaterialTheme.colorScheme.onSecondaryContainer
-                )
-                PlayerButtonsStyle.PRIMARY -> Pair(
-                    MaterialTheme.colorScheme.primaryContainer,
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                )
-                PlayerButtonsStyle.TERTIARY -> Pair(
-                    MaterialTheme.colorScheme.tertiaryContainer,
-                    MaterialTheme.colorScheme.onTertiaryContainer
-                )
-            }
-        }
-    }
-
     val download by LocalDownloadUtil.current.getDownload(mediaMetadata?.id ?: "")
         .collectAsState(initial = null)
 
@@ -780,7 +739,7 @@ fun BottomSheetPlayer(
                             Image(
                                 painter = rememberPlayerBackgroundPainter(artworkUrl, 14, animateBackground),
                                 contentDescription = null,
-                                contentScale = ContentScale.FillBounds,
+                                contentScale = ContentScale.Crop,
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .alpha(backgroundAlpha),
@@ -795,6 +754,7 @@ fun BottomSheetPlayer(
                     PlayerBackgroundStyle.GRADIENT -> {
                         AnimatedContent(
                             targetState = gradientColors,
+                            modifier = Modifier.fillMaxSize(),
                             transitionSpec = {
                                 val duration = if (animateBackground) 800 else 0
                                 fadeIn(tween(duration)).togetherWith(fadeOut(tween(duration)))
@@ -828,6 +788,7 @@ fun BottomSheetPlayer(
                     PlayerBackgroundStyle.GLOW_ANIMATED -> {
                         AnimatedContent(
                             targetState = gradientColors,
+                            modifier = Modifier.fillMaxSize(),
                             transitionSpec = {
                                 val duration = if (animateBackground) 1200 else 0
                                 fadeIn(tween(duration)) togetherWith fadeOut(tween(duration))
@@ -1006,11 +967,6 @@ fun BottomSheetPlayer(
                                 modifier = Modifier
                                     .fillMaxSize()
                                     .alpha(backgroundAlpha)
-                                    .graphicsLayer {
-                                        // Scale up to avoid showing edges during rotation
-                                        scaleX = 1.7f
-                                        scaleY = 1.7f
-                                    }
                             ) {
                                 val matrix = remember {
                                     val m = ColorMatrix()
@@ -1020,15 +976,13 @@ fun BottomSheetPlayer(
                                 val colorFilter = remember(matrix) { ColorFilter.colorMatrix(matrix) }
                                 val painter = rememberPlayerBackgroundPainter(artworkUrl, 15, animateBackground)
 
-                                // Layer 1: The Anchor (Full Image, Counter-Clockwise)
+                                // Keep the base still so the moving layers cannot expose an empty edge.
                                 Image(
                                     painter = painter,
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
                                     colorFilter = colorFilter,
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .graphicsLayer { rotationZ = -3f * (rotation?.value ?: 0f) }
+                                    modifier = Modifier.fillMaxSize()
                                 )
 
                                 // Layer 2: Fast Rotating Crop (Top-Left)
@@ -1041,6 +995,8 @@ fun BottomSheetPlayer(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .graphicsLayer {
+                                            scaleX = 1.7f
+                                            scaleY = 1.7f
                                             rotationZ = 6f * (rotation?.value ?: 0f)
                                             alpha = 0.6f
                                         }
@@ -1056,6 +1012,8 @@ fun BottomSheetPlayer(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .graphicsLayer {
+                                            scaleX = 1.7f
+                                            scaleY = 1.7f
                                             rotationZ = 4f * (rotation?.value ?: 0f)
                                             alpha = 0.5f
                                         }
@@ -1274,6 +1232,8 @@ fun BottomSheetPlayer(
                                 textButtonColor = textButtonColor,
                                 iconButtonColor = iconButtonColor,
                                 textBackgroundColor = TextBackgroundColor,
+                                playerBackground = playerBackground,
+                                useDarkTheme = useDarkTheme,
                                 onSliderValueChange = { sliderPosition = it },
                                 onSliderValueChangeFinished = {
                                     sliderPosition?.let { playerConnection.player.seekTo(it) }
@@ -1343,43 +1303,6 @@ fun BottomSheetPlayer(
                                     sliderPosition?.let { playerConnection.player.seekTo(it) }
                                     sliderPosition = null
                                 },
-                                onShowLyrics = { showInlineLyrics = !showInlineLyrics },
-                                onShowQueue = { queueSheetState.expandSoft() },
-                                onShowMenu = { onOpenMenu(metadata) },
-                                modifier = Modifier.fillMaxSize()
-                            )
-                            PlayerStyle.IMMERSIVE_EXTENDED -> ImmersiveExtendedPlayer(
-                                mediaMetadata = metadata,
-                                itemArtwork = currentItemArtwork,
-                                animateArtwork = animateBackground,
-                                foreground = immersiveForeground,
-                                controlsBackground = immersiveControlsBackground,
-                                primaryButtonColor = textButtonColor,
-                                primaryIconColor = iconButtonColor,
-                                sideButtonColor = sideButtonContainerColor,
-                                sideIconColor = sideButtonContentColor,
-                                playbackState = playbackState,
-                                isPlaying = isPlaying,
-                                isLoading = isLoading,
-                                canSkipPrevious = canSkipPrevious,
-                                canSkipNext = canSkipNext,
-                                sliderPosition = sliderPosition,
-                                position = effectivePosition,
-                                duration = duration,
-                                repeatMode = repeatMode,
-                                shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
-                                isLiked = isCurrentTrackLiked,
-                                playerVolume = playerVolume,
-                                currentFormat = currentFormat,
-                                playerConnection = playerConnection,
-                                navController = navController,
-                                state = state,
-                                onSliderValueChange = { sliderPosition = it },
-                                onSliderValueChangeFinished = {
-                                    sliderPosition?.let { playerConnection.player.seekTo(it) }
-                                    sliderPosition = null
-                                },
-                                onVolumeChange = { playerConnection.service.playerVolume.value = it },
                                 onShowLyrics = { showInlineLyrics = !showInlineLyrics },
                                 onShowQueue = { queueSheetState.expandSoft() },
                                 onShowMenu = { onOpenMenu(metadata) },

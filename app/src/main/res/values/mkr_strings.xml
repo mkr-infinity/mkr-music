@@ -168,8 +168,6 @@
     <string name="player_style_cinematic_desc">Asymmetric spacious controls with prominent animated play button</string>
     <string name="player_style_immersive">Immersive</string>
     <string name="player_style_immersive_desc">Edge-to-edge ambient artwork with audio format badge</string>
-    <string name="player_style_immersive_extended">Immersive Extended</string>
-    <string name="player_style_immersive_extended_desc">Extended ambient backdrop with integrated volume bar and queue peek</string>
     <!-- Library 5-Category Cards -->
     <string name="library_liked_songs">Liked songs</string>
     <string name="library_liked_songs_desc">Your favorite tracks</string>
