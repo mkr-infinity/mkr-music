@@ -95,6 +95,7 @@ import androidx.compose.material3.adaptive.separatingVerticalHingeBounds
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
@@ -102,10 +103,8 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -132,6 +131,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.media3.common.MediaItem
 import androidx.media3.common.Player
 import androidx.media3.common.Timeline
@@ -249,9 +250,6 @@ fun Queue(
 
     val currentFormat by playerConnection.currentFormat.collectAsState(initial = null)
 
-    val selectedSongs = remember { mutableStateListOf<MediaMetadata>() }
-    val selectedItems = remember { mutableStateListOf<Timeline.Window>() }
-
     // Cast state - safely access castConnectionHandler to prevent crashes during service lifecycle changes
     val castHandler = remember(playerConnection) {
         try {
@@ -263,16 +261,10 @@ fun Queue(
     val isCasting by castHandler?.isCasting?.collectAsState() ?: remember { mutableStateOf(false) }
     val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
 
-    var inSelectMode by rememberSaveable { mutableStateOf(false) }
-    val selection = rememberSaveable(
-        saver = listSaver<MutableList<String>, String>(
-            save = { it.toList() },
-            restore = { it.toMutableStateList() }
-        )
-    ) { mutableStateListOf() }
+    val selection = viewModel<QueueSelection>()
     val onExitSelectionMode = {
-        inSelectMode = false
-        selection.clear()
+        selection.active = false
+        selection.uids = emptySet()
     }
     LaunchedEffect(state.isCollapsed) {
         if (state.isCollapsed) onExitSelectionMode()
@@ -527,12 +519,21 @@ fun Queue(
             }
         },
     ) {
-        BackHandler(enabled = inSelectMode && state.isExpanded, onBack = onExitSelectionMode)
+        BackHandler(enabled = selection.active && state.isExpanded, onBack = onExitSelectionMode)
         val unknownTrack = stringResource(R.string.unknown)
         val queueTitle by playerConnection.queueTitle.collectAsState()
         val radioChips by playerConnection.radioChips.collectAsState()
         val queueWindows by playerConnection.queueWindows.collectAsState()
         val queueOrder = remember(queueWindows) { queueWindows.map { it.uid } }
+        val selectedItems by remember(playerConnection, selection) {
+            derivedStateOf {
+                if (selection.uids.isEmpty()) emptyList()
+                else queueWindows.filter { it.uid in selection.uids }
+            }
+        }
+        LaunchedEffect(queueOrder) {
+            if (selection.uids.isNotEmpty()) selection.uids = selection.uids.intersect(queueOrder)
+        }
         val automix by playerConnection.service.automixItems.collectAsState()
         val mutableQueueWindows = remember { mutableStateListOf<Timeline.Window>() }
         val queueLength = remember(queueWindows) {
@@ -772,8 +773,8 @@ fun Queue(
                                         player.removeMediaItems(active + 1, player.mediaItemCount)
                                     }
                                     if (active > 0) player.removeMediaItems(0, active)
-                                    selection.clear()
-                                    inSelectMode = false
+                                    selection.uids = emptySet()
+                                    selection.active = false
                                 }
                             },
                             modifier = Modifier.size(38.dp),
@@ -958,18 +959,11 @@ fun Queue(
 
 
                 AnimatedVisibility(
-                    visible = inSelectMode,
+                    visible = selection.active,
                     enter = fadeIn() + expandVertically(),
                     exit = fadeOut() + shrinkVertically(),
                 ) {
-                    val selectedSongs = remember(selection.toList(), mutableQueueWindows) {
-                        mutableQueueWindows.filter { it.mediaItem.mediaId in selection }
-                            .mapNotNull { it.mediaItem.metadata }
-                    }
-                    val selectedItems = remember(selection.toList(), mutableQueueWindows) {
-                        mutableQueueWindows.filter { it.mediaItem.mediaId in selection }
-                    }
-                    val count = selection.size
+                    val count = selectedItems.size
                     Row(
                         modifier =
                         Modifier
@@ -989,28 +983,28 @@ fun Queue(
                             modifier = Modifier.weight(1f)
                         )
                         Checkbox(
-                            checked = count == mutableQueueWindows.size && count > 0,
-                            onCheckedChange = {
-                                if (count == mutableQueueWindows.size) {
-                                    selection.clear()
-                                } else {
-                                    selection.clear()
-                                    mutableQueueWindows.forEach {
-                                        selection.add(it.mediaItem.mediaId)
-                                    }
-                                }
+                            checked = count > 0 && count == queueWindows.size,
+                            onCheckedChange = { checked ->
+                                selection.uids = if (checked) {
+                                    playerConnection.queueWindows.value.mapTo(hashSetOf()) { it.uid }
+                                } else emptySet()
                             }
                         )
                         IconButton(
                             enabled = count > 0,
                             onClick = {
                                 menuState.show {
-                                    SelectionMediaMetadataMenu(
-                                        songSelection = selectedSongs,
-                                        onDismiss = menuState::dismiss,
-                                        clearAction = onExitSelectionMode,
-                                        currentItems = selectedItems,
-                                    )
+                                    val items = selectedItems
+                                    if (items.isEmpty()) {
+                                        LaunchedEffect(Unit) { menuState.dismiss() }
+                                    } else {
+                                        SelectionMediaMetadataMenu(
+                                            songSelection = remember(items) { items.mapNotNull { it.mediaItem.metadata } },
+                                            onDismiss = menuState::dismiss,
+                                            clearAction = onExitSelectionMode,
+                                            currentItems = items,
+                                        )
+                                    }
                                 }
                             },
                         ) {
@@ -1051,7 +1045,7 @@ fun Queue(
                             modifier =
                                 Modifier
                                     .animateContentSize()
-                                    .height(if (inSelectMode) 48.dp else 0.dp),
+                                    .height(if (selection.active) 48.dp else 0.dp),
                         )
                     }
 
@@ -1144,11 +1138,12 @@ fun Queue(
                                 }
                             }
 
-                            val onCheckedChange: (Boolean) -> Unit = {
-                                if (it) {
-                                    selection.add(window.mediaItem.mediaId)
-                                } else {
-                                    selection.remove(window.mediaItem.mediaId)
+                            val onCheckedChange: (Boolean) -> Unit = { checked ->
+                                val uid = window.uid
+                                if (!checked) {
+                                    selection.uids = selection.uids - uid
+                                } else if (playerConnection.queueWindows.value.any { it.uid == uid }) {
+                                    selection.uids = selection.uids + uid
                                 }
                             }
 
@@ -1170,9 +1165,9 @@ fun Queue(
                                         isPlaying = isPlaying && isActive,
                                         shape = listItemShape(index, mutableQueueWindows.size),
                                         trailingContent = {
-                                            if (inSelectMode) {
+                                            if (selection.active) {
                                                 Checkbox(
-                                                    checked = window.mediaItem.mediaId in selection,
+                                                    checked = window.uid in selection.uids,
                                                     onCheckedChange = onCheckedChange
                                                 )
                                             } else {
@@ -1221,8 +1216,8 @@ fun Queue(
                                                 .background(background)
                                                 .combinedClickable(
                                                     onClick = {
-                                                        if (inSelectMode) {
-                                                            onCheckedChange(window.mediaItem.mediaId !in selection)
+                                                        if (selection.active) {
+                                                            onCheckedChange(window.uid !in selection.uids)
                                                         } else if (!isListenTogetherGuest) {
                                                             val player = playerConnection.player
                                                             val target = player.queueWindowIndices(setOf(window.uid)).singleOrNull()
@@ -1258,11 +1253,11 @@ fun Queue(
                                                         }
                                                     },
                                                     onLongClick = {
-                                                        if (!inSelectMode) {
+                                                        if (!selection.active) {
                                                             haptic.performHapticFeedback(
                                                                 HapticFeedbackType.LongPress
                                                             )
-                                                            inSelectMode = true
+                                                            selection.active = true
                                                             onCheckedChange(true)
                                                         }
                                                     },
@@ -1516,6 +1511,11 @@ private fun QueueViewport(
             }
         }
     }
+}
+
+internal class QueueSelection : ViewModel() {
+    var active by mutableStateOf(false)
+    var uids by mutableStateOf(emptySet<Any>())
 }
 
 private data class QueueDrag(

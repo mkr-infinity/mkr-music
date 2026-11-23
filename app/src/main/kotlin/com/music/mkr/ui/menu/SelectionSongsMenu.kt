@@ -534,6 +534,7 @@ fun SelectionMediaMetadataMenu(
     val listenTogetherManager = com.music.mkr.LocalListenTogetherManager.current
     val isGuest = listenTogetherManager?.isInRoom == true && listenTogetherManager.isHost == false
 
+    val hasSongMetadata = songSelection.isNotEmpty()
     val allLiked by remember(songSelection) {
         mutableStateOf(songSelection.isNotEmpty() && songSelection.all { it.liked })
     }
@@ -547,7 +548,7 @@ fun SelectionMediaMetadataMenu(
     }
 
     AddToPlaylistDialog(
-        isVisible = showChoosePlaylistDialog,
+        isVisible = hasSongMetadata && showChoosePlaylistDialog,
         onGetSong = {
             database.withTransaction { songSelection.forEach { insert(it) } }
             songSelection.map { it.id }
@@ -582,7 +583,7 @@ fun SelectionMediaMetadataMenu(
         mutableStateOf(false)
     }
 
-    if (showRemoveDownloadDialog) {
+    if (hasSongMetadata && showRemoveDownloadDialog) {
         DefaultDialog(
             onDismiss = { showRemoveDownloadDialog = false },
             content = {
@@ -654,7 +655,7 @@ fun SelectionMediaMetadataMenu(
                             )
                         )
                     }
-                    if (!isGuest) {
+                    if (hasSongMetadata && !isGuest) {
                         add(
                             Material3MenuItemData(
                                 title = { Text(text = stringResource(R.string.play)) },
@@ -716,7 +717,7 @@ fun SelectionMediaMetadataMenu(
                             )
                         }
                     }
-                    add(
+                    if (hasSongMetadata) add(
                         Material3MenuItemData(
                             title = { Text(text = stringResource(R.string.add_to_playlist)) },
                             icon = {
@@ -734,9 +735,9 @@ fun SelectionMediaMetadataMenu(
             )
         }
 
-        item { Spacer(modifier = Modifier.height(12.dp)) }
+        if (hasSongMetadata) item { Spacer(modifier = Modifier.height(12.dp)) }
 
-        item {
+        if (hasSongMetadata) item {
             Material3MenuGroup(
                 expressive = true,
                 items = buildList {
