@@ -34,6 +34,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
@@ -131,6 +132,7 @@ fun SuggestionsTabContent(
                 item(key = "personalized_suggestions") {
                     BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
                         val columns = if (maxWidth >= 640.dp) 2 else 1
+                        val albumCardWidth = searchAlbumCardWidth(maxWidth)
                         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text(stringResource(R.string.search_personalized_suggestions), style = MaterialTheme.typography.titleLarge)
                             personalTracks.chunked(columns).forEach { row ->
@@ -148,8 +150,8 @@ fun SuggestionsTabContent(
                                             color = MaterialTheme.colorScheme.surfaceContainerLow,
                                         ) {
                                             Row(
-                                                Modifier.padding(10.dp),
-                                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                                Modifier.padding(8.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp),
                                                 verticalAlignment = Alignment.CenterVertically,
                                             ) {
                                                 AsyncImage(
@@ -176,6 +178,7 @@ fun SuggestionsTabContent(
                                 if (showAlbumCharts) {
                                     TrendingAlbumsSection(
                                         albums = trendingAlbums.orEmpty(),
+                                        cardWidth = albumCardWidth,
                                         onAlbumClick = { viewModel.navigateToAlbum(it, navController) },
                                         onMoreClick = {
                                             val code = if (regionCode == "system") java.util.Locale.getDefault().country.lowercase() else regionCode.lowercase()
@@ -191,11 +194,15 @@ fun SuggestionsTabContent(
             val releases = youtubeNewReleases.orEmpty()
             if (releases.isNotEmpty()) {
                 item(key = "new_releases") {
-                    YouTubeLatestAlbumsSection(
-                        albums = releases,
-                        onAlbumClick = { navController.navigate("album/${it.id}") },
-                        onMoreClick = { navController.navigate("new_release") },
-                    )
+                    BoxWithConstraints(Modifier.fillMaxWidth()) {
+                        val albumCardWidth = searchAlbumCardWidth((maxWidth - 32.dp).coerceAtLeast(0.dp))
+                        YouTubeLatestAlbumsSection(
+                            albums = releases,
+                            cardWidth = albumCardWidth,
+                            onAlbumClick = { navController.navigate("album/${it.id}") },
+                            onMoreClick = { navController.navigate("new_release") },
+                        )
+                    }
                 }
             }
             val hasDiscoveries = personalTracks.isNotEmpty() || !trendingAlbums.isNullOrEmpty() || releases.isNotEmpty()
@@ -375,28 +382,28 @@ fun TopArtistsSection(
     }
 }
 
+private fun searchAlbumCardWidth(width: Dp): Dp = (width * 0.28f).coerceIn(92.dp, 120.dp)
+
 @Composable
 fun TrendingAlbumsSection(
     albums: List<SuggestionAlbum>,
+    cardWidth: Dp,
     onAlbumClick: (SuggestionAlbum) -> Unit,
     onMoreClick: () -> Unit
 ) {
     if (albums.isEmpty()) return
     Column(modifier = Modifier.fillMaxWidth()) {
-        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Trending Albums",
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 16.dp)
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             items(albums) { album ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(120.dp).clickable { onAlbumClick(album) }) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(cardWidth).clickable { onAlbumClick(album) }) {
                     Box(contentAlignment = Alignment.BottomEnd) {
                         SubcomposeAsyncImage(
                             model = album.thumbnailUrl,
@@ -407,7 +414,7 @@ fun TrendingAlbumsSection(
                                     LoadingIndicator()
                                 }
                             },
-                            modifier = Modifier.size(120.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
+                            modifier = Modifier.size(cardWidth).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
                         )
                         Surface(modifier = Modifier.size(28.dp).offset((-4).dp, (-4).dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary, tonalElevation = 4.dp) {
                             Box(contentAlignment = Alignment.Center) {
@@ -425,13 +432,13 @@ fun TrendingAlbumsSection(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .width(100.dp)
+                        .width(cardWidth)
                         .clickable { onMoreClick() }
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(120.dp)
+                            .size(cardWidth)
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.primaryContainer)
                     ) {
@@ -571,27 +578,28 @@ fun TrendingVideosSection(
 @Composable
 fun YouTubeLatestAlbumsSection(
     albums: List<AlbumItem>,
+    cardWidth: Dp,
     onAlbumClick: (AlbumItem) -> Unit,
     onMoreClick: () -> Unit
 ) {
     if (albums.isEmpty()) return
     Column(modifier = Modifier.fillMaxWidth()) {
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
         NavigationTitle(
             title = "New Releases",
             onClick = onMoreClick
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             items(albums) { album ->
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .width(120.dp)
+                        .width(cardWidth)
                         .clickable { onAlbumClick(album) }
                 ) {
                     AsyncImage(
@@ -599,7 +607,7 @@ fun YouTubeLatestAlbumsSection(
                         contentDescription = album.title,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(120.dp)
+                            .size(cardWidth)
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                     )
@@ -624,7 +632,7 @@ fun YouTubeLatestAlbumsSection(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 

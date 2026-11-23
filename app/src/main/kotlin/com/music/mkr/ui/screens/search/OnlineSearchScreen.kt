@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -77,7 +78,6 @@ import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
-import com.music.mkr.constants.SuggestionItemHeight
 import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.playback.queues.YouTubeQueue
 import com.music.mkr.ui.component.LocalMenuState
@@ -457,7 +457,7 @@ fun SearchSpotlightCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
             .mkrClickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         color = if (pureBlack) Color(0xFF16171B) else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -468,7 +468,7 @@ fun SearchSpotlightCard(
         ),
         tonalElevation = 2.dp
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -493,7 +493,7 @@ fun SearchSpotlightCard(
                 IconButton(
                     interactionSource = menuPressInteraction,
                     onClick = onMenuClick,
-                    modifier = Modifier.size(32.dp).mkrPressFeedback(interactionSource = menuPressInteraction)
+                    modifier = Modifier.mkrPressFeedback(interactionSource = menuPressInteraction)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.more_vert),
@@ -504,7 +504,7 @@ fun SearchSpotlightCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -521,7 +521,7 @@ fun SearchSpotlightCard(
 
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(52.dp)
                         .clip(if (isCircle) CircleShape else RoundedCornerShape(14.dp))
                 ) {
                     AsyncImage(
@@ -532,7 +532,7 @@ fun SearchSpotlightCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     val title = when (item) {
@@ -579,7 +579,7 @@ fun SearchSpotlightCard(
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(42.dp).mkrPressFeedback(interactionSource = playPressInteraction)
+                    modifier = Modifier.size(48.dp).mkrPressFeedback(interactionSource = playPressInteraction)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -612,7 +612,7 @@ fun SuggestionItem(
         modifier = modifier
             .padding(horizontal = 16.dp, vertical = 1.dp)
             .fillMaxWidth()
-            .height(SuggestionItemHeight)
+            .heightIn(min = 48.dp)
             .clip(shape)
             .background(if (pureBlack) Color(0xFF16171B) else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f))
             .mkrClickable(onClick = onClick)
@@ -622,7 +622,7 @@ fun SuggestionItem(
             painterResource(if (online) R.drawable.search else R.drawable.history),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp).size(20.dp)
+            modifier = Modifier.padding(horizontal = 12.dp).size(20.dp)
         )
 
         Text(

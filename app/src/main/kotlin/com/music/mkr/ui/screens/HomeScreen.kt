@@ -1007,6 +1007,7 @@ fun HomeScreen(
 
             val horizontalLazyGridItemWidthFactor = if (maxWidth * 0.475f >= 320.dp) 0.475f else 0.9f
             val horizontalLazyGridItemWidth = maxWidth * horizontalLazyGridItemWidthFactor
+            val moodTileWidth = (maxWidth * 0.38f).coerceIn(132.dp, 172.dp)
             val forgottenFavoritesSnapLayoutInfoProvider = remember(forgottenFavoritesLazyGridState) {
                 SnapLayoutInfoProvider(
                     lazyGridState = forgottenFavoritesLazyGridState,
@@ -1043,6 +1044,7 @@ fun HomeScreen(
                             ?.filter { !it.title.equals("Podcasts", ignoreCase = true) }
                             ?.map { it to it.title } ?: emptyList(),
                         currentValue = selectedChip,
+                        chipSpacing = 6.dp,
                         onValueUpdate = {
                             viewModel.toggleChip(it)
                         }
@@ -2189,7 +2191,7 @@ fun HomeScreen(
                             }
                         }
                         HomeSection.MoodAndGenres -> {
-                            explorePage?.moodAndGenres?.let { moodAndGenres ->
+                            explorePage?.moodAndGenres?.takeIf { it.isNotEmpty() }?.let { moodAndGenres ->
                                 item(key = "mood_and_genres_title") {
                                     NavigationTitle(
                                         title = stringResource(R.string.mood_and_genres),
@@ -2200,11 +2202,15 @@ fun HomeScreen(
                                     )
                                 }
                                 item(key = "mood_and_genres_list") {
+                                    val rows = minOf(4, moodAndGenres.size)
+                                    val gap = 8.dp
                                     LazyHorizontalGrid(
-                                        rows = GridCells.Fixed(4),
-                                        contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp),
+                                        rows = GridCells.Fixed(rows),
+                                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
+                                        horizontalArrangement = Arrangement.spacedBy(gap),
+                                        verticalArrangement = Arrangement.spacedBy(gap),
                                         modifier = Modifier
-                                            .height((MoodAndGenresButtonHeight + 12.dp) * 4 + 12.dp)
+                                            .height((MoodAndGenresButtonHeight + gap) * rows)
                                             .animateItem()
                                     ) {
                                         items(moodAndGenres) {
@@ -2213,9 +2219,7 @@ fun HomeScreen(
                                                 onClick = {
                                                     navController.navigate("youtube_browse/${it.endpoint.browseId}?params=${it.endpoint.params}")
                                                 },
-                                                modifier = Modifier
-                                                    .padding(6.dp)
-                                                    .width(180.dp)
+                                                modifier = Modifier.width(moodTileWidth)
                                             )
                                         }
                                     }

@@ -1265,6 +1265,8 @@ fun BottomSheetPlayer(
                                 textButtonColor = textButtonColor,
                                 iconButtonColor = iconButtonColor,
                                 textBackgroundColor = TextBackgroundColor,
+                                playerBackground = playerBackground,
+                                useDarkTheme = useDarkTheme,
                                 onSliderValueChange = { sliderPosition = it },
                                 onSliderValueChangeFinished = {
                                     sliderPosition?.let { playerConnection.player.seekTo(it) }

@@ -25,6 +25,8 @@
 - **Settings and playback controls** — Upright icons on expressive faces that rotate during playback. · *Home, Library, and player*
 - **Home shuffle** — Speed Dial, Keep Listening, and eligible shelves keep their order until the next app session. · *Settings → Content → Misc → Randomize Home Screen Order*
 - **Search landing** — History, personalized suggestions with album charts, then new releases. · *Search*
+- **Search spacing** — Smaller result cards, album tiles, and category filters. · *Search*
+- **Home controls** — A matching account cookie, tighter category chips, and adaptive mood tiles. · *Home*
 - **Listen Together shortcut** — Opt in to show it on Home. · *Settings → Appearance → Auto playlists → Show Listen Together on Home Screen*
 - **Audio output** — A simpler sheet highlights the selected device. · *Full player → More options → Audio Output*
 - **Update checker** — Clearer version, status, and download actions. · *Settings → System Updates or Update Available*
@@ -38,6 +40,7 @@
 - **Queue reliability** — Reorder and remove tracks more safely. Wide screens get a side panel. · *Full player → Queue*
 - **Adaptive full player** — Artwork stays visible when the window is short. Scroll to reach all controls. · *Full player*
 - **Minimal player** — Swipe down at the top to collapse the player. Artwork effects fill the background. · *Full player → Minimal*
+- **Cinematic player** — Swipe down to collapse and a seek bar that follows the selected background. · *Full player → Cinematic*
 - **Universal APK selection** — Downloads only the latest `mkr-music-universal.apk`. · *Settings → System Updates or Home → Update Available*
 - **Auto download on like** — Newly liked online songs queue once. · *Settings → Player and audio → Queue → Auto download on like*
 - **Backup export feedback** — Shows an error when the destination cannot be opened. · *Settings → Backup and restore → Backup*

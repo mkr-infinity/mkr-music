@@ -160,6 +160,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import coil3.compose.AsyncImage
+import coil3.compose.SubcomposeAsyncImage
 import coil3.imageLoader
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -796,6 +797,7 @@ class MainActivity : ComponentActivity() {
                 // in background immediately — zero lag when user opens the Search screen
                 hiltViewModel<SuggestionsViewModel>()
                 val accountImageUrl by homeViewModel.accountImageUrl.collectAsState()
+                val accountName by homeViewModel.accountName.collectAsState()
                 val isLoggedIn by homeViewModel.isLoggedIn.collectAsState()
                 val updateState by homeViewModel.updateState.collectAsState()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -1243,7 +1245,41 @@ class MainActivity : ComponentActivity() {
                                                 }
 
                                                 // Account-aware button reactive to auth state (hidden when not authenticated)
-                                                if (isLoggedIn) {
+                                                if (isLoggedIn && isHome) {
+                                                    val accountDesc = stringResource(R.string.account)
+                                                    val initials = remember(accountName, accountDesc) {
+                                                        val name = accountName.takeUnless { it.isBlank() || it == "Guest" } ?: accountDesc
+                                                        name.trim().split(Regex("\\s+")).take(2)
+                                                            .joinToString("") { it.take(1).uppercase() }
+                                                    }
+                                                    PlaybackCookieButton(
+                                                        onClick = { navController.navigate("settings/account") },
+                                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                                        modifier = Modifier.semantics { contentDescription = accountDesc },
+                                                        angle = null,
+                                                    ) {
+                                                        val initialsContent: @Composable () -> Unit = {
+                                                            Text(
+                                                                initials,
+                                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                maxLines = 1,
+                                                            )
+                                                        }
+                                                        if (accountImageUrl.isNullOrBlank()) {
+                                                            initialsContent()
+                                                        } else {
+                                                            SubcomposeAsyncImage(
+                                                                model = accountImageUrl,
+                                                                contentDescription = null,
+                                                                contentScale = ContentScale.Crop,
+                                                                modifier = Modifier.size(26.dp).clip(CircleShape),
+                                                                loading = { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { initialsContent() } },
+                                                                error = { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { initialsContent() } },
+                                                            )
+                                                        }
+                                                    }
+                                                } else if (isLoggedIn) {
                                                     val accountDesc = stringResource(R.string.account)
                                                     ExpressiveIconButton(
                                                         onClick = { navController.navigate("settings/account") }

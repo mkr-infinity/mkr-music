@@ -34,6 +34,7 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -391,14 +392,13 @@ private val onlineFilters = listOf<Pair<YouTube.SearchFilter?, Int>>(
 
 @Composable
 internal fun <T> SearchCategoryFilters(labels: List<Pair<T, Int>>, selected: T, onSelect: (T) -> Unit) {
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
         items(labels, key = { it.second }) { (filter, label) ->
             FilterChip(
                 selected = filter == selected,
                 onClick = { onSelect(filter) },
-                label = { Text(stringResource(label)) },
-                shape = MaterialTheme.shapes.large,
-                modifier = Modifier.heightIn(min = 48.dp),
+                label = { Text(stringResource(label), style = MaterialTheme.typography.labelMedium) },
+                shape = RoundedCornerShape(10.dp),
                 colors = FilterChipDefaults.filterChipColors(
                     selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
                     selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
@@ -438,7 +438,7 @@ private fun SearchResultRow(
     modifier: Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
-    val artworkSize = if (item is AlbumItem) 64.dp else 48.dp
+    val artworkSize = if (item is AlbumItem) 56.dp else 48.dp
     val label = when (item) {
         is SongItem -> item.artists.joinToString { it.name }.ifBlank { item.album?.name.orEmpty() }
         is AlbumItem -> listOfNotNull(item.artists?.joinToString { it.name }, item.year?.toString()).joinToString(" · ")
@@ -466,7 +466,7 @@ private fun SearchResultRow(
                             stateDescription = state
                         }
                     }
-                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                    .padding(horizontal = 8.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(10.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {

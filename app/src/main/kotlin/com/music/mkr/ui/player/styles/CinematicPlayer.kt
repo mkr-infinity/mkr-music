@@ -40,10 +40,12 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
@@ -95,6 +97,8 @@ fun CinematicPlayer(
     textButtonColor: Color,
     iconButtonColor: Color,
     textBackgroundColor: Color,
+    playerBackground: PlayerBackgroundStyle,
+    useDarkTheme: Boolean,
     onSliderValueChange: (Long) -> Unit,
     onSliderValueChangeFinished: () -> Unit,
     onShowLyrics: () -> Unit,
@@ -115,9 +119,11 @@ fun CinematicPlayer(
     )
 
     val insets = WindowInsets.systemBars.asPaddingValues()
+    val sheetScrollConnection = remember(state) { state.preUpPostDownNestedScrollConnection }
     AdaptivePlayerLayout(
         modifier = modifier
             .fillMaxSize()
+            .nestedScroll(sheetScrollConnection)
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
             .padding(
                 top = insets.calculateTopPadding() + 8.dp,
@@ -129,6 +135,8 @@ fun CinematicPlayer(
         artwork = { size ->
             Surface(
                 shape = RoundedCornerShape(26.dp),
+                color = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.surface
+                    else Color.Transparent,
                 shadowElevation = if (isPlaying) 16.dp else 8.dp,
                 modifier = Modifier
                     .size(size)
@@ -210,12 +218,13 @@ fun CinematicPlayer(
 
         // Slider
         PlayerSliderTrack(
-            sliderColors = PlayerSliderColors.getSliderColors(PlayerBackgroundStyle.DEFAULT, false),
+            sliderColors = PlayerSliderColors.getSliderColors(playerBackground, useDarkTheme),
             value = (sliderPosition ?: position).toFloat(),
             onValueChange = { onSliderValueChange(it.toLong()) },
             onValueChangeFinished = onSliderValueChangeFinished,
             valueRange = 0f..duration.coerceAtLeast(0L).toFloat(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isPlaying = isPlaying,
         )
 
         Row(
