@@ -1106,9 +1106,7 @@ private fun LegacyPlayPauseButton(
         onClick = {
             if (isListenTogetherGuest) {
                 playerConnection.toggleMute()
-                return@IconButton
-            }
-            if (isCasting) {
+            } else if (isCasting) {
                 if (castIsPlaying) castHandler?.pause() else castHandler?.play()
             } else if (playbackState == Player.STATE_ENDED) {
                 playerConnection.player.seekTo(0, 0)
