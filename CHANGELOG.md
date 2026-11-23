@@ -16,12 +16,12 @@
 
 ### Changed
 
-- **Navigation styles** — Connected capsules with morphing selection and distinct tab animations. · *Settings → Appearance → Misc → Navigation style*
+- **Navigation styles** — Connected capsules with distinct tab animations. Floating Glass takes up less space. · *Settings → Appearance → Misc → Navigation style*
 - **Player style picker** — Preview four layouts before applying one. · *Settings → Appearance → Full Player → Player style*
 - **Immersive players** — Sharper covers, curved controls, and room to scroll in smaller windows. · *Settings → Appearance → Full Player → Player style*
 - **Full-player settings** — Style and background controls now sit together. · *Settings → Appearance → Full Player*
 - **Audio offload** — Moved to Advanced. · *Settings → Player and audio → Advanced → Enable offload*
-- **Library cards and headers** — Two category columns, a full-width final card, and artwork-led collection headers. · *Library*
+- **Library cards and headers** — Two category columns and collection headers with artwork beside the song details. · *Library*
 - **Settings and playback controls** — Upright icons on expressive faces that rotate during playback. · *Home, Library, and player*
 - **Home shuffle** — Speed Dial, Keep Listening, and eligible shelves keep their order until the next app session. · *Settings → Content → Misc → Randomize Home Screen Order*
 - **Search landing** — History, personalized suggestions with album charts, then new releases. · *Search*
@@ -34,8 +34,9 @@
 ### Fixed
 
 - **Settings entry** — Uses the current destination’s app bar from the first frame. · *Home or Library → Settings*
-- **Top Song Match placement** — Appears below the category filters and before results. · *Search → Results*
-- **Adaptive full player** — Artwork and controls adapt to tablets, foldables, and split-screen. · *Full player*
+- **Top Song Match placement** — A smaller card appears below the filters in All and Songs when there’s a match. · *Search → Results*
+- **Queue reliability** — Reorder and remove tracks more safely. Wide screens get a side panel. · *Full player → Queue*
+- **Adaptive full player** — Artwork stays visible when the window is short. Scroll to reach all controls. · *Full player*
 - **Universal APK selection** — Downloads only the latest `mkr-music-universal.apk`. · *Settings → System Updates or Home → Update Available*
 - **Auto download on like** — Newly liked online songs queue once. · *Settings → Player and audio → Queue → Auto download on like*
 - **Backup export feedback** — Shows an error when the destination cannot be opened. · *Settings → Backup and restore → Backup*
