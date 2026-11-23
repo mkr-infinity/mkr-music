@@ -39,6 +39,7 @@ class UpdateDownloadWorker(private val context: Context, workerParams: WorkerPar
             Timber.tag("UpdateDownloadWorker").e(e, "Failed to perform auto backup before update")
         }
 
+        DownloadNotificationManager.initialize(applicationContext)
         DownloadNotificationManager.showDownloadStarting(version, fileSize)
 
         try {

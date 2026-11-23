@@ -101,6 +101,7 @@ import com.music.mkr.constants.SliderStyleKey
 import com.music.mkr.constants.FloatingNavBarKey
 import com.music.mkr.constants.NavigationStyle
 import com.music.mkr.constants.NavigationStyleKey
+import com.music.mkr.constants.AutoHideNavBarKey
 import com.music.mkr.constants.SlimNavBarKey
 import com.music.mkr.ui.component.NavigationStyleDialog
 import com.music.mkr.constants.SquigglySliderKey
@@ -325,6 +326,7 @@ fun AppearanceSettings(
         SlimNavBarKey,
         defaultValue = false
     )
+    val (autoHideNav, onAutoHideNavChange) = rememberPreference(AutoHideNavBarKey, true)
     val (floatingNavBar, onFloatingNavBarChange) = rememberPreference(
         FloatingNavBarKey,
         defaultValue = true
@@ -1857,6 +1859,16 @@ fun AppearanceSettings(
                         )
                     },
                     onClick = { showNavigationStyleDialog = true }
+                ),
+                Material3SettingsItem(
+                    key = "appearance_auto_hide_nav",
+                    icon = painterResource(R.drawable.nav_bar),
+                    title = { Text(stringResource(R.string.auto_hide_navbar)) },
+                    description = { Text(stringResource(R.string.auto_hide_navbar_desc)) },
+                    trailingContent = {
+                        Switch(checked = autoHideNav, onCheckedChange = onAutoHideNavChange)
+                    },
+                    onClick = { onAutoHideNavChange(!autoHideNav) }
                 ),
                 Material3SettingsItem(
                     key = "appearance_floating_nav",

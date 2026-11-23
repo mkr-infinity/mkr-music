@@ -8,6 +8,8 @@
     <string name="update_failed">Update Failed</string>
     <string name="failed_to_download_version">Failed to download version %1$s</string>
     <string name="failed_to_download_version_error">Error parsing version %1$s : %2$s</string>
+    <string name="update_download_notification_title">MKR Music %1$s</string>
+    <string name="update_download_waiting">Waiting to download update</string>
     <string name="downloading_update">Downloading…</string>
     <string name="version_file_size">Version %1$s ~ %2$s MB</string>
     <string name="starting">Starting...</string>

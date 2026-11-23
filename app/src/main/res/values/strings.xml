@@ -301,13 +301,13 @@
     <string name="navigation_style">Navigation style</string>
     <string name="navigation_style_desc">Choose between four distinct bottom navigation layouts</string>
     <string name="nav_style_floating_glass">Floating Glass Navigation</string>
-    <string name="nav_style_floating_glass_desc">Wide tonal capsule with evenly spaced destinations</string>
+    <string name="nav_style_floating_glass_desc">Wide glass capsule with a sliding selection pill</string>
     <string name="nav_style_expressive_pill">Expressive Expanding Navigation</string>
-    <string name="nav_style_expressive_pill_desc">Compact tonal capsule that emphasizes the active destination</string>
+    <string name="nav_style_expressive_pill_desc">Compact glass capsule that expands to reveal the active label</string>
     <string name="nav_style_clean_material">Material 3 Navigation</string>
-    <string name="nav_style_clean_material_desc">Refined edge-aligned Material 3 bar with authentic indicator capsule and anchored ergonomics</string>
+    <string name="nav_style_clean_material_desc">Edge-aligned Material 3 bar with a growing selection indicator</string>
     <string name="nav_style_amber_dock">MKR Signature Navigation</string>
-    <string name="nav_style_amber_dock_desc">Sculpted charcoal console dock with signature amber indicator capsule and brand identity</string>
+    <string name="nav_style_amber_dock_desc">Raised glass dock with a lifting tab and signature underline</string>
     <string name="customize_navigation_tabs">Customize navigation tabs</string>
     <string name="player">Player</string>
     <string name="player_text_alignment">Player text alignment</string>

@@ -180,6 +180,16 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             keywords = listOf("navbar", "navigation", "style", "glass", "capsule", "dock", "bottom bar", "floating", "telegram")
         ),
         SearchableSettingItem(
+            id = "appearance_auto_hide_nav",
+            title = "Auto-hide bottom navigation",
+            description = "Hide the bottom bar when scrolling down and reveal it when scrolling up",
+            category = "Appearance & Themes",
+            iconRes = R.drawable.nav_bar,
+            route = "settings/appearance",
+            targetKey = "appearance_auto_hide_nav",
+            keywords = listOf("auto hide", "navbar", "scroll", "bottom bar")
+        ),
+        SearchableSettingItem(
             id = "appearance_floating_nav",
             title = "Floating Navigation Bar",
             description = "Floating pill-shaped navigation dock with smooth glass blur effect and translucent background",

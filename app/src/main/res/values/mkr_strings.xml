@@ -1093,6 +1093,8 @@
     <string name="cipher_rate_limited">Manual update rate limit reached. Please wait before updating again.</string>
 
     <!-- Floating Navigation Bar -->
+    <string name="auto_hide_navbar">Auto-hide bottom navigation</string>
+    <string name="auto_hide_navbar_desc">Hide the bottom bar as you scroll down. Scroll up to bring it back.</string>
     <string name="floating_navbar">Floating navigation bar</string>
     <string name="floating_navbar_desc">Show suspended centered navigation bar at the bottom</string>
     <string name="enabled">Enabled</string>

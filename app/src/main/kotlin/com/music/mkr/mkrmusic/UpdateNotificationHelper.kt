@@ -14,6 +14,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.music.mkr.R
 import com.music.mkr.constants.EnableNotificationsKey
+import com.music.mkr.mkrmusic.updater.LATEST_UNIVERSAL_APK_URL
 import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.get
 
@@ -36,9 +37,7 @@ object UpdateNotificationHelper {
             nm.createNotificationChannel(channel)
         }
 
-        // Direct download URL format from mkrmusicupdater - use the full tag (vX.X.X or bX.X.X) or nightly link
-        val apkUrl = "https://github.com/mkr-infinity/mkr-music/releases/download/$versionName/mkr-music-universal.apk"
-        val intent = Intent(Intent.ACTION_VIEW, apkUrl.toUri())
+        val intent = Intent(Intent.ACTION_VIEW, LATEST_UNIVERSAL_APK_URL.toUri())
 
         val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         val pending = PendingIntent.getActivity(context, NOTIFICATION_ID, intent, flags)

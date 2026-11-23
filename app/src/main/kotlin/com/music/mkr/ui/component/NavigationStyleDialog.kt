@@ -233,7 +233,7 @@ private fun NavigationStyleMiniPreview(
     ) {
         when (style) {
             NavigationStyle.AMBER_DOCK -> {
-                // Dock with glowing indicator under active tab (3 destinations)
+                // Dock with an underline under the active tab.
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -249,22 +249,24 @@ private fun NavigationStyleMiniPreview(
             }
             NavigationStyle.FLOATING_GLASS, NavigationStyle.EXPRESSIVE_PILL -> {
                 val compact = style == NavigationStyle.EXPRESSIVE_PILL
+                val colors = MaterialTheme.colorScheme
+                val indicator = if (compact) colors.primaryContainer else colors.secondaryContainer
+                val selectedInk = if (compact) colors.onPrimaryContainer else colors.onSecondaryContainer
                 Row(
                     modifier = Modifier
                         .size(width = if (compact) 37.dp else 46.dp, height = 19.dp)
                         .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.surfaceContainer)
-                        .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
+                        .navigationGlass(CircleShape, pureBlack = false)
                         .padding(horizontal = 4.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
                         Modifier.size(width = if (compact) 14.dp else 11.dp, height = 11.dp)
-                            .background(MaterialTheme.colorScheme.secondaryContainer, RoundedCornerShape(4.dp)),
+                            .background(indicator, RoundedCornerShape(4.dp)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Box(Modifier.size(4.dp).background(MaterialTheme.colorScheme.onSecondaryContainer, CircleShape))
+                        Box(Modifier.size(4.dp).background(selectedInk, CircleShape))
                     }
                     repeat(2) {
                         Box(Modifier.size(4.dp).background(MaterialTheme.colorScheme.onSurfaceVariant, CircleShape))

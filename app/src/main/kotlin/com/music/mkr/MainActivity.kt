@@ -26,6 +26,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -120,6 +121,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -196,6 +200,7 @@ import com.music.mkr.constants.PauseSearchHistoryKey
 import com.music.mkr.constants.PureBlackKey
 import com.music.mkr.constants.SYSTEM_DEFAULT
 import com.music.mkr.constants.SelectedThemeColorKey
+import com.music.mkr.constants.AutoHideNavBarKey
 import com.music.mkr.constants.SlimNavBarHeight
 import com.music.mkr.constants.SlimNavBarKey
 import com.music.mkr.constants.FloatingNavBarKey
@@ -478,7 +483,7 @@ class MainActivity : ComponentActivity() {
                 delay(2000L)
                 checkForUpdate(
                     context = context,
-                    onSuccess = { latestVersion, isAvailable, _, _, _, _, _, _ ->
+                    onSuccess = { latestVersion, isAvailable, _, _, _, _, _, apkUrl ->
                         if (!getAutoUpdateCheckSetting(context)) {
                             Log.d("UpdateCheck", "Auto update check disabled while in-flight; skipping startup update notification")
                             return@checkForUpdate
@@ -487,7 +492,7 @@ class MainActivity : ComponentActivity() {
                         Log.d("UpdateCheck", "Startup check success. Latest: $latestVersion, Current: $currentVersion, isAvailable: $isAvailable")
                         saveUpdateAvailableState(context, isAvailable)
 
-                        if (isAvailable && getUpdateNotificationsSetting(context)) {
+                        if (isAvailable && apkUrl != null && getUpdateNotificationsSetting(context)) {
                             Log.d("UpdateCheck", "Posting update notification for $latestVersion")
                             UpdateNotificationHelper.showUpdateNotification(context, latestVersion)
                         }
@@ -795,6 +800,8 @@ class MainActivity : ComponentActivity() {
 
                 val (listenTogetherInTopBar) = rememberPreference(ListenTogetherInTopBarKey, defaultValue = true)
                 val navigationItems = remember { Screens.MainScreens }
+                val (autoHideNav) = rememberPreference(AutoHideNavBarKey, true)
+                val interfaceAnimations by rememberPreference(InterfaceAnimationsKey, true)
                 val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
                 val (floatingNav) = rememberPreference(FloatingNavBarKey, defaultValue = true)
                 val (navigationStyle) = rememberEnumPreference(NavigationStyleKey, defaultValue = NavigationStyle.DEFAULT)
@@ -870,22 +877,46 @@ class MainActivity : ComponentActivity() {
 
                 val showRail = isLandscape && !inSearchResultScreen
 
-                val navPadding = if (shouldShowNavigationBar && !showRail) {
-                    if (slimNav) SlimNavBarHeight else NavigationBarHeight
-                } else {
-                    0.dp
+                val canAutoHideNav = autoHideNav && shouldShowNavigationBar && !showRail
+                var navHiddenByScroll by remember(currentRoute, canAutoHideNav) { mutableStateOf(false) }
+                val scrollThreshold = with(LocalDensity.current) { 24.dp.toPx() }
+                val navScrollConnection = remember(currentRoute, canAutoHideNav, scrollThreshold) {
+                    object : NestedScrollConnection {
+                        private var travel = 0f
+
+                        override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                            if (!canAutoHideNav || source != NestedScrollSource.UserInput) return Offset.Zero
+
+                            val delta = if (navHiddenByScroll) consumed.y + available.y else consumed.y
+                            if (delta == 0f) return Offset.Zero
+                            if ((delta > 0f) != (travel > 0f)) travel = 0f
+                            travel += delta
+                            if (travel <= -scrollThreshold && !navHiddenByScroll) {
+                                navHiddenByScroll = true
+                                travel = 0f
+                            } else if (travel >= scrollThreshold && navHiddenByScroll) {
+                                navHiddenByScroll = false
+                                travel = 0f
+                            }
+                            return Offset.Zero
+                        }
+                    }
                 }
+                val bottomNavVisible = shouldShowNavigationBar && !showRail && !navHiddenByScroll
+                val fullNavHeight = if (slimNav) SlimNavBarHeight else NavigationBarHeight
+                val navPadding = if (bottomNavVisible) fullNavHeight else 0.dp
 
                 val navigationBarHeight by animateDpAsState(
-                    targetValue = if (shouldShowNavigationBar && !showRail) NavigationBarHeight else 0.dp,
-                    animationSpec = NavigationBarAnimationSpec,
+                    targetValue = navPadding,
+                    animationSpec = if (interfaceAnimations) NavigationBarAnimationSpec else snap(),
                     label = "navBarHeight",
                 )
+                val hasAnimatedNavHeight by remember { derivedStateOf { navigationBarHeight > 0.dp } }
 
                 val playerBottomSheetState = rememberBottomSheetState(
                     dismissedBound = 0.dp,
                     collapsedBound = bottomInset +
-                        (if (!showRail && shouldShowNavigationBar) navPadding else 0.dp) +
+                        navPadding +
                         (if (useNewMiniPlayerDesign || useAppleMiniPlayer) {
                             if (navigationStyle == NavigationStyle.CLEAN_MATERIAL) 0.dp else MiniPlayerBottomSpacing
                         } else 0.dp) +
@@ -895,14 +926,11 @@ class MainActivity : ComponentActivity() {
 
                 val playerAwareWindowInsets = remember(
                     bottomInset,
-                    shouldShowNavigationBar,
+                    navPadding,
                     playerBottomSheetState.isDismissed,
-                    showRail,
+                    windowsInsets,
                 ) {
-                    var bottom = bottomInset
-                    if (shouldShowNavigationBar && !showRail) {
-                        bottom += NavigationBarHeight
-                    }
+                    var bottom = bottomInset + navPadding
                     if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight
                     windowsInsets
                         .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
@@ -1056,7 +1084,6 @@ class MainActivity : ComponentActivity() {
                 val pauseListenHistory by rememberPreference(PauseListenHistoryKey, defaultValue = false)
                 val eventCount by database.eventCount().collectAsState(initial = 0)
                 val showHistoryButton = true
-                val interfaceAnimations by rememberPreference(InterfaceAnimationsKey, true)
                 val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
                 val animateHomeControls = interfaceAnimations && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
 
@@ -1315,7 +1342,7 @@ class MainActivity : ComponentActivity() {
                             val onSearchLongClick: (() -> Unit)? = null
 
                             // Pre-calculate values for graphicsLayer to avoid reading state during composition
-                            val navBarTotalHeight = bottomInset + NavigationBarHeight
+                            val navBarTotalHeight = bottomInset + fullNavHeight
 
                             if (!showRail && currentRoute != "wrapped" && currentRoute != "update" && currentRoute != "listen_together/chat") {
                                 Box {
@@ -1325,7 +1352,7 @@ class MainActivity : ComponentActivity() {
                                         pureBlack = pureBlack
                                     )
 
-                                    AppNavigationBar(
+                                    if (bottomNavVisible || hasAnimatedNavHeight) AppNavigationBar(
                                         navigationItems = navigationItems,
                                         currentRoute = currentRoute,
                                         onItemClick = onNavItemClick,
@@ -1337,7 +1364,7 @@ class MainActivity : ComponentActivity() {
                                         bottomInset = bottomInset,
                                         modifier = Modifier
                                             .align(Alignment.BottomCenter)
-                                            .height(bottomInset + navPadding)
+                                            .height(navBarTotalHeight)
                                             // Use graphicsLayer instead of offset to avoid recomposition
                                             // graphicsLayer runs during draw phase, not composition phase
                                             .graphicsLayer {
@@ -1350,7 +1377,7 @@ class MainActivity : ComponentActivity() {
                                                     // Read progress only during draw phase
                                                     val progress = playerBottomSheetState.progress.coerceIn(0f, 1f)
                                                     val slideOffset = totalHeightPx * progress
-                                                    val hideOffset = totalHeightPx * (1 - navBarHeightPx / NavigationBarHeight.toPx())
+                                                    val hideOffset = totalHeightPx * (1 - navBarHeightPx / fullNavHeight.toPx())
                                                     slideOffset + hideOffset
                                                 }
                                             }
@@ -1433,7 +1460,7 @@ class MainActivity : ComponentActivity() {
                                     onSearchLongClick = onRailSearchLongClick
                                 )
                             }
-                            Box(Modifier.weight(1f)) {
+                            Box(Modifier.weight(1f).nestedScroll(navScrollConnection)) {
                                 // NavHost with animations (Material 3 Expressive style)
                                 NavHost(
                                     navController = navController,

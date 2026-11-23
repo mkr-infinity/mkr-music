@@ -59,25 +59,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.music.mkr.BuildConfig
 import com.music.mkr.R
 import com.music.mkr.constants.InterfaceAnimationsKey
-import com.music.mkr.mkrmusic.updater.downloadmanager.UpdateDownloadWorker
-import com.music.mkr.mkrmusic.updater.downloadmanager.DownloadNotificationManager
+import com.music.mkr.github.network.GitHubAssetDto
+import com.music.mkr.mkrmusic.updater.downloadmanager.enqueueUpdateWithNotification
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
 import java.net.URL
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -149,6 +143,7 @@ fun UpdateScreen(navController: NavHostController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf<MkrUpdateStatus>(MkrUpdateStatus.NoUpdate(BuildConfig.VERSION_NAME)) }
+    var checkingDownload by remember { mutableStateOf(false) }
 
     val currentVersion = BuildConfig.VERSION_NAME
     val autoUpdateCheckEnabled = getAutoUpdateCheckSetting(context)
@@ -269,25 +264,18 @@ fun UpdateScreen(navController: NavHostController) {
                                 // Button 1: Download APK
                                 AnimatedActionButton(
                                     onClick = {
-                                        currentStatus.apkUrl?.let { apkUrl ->
-                                            try {
-                                                val uri = Uri.parse(apkUrl)
-                                                val request = android.app.DownloadManager.Request(uri)
-                                                    .setTitle("MKR Music ${currentStatus.version}")
-                                                    .setDescription("Downloading update")
-                                                    .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                                                    .setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, "mkr-music-universal.apk")
-                                                    .setMimeType("application/vnd.android.package-archive")
-
-                                                val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
-                                                manager.enqueue(request)
-                                            } catch (_: Exception) {
-                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl))
-                                                context.startActivity(intent)
+                                        if (!checkingDownload) {
+                                            checkingDownload = true
+                                            scope.launch {
+                                                try {
+                                                    downloadLatestUniversalUpdate(context)
+                                                } finally {
+                                                    checkingDownload = false
+                                                }
                                             }
                                         }
                                     },
-                                    enabled = hasDirectApk,
+                                    enabled = hasDirectApk && !checkingDownload,
                                     animate = animate,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
@@ -298,7 +286,11 @@ fun UpdateScreen(navController: NavHostController) {
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = if (hasDirectApk) stringResource(R.string.download_apk) else stringResource(R.string.no_direct_apk),
+                                        text = when {
+                                            checkingDownload -> stringResource(R.string.checking_for_updates)
+                                            hasDirectApk -> stringResource(R.string.download_apk)
+                                            else -> stringResource(R.string.no_direct_apk)
+                                        },
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                                     )
                                 }
@@ -866,6 +858,40 @@ fun isNewerVersion(latestVersion: String, currentVersion: String): Boolean {
     return false
 }
 
+internal suspend fun downloadLatestUniversalUpdate(context: Context) {
+    var version: String? = null
+    var error = R.string.update_check_error_title
+    checkForUpdate(
+        context = context,
+        onSuccess = { tag, available, _, _, _, _, _, apkUrl ->
+            when {
+                !available -> error = R.string.app_up_to_date
+                apkUrl.isNullOrBlank() -> error = R.string.no_direct_apk
+                else -> version = tag
+            }
+        },
+        onError = { },
+    )
+    val latestVersion = version
+    if (latestVersion == null) {
+        android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    try {
+        enqueueUpdateWithNotification(context, latestVersion)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        val opened = runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(LATEST_UNIVERSAL_APK_URL)))
+        }.isSuccess
+        if (!opened) {
+            android.widget.Toast.makeText(context, R.string.download_failed, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
 // Fetches latest published release from GitHub and compares deterministic version codes
 suspend fun checkForUpdate(
     context: Context,
@@ -881,12 +907,18 @@ suspend fun checkForUpdate(
             connection.setRequestProperty("Accept", "application/vnd.github+json")
             connection.setRequestProperty("User-Agent", "MKR-Music-Android")
 
-            if (connection.responseCode != 200) {
+            val json = try {
+                connection.useCaches = false
+                if (connection.responseCode == 200) connection.inputStream.bufferedReader().use { it.readText() }
+                else null
+            } finally {
+                connection.disconnect()
+            }
+            if (json == null) {
                 withContext(Dispatchers.Main) { onError() }
                 return@withContext
             }
 
-            val json = connection.inputStream.bufferedReader().use { it.readText() }
             val targetRelease = JSONObject(json)
 
             val (currentVersion, currentVersionCode) = try {
@@ -952,20 +984,23 @@ suspend fun checkForUpdate(
             // An update is available ONLY when the remote release's version code is strictly greater
             val isAvailable = remoteVersionCode != null && remoteVersionCode > currentVersionCode
 
-            // Select compatible APK asset
-            var apkSizeInMB = ""
-            var apkDownloadUrl = ""
-            val expectedApkName = "mkr-music-universal.apk"
-            for (j in 0 until assets.length()) {
-                val asset = assets.getJSONObject(j)
-                val assetName = asset.getString("name")
-                if (assetName.equals(expectedApkName, ignoreCase = true) || assetName.endsWith("-universal.apk", ignoreCase = true) || assetName.endsWith(".apk", ignoreCase = true)) {
-                    val apkSizeInBytes = asset.optLong("size", 0L)
-                    apkSizeInMB = String.format(java.util.Locale.US, "%.1f", apkSizeInBytes / (1024.0 * 1024.0))
-                    apkDownloadUrl = asset.getString("browser_download_url")
-                    break
+            val apkAsset = selectUniversalUpdateAsset(
+                buildList {
+                    for (index in 0 until assets.length()) {
+                        val asset = assets.optJSONObject(index) ?: continue
+                        add(
+                            GitHubAssetDto(
+                                name = asset.optString("name"),
+                                size = asset.optLong("size", 0L),
+                                browserDownloadUrl = asset.optString("browser_download_url"),
+                            )
+                        )
+                    }
                 }
-            }
+            )
+            val apkSizeInMB = apkAsset?.size?.takeIf { it > 0 }?.let {
+                String.format(java.util.Locale.US, "%.1f", it / (1024.0 * 1024.0))
+            }.orEmpty()
 
             // Parse release notes directly from GitHub release body
             val changelogList = mutableListOf<ChangelogSection>()
@@ -1019,9 +1054,11 @@ suspend fun checkForUpdate(
                     formattedReleaseDate,
                     description,
                     imageUrl,
-                    if (isAvailable && apkDownloadUrl.isNotEmpty()) apkDownloadUrl else null
+                    if (isAvailable) apkAsset?.browserDownloadUrl else null
                 )
             }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             Log.e("UpdateCheck", "Error checking for updates: ${e.message}", e)
             withContext(Dispatchers.Main) { onError() }
