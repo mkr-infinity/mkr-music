@@ -14,7 +14,6 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -23,6 +22,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
@@ -40,7 +40,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -80,7 +79,7 @@ fun LibraryCategoryCardsSection(
     val animationsEnabled by rememberPreference(InterfaceAnimationsKey, true)
     val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
     val animate = animationsEnabled && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
-    val cookieShape = MaterialShapes.Cookie6Sided.toShape()
+    val cookieShape = MaterialShapes.Cookie12Sided.toShape()
 
     val items = buildList {
         if (showLiked) add(
@@ -125,11 +124,12 @@ fun LibraryCategoryCardsSection(
         )
     }
 
-    val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
-    BoxWithConstraints(modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
-        val columns = libraryCategoryColumns(maxWidth.value, fontScale, items.size)
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            items.chunked(columns).forEach { rowItems ->
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Column(
+            modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            libraryCategoryRows(items).forEach { rowItems ->
                 Row(
                     Modifier.fillMaxWidth().height(IntrinsicSize.Min),
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -137,6 +137,7 @@ fun LibraryCategoryCardsSection(
                     rowItems.forEach { item ->
                         ShortcutCard(
                             item = item,
+                            fullWidth = rowItems.size == 1,
                             badgeShape = cookieShape,
                             animationsEnabled = animate,
                             modifier = Modifier.weight(1f).fillMaxHeight(),
@@ -149,12 +150,12 @@ fun LibraryCategoryCardsSection(
     }
 }
 
-internal fun libraryCategoryColumns(widthDp: Float, fontScale: Float, count: Int): Int =
-    ((widthDp + 12f) / (144f * fontScale + 12f)).toInt().coerceIn(1, count.coerceAtLeast(1))
+internal fun <T> libraryCategoryRows(items: List<T>): List<List<T>> = items.chunked(2)
 
 @Composable
 private fun ShortcutCard(
     item: LibraryShortcutItem,
+    fullWidth: Boolean,
     badgeShape: Shape,
     animationsEnabled: Boolean,
     modifier: Modifier = Modifier,
@@ -190,37 +191,36 @@ private fun ShortcutCard(
         shadowElevation = if (isPressed) 0.dp else 1.dp,
         border = BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.55f)),
     ) {
-        Column(
-            Modifier.fillMaxWidth().padding(14.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            Row(
-                Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+        val badge: @Composable () -> Unit = {
+            Surface(
+                modifier = Modifier.size(40.dp).graphicsLayer {
+                    rotationZ = if (animationsEnabled) badgeTilt.value else 0f
+                },
+                shape = badgeShape,
+                color = badgeColor,
+                contentColor = badgeInk,
             ) {
-                Surface(
-                    modifier = Modifier.size(40.dp).graphicsLayer {
-                        rotationZ = if (animationsEnabled) badgeTilt.value else 0f
-                    },
-                    shape = badgeShape,
-                    color = badgeColor,
-                    contentColor = badgeInk,
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(painterResource(item.iconRes), contentDescription = null, modifier = Modifier.size(22.dp))
-                    }
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(painterResource(item.iconRes), contentDescription = null, modifier = Modifier.size(22.dp))
                 }
-                Icon(
-                    painterResource(R.drawable.navigate_next),
-                    contentDescription = null,
-                    tint = colors.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp),
-                )
             }
+        }
+        val labels: @Composable () -> Unit = {
             Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(item.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(item.subtitle, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+            }
+        }
+        val contentPadding = Modifier.fillMaxWidth().padding(14.dp)
+        if (fullWidth) {
+            Row(contentPadding, horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                badge()
+                Box(Modifier.weight(1f)) { labels() }
+            }
+        } else {
+            Column(contentPadding, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                badge()
+                labels()
             }
         }
     }

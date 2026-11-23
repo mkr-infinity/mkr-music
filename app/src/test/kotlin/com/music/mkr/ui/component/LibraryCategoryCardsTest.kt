@@ -10,11 +10,9 @@ import org.junit.Test
 
 class LibraryCategoryCardsTest {
     @Test
-    fun columnsFollowAvailableWidthAndFontScale() {
-        assertEquals(1, libraryCategoryColumns(280f, 1f, 5))
-        assertEquals(2, libraryCategoryColumns(340f, 1f, 5))
-        assertEquals(3, libraryCategoryColumns(540f, 1f, 5))
-        assertEquals(1, libraryCategoryColumns(340f, 1.5f, 5))
-        assertEquals(2, libraryCategoryColumns(540f, 1f, 2))
+    fun completeRowsContainTwoCardsAndFinalCardKeepsItsOwnRow() {
+        assertEquals(listOf(listOf(1, 2), listOf(3, 4), listOf(5)), libraryCategoryRows((1..5).toList()))
+        assertEquals(listOf(listOf(1, 2)), libraryCategoryRows(listOf(1, 2)))
+        assertEquals(emptyList<List<Int>>(), libraryCategoryRows(emptyList<Int>()))
     }
 }
