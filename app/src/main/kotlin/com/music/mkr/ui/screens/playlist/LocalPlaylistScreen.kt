@@ -116,7 +116,6 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastAny
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastForEachReversed
-import androidx.compose.ui.util.fastSumBy
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -202,10 +201,6 @@ fun LocalPlaylistScreen(
     val isLocalFiles = viewModel.playlistId == "0"
     val songs by viewModel.playlistSongs.collectAsState()
     val mutableSongs = remember { mutableStateListOf<PlaylistSong>() }
-    val playlistLength =
-        remember(songs) {
-            songs.fastSumBy { it.song.song.duration }
-        }
     val (sortType, onSortTypeChange) = rememberEnumPreference(
         PlaylistSongSortTypeKey,
         PlaylistSongSortType.CUSTOM
@@ -908,7 +903,7 @@ fun LocalPlaylistHeader(
 
     val playlistLength =
         remember(songs) {
-            songs.fastSumBy { it.song.song.duration }
+            songs.collectionDurationSeconds { it.song.song.duration }
         }
 
     val downloadUtil = LocalDownloadUtil.current
@@ -1072,10 +1067,11 @@ fun LocalPlaylistHeader(
             playlist.songCount
         }
 
+        val totalDuration = playlistLength.takeIf { songCount == songs.size }
         CollectionHeader(
             title = playlist.playlist.name,
             songCount = songCount,
-            durationSeconds = playlistLength,
+            durationSeconds = totalDuration,
         ) {
             val localThumbnails = remember(songs) {
                 songs.mapNotNull { it.song.song.thumbnailUrl }.distinct().take(4)
@@ -1496,11 +1492,11 @@ fun LocalPlaylistHeader(
 
         Spacer(Modifier.height(24.dp))
 
-        val staticDescription = remember(songCount, playlistLength) {
+        val staticDescription = remember(songCount, totalDuration) {
             val name = playlist.playlist.name
             val trackCountText = context.resources.getQuantityString(R.plurals.n_song, songCount, songCount)
             "$name is a custom playlist featuring $trackCountText.${
-                if (playlistLength > 0) " Combined duration is ${makeTimeString(playlistLength * 1000L)}." else ""
+                if (totalDuration != null && totalDuration > 0) " Combined duration is ${makeTimeString(totalDuration * 1000L)}." else ""
             }"
         }
 

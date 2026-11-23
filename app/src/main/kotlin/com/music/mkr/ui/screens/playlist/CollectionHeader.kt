@@ -35,33 +35,42 @@ import com.music.mkr.utils.makeTimeString
 internal fun CollectionHeader(
     title: String,
     songCount: Int,
-    durationSeconds: Int,
+    durationSeconds: Long?,
     artwork: @Composable BoxScope.() -> Unit,
 ) {
     Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         BoxWithConstraints(
             Modifier.widthIn(max = 920.dp).fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            val wide = maxWidth >= 440.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
-            val artworkSize = if (wide) (maxWidth * 0.31f).coerceIn(132.dp, 200.dp)
-                else (maxWidth * 0.63f).coerceAtMost(176.dp)
-            val cover: @Composable () -> Unit = {
+            val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
+            val wide = maxWidth >= 560.dp && fontScale <= 1.5f
+            val padding = if (wide) 20.dp else 12.dp
+            val artworkSize = (maxWidth - padding * 2).coerceAtLeast(0.dp) * (if (wide) 0.29f else 0.31f)
+            Row(
+                modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large)
+                    .background(MaterialTheme.colorScheme.surfaceContainerLow).padding(padding),
+                horizontalArrangement = Arrangement.spacedBy(if (wide) 24.dp else 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Box(
-                    modifier = Modifier.size(artworkSize).clip(MaterialTheme.shapes.large)
+                    modifier = Modifier.size(artworkSize.coerceAtMost(if (wide) 224.dp else 126.dp))
+                        .clip(MaterialTheme.shapes.medium)
                         .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                     contentAlignment = Alignment.Center,
                     content = artwork,
                 )
-            }
-            val details: @Composable () -> Unit = {
-                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
-                    Text(title, style = MaterialTheme.typography.headlineMedium, modifier = Modifier.semantics { heading() })
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        title,
+                        style = if (wide) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.semantics { heading() },
+                    )
                     Text(
                         pluralStringResource(R.plurals.n_song, songCount, songCount),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    if (durationSeconds > 0) {
+                    if (durationSeconds != null && durationSeconds > 0) {
                         Text(
                             makeTimeString(durationSeconds * 1000L),
                             style = MaterialTheme.typography.bodyMedium,
@@ -70,21 +79,17 @@ internal fun CollectionHeader(
                     }
                 }
             }
-            val surface = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.extraLarge)
-                .background(MaterialTheme.colorScheme.surfaceContainerLow).padding(18.dp)
-            if (wide) {
-                Row(surface, horizontalArrangement = Arrangement.spacedBy(22.dp), verticalAlignment = Alignment.CenterVertically) {
-                    cover()
-                    Box(Modifier.weight(1f)) { details() }
-                }
-            } else {
-                Column(surface, verticalArrangement = Arrangement.spacedBy(14.dp)) {
-                    cover()
-                    details()
-                }
-            }
         }
     }
+}
+
+internal inline fun <T> List<T>.collectionDurationSeconds(duration: (T) -> Int?): Long? {
+    var total = 0L
+    for (song in this) {
+        val seconds = duration(song)?.takeIf { it > 0 } ?: return null
+        total += seconds
+    }
+    return total
 }
 
 @Composable

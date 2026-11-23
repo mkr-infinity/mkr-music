@@ -84,7 +84,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEachReversed
-import androidx.compose.ui.util.fastSumBy
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.exoplayer.offline.Download
@@ -136,7 +135,7 @@ fun TopPlaylistScreen(
     val mutableSongs = remember { mutableStateListOf<Song>() }
 
     val likeLength = remember(songs) {
-        songs?.fastSumBy { it.song.duration } ?: 0
+        songs?.collectionDurationSeconds { it.song.duration }
     }
 
     var isSearching by remember { mutableStateOf(false) }
@@ -525,7 +524,7 @@ fun TopPlaylistScreen(
 private fun TopPlaylistHeader(
     name: String,
     songs: List<Song>,
-    likeLength: Int,
+    likeLength: Long?,
     downloadState: Int,
     onShowRemoveDownloadDialog: () -> Unit,
     menuState: com.music.mkr.ui.component.MenuState,
