@@ -176,25 +176,27 @@ private data class OnboardingFeatureItem(
     val iconTint: Color
 )
 
+private const val ONBOARDING_VERSION_KEY = "completed_onboarding_version"
+private const val LEGACY_ONBOARDING_KEY = "has_completed_onboarding"
+
+private fun Context.onboardingPreferences() = getSharedPreferences("app_state", Context.MODE_PRIVATE)
+
+internal fun Context.hasCompletedOnboardingForCurrentVersion(): Boolean =
+    onboardingPreferences().getInt(ONBOARDING_VERSION_KEY, 0) == BuildConfig.VERSION_CODE
+
 class WelcomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        val sp = getSharedPreferences("app_state", Context.MODE_PRIVATE)
-        val hasCompletedOnboardingSp = sp.getBoolean("has_completed_onboarding", false)
-
-        val isFirstRun = dataStore.get(IsFirstRunKey, true)
+        val preferences = onboardingPreferences()
         val forceShow = intent.getBooleanExtra("FORCE_SHOW", false)
 
-        if (!isFirstRun && !hasCompletedOnboardingSp) {
-            sp.edit().putBoolean("has_completed_onboarding", true).apply()
-        }
-
-        val completedOnboarding = !isFirstRun || hasCompletedOnboardingSp
-
-        if (completedOnboarding && !forceShow) {
+        if (hasCompletedOnboardingForCurrentVersion() && !forceShow) {
             super.onCreate(savedInstanceState)
             finishOnboarding()
             return
         }
+
+        val showSetup = !preferences.getBoolean(LEGACY_ONBOARDING_KEY, false) &&
+            dataStore.get(IsFirstRunKey, true)
 
         try {
             installSplashScreen()
@@ -223,20 +225,20 @@ class WelcomeActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    WelcomePagerScreen(onFinished = {
+                    WelcomePagerScreen(showSetup = showSetup) {
                         lifecycleScope.launch {
-                            getSharedPreferences("app_state", Context.MODE_PRIVATE)
-                                .edit()
-                                .putBoolean("has_completed_onboarding", true)
+                            if (showSetup) dataStore.edit { it[IsFirstRunKey] = false }
+                            preferences.edit()
+                                .putBoolean(LEGACY_ONBOARDING_KEY, true)
+                                .putInt(ONBOARDING_VERSION_KEY, BuildConfig.VERSION_CODE)
                                 .apply()
-                            dataStore.edit { it[IsFirstRunKey] = false }
                             if (forceShow) {
                                 finish()
                             } else {
                                 finishOnboarding()
                             }
                         }
-                    })
+                    }
                 }
             }
         }
@@ -268,7 +270,7 @@ val GoogleSansFlex = FontFamily(
 )
 
 @Composable
-fun WelcomePagerScreen(onFinished: () -> Unit) {
+private fun WelcomePagerScreen(showSetup: Boolean, onFinished: () -> Unit) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
@@ -348,7 +350,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
         }
     )
 
-    val pages = listOf(
+    val pages = listOfNotNull(
         OnboardingPageInfo(
             content = { _ ->
                 WelcomePageContent(
@@ -359,7 +361,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                 )
             }
         ),
-        OnboardingPageInfo(
+        if (showSetup) OnboardingPageInfo(
             content = { _ ->
                 BoxWithConstraints(
                     modifier = Modifier.fillMaxSize()
@@ -556,7 +558,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     }
                 }
             }
-        ),
+        ) else null,
         OnboardingPageInfo(
             content = { onUpdateScroll ->
                 LaunchedEffect(Unit) {
@@ -1052,18 +1054,19 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                val showLanguageButton = showSetup && isTargetFirstPage
                 val languageButtonWidth by animateDpAsState(
-                    targetValue = if (isTargetFirstPage) 64.dp else 0.dp,
+                    targetValue = if (showLanguageButton) 64.dp else 0.dp,
                     animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
                     label = "languageButtonWidth"
                 )
                 val languageButtonAlpha by animateFloatAsState(
-                    targetValue = if (isTargetFirstPage) 1f else 0f,
+                    targetValue = if (showLanguageButton) 1f else 0f,
                     animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
                     label = "languageButtonAlpha"
                 )
                 val spacingValue by animateDpAsState(
-                    targetValue = if (isTargetFirstPage) 12.dp else 0.dp,
+                    targetValue = if (showLanguageButton) 12.dp else 0.dp,
                     animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
                     label = "buttonSpacing"
                 )
@@ -1075,42 +1078,44 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         .height(80.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val languageButtonShapes = IconButtonDefaults.shapes(
-                        shape = CircleShape,
-                        pressedShape = RoundedCornerShape(12.dp)
-                    )
-                    FilledTonalIconButton(
-                        onClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                runCatching {
-                                    context.startActivity(
-                                        Intent(
-                                            Settings.ACTION_APP_LOCALE_SETTINGS,
-                                            "package:${context.packageName}".toUri()
+                    if (showSetup) {
+                        val languageButtonShapes = IconButtonDefaults.shapes(
+                            shape = CircleShape,
+                            pressedShape = RoundedCornerShape(12.dp)
+                        )
+                        FilledTonalIconButton(
+                            onClick = {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(
+                                                Settings.ACTION_APP_LOCALE_SETTINGS,
+                                                "package:${context.packageName}".toUri()
+                                            )
                                         )
-                                    )
+                                    }
+                                } else {
+                                    showAppLanguageDialog = true
                                 }
-                            } else {
-                                showAppLanguageDialog = true
-                            }
-                        },
-                        modifier = Modifier
-                            .size(languageButtonWidth)
-                            .alpha(languageButtonAlpha),
-                        shapes = languageButtonShapes,
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    ) {
-                        Icon(
-                            painter = painterResource(id = com.music.mkr.R.drawable.language),
-                            contentDescription = "Language",
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
+                            },
+                            modifier = Modifier
+                                .size(languageButtonWidth)
+                                .alpha(languageButtonAlpha),
+                            shapes = languageButtonShapes,
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        ) {
+                            Icon(
+                                painter = painterResource(id = com.music.mkr.R.drawable.language),
+                                contentDescription = "Language",
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.width(spacingValue))
+                        Spacer(modifier = Modifier.width(spacingValue))
+                    }
 
                     val isNextEnabled = !isLastPage || isLastPageScrolledToEnd
                     val alphaNext by animateFloatAsState(

@@ -384,9 +384,7 @@ class MainActivity : ComponentActivity() {
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_LTR
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        val sp = getSharedPreferences("app_state", Context.MODE_PRIVATE)
-        val hasCompletedOnboarding = sp.getBoolean("has_completed_onboarding", false) || !dataStore.get(com.music.mkr.constants.IsFirstRunKey, true)
-        if (!hasCompletedOnboarding) {
+        if (!hasCompletedOnboardingForCurrentVersion()) {
             val welcomeIntent = Intent(this, WelcomeActivity::class.java).apply {
                 this@MainActivity.intent?.extras?.let { putExtras(it) }
                 action = this@MainActivity.intent?.action
@@ -396,10 +394,6 @@ class MainActivity : ComponentActivity() {
             finish()
             return
         }
-
-        sp.edit()
-            .putBoolean("has_completed_onboarding", true)
-            .apply()
 
         // Initialize Listen Together manager
         listenTogetherManager.initialize()
