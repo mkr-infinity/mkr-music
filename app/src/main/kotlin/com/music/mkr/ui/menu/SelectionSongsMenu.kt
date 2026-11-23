@@ -526,6 +526,7 @@ fun SelectionMediaMetadataMenu(
 ) {
     val context = LocalContext.current
     val database = LocalDatabase.current
+    val syncUtils = LocalSyncUtils.current
     val downloadUtil = LocalDownloadUtil.current
     val coroutineScope = rememberCoroutineScope()
     val playerConnection = LocalPlayerConnection.current ?: return
@@ -765,7 +766,9 @@ fun SelectionMediaMetadataMenu(
                                         }
                                     } else {
                                         songSelection.filter { !it.liked }.forEach { song ->
-                                            update(song.toSongEntity().toggleLike())
+                                            val likedSong = song.toSongEntity().toggleLike()
+                                            update(likedSong)
+                                            syncUtils.autoDownloadLikedSong(likedSong)
                                         }
                                     }
                                 }

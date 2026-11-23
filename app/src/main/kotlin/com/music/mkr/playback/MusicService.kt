@@ -79,7 +79,6 @@ import com.music.mkr.R
 import com.music.mkr.constants.AudioNormalizationKey
 import com.music.mkr.constants.AudioOffload
 import com.music.mkr.constants.AudioQualityKey
-import com.music.mkr.constants.AutoDownloadOnLikeKey
 import com.music.mkr.constants.AutoLoadMoreKey
 import com.music.mkr.constants.AutoSkipNextOnErrorKey
 import com.music.mkr.constants.CrossfadeCurve

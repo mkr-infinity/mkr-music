@@ -22,6 +22,8 @@ import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadManager
 import androidx.media3.exoplayer.offline.DownloadNotificationHelper
+import androidx.media3.exoplayer.offline.DownloadRequest
+import androidx.media3.exoplayer.offline.DownloadService
 import com.music.innertube.YouTube
 import com.music.mkr.constants.AudioQuality
 import com.music.mkr.constants.AudioQualityKey
@@ -74,9 +76,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import timber.log.Timber
 import java.time.LocalDateTime
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executor
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -424,6 +428,31 @@ constructor(
 
     private fun Download.cacheKey() = request.customCacheKey ?: request.uri.toString()
 
+    private val pendingLikedDownloads = ConcurrentHashMap.newKeySet<String>()
+
+    internal suspend fun enqueueLikedSong(song: SongEntity) {
+        if (!pendingLikedDownloads.add(song.id)) return
+        try {
+            val existing = downloads.value[song.id] ?: downloadManager.downloadIndex.getDownload(song.id)
+            if (!canAutoDownloadLikedSong(existing?.state)) return
+
+            val request = DownloadRequest.Builder(song.id, song.id.toUri())
+                .setCustomCacheKey(song.id)
+                .setData(song.title.toByteArray())
+                .build()
+            DownloadService.sendAddDownload(context, ExoDownloadService::class.java, request, false)
+            withTimeoutOrNull(30_000L) {
+                downloads.first { state -> state[song.id]?.let { it !== existing } == true }
+            }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
+        } catch (error: Exception) {
+            Timber.w(error, "Could not queue a newly liked song for download")
+        } finally {
+            pendingLikedDownloads.remove(song.id)
+        }
+    }
+
     fun getDownload(songId: String): Flow<Download?> = downloads.map { it[songId] }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -577,3 +606,5 @@ private fun downloadStateToString(state: Int): String {
         else -> "UNKNOWN ($state)"
     }
 }
+
+internal fun canAutoDownloadLikedSong(state: Int?): Boolean = state == null || state == Download.STATE_FAILED
