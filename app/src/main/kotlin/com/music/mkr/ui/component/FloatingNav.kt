@@ -9,6 +9,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -20,14 +21,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -40,11 +39,11 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.toPath
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
@@ -55,15 +54,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Matrix
+import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalHapticFeedback
-import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -74,11 +70,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.graphics.shapes.Morph
 import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.ui.screens.Screens
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.collectLatest
 
 @Composable
 internal fun Modifier.navigationGlass(
@@ -87,10 +82,20 @@ internal fun Modifier.navigationGlass(
     rim: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.75f),
 ): Modifier {
     val colors = MaterialTheme.colorScheme
-    val bright = if (pureBlack) Color.Black else colors.surfaceContainerHighest.copy(alpha = 0.88f)
-    val base = if (pureBlack) Color.Black else colors.surfaceContainer.copy(alpha = 0.96f)
-    val sheen = remember(bright, base) { Brush.verticalGradient(listOf(bright, base)) }
-    return background(sheen, shape).border(1.dp, rim, shape)
+    val surface = if (pureBlack) Color.Black else colors.surfaceContainerHigh.copy(alpha = 0.96f)
+    return background(surface, shape).border(1.dp, rim, shape)
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun navigationFace(progress: Float): Shape {
+    val morph = remember { Morph(MaterialShapes.Cookie12Sided, MaterialShapes.Circle) }
+    return remember(morph, progress) {
+        Shape { size, _, _ ->
+            val scale = Matrix().apply { scale(size.width, size.height) }
+            Outline.Generic(morph.toPath(progress.coerceIn(0f, 1f)).apply { transform(scale) })
+        }
+    }
 }
 
 /**
@@ -182,6 +187,9 @@ private fun AmberDockItem(
         label = "dock_selection_lift",
     )
 
+    val targetShape = if (isSelected) 0.82f else 1f
+    val morph by animateFloatAsState(targetShape, label = "signature_tab_shape")
+    val faceShape = navigationFace(if (animate) morph else targetShape)
     val iconRes = if (isSelected) screen.iconIdActive else screen.iconIdInactive
     val contentColor = if (isSelected) {
         MaterialTheme.colorScheme.primary
@@ -227,7 +235,7 @@ private fun AmberDockItem(
                 .fillMaxWidth()
                 .mkrPressFeedback(0.96f, interactionSource, animate)
                 .graphicsLayer { translationY = if (animate) lift.toPx() else 0f }
-                .background(if (animate) slotBgColor else targetSlotColor, RoundedCornerShape(16.dp))
+                .background(if (animate) slotBgColor else targetSlotColor, faceShape)
                 .padding(vertical = 5.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
@@ -306,11 +314,12 @@ private fun CapsuleNavigationBar(
     onSearchLongClick: (() -> Unit)?,
     bottomInset: Dp,
     compact: Boolean,
+    anchored: Boolean = false,
 ) {
     val colors = MaterialTheme.colorScheme
     val animate by rememberPreference(InterfaceAnimationsKey, true)
     val labelScale = LocalDensity.current.fontScale
-    val bottomPadding = if (slimNav) 8.dp else if (compact) 14.dp else 10.dp
+    val bottomPadding = if (anchored) 4.dp else if (slimNav) 8.dp else if (compact) 14.dp else 10.dp
     BoxWithConstraints(
         modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = bottomInset + bottomPadding),
         contentAlignment = Alignment.Center,
@@ -329,7 +338,7 @@ private fun CapsuleNavigationBar(
             val selectedIndex = navigationItems.indexOfFirst {
                 isNavRouteSelected(currentRoute, it.route, navigationItems)
             }
-            if (!compact && selectedIndex >= 0) {
+            if (!compact && !anchored && selectedIndex >= 0) {
                 val cellWidth = (maxWidth - 4.dp * (navigationItems.size - 1)) / navigationItems.size
                 val targetOffset = (cellWidth + 4.dp) * selectedIndex + 2.dp
                 val indicatorOffset by animateDpAsState(
@@ -337,12 +346,22 @@ private fun CapsuleNavigationBar(
                     spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
                     label = "glass_indicator_slide",
                 )
+                val morph = remember { Animatable(1f) }
+                LaunchedEffect(selectedIndex, animate) {
+                    if (animate) {
+                        morph.snapTo(0.55f)
+                        morph.animateTo(1f, tween(260))
+                    } else {
+                        morph.snapTo(1f)
+                    }
+                }
+                val indicatorShape = navigationFace(morph.value)
                 Box(
                     Modifier.offset { IntOffset((if (animate) indicatorOffset else targetOffset).roundToPx(), 0) }
                         .width((cellWidth - 4.dp).coerceAtLeast(0.dp))
                         .fillMaxHeight()
-                        .background(colors.secondaryContainer, RoundedCornerShape(17.dp))
-                        .border(1.dp, colors.onSecondaryContainer.copy(alpha = 0.13f), RoundedCornerShape(17.dp)),
+                        .padding(vertical = 1.dp)
+                        .background(colors.secondaryContainer, indicatorShape),
                 )
             }
             Row(
@@ -365,6 +384,7 @@ private fun CapsuleNavigationBar(
                         isSelected = isSelected,
                         showLabel = labelsFit && (!compact || isSelected),
                         inlineLabel = compact,
+                        ownIndicator = compact || anchored,
                         animate = animate,
                         onClick = { onItemClick(screen, isSelected) },
                         onLongClick = onSearchLongClick.takeIf { screen == Screens.Search },
@@ -383,6 +403,7 @@ private fun CapsuleNavigationItem(
     isSelected: Boolean,
     showLabel: Boolean,
     inlineLabel: Boolean,
+    ownIndicator: Boolean,
     animate: Boolean,
     onClick: () -> Unit,
     onLongClick: (() -> Unit)?,
@@ -390,15 +411,15 @@ private fun CapsuleNavigationItem(
 ) {
     val colors = MaterialTheme.colorScheme
     val interaction = remember { MutableInteractionSource() }
-    val targetColor = if (inlineLabel && isSelected) colors.primaryContainer else Color.Transparent
+    val targetColor = if (ownIndicator && isSelected) colors.primaryContainer else Color.Transparent
     val fill by animateColorAsState(targetColor, tween(150), label = "navigation_selection_color")
-    val targetCorner = if (isSelected) 15.dp else 24.dp
-    val corner by animateDpAsState(targetCorner, tween(150), label = "navigation_selection_shape")
-    val shape = RoundedCornerShape(if (animate) corner else targetCorner)
+    val targetMorph = if (isSelected) 1f else 0f
+    val morph by animateFloatAsState(targetMorph, tween(220), label = "navigation_selection_shape")
+    val shape = navigationFace(if (animate) morph else targetMorph)
     val label = stringResource(screen.titleId)
     val ink = when {
         !isSelected -> colors.onSurfaceVariant
-        inlineLabel -> colors.onPrimaryContainer
+        ownIndicator -> colors.onPrimaryContainer
         else -> colors.onSecondaryContainer
     }
 
@@ -467,10 +488,7 @@ private fun CapsuleNavigationItem(
 }
 
 // ---------------------------------------------------------------------------
-// STYLE C: Material 3 Navigation
-// Refined edge-aligned Material 3 NavigationBar with authentic indicator capsule,
-// clean labels, top separation divider, and anchored ergonomics.
-// ---------------------------------------------------------------------------
+// Material navigation keeps its edge-aligned placement.
 @Composable
 fun CleanMaterialNavigationBar(
     navigationItems: List<Screens>,
@@ -481,95 +499,10 @@ fun CleanMaterialNavigationBar(
     slimNav: Boolean = false,
     onSearchLongClick: (() -> Unit)? = null,
     bottomInset: Dp = 0.dp,
-) {
-    val colors = MaterialTheme.colorScheme
-    val animate by rememberPreference(InterfaceAnimationsKey, true)
-    val haptics = LocalHapticFeedback.current
-    val viewConfiguration = LocalViewConfiguration.current
-
-    Column(modifier = modifier.fillMaxWidth()) {
-        // Subtle top separation border
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(1.dp)
-                .background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-        )
-
-        NavigationBar(
-            modifier = Modifier.fillMaxWidth().navigationGlass(RectangleShape, pureBlack),
-            containerColor = Color.Transparent,
-            contentColor = colors.onSurfaceVariant,
-            windowInsets = WindowInsets(bottom = bottomInset)
-        ) {
-            navigationItems.forEach { screen ->
-                val isSelected = remember(currentRoute, screen.route) {
-                    isNavRouteSelected(currentRoute, screen.route, navigationItems)
-                }
-                val iconRes = remember(isSelected, screen) {
-                    if (isSelected) screen.iconIdActive else screen.iconIdInactive
-                }
-
-                val isSearchItem = screen == Screens.Search && onSearchLongClick != null
-                val interactionSource = remember { MutableInteractionSource() }
-
-                if (isSearchItem) {
-                    LaunchedEffect(interactionSource) {
-                        var isLongClick = false
-                        interactionSource.interactions.collectLatest { interaction ->
-                            when (interaction) {
-                                is PressInteraction.Press -> {
-                                    isLongClick = false
-                                    delay(viewConfiguration.longPressTimeoutMillis)
-                                    isLongClick = true
-                                    haptics.performHapticFeedback(HapticFeedbackType.LongPress)
-                                    onSearchLongClick.invoke()
-                                }
-                                is PressInteraction.Release -> {
-                                    if (!isLongClick) onItemClick(screen, isSelected)
-                                }
-                                is PressInteraction.Cancel -> {
-                                    isLongClick = false
-                                }
-                            }
-                        }
-                    }
-                }
-
-                NavigationBarItem(
-                    selected = isSelected,
-                    onClick = {
-                        onItemClick(screen, isSelected)
-                    },
-                    interactionSource = interactionSource,
-                    colors = NavigationBarItemDefaults.colors(
-                        indicatorColor = colors.primaryContainer,
-                        selectedIconColor = colors.onPrimaryContainer,
-                        selectedTextColor = colors.primary,
-                        unselectedIconColor = colors.onSurfaceVariant,
-                        unselectedTextColor = colors.onSurfaceVariant
-                    ),
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = iconRes),
-                            contentDescription = if (slimNav) stringResource(screen.titleId) else null,
-                            modifier = Modifier.mkrPressFeedback(0.94f, interactionSource, animate),
-                        )
-                    },
-                    label = if (!slimNav) {
-                        {
-                            Text(
-                                text = stringResource(screen.titleId),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
-                    } else null
-                )
-            }
-        }
-    }
-}
+) = CapsuleNavigationBar(
+    navigationItems, currentRoute, onItemClick, modifier, pureBlack, slimNav,
+    onSearchLongClick, bottomInset, compact = false, anchored = true,
+)
 
 // ---------------------------------------------------------------------------
 // Backward-compatibility delegator
