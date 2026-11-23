@@ -83,7 +83,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -210,6 +209,15 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
+
+private val homeSessionSeed = Random.nextLong()
+
+internal fun <T> shuffleHomeShelves(shelves: List<T>, seed: Long, key: (T) -> String?): List<T> {
+    val ranked = shelves.mapNotNull { shelf -> key(shelf)?.let { it to shelf } }
+        .sortedWith(compareBy({ Random(seed xor it.first.hashCode().toLong()).nextLong() }, { it.first }))
+        .iterator()
+    return shelves.map { shelf -> if (key(shelf) == null) shelf else ranked.next().second }
+}
 
 sealed class HomeSection(val id: String, val baseWeight: Int) {
     data object SpeedDial : HomeSection("speed_dial", 100)
@@ -637,14 +645,6 @@ fun HomeScreen(
     val wrappedDismissed by backStackEntry?.savedStateHandle?.getStateFlow("wrapped_seen", false)
         ?.collectAsState() ?: remember { mutableStateOf(false) }
 
-    var randomSeed by rememberSaveable { mutableLongStateOf(System.currentTimeMillis()) }
-
-    LaunchedEffect(isRefreshing) {
-        if (isRefreshing) {
-            randomSeed = System.currentTimeMillis()
-        }
-    }
-
     val foundInSettings = stringResource(R.string.found_in_settings_content)
     LaunchedEffect(wrappedDismissed) {
         if (wrappedDismissed) {
@@ -830,7 +830,6 @@ fun HomeScreen(
     val homeSections = remember(
         randomizeHomeOrder,
         hideSpeedDial,
-        randomSeed,
         selectedChip,
         speedDialItems,
         quickPicks,
@@ -843,7 +842,8 @@ fun HomeScreen(
         coversAndRemixes,
         homePage?.sections,
         explorePage?.moodAndGenres,
-        hasListeningHistory
+        hasListeningHistory,
+        isLoggedIn,
     ) {
         val list = mutableListOf<HomeSection>()
         val chipActive = selectedChip != null
@@ -873,51 +873,24 @@ fun HomeScreen(
             it is HomeSection.HomePageSection && homePage?.sections?.getOrNull(it.index)?.title?.contains("Quick picks", ignoreCase = true) == true
         }
 
-        val sortedList = if (randomizeHomeOrder) {
-            list.sortedByDescending { section ->
-                val sectionRandom = Random(randomSeed + section.id.hashCode())
-                val base = when {
-                    section == HomeSection.QuickPicks || isYtQuickPicks(section) -> 700
-                    section == HomeSection.SpeedDial || section == HomeSection.DailyDiscover -> 500
-                    section == HomeSection.KeepListening ||
-                    section == HomeSection.AccountPlaylists ||
-                    section == HomeSection.ForgottenFavorites ||
-                    section == HomeSection.FromTheCommunity -> 300
-                    else -> 100
-                }
-                val modifier = when {
-                    section == HomeSection.QuickPicks || isYtQuickPicks(section) -> 0
-                    section == HomeSection.SpeedDial ||
-                    section == HomeSection.CoversAndRemixes ||
-                    section == HomeSection.DailyDiscover -> sectionRandom.nextInt(-200, 400)
-                    section == HomeSection.KeepListening ||
-                    section == HomeSection.AccountPlaylists ||
-                    section == HomeSection.ForgottenFavorites ||
-                    section == HomeSection.FromTheCommunity -> sectionRandom.nextInt(-100, 400)
-                    else -> sectionRandom.nextInt(-50, 50)
-                }
-                base + modifier
-            }
-        } else {
-            val defaultOrder = mapOf(
-                HomeSection.QuickPicks to 110,
-                HomeSection.SpeedDial to 100,
-                HomeSection.CoversAndRemixes to 85,
-                HomeSection.FromTheCommunity to 80,
-                HomeSection.DailyDiscover to 70,
-                HomeSection.KeepListening to 60,
-                HomeSection.AccountPlaylists to 50,
-                HomeSection.ForgottenFavorites to 40,
-                HomeSection.MoodAndGenres to 10
-            )
+        val defaultOrder = mapOf(
+            HomeSection.QuickPicks to 110,
+            HomeSection.SpeedDial to 100,
+            HomeSection.CoversAndRemixes to 85,
+            HomeSection.FromTheCommunity to 80,
+            HomeSection.DailyDiscover to 70,
+            HomeSection.KeepListening to 60,
+            HomeSection.AccountPlaylists to 50,
+            HomeSection.ForgottenFavorites to 40,
+            HomeSection.MoodAndGenres to 10
+        )
 
-            list.sortedByDescending { section ->
-                when {
-                    isYtQuickPicks(section) -> 110
-                    section is HomeSection.SimilarRecommendation -> 30 - section.index
-                    section is HomeSection.HomePageSection -> 20 - section.index
-                    else -> defaultOrder[section] ?: 0
-                }
+        val sortedList = list.sortedByDescending { section ->
+            when {
+                isYtQuickPicks(section) -> 110
+                section is HomeSection.SimilarRecommendation -> 30 - section.index
+                section is HomeSection.HomePageSection -> 20 - section.index
+                else -> defaultOrder[section] ?: 0
             }
         }
 
@@ -947,8 +920,23 @@ fun HomeScreen(
             it == HomeSection.QuickPicks || isYtQuickPicks(it)
         }
         val qpItems = deduplicatedList.filter(isQuickPicksSection)
-        if (qpItems.isNotEmpty()) qpItems + deduplicatedList.filterNot(isQuickPicksSection)
-        else deduplicatedList
+        val remaining = deduplicatedList.filterNot(isQuickPicksSection)
+        qpItems + if (randomizeHomeOrder && !chipActive) {
+            shuffleHomeShelves(remaining, homeSessionSeed) { section ->
+                when (section) {
+                    HomeSection.SpeedDial, HomeSection.KeepListening, HomeSection.CoversAndRemixes,
+                    HomeSection.DailyDiscover, HomeSection.ForgottenFavorites, HomeSection.FromTheCommunity -> section.id
+                    is HomeSection.SimilarRecommendation -> similarRecommendations
+                        ?.getOrNull(section.index)?.title?.let { "similar:${it.id}" }
+                    is HomeSection.HomePageSection -> homePage?.sections?.getOrNull(section.index)
+                        ?.takeIf { shelf ->
+                            shelf.title.contains("recommended", ignoreCase = true) ||
+                                shelf.title.contains("for you", ignoreCase = true)
+                        }?.let { shelf -> "provider:${shelf.endpoint?.browseId}:${shelf.title}:${shelf.label}" }
+                    else -> null
+                }
+            }
+        } else remaining
     }
 
     LaunchedEffect(forgottenFavorites) {
