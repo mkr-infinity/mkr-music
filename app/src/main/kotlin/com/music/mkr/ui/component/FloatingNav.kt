@@ -9,7 +9,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -48,7 +47,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -364,11 +362,16 @@ private fun CapsuleNavigationBar(
         contentAlignment = Alignment.Center,
     ) {
         // Icon descriptions carry the labels when the capsule is too small for visible text.
-        val labelsFit = !slimNav && labelScale <= 1.4f && maxWidth >= 260.dp
+        val labelsFit = !floatingGlass && !slimNav && labelScale <= 1.4f && maxWidth >= 260.dp
+        val capsuleWidth = if (floatingGlass) {
+            val minimumWidth = (56.dp * navigationItems.size + 20.dp).coerceAtMost(360.dp)
+            (maxWidth * 0.88f).coerceIn(minimumWidth, 360.dp).coerceAtMost(maxWidth)
+        } else {
+            maxWidth.coerceAtMost(if (compact) 320.dp else 500.dp)
+        }
         BoxWithConstraints(
             modifier = Modifier
-                .widthIn(max = if (compact) 320.dp else 500.dp)
-                .fillMaxWidth()
+                .width(capsuleWidth)
                 .height(capsuleHeight)
                 .shadow(if (floatingGlass) 2.dp else 3.dp, CircleShape)
                 .then(capsuleSurface)
@@ -377,37 +380,29 @@ private fun CapsuleNavigationBar(
             val selectedIndex = navigationItems.indexOfFirst {
                 isNavRouteSelected(currentRoute, it.route, navigationItems)
             }
+            val itemGap = if (floatingGlass) (maxWidth * 0.018f).coerceIn(2.dp, 6.dp) else 4.dp
             if (floatingGlass && selectedIndex >= 0) {
-                val cellWidth = (maxWidth - 4.dp * (navigationItems.size - 1)) / navigationItems.size
-                val targetOffset = (cellWidth + 4.dp) * selectedIndex + 2.dp
-                val indicatorWidth = (cellWidth - 4.dp).coerceAtLeast(0.dp)
+                val cellWidth = (maxWidth - itemGap * (navigationItems.size - 1)) / navigationItems.size
+                val indicatorWidth = (cellWidth * 0.68f).coerceIn(42.dp, 62.dp).coerceAtMost(cellWidth)
+                val indicatorHeight = (maxHeight * 0.78f).coerceIn(32.dp, 40.dp).coerceAtMost(maxHeight)
+                val targetOffset = (cellWidth + itemGap) * selectedIndex + (cellWidth - indicatorWidth) / 2
                 val maxOffset = (maxWidth - indicatorWidth).coerceAtLeast(0.dp)
                 val indicatorOffset by animateDpAsState(
                     targetOffset,
                     if (animate) spring(dampingRatio = 0.78f, stiffness = Spring.StiffnessMedium) else snap(),
                     label = "glass_indicator_slide",
                 )
-                val morph = remember { Animatable(1f) }
-                LaunchedEffect(selectedIndex, animate) {
-                    if (animate) {
-                        morph.snapTo(0.66f)
-                        morph.animateTo(1f, tween(150, easing = FastOutSlowInEasing))
-                    } else {
-                        morph.snapTo(1f)
-                    }
-                }
-                val indicatorShape = navigationFace(morph.value)
                 Box(
                     Modifier.offset { IntOffset(indicatorOffset.coerceIn(0.dp, maxOffset).roundToPx(), 0) }
                         .width(indicatorWidth)
-                        .fillMaxHeight(0.92f)
+                        .height(indicatorHeight)
                         .align(Alignment.CenterStart)
-                        .background(colors.secondaryContainer, indicatorShape),
+                        .background(colors.secondaryContainer, CircleShape),
                 )
             }
             Row(
                 modifier = Modifier.fillMaxSize().selectableGroup(),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                horizontalArrangement = Arrangement.spacedBy(itemGap),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 navigationItems.forEachIndexed { index, screen ->
@@ -426,6 +421,7 @@ private fun CapsuleNavigationBar(
                         showLabel = labelsFit && (!compact || isSelected),
                         inlineLabel = compact,
                         ownIndicator = compact || anchored,
+                        floatingGlass = floatingGlass,
                         anchored = anchored,
                         animate = animate,
                         onClick = { onItemClick(screen, isSelected) },
@@ -446,6 +442,7 @@ private fun CapsuleNavigationItem(
     showLabel: Boolean,
     inlineLabel: Boolean,
     ownIndicator: Boolean,
+    floatingGlass: Boolean,
     anchored: Boolean,
     animate: Boolean,
     onClick: () -> Unit,
@@ -498,8 +495,14 @@ private fun CapsuleNavigationItem(
             .then(if (ownIndicator) Modifier.background(if (animate) fill else targetColor, shape) else Modifier)
             .padding(horizontal = 5.dp)
         val icon: @Composable () -> Unit = {
+            val iconId = when {
+                floatingGlass && screen == Screens.Search -> R.drawable.nav_search
+                floatingGlass && screen == Screens.Library -> R.drawable.nav_library
+                isSelected -> screen.iconIdActive
+                else -> screen.iconIdInactive
+            }
             Icon(
-                painterResource(if (isSelected) screen.iconIdActive else screen.iconIdInactive),
+                painterResource(iconId),
                 contentDescription = if (showLabel) null else label,
                 tint = ink,
                 modifier = Modifier.size(22.dp),

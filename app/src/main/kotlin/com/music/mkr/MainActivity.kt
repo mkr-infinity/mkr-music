@@ -36,7 +36,6 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -148,9 +147,6 @@ import androidx.core.util.Consumer
 import androidx.core.view.WindowCompat
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.coroutineScope
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.MediaItem
@@ -159,7 +155,6 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import coil3.compose.AsyncImage
 import coil3.compose.SubcomposeAsyncImage
 import coil3.imageLoader
 import coil3.request.CachePolicy
@@ -1082,8 +1077,6 @@ class MainActivity : ComponentActivity() {
                 val pauseListenHistory by rememberPreference(PauseListenHistoryKey, defaultValue = false)
                 val eventCount by database.eventCount().collectAsState(initial = 0)
                 val showHistoryButton = true
-                val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
-                val animateHomeControls = interfaceAnimations && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
 
                 val baseBg = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
 
@@ -1219,27 +1212,25 @@ class MainActivity : ComponentActivity() {
                                                 horizontalArrangement = Arrangement.spacedBy(if (isHome) 2.dp else 8.dp),
                                                 modifier = Modifier.padding(end = if (isHome) 4.dp else 12.dp)
                                             ) {
-                                                // Listening History navigation action (expressive squircle capsule)
+                                                val actionFace = MaterialTheme.colorScheme.primaryContainer
+                                                val actionInk = MaterialTheme.colorScheme.onPrimaryContainer
                                                 if (showHistoryButton) {
-                                                    val historyDesc = stringResource(R.string.listening_history)
-                                                    ExpressiveIconButton(
+                                                    PlaybackCookieButton(
                                                         onClick = { navController.navigate("history") },
-                                                        animateShape = isHome,
-                                                        animationsEnabled = !isHome || animateHomeControls,
-                                                        shape = if (isHome) CircleShape else RoundedCornerShape(13.dp),
-                                                        containerColor = if (isHome) MaterialTheme.colorScheme.secondaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.52f),
-                                                        contentColor = if (isHome) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurface
+                                                        color = actionFace,
+                                                        angle = null,
                                                     ) {
                                                         Icon(
                                                             painter = painterResource(R.drawable.history),
-                                                            contentDescription = historyDesc,
-                                                            modifier = Modifier.size(20.dp)
+                                                            contentDescription = stringResource(R.string.listening_history),
+                                                            tint = actionInk,
+                                                            modifier = Modifier.size(20.dp),
                                                         )
                                                     }
                                                 }
 
                                                 // Account-aware button reactive to auth state (hidden when not authenticated)
-                                                if (isLoggedIn && isHome) {
+                                                if (isLoggedIn) {
                                                     val accountDesc = stringResource(R.string.account)
                                                     val initials = remember(accountName, accountDesc) {
                                                         val name = accountName.takeUnless { it.isBlank() || it == "Guest" } ?: accountDesc
@@ -1248,14 +1239,14 @@ class MainActivity : ComponentActivity() {
                                                     }
                                                     PlaybackCookieButton(
                                                         onClick = { navController.navigate("settings/account") },
-                                                        color = MaterialTheme.colorScheme.primaryContainer,
+                                                        color = actionFace,
                                                         modifier = Modifier.semantics { contentDescription = accountDesc },
                                                         angle = null,
                                                     ) {
                                                         val initialsContent: @Composable () -> Unit = {
                                                             Text(
                                                                 initials,
-                                                                color = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                                color = actionInk,
                                                                 style = MaterialTheme.typography.labelSmall,
                                                                 maxLines = 1,
                                                             )
@@ -1273,34 +1264,6 @@ class MainActivity : ComponentActivity() {
                                                             )
                                                         }
                                                     }
-                                                } else if (isLoggedIn) {
-                                                    val accountDesc = stringResource(R.string.account)
-                                                    ExpressiveIconButton(
-                                                        onClick = { navController.navigate("settings/account") }
-                                                    ) {
-                                                        if (accountImageUrl != null) {
-                                                            AsyncImage(
-                                                                model = accountImageUrl,
-                                                                contentDescription = accountDesc,
-                                                                contentScale = ContentScale.Crop,
-                                                                modifier = Modifier
-                                                                    .size(26.dp)
-                                                                    .clip(RoundedCornerShape(8.dp))
-                                                                    .border(
-                                                                        width = 1.dp,
-                                                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                                                                        shape = RoundedCornerShape(8.dp)
-                                                                    )
-                                                            )
-                                                        } else {
-                                                            Icon(
-                                                                painter = painterResource(R.drawable.account),
-                                                                contentDescription = accountDesc,
-                                                                tint = MaterialTheme.colorScheme.onSurface,
-                                                                modifier = Modifier.size(20.dp)
-                                                            )
-                                                        }
-                                                    }
                                                 }
 
                                                 val settingsAngle = rememberPlaybackCookieAngle(
@@ -1309,13 +1272,13 @@ class MainActivity : ComponentActivity() {
                                                 )
                                                 PlaybackCookieButton(
                                                     onClick = { navController.navigate("settings") },
-                                                    color = MaterialTheme.colorScheme.primaryContainer,
+                                                    color = actionFace,
                                                     angle = settingsAngle,
                                                 ) {
                                                     Icon(
                                                         painter = painterResource(R.drawable.settings),
                                                         contentDescription = stringResource(R.string.settings),
-                                                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                                        tint = actionInk,
                                                         modifier = Modifier.size(20.dp)
                                                     )
                                                 }
