@@ -123,6 +123,7 @@ internal fun AnimatedActionButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     emphasis: ActionButtonEmphasis = ActionButtonEmphasis.Primary,
+    compact: Boolean = false,
     content: @Composable RowScope.() -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -152,7 +153,7 @@ internal fun AnimatedActionButton(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier
-            .heightIn(min = if (primary) 56.dp else 48.dp)
+            .heightIn(min = if (primary && !compact) 56.dp else 48.dp)
             .mkrPressFeedback(0.975f, interaction, animate),
         shape = RoundedCornerShape(if (animate) corner else restCorner),
         interactionSource = interaction,
@@ -169,7 +170,8 @@ internal fun AnimatedActionButton(
         border = if (quiet || !enabled) null else BorderStroke(
             1.dp, if (primary) colors.onPrimary.copy(alpha = 0.18f) else colors.outlineVariant,
         ),
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+        contentPadding = if (compact) PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            else PaddingValues(horizontal = 18.dp, vertical = 10.dp),
         content = content,
     )
 }

@@ -145,22 +145,6 @@ fun LocalSearchScreen(
                 .fillMaxSize()
                 .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.background)
         ) {
-            if (featured != null) {
-                val song = visibleResult?.map?.get(LocalFilter.SONG).orEmpty().filterIsInstance<Song>()
-                    .firstOrNull { it.id == featured.id }
-                if (song != null) {
-                    item(key = "top_song_match", span = { GridItemSpan(maxLineSpan) }) {
-                        Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                            TopSongMatchCard(
-                                song = featured,
-                                onPlay = { playFeatured(songQueue(song), song.id) },
-                                onPlayNext = { enqueueSearchMatch(playerConnection, song.toMediaItem()) },
-                                onMenu = { openSongMenu(song) },
-                            )
-                        }
-                    }
-                }
-            }
             stickyHeader(key = "local_filters") {
                 Column(
                     modifier = Modifier
@@ -185,6 +169,22 @@ fun LocalSearchScreen(
                 }
             }
 
+            if (featured != null) {
+                val song = visibleResult?.map?.get(LocalFilter.SONG).orEmpty().filterIsInstance<Song>()
+                    .firstOrNull { it.id == featured.id }
+                if (song != null) {
+                    item(key = "top_song_match", span = { GridItemSpan(maxLineSpan) }) {
+                        Box(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
+                            TopSongMatchCard(
+                                song = featured,
+                                onPlay = { playFeatured(songQueue(song), song.id) },
+                                onPlayNext = { enqueueSearchMatch(playerConnection, song.toMediaItem()) },
+                                onMenu = { openSongMenu(song) },
+                            )
+                        }
+                    }
+                }
+            }
             visibleResult?.map?.forEach { (filter, sourceItems) ->
                 val items = sourceItems.distinctBy { it.id }.filterNot { it is Song && it.id == featured?.id }
                 if (items.isEmpty()) return@forEach

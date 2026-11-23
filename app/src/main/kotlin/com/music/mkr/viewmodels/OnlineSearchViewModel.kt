@@ -72,6 +72,12 @@ constructor(
                 if (selected == null && summaryPage == null ||
                     selected != null && viewStateMap[selected.value] == null
                 ) loadInitial(selected)
+                if (selected == null && summaryPage != null && summaryMatch == null &&
+                    viewStateMap[YouTube.SearchFilter.FILTER_SONG.value] == null &&
+                    !initialFailed(YouTube.SearchFilter.FILTER_SONG)
+                ) {
+                    loadInitial(YouTube.SearchFilter.FILTER_SONG)
+                }
             }
         }
     }

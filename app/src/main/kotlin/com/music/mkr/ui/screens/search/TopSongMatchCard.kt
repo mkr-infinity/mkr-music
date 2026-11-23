@@ -6,7 +6,6 @@
 package com.music.mkr.ui.screens.search
 
 import android.os.SystemClock
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,14 +18,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -57,13 +53,14 @@ import com.music.mkr.ui.component.AnimatedActionButton
 import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.rememberPreference
 
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun TopSongMatchCard(
     song: SongItem,
     onPlay: () -> Unit,
     onPlayNext: () -> Unit,
     onMenu: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val colors = MaterialTheme.colorScheme
     val allowAnimation by rememberPreference(InterfaceAnimationsKey, true)
@@ -72,51 +69,34 @@ internal fun TopSongMatchCard(
     var lastPlayTap by remember(song.id) { mutableLongStateOf(-500L) }
     var lastQueueTap by remember(song.id) { mutableLongStateOf(-500L) }
 
-    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
         Surface(
-            modifier = Modifier.widthIn(max = 760.dp).fillMaxWidth(),
-            shape = MaterialTheme.shapes.extraLarge,
+            modifier = Modifier.widthIn(max = 560.dp).fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
             color = colors.surfaceContainer,
-            border = BorderStroke(1.dp, colors.outlineVariant),
-            shadowElevation = 2.dp,
         ) {
-            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Row(
-                    Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    Surface(
-                        shape = MaterialShapes.Cookie6Sided.toShape(),
-                        color = colors.primaryContainer,
-                        contentColor = colors.onPrimaryContainer,
-                    ) {
-                        Box(Modifier.size(32.dp), contentAlignment = Alignment.Center) {
-                            Icon(painterResource(R.drawable.music_note), null, Modifier.size(17.dp))
-                        }
-                    }
-                    Text(
-                        stringResource(R.string.search_top_song_match),
-                        style = MaterialTheme.typography.titleSmall,
-                        modifier = Modifier.weight(1f).semantics { heading() },
-                    )
-                    IconButton(onClick = onMenu) {
-                        Icon(painterResource(R.drawable.more_vert), stringResource(R.string.more_options))
-                    }
-                }
+            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                    stringResource(R.string.search_top_song_match),
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.semantics { heading() },
+                )
 
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                 ) {
-                    SearchArtwork(song, Modifier.size(64.dp), MaterialTheme.shapes.medium, pixels = 256)
+                    SearchArtwork(song, Modifier.size(52.dp), MaterialTheme.shapes.medium, pixels = 256)
                     Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Text(song.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                        Text(song.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                         Text(
                             song.artists.joinToString { it.name },
                             style = MaterialTheme.typography.bodyMedium,
                             color = colors.onSurfaceVariant,
                         )
+                    }
+                    IconButton(onClick = onMenu) {
+                        Icon(painterResource(R.drawable.more_vert), stringResource(R.string.more_options))
                     }
                 }
 
@@ -133,8 +113,9 @@ internal fun TopSongMatchCard(
                             }
                         },
                         animate = animate,
+                        compact = true,
                     ) {
-                        Icon(painterResource(R.drawable.play), null, Modifier.size(20.dp))
+                        Icon(painterResource(R.drawable.play), null, Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(stringResource(R.string.play))
                     }
@@ -147,9 +128,10 @@ internal fun TopSongMatchCard(
                             }
                         },
                         animate = animate,
+                        compact = true,
                         emphasis = ActionButtonEmphasis.Tonal,
                     ) {
-                        Icon(painterResource(R.drawable.playlist_play), null, Modifier.size(20.dp))
+                        Icon(painterResource(R.drawable.playlist_play), null, Modifier.size(18.dp))
                         Spacer(Modifier.width(6.dp))
                         Text(stringResource(R.string.search_add_to_play_next))
                     }

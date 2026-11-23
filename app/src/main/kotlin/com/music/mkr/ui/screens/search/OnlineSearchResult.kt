@@ -150,8 +150,8 @@ fun OnlineSearchResult(
     val summary = viewModel.summaryPage
     val page = filter?.value?.let { viewModel.viewStateMap[it] }
     val featured = when (filter) {
-        null -> viewModel.summaryMatch
-        FILTER_SONG -> viewModel.songsMatch
+        null -> viewModel.summaryMatch ?: viewModel.songsMatch
+        FILTER_SONG -> viewModel.songsMatch ?: viewModel.summaryMatch
         else -> null
     }
     val sections = remember(summary, featured?.id) {
@@ -325,6 +325,7 @@ fun OnlineSearchResult(
                                 item(key = "top_song_match", span = { GridItemSpan(maxLineSpan) }) {
                                     TopSongMatchCard(
                                         song = featured,
+                                        modifier = Modifier.padding(top = 8.dp),
                                         onPlay = { playSong(featured, fromHero = true) },
                                         onPlayNext = { enqueueSearchMatch(connection, featured.toMediaItem()) },
                                         onMenu = { openMenu(featured) },
@@ -364,7 +365,7 @@ fun OnlineSearchResult(
                                 item(key = "initial", span = { GridItemSpan(maxLineSpan) }) {
                                     SearchLoadStatus(viewModel.initialFailed(filter), viewModel::retryInitial)
                                 }
-                            } else if (sourceEmpty) {
+                            } else if (sourceEmpty && featured == null) {
                                 item(key = "empty", span = { GridItemSpan(maxLineSpan) }) {
                                     EmptyPlaceholder(R.drawable.search, stringResource(R.string.no_results_found),
                                         description = stringResource(R.string.search_no_match_hint))
