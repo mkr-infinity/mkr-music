@@ -489,10 +489,23 @@ enum class PlayerButtonsStyle {
 enum class PlayerBackgroundStyle {
     DEFAULT,
     GRADIENT,
-    BLUR,
     GLOW_ANIMATED,
     LIVE_MESH,
+    IMMERSIVE_ARTWORK,
 }
+
+internal val miniPlayerBackgroundStyles = PlayerBackgroundStyle.entries.filter { it != PlayerBackgroundStyle.IMMERSIVE_ARTWORK }
+
+internal fun resolveFullPlayerBackground(saved: String, style: PlayerStyle): PlayerBackgroundStyle =
+    when (saved) {
+        "BLUR" -> PlayerBackgroundStyle.IMMERSIVE_ARTWORK
+        else -> PlayerBackgroundStyle.entries.firstOrNull { it.name == saved }
+            ?: if (style == PlayerStyle.IMMERSIVE) PlayerBackgroundStyle.IMMERSIVE_ARTWORK
+            else PlayerBackgroundStyle.DEFAULT
+    }
+
+internal fun resolveMiniPlayerBackground(saved: String): PlayerBackgroundStyle =
+    miniPlayerBackgroundStyles.firstOrNull { it.name == saved } ?: PlayerBackgroundStyle.GLOW_ANIMATED
 
 val TopSize = stringPreferencesKey("topSize")
 val HistoryDuration = floatPreferencesKey("historyDuration")

@@ -82,7 +82,6 @@
     <string name="starting_radio">Radio starten</string>
     <string name="close">Afsluiten</string>
     <string name="similar_content">Gelijkaardige inhoud</string>
-    <string name="player_background_blur">Vervagen</string>
     <string name="player_buttons_style">Kleuren spelerknoppen</string>
     <string name="enable_swipe_thumbnail">Vegen om lied te veranderen</string>
     <string name="swipe_song_to_add">Naar links vegen om lied in de afspeellijst te zetten of naar rechts om als volgende te spelen</string>

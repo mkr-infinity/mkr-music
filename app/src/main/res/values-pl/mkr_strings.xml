@@ -40,7 +40,6 @@
     <string name="loading_charts">Ładowanie wykresów…</string>
     <string name="album_cover_desc">Okładka</string>
     <string name="sync_playlist">Synchronizuj playlistę</string>
-    <string name="player_background_blur">Rozmycie</string>
     <string name="default_style">Domyślny</string>
     <string name="general">Ogólne</string>
     <string name="percentage_format">%d%%</string>

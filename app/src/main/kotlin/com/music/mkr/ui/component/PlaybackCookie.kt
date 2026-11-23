@@ -74,11 +74,15 @@ internal fun rememberPlaybackCookieAngle(connection: PlayerConnection?, visible:
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-internal fun PlaybackCookieFace(color: Color, angle: State<Float>? = LocalPlaybackCookieAngle.current) {
+internal fun PlaybackCookieFace(
+    color: Color,
+    angle: State<Float>? = LocalPlaybackCookieAngle.current,
+    faceFraction: Float = 0.88f,
+) {
     val shape = MaterialShapes.Cookie12Sided.toShape()
     BoxWithConstraints(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Box(
-            Modifier.size(minOf(maxWidth, maxHeight) * 0.88f)
+            Modifier.size(minOf(maxWidth, maxHeight) * faceFraction)
                 .graphicsLayer { rotationZ = angle?.value ?: 0f }
                 .background(color, shape),
         )
@@ -92,11 +96,12 @@ internal fun PlaybackCookieButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     angle: State<Float>? = LocalPlaybackCookieAngle.current,
+    faceFraction: Float = 0.88f,
     content: @Composable () -> Unit,
 ) {
     IconButton(onClick = onClick, enabled = enabled, modifier = modifier) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            PlaybackCookieFace(if (enabled) color else color.copy(alpha = 0.45f), angle)
+            PlaybackCookieFace(if (enabled) color else color.copy(alpha = 0.45f), angle, faceFraction)
             content()
         }
     }

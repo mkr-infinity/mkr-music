@@ -5,16 +5,9 @@
 
 package com.music.mkr.ui.screens.settings
 
-import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -23,18 +16,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.unit.dp
 import com.music.mkr.R
 import com.music.mkr.constants.MiniPlayerBackgroundStyleKey
 import com.music.mkr.constants.MiniPlayerDesignOption
 import com.music.mkr.constants.PlayerBackgroundStyle
 import com.music.mkr.constants.PlayerBackgroundStyleKey
+import com.music.mkr.constants.miniPlayerBackgroundStyles
+import com.music.mkr.constants.resolveFullPlayerBackground
+import com.music.mkr.constants.resolveMiniPlayerBackground
 import com.music.mkr.constants.PlayerStyle
 import com.music.mkr.constants.PlayerStyleKey
 import com.music.mkr.constants.PureBlackMiniPlayerKey
@@ -44,17 +36,14 @@ import com.music.mkr.ui.component.EnumDialog
 import com.music.mkr.ui.component.ExpressiveSettingGroup
 import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.ui.component.PlayerStyleSelectionDialog
-import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.utils.rememberPreference
 
 @Composable
 internal fun fullPlayerAppearanceItems(): List<Material3SettingsItem> {
     val (playerStyleName, setPlayerStyleName) = rememberPreference(PlayerStyleKey, PlayerStyle.DEFAULT.name)
     val playerStyle = remember(playerStyleName) { PlayerStyle.fromString(playerStyleName) }
-    val (playerBackground, onPlayerBackgroundChange) = rememberEnumPreference(
-        PlayerBackgroundStyleKey,
-        defaultValue = PlayerBackgroundStyle.DEFAULT
-    )
+    val (savedBackground, onPlayerBackgroundChange) = rememberPreference(PlayerBackgroundStyleKey, "")
+    val playerBackground = resolveFullPlayerBackground(savedBackground, playerStyle)
 
     var showPlayerDesignDialog by remember { mutableStateOf(false) }
     var showPlayerBackgroundDialog by remember { mutableStateOf(false) }
@@ -74,21 +63,13 @@ internal fun fullPlayerAppearanceItems(): List<Material3SettingsItem> {
         EnumDialog(
             onDismiss = { showPlayerBackgroundDialog = false },
             onSelect = {
-                onPlayerBackgroundChange(it)
+                onPlayerBackgroundChange(it.name)
                 showPlayerBackgroundDialog = false
             },
             title = stringResource(R.string.player_background_style),
             current = playerBackground,
             values = PlayerBackgroundStyle.entries,
-            valueText = {
-                when (it) {
-                    PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
-                    PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
-                    PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
-                    PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
-                    PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
-                }
-            }
+            valueText = { stringResource(it.labelRes()) }
         )
     }
 
@@ -97,27 +78,15 @@ internal fun fullPlayerAppearanceItems(): List<Material3SettingsItem> {
             key = "appearance_player_style",
             icon = painterResource(R.drawable.palette),
             title = { Text(stringResource(R.string.player_style)) },
-            description = { Text(stringResource(R.string.player_style_picker_description)) },
-            trailingContent = {
-                Text(stringResource(playerStyle.titleRes))
-            },
+            description = { Text(stringResource(playerStyle.titleRes)) },
             onClick = { showPlayerDesignDialog = true }
         ),
         Material3SettingsItem(
             key = "appearance_player_background",
             icon = painterResource(R.drawable.gradient),
             title = { Text(stringResource(R.string.player_background_style)) },
-            description = { Text(stringResource(R.string.player_background_style_description)) },
-            trailingContent = {
-                Text(
-                    when (playerBackground) {
-                        PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
-                        PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
-                        PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
-                        PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
-                        PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
-                    }
-                )
+            description = {
+                Text(stringResource(playerBackground.labelRes()))
             },
             onClick = { showPlayerBackgroundDialog = true }
         )
@@ -138,10 +107,8 @@ internal fun MiniPlayerAppearanceSettings() {
         PureBlackMiniPlayerKey,
         defaultValue = false
     )
-    val (miniPlayerBackground, onMiniPlayerBackgroundChange) = rememberEnumPreference(
-        MiniPlayerBackgroundStyleKey,
-        defaultValue = PlayerBackgroundStyle.DEFAULT
-    )
+    val (savedMiniPlayerBackground, onMiniPlayerBackgroundChange) = rememberPreference(MiniPlayerBackgroundStyleKey, "")
+    val miniPlayerBackground = resolveMiniPlayerBackground(savedMiniPlayerBackground)
 
     var showMiniPlayerDesignDialog by remember { mutableStateOf(false) }
     var showMiniPlayerBackgroundDialog by remember { mutableStateOf(false) }
@@ -174,13 +141,7 @@ internal fun MiniPlayerAppearanceSettings() {
             title = stringResource(R.string.mini_player),
             current = currentMiniPlayerOption,
             values = MiniPlayerDesignOption.entries,
-            valueText = {
-                when (it) {
-                    MiniPlayerDesignOption.CLASSIC -> "Classic mini player"
-                    MiniPlayerDesignOption.NEW -> "Expressive mini player"
-                    MiniPlayerDesignOption.APPLE -> "Apple-style capsule"
-                }
-            }
+            valueText = { it.settingLabel() }
         )
     }
 
@@ -188,28 +149,13 @@ internal fun MiniPlayerAppearanceSettings() {
         EnumDialog(
             onDismiss = { showMiniPlayerBackgroundDialog = false },
             onSelect = {
-                onMiniPlayerBackgroundChange(it)
+                onMiniPlayerBackgroundChange(it.name)
                 showMiniPlayerBackgroundDialog = false
             },
             title = stringResource(R.string.miniplayer_background_style),
             current = miniPlayerBackground,
-            values = listOf(
-                PlayerBackgroundStyle.DEFAULT,
-                PlayerBackgroundStyle.GRADIENT,
-                PlayerBackgroundStyle.BLUR,
-                PlayerBackgroundStyle.GLOW_ANIMATED,
-                PlayerBackgroundStyle.LIVE_MESH
-            ),
-            valueText = {
-                when (it) {
-                    PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
-                    PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
-                    PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
-                    PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
-                    PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
-                    else -> stringResource(R.string.follow_theme)
-                }
-            }
+            values = miniPlayerBackgroundStyles,
+            valueText = { stringResource(it.labelRes()) }
         )
     }
 
@@ -221,41 +167,7 @@ internal fun MiniPlayerAppearanceSettings() {
                 icon = painterResource(R.drawable.nav_bar),
                 title = { Text(stringResource(R.string.mini_player)) },
                 description = {
-                    Text(
-                        text = "Classic bar, Expressive pill, or Apple capsule",
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                },
-                trailingContent = {
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
-                    ) {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                        ) {
-                            Text(
-                                text = when (currentMiniPlayerOption) {
-                                    MiniPlayerDesignOption.CLASSIC -> "Classic"
-                                    MiniPlayerDesignOption.NEW -> "Expressive"
-                                    MiniPlayerDesignOption.APPLE -> "Apple"
-                                },
-                                style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                color = MaterialTheme.colorScheme.primary,
-                                maxLines = 1
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                painter = painterResource(R.drawable.navigate_next),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
+                    Text(currentMiniPlayerOption.settingLabel())
                 },
                 onClick = { showMiniPlayerDesignDialog = true }
             ),
@@ -285,21 +197,27 @@ internal fun MiniPlayerAppearanceSettings() {
                 key = "appearance_mini_player_background",
                 icon = painterResource(R.drawable.palette),
                 title = { Text(stringResource(R.string.miniplayer_background_style)) },
-                description = { Text("Follow theme, gradient, blur, or animated glow") },
-                trailingContent = {
-                    Text(
-                        when (miniPlayerBackground) {
-                            PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
-                            PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
-                            PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
-                            PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
-                            PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
-                            else -> stringResource(R.string.follow_theme)
-                        }
-                    )
+                description = {
+                    Text(stringResource(miniPlayerBackground.labelRes()))
                 },
                 onClick = { showMiniPlayerBackgroundDialog = true }
             ),
         )
     )
+}
+
+
+@StringRes
+private fun PlayerBackgroundStyle.labelRes(): Int = when (this) {
+    PlayerBackgroundStyle.DEFAULT -> R.string.follow_theme
+    PlayerBackgroundStyle.GRADIENT -> R.string.gradient
+    PlayerBackgroundStyle.GLOW_ANIMATED -> R.string.glow_animated
+    PlayerBackgroundStyle.LIVE_MESH -> R.string.live_mesh
+    PlayerBackgroundStyle.IMMERSIVE_ARTWORK -> R.string.immersive_artwork_background
+}
+
+private fun MiniPlayerDesignOption.settingLabel(): String = when (this) {
+    MiniPlayerDesignOption.CLASSIC -> "Classic"
+    MiniPlayerDesignOption.NEW -> "Expressive"
+    MiniPlayerDesignOption.APPLE -> "Capsule"
 }

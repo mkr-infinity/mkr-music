@@ -85,7 +85,8 @@ internal fun AppleMiniPlayer(
         if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
     }
     
-    val miniPlayerBackground by rememberEnumPreference(MiniPlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.DEFAULT)
+    val savedMiniPlayerBackground by rememberPreference(MiniPlayerBackgroundStyleKey, "")
+    val miniPlayerBackground = resolveMiniPlayerBackground(savedMiniPlayerBackground)
     
     // Player states
     val playbackState by playerConnection.playbackState.collectAsState()
@@ -441,12 +442,12 @@ internal fun AppleMiniPlayer(
                             }
                         }
                 ) {
-                    PlaybackCookieFace(MaterialTheme.colorScheme.secondaryContainer)
+                    PlaybackCookieFace(MaterialTheme.colorScheme.secondaryContainer, faceFraction = 0.78f)
                     Icon(
-                        painter = painterResource(R.drawable.skip_previous),
+                        painter = painterResource(R.drawable.immersive_previous),
                         contentDescription = stringResource(R.string.previous_track),
                         tint = if (canSkipPrevious && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
@@ -494,8 +495,8 @@ internal fun AppleMiniPlayer(
                                 when {
                                     isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
                                     playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                    playing -> R.drawable.pause
-                                    else -> R.drawable.play
+                                    playing -> R.drawable.transport_pause
+                                    else -> R.drawable.transport_play
                                 }
                             ),
                             contentDescription = if (isListenTogetherGuest) {
@@ -528,12 +529,12 @@ internal fun AppleMiniPlayer(
                             }
                         }
                 ) {
-                    PlaybackCookieFace(MaterialTheme.colorScheme.secondaryContainer)
+                    PlaybackCookieFace(MaterialTheme.colorScheme.secondaryContainer, faceFraction = 0.78f)
                     Icon(
-                        painter = painterResource(R.drawable.skip_next),
-                        contentDescription = stringResource(R.string.next),
+                        painter = painterResource(R.drawable.immersive_next),
+                        contentDescription = stringResource(R.string.next_track),
                         tint = if (canSkipNext && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
-                        modifier = Modifier.size(28.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }

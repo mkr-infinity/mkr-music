@@ -16,14 +16,13 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -57,6 +56,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
@@ -67,7 +69,7 @@ import com.music.mkr.ui.theme.PlayerColorExtractor
 import com.music.mkr.utils.rememberPreference
 
 internal fun playerStylePickerColumns(width: Dp, fontScale: Float): Int =
-    if (width >= 280.dp && fontScale < 1.3f) 2 else 1
+    if (width >= 424.dp && fontScale < 1.3f) 2 else 1
 
 @Composable
 fun PlayerStyleSelectionDialog(
@@ -122,7 +124,7 @@ private fun PlayerStyleCard(
     val colors = MaterialTheme.colorScheme
     val interactions = remember { MutableInteractionSource() }
     val radius by animateDpAsState(
-        if (selected) 26.dp else 18.dp,
+        if (selected) 34.dp else 28.dp,
         animationSpec = if (animate) spring(dampingRatio = 1f) else snap(),
         label = "playerStyleCorners",
     )
@@ -132,16 +134,17 @@ private fun PlayerStyleCard(
         label = "playerStyleBorder",
     )
     val shape = RoundedCornerShape(radius)
+    val layoutDescription = stringResource(style.descriptionRes)
 
     Surface(
         shape = shape,
-        color = if (selected) colors.secondaryContainer else colors.surfaceContainer,
+        color = if (selected) colors.secondaryContainer else colors.surfaceContainerHighest.copy(alpha = 0.60f),
         contentColor = if (selected) colors.onSecondaryContainer else colors.onSurface,
         border = BorderStroke(if (selected) 2.dp else 1.dp, border),
         shadowElevation = 1.dp,
         modifier = Modifier.fillMaxWidth().mkrPressFeedback(0.98f, interactions, animate),
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .clip(shape)
                 .selectable(
@@ -151,29 +154,23 @@ private fun PlayerStyleCard(
                     role = Role.RadioButton,
                     onClick = onClick,
                 )
-                .padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
+                .semantics { contentDescription = layoutDescription }
+                .padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
         ) {
-            PlayerStylePreview(style, Modifier.fillMaxWidth())
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = stringResource(style.titleRes),
-                    style = MaterialTheme.typography.titleSmall,
-                    modifier = Modifier.weight(1f),
-                )
-                Icon(
-                    painter = painterResource(if (selected) R.drawable.check else R.drawable.radio_button_unchecked),
-                    contentDescription = null,
-                    tint = if (selected) colors.primary else colors.onSurfaceVariant,
-                    modifier = Modifier.size(16.dp),
-                )
-            }
+            PlayerStylePreview(style, Modifier.width(46.dp))
             Text(
-                text = stringResource(style.descriptionRes),
-                style = MaterialTheme.typography.bodySmall,
+                text = stringResource(style.titleRes),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                modifier = Modifier.weight(1f),
+            )
+            Icon(
+                painter = painterResource(if (selected) R.drawable.check else R.drawable.radio_button_unchecked),
+                contentDescription = null,
+                tint = if (selected) colors.primary else colors.onSurfaceVariant,
+                modifier = Modifier.size(18.dp),
             )
         }
     }
@@ -194,7 +191,6 @@ private fun PlayerStylePreview(style: PlayerStyle, modifier: Modifier) {
         val depth = detail.copy(alpha = if (immersive) 0.10f else 0.16f)
         Canvas(
             Modifier
-                .widthIn(max = 172.dp)
                 .fillMaxWidth()
                 .aspectRatio(0.86f)
                 .clip(RoundedCornerShape(14.dp))
@@ -210,10 +206,7 @@ private fun PlayerStylePreview(style: PlayerStyle, modifier: Modifier) {
             if (immersive) {
                 drawCircle(art, w * 0.72f, Offset(w * 0.72f, h * 0.20f))
                 drawCircle(depth, w * 0.58f, Offset(w * 0.20f, h * 0.40f))
-                block(0.09f, 0.08f, 0.10f, 0.07f, depth, 0.05f)
                 block(0.35f, 0.10f, 0.30f, 0.025f, detail.copy(alpha = 0.56f))
-                block(0.81f, 0.08f, 0.10f, 0.07f, depth, 0.05f)
-                block(0.12f, 0.55f, 0.18f, 0.033f, depth)
             } else {
                 val artWidth = if (cinematic) 0.72f else 0.66f
                 val artLeft = (1f - artWidth) / 2f
@@ -229,14 +222,16 @@ private fun PlayerStylePreview(style: PlayerStyle, modifier: Modifier) {
             block(0.12f, titleY + 0.092f, 0.33f, 0.018f, accent)
             val transportY = titleY + 0.18f
             val playWidth = if (cinematic) 0.24f else 0.18f
-            block(0.50f - playWidth / 2, transportY - 0.034f, playWidth, 0.11f, accent, 0.075f)
+            if (!immersive) {
+                block(0.50f - playWidth / 2, transportY - 0.034f, playWidth, 0.11f, accent, 0.075f)
+            }
             val playIcon = Path().apply {
                 moveTo(w * 0.483f, h * (transportY - 0.004f))
                 lineTo(w * 0.526f, h * (transportY + 0.021f))
                 lineTo(w * 0.483f, h * (transportY + 0.046f))
                 close()
             }
-            drawPath(playIcon, if (immersive) base else colors.onPrimary)
+            drawPath(playIcon, if (immersive) detail else colors.onPrimary)
             block(0.26f, transportY, 0.065f, 0.027f, detail)
             block(0.675f, transportY, 0.065f, 0.027f, detail)
             block(0.12f, transportY, 0.043f, 0.027f, detail.copy(alpha = 0.55f))

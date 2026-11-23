@@ -95,7 +95,6 @@
     <string name="player_thumbnail_shadow_depth">Kölgənin dərinliyi</string>
     <string name="player_thumbnail_shadow_depth_desc">Adjust intensity və distance -ın pleyer thumbnail shadow</string>
     <string name="thumbnail_corner_radius">Miniatürün künc radiusu</string>
-    <string name="thumbnail_corner_radius_desc">Miniatürün künc radiusunu tənzimlə</string>
     <string name="crop_album_art">Crop Albom Art</string>
     <string name="crop_album_art_desc">Force bir square aspect ratio by cropping video thumbnails</string>
     <string name="rotating_thumbnail">Fırlanan miniatür</string>
@@ -135,7 +134,6 @@
     <string name="show_song_thumbnail_in_list_desc">Göstər albom mahnı artwork instead -ın trek nömrələr in expressive lists</string>
     <string name="album_settings">Albom Parametrlər</string>
     <string name="new_mini_player_design">Yeni mini pleyer design</string>
-    <string name="player_background_blur">Bulanıqlaşdırma</string>
     <string name="player_buttons_style">Pleyer düymə rənglər</string>
     <string name="default_style">Standart</string>
     <string name="primary_color_style">Əsas rəng</string>

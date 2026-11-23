@@ -3,7 +3,9 @@ package com.music.mkr.ui.player
 import androidx.compose.ui.unit.dp
 import com.music.mkr.constants.PlayerBackgroundStyle
 import com.music.mkr.constants.PlayerStyle
-import com.music.mkr.extensions.toEnum
+import com.music.mkr.constants.miniPlayerBackgroundStyles
+import com.music.mkr.constants.resolveFullPlayerBackground
+import com.music.mkr.constants.resolveMiniPlayerBackground
 import com.music.mkr.ui.component.playerStylePickerColumns
 import com.music.mkr.ui.player.styles.ImmersiveArtworkSource
 import com.music.mkr.ui.player.styles.immersiveArtworkSources
@@ -31,20 +33,33 @@ class FullPlayerAppearanceTest {
     }
 
     @Test
-    fun retiredAppleBackdropFallsBackAndOtherBackgroundIdsRoundTrip() {
-        val default = PlayerBackgroundStyle.DEFAULT
-        assertEquals(default, "APPLE_MUSIC".toEnum(default))
-        val ids = listOf("DEFAULT", "GRADIENT", "BLUR", "GLOW_ANIMATED", "LIVE_MESH")
+    fun fullPlayerBackgroundIdsRoundTripAndRetiredValuesFallBack() {
+        assertEquals(PlayerBackgroundStyle.DEFAULT, resolveFullPlayerBackground("APPLE_MUSIC", PlayerStyle.CINEMATIC))
+        assertEquals(PlayerBackgroundStyle.IMMERSIVE_ARTWORK, resolveFullPlayerBackground("BLUR", PlayerStyle.CINEMATIC))
+        assertEquals(PlayerBackgroundStyle.IMMERSIVE_ARTWORK, resolveFullPlayerBackground("", PlayerStyle.IMMERSIVE))
+        val ids = listOf("DEFAULT", "GRADIENT", "GLOW_ANIMATED", "LIVE_MESH", "IMMERSIVE_ARTWORK")
         assertEquals(ids, PlayerBackgroundStyle.entries.map { it.name })
         for (id in ids) {
-            assertEquals(id, id.toEnum(default).name)
+            assertEquals(id, resolveFullPlayerBackground(id, PlayerStyle.IMMERSIVE).name)
+        }
+    }
+
+    @Test
+    fun miniPlayerPreservesSavedBackgroundsAndDefaultsToGlowMotion() {
+        assertEquals(PlayerBackgroundStyle.GLOW_ANIMATED, resolveMiniPlayerBackground(""))
+        assertEquals(PlayerBackgroundStyle.GLOW_ANIMATED, resolveMiniPlayerBackground("BLUR"))
+        assertEquals(PlayerBackgroundStyle.GLOW_ANIMATED, resolveMiniPlayerBackground("IMMERSIVE_ARTWORK"))
+        val ids = listOf("DEFAULT", "GRADIENT", "GLOW_ANIMATED", "LIVE_MESH")
+        assertEquals(ids, miniPlayerBackgroundStyles.map { it.name })
+        for (id in ids) {
+            assertEquals(id, resolveMiniPlayerBackground(id).name)
         }
     }
 
     @Test
     fun pickerUsesOneColumnInNarrowWindowsAndAtLargerFontScales() {
-        assertEquals(1, playerStylePickerColumns(279.dp, 1f))
-        assertEquals(2, playerStylePickerColumns(280.dp, 1f))
+        assertEquals(1, playerStylePickerColumns(423.dp, 1f))
+        assertEquals(2, playerStylePickerColumns(424.dp, 1f))
         assertEquals(1, playerStylePickerColumns(500.dp, 1.3f))
     }
 

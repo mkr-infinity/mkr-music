@@ -13,12 +13,19 @@
 - **Auto-hide navigation** — On by default. Scroll down to hide the bar and up to reveal it. · *Settings → Appearance → Misc → Auto-hide bottom navigation*
 - **Top Song Match** — Play the best match or queue it next. · *Search → Top Song Match*
 - **APK download progress** — Track the download in a notification and tap when ready to install. · *Settings → System Updates → Download APK*
+- **Immersive Artwork** — Edge-to-edge artwork that fades behind playback controls. · *Settings → Appearance → Full Player → Player background style*
 
 ### Changed
 
+- **Onboarding** — Opens on first install and once per update, with existing settings kept. · *App launch*
 - **Navigation styles** — Connected capsules with distinct tab animations. Floating Glass takes up less space. · *Settings → Appearance → Misc → Navigation style*
-- **Player style picker** — Preview three layouts before applying one. · *Settings → Appearance → Full Player → Player style*
-- **Immersive player** — Centered artwork, curved playback controls, and a layout that adapts to smaller windows. · *Settings → Appearance → Full Player → Player style → Immersive*
+- **Floating Glass** — A compact active capsule scales with your screen. · *Bottom navigation → Floating Glass*
+- **Top actions** — History, Account, and Settings use matching cookie buttons. · *Home and Library*
+- **Player style picker** — Capsule previews and a clear selected style. · *Settings → Appearance → Full Player → Player style*
+- **Appearance selections** — Settings show the chosen player styles, backgrounds, and artwork corner radius. · *Settings → Appearance*
+- **Immersive player** — Larger artwork, compact song details, and icon-only transport controls. · *Settings → Appearance → Full Player → Player style → Immersive*
+- **Mini-player controls** — Rounded transport icons with smaller Previous and Next cookies. · *Mini-player*
+- **Mini-player background** — Glow Motion is the default and replaces saved Blur selections. · *Settings → Appearance → Mini-player → Background style*
 - **Full-player settings** — Style and background controls now sit together. · *Settings → Appearance → Full Player*
 - **Audio offload** — Moved to Advanced. · *Settings → Player and audio → Advanced → Enable offload*
 - **Library cards and headers** — Two category columns and collection headers with artwork beside the song details. · *Library*
@@ -58,6 +65,7 @@
 - **Liquid Mini Player** — Saved selections use the default mini-player. · *Settings → Appearance → Mini-player*
 - **Material Extended, Modern, and Classic** — Saved selections use Cinematic. · *Settings → Appearance → Full Player → Player style*
 - **Immersive Extended** — Saved selections use Cinematic. · *Settings → Appearance → Full Player → Player style*
+- **Full-player Blur** — Saved selections use Immersive Artwork. · *Settings → Appearance → Full Player → Player background style*
 - **Apple Music background** — Saved selections use Follow theme. · *Settings → Appearance → Full Player → Player background style*
 
 ## [v1.1.0] - 2026-11-01

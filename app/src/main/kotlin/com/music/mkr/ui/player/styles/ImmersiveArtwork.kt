@@ -14,6 +14,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -77,10 +78,13 @@ internal fun ImmersiveArtwork(
     backgroundColor: Color,
     modifier: Modifier = Modifier,
     contentDescription: String? = null,
+    contentScale: ContentScale = ContentScale.Fit,
+    alignment: Alignment = Alignment.Center,
+    showPlaceholder: Boolean = true,
 ) {
     val (dataSaver) = rememberPreference(DataSaverKey, defaultValue = false)
     val context = LocalContext.current
-    val placeholder = painterResource(R.drawable.mkr_music_small_icon)
+    val placeholder = if (showPlaceholder) painterResource(R.drawable.mkr_music_small_icon) else null
 
     BoxWithConstraints(modifier.background(backgroundColor)) {
         val density = LocalDensity.current
@@ -95,11 +99,11 @@ internal fun ImmersiveArtwork(
         key(trackId, sources) {
             var sourceIndex by remember { mutableIntStateOf(0) }
             val source = sources.getOrNull(sourceIndex)
-            val request = remember(context, source, decodePixels, animate) {
+            val request = remember(context, source, decodePixels, animate, contentScale) {
                 ImageRequest.Builder(context)
                     .data(source?.url)
                     .size(decodePixels, decodePixels)
-                    .scale(Scale.FIT)
+                    .scale(if (contentScale == ContentScale.Crop) Scale.FILL else Scale.FIT)
                     .networkCachePolicy(if (source?.cacheOnly == true) CachePolicy.DISABLED else CachePolicy.ENABLED)
                     .crossfade(if (animate) 180 else 0)
                     .build()
@@ -107,7 +111,8 @@ internal fun ImmersiveArtwork(
             AsyncImage(
                 model = request,
                 contentDescription = contentDescription,
-                contentScale = ContentScale.Fit,
+                contentScale = contentScale,
+                alignment = alignment,
                 placeholder = placeholder,
                 fallback = placeholder,
                 error = placeholder,

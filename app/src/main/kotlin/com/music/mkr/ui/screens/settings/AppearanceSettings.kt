@@ -1266,14 +1266,7 @@ fun AppearanceSettings(
                     key = "appearance_thumbnail_radius",
                     icon = painterResource(R.drawable.image),
                     title = { Text(stringResource(R.string.thumbnail_corner_radius)) },
-                    description = { Text(stringResource(R.string.thumbnail_corner_radius_desc)) },
-                    trailingContent = {
-                        Text(
-                            text = "${thumbnailCornerRadius.roundToInt()}dp",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
+                    description = { Text("${thumbnailCornerRadius.roundToInt()} dp") },
                     onClick = { showThumbnailCornerRadiusDialog = true }
                 ),
                 Material3SettingsItem(

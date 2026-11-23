@@ -97,6 +97,9 @@ import com.music.mkr.constants.ShowPlayerThumbnailShadowKey
 import com.music.mkr.constants.PlayerThumbnailShadowElevationKey
 import com.music.mkr.constants.PlayerBackgroundStyle
 import com.music.mkr.constants.PlayerBackgroundStyleKey
+import com.music.mkr.constants.PlayerStyle
+import com.music.mkr.constants.PlayerStyleKey
+import com.music.mkr.constants.resolveFullPlayerBackground
 import com.music.mkr.constants.PlayerHorizontalPadding
 import com.music.mkr.constants.RotatingThumbnailKey
 import com.music.mkr.constants.SeekExtraSeconds
@@ -105,7 +108,6 @@ import com.music.mkr.constants.ThumbnailCornerRadiusKey
 import com.music.mkr.constants.ThumbnailCornerRadius
 import com.music.mkr.listentogether.RoomRole
 import com.music.mkr.ui.component.CastButton
-import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.delay
@@ -214,7 +216,7 @@ private fun getMediaItems(
 private fun getTextColor(playerBackground: PlayerBackgroundStyle): Color {
     return when (playerBackground) {
         PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onBackground
-        PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.LIVE_MESH -> Color.White
+        else -> Color.White
     }
 }
 
@@ -244,10 +246,9 @@ fun Thumbnail(
     val swipeThumbnail = swipeThumbnailPref && !isListenTogetherGuest
     val hidePlayerThumbnail by rememberPreference(HidePlayerThumbnailKey, false)
     val cropAlbumArt by rememberPreference(CropAlbumArtKey, false)
-    val playerBackground by rememberEnumPreference(
-        key = PlayerBackgroundStyleKey,
-        defaultValue = PlayerBackgroundStyle.DEFAULT
-    )
+    val playerStyleName by rememberPreference(PlayerStyleKey, PlayerStyle.DEFAULT.name)
+    val savedPlayerBackground by rememberPreference(PlayerBackgroundStyleKey, "")
+    val playerBackground = resolveFullPlayerBackground(savedPlayerBackground, PlayerStyle.fromString(playerStyleName))
     val thumbnailCornerRadius by rememberPreference(ThumbnailCornerRadiusKey, defaultValue = 3f)
     
     // Pre-calculate text color based on background style

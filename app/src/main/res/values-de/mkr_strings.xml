@@ -18,7 +18,6 @@
     <string name="player_background_style">Hintergrundstil des Players</string>
     <string name="follow_theme">Design folgen</string>
     <string name="gradient">Farbverlauf</string>
-    <string name="player_background_blur">Unschärfe</string>
     <string name="enable_swipe_thumbnail">Wischen zum Songwechsel aktivieren</string>
     <string name="lyrics_click_change">Mit Tippen im Songtext springen</string>
     <string name="slim">Schmal</string>

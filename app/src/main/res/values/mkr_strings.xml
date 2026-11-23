@@ -115,7 +115,6 @@
     <string name="player_thumbnail_shadow_depth">Shadow Depth</string>
     <string name="player_thumbnail_shadow_depth_desc">Adjust the intensity and distance of the player thumbnail shadow</string>
     <string name="thumbnail_corner_radius">Thumbnail Corner Radius</string>
-    <string name="thumbnail_corner_radius_desc">Adjust thumbnail corner radius</string>
     <string name="crop_album_art">Crop Album Art</string>
     <string name="crop_album_art_desc">Force a square aspect ratio by cropping video thumbnails</string>
     <string name="rotating_thumbnail">Rotating thumbnail</string>
@@ -149,7 +148,7 @@
     <string name="general_settings">General settings</string>
 
     <string name="player_background_style">Player background style</string>
-    <string name="player_background_style_description">Follow your theme or use an artwork-based backdrop.</string>
+    <string name="immersive_artwork_background">Immersive Artwork</string>
     <string name="player_background_solid">Solid</string>
     <string name="follow_theme">Follow theme</string>
     <string name="gradient">Gradient</string>
@@ -159,7 +158,6 @@
     <!-- Player Styles (9 Native Styles) -->
     <string name="player_style">Player style</string>
     <string name="player_style_apply">Apply</string>
-    <string name="player_style_picker_description">Choose how the full player is laid out.</string>
     <string name="player_style_minimal">Minimal</string>
     <string name="player_style_minimal_desc">Clean compact square controls designed for focused listening</string>
     <string name="player_style_cinematic">Cinematic</string>
@@ -194,7 +192,6 @@
     <string name="show_song_thumbnail_in_list_desc">Show album song artwork instead of track numbers in expressive lists</string>
     <string name="album_settings">Album Settings</string>
     <string name="new_mini_player_design">New mini player design</string>
-    <string name="player_background_blur">Blur</string>
     <string name="player_buttons_style">Player button colors</string>
     <string name="default_style">Default</string>
     <string name="primary_color_style">Primary color</string>

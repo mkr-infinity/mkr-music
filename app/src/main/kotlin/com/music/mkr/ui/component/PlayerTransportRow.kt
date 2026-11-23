@@ -8,7 +8,6 @@ package com.music.mkr.ui.component
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
@@ -35,7 +34,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
@@ -126,15 +124,8 @@ fun PlayerTransportRow(
     val effectivePlayHeight = playButtonHeight ?: playButtonSize
     val effectiveSideWidth = sideButtonWidth ?: if (variant == TransportVariant.PILL) sideButtonSize * 1.30f else sideButtonSize
     val effectiveSideHeight = sideButtonHeight ?: sideButtonSize
-    val playShape = if (immersive) {
-        val corner by animateDpAsState(
-            targetValue = if (isPlaying) 20.dp else effectivePlayHeight / 2,
-            animationSpec = if (interfaceAnimations) spring(dampingRatio = 0.9f, stiffness = 400f) else snap(),
-            label = "immersiveTransportCorner",
-        )
-        RoundedCornerShape(corner)
-    } else CircleShape
-    val skipShape = if (immersive) RoundedCornerShape(effectiveSideHeight / 2) else CircleShape
+    val playShape = CircleShape
+    val skipShape = CircleShape
     val pressSpec = if (interfaceAnimations) {
         spring<Float>(
             dampingRatio = Spring.DampingRatioNoBouncy,
@@ -166,7 +157,7 @@ fun PlayerTransportRow(
         label = "nextPressScale"
     )
 
-    val sideFace = if (secondaryContainerColor == Color.Transparent) {
+    val sideFace = if (!immersive && secondaryContainerColor == Color.Transparent) {
         secondaryContentColor.copy(alpha = 0.12f)
     } else {
         secondaryContainerColor
@@ -191,22 +182,10 @@ fun PlayerTransportRow(
         } else {
             widthBudget * 0.40f
         }
-        val useImmersiveRow = immersive && !wrapTransport
-        val immersiveWidth = widthBudget.coerceAtMost(328.dp)
-        val playWidth = if (useImmersiveRow) {
-            val animateWidth = interfaceAnimations && android.animation.ValueAnimator.areAnimatorsEnabled()
-            val playShare = if (isPlayPressed && animateWidth) 0.66f else 0.58f
-            val targetWidth = (immersiveWidth * playShare)
-                .coerceIn(48.dp, immersiveWidth - 96.dp)
-            animateDpAsState(
-                targetValue = targetWidth,
-                animationSpec = if (animateWidth) spring(dampingRatio = 0.8f, stiffness = 400f) else snap(),
-                label = "immersiveTransportWidth",
-            ).value.coerceIn(48.dp, immersiveWidth - 96.dp)
-        } else {
-            minOf(effectivePlayWidth, playWidthLimit).coerceAtLeast(48.dp)
-        }
-        val sideWidth = if (useImmersiveRow) (immersiveWidth - playWidth) / 2 else defaultSideWidth
+        val immersiveButtonWidth = widthBudget.coerceAtMost(300.dp) / 3
+        val playWidth = if (immersive && !wrapTransport) immersiveButtonWidth
+            else minOf(effectivePlayWidth, playWidthLimit).coerceAtLeast(48.dp)
+        val sideWidth = if (immersive && !wrapTransport) immersiveButtonWidth else defaultSideWidth
         val actualPlayIconSize = if (immersive) minOf(playIconSize, playWidth - 12.dp) else playIconSize
         val actualSideIconSize = if (immersive) minOf(sideIconSize, sideWidth - 12.dp) else sideIconSize
         val playLabel = stringResource(if (isPlaying) R.string.pause else R.string.play)
@@ -237,7 +216,7 @@ fun PlayerTransportRow(
                     ) {
                         if (!immersive) PlaybackCookieFace(face)
                         Icon(
-                            painter = painterResource(R.drawable.skip_previous),
+                            painter = painterResource(if (immersive) R.drawable.immersive_previous else R.drawable.skip_previous),
                             contentDescription = stringResource(R.string.previous_track),
                             tint = secondaryContentColor.copy(alpha = if (canSkipPrevious) 1f else 0.38f),
                             modifier = Modifier.size(actualSideIconSize)
@@ -332,7 +311,7 @@ fun PlayerTransportRow(
                     ) {
                         if (!immersive) PlaybackCookieFace(face)
                         Icon(
-                            painter = painterResource(R.drawable.skip_next),
+                            painter = painterResource(if (immersive) R.drawable.immersive_next else R.drawable.skip_next),
                             contentDescription = stringResource(R.string.next_track),
                             tint = secondaryContentColor.copy(alpha = if (canSkipNext) 1f else 0.38f),
                             modifier = Modifier.size(actualSideIconSize)

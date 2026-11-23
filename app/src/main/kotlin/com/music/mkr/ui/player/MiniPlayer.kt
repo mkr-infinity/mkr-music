@@ -8,7 +8,6 @@
 package com.music.mkr.ui.player
 
 import android.content.res.Configuration
-import android.os.Build
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
@@ -126,6 +125,7 @@ import com.music.mkr.constants.MiniPlayerDesignOption
 import com.music.mkr.constants.CropAlbumArtKey
 import com.music.mkr.constants.DarkModeKey
 import com.music.mkr.constants.MiniPlayerBackgroundStyleKey
+import com.music.mkr.constants.resolveMiniPlayerBackground
 import com.music.mkr.constants.MiniPlayerHeight
 import com.music.mkr.constants.PlayerBackgroundStyle
 import com.music.mkr.constants.PureBlackMiniPlayerKey
@@ -234,7 +234,8 @@ private fun NewMiniPlayer(
         if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
     }
     
-    val miniPlayerBackground by rememberEnumPreference(MiniPlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.DEFAULT)
+    val savedMiniPlayerBackground by rememberPreference(MiniPlayerBackgroundStyleKey, "")
+    val miniPlayerBackground = resolveMiniPlayerBackground(savedMiniPlayerBackground)
     
     // Player states - only collect what's needed at this level
     val playbackState by playerConnection.playbackState.collectAsState()
@@ -513,6 +514,7 @@ private fun NewMiniPlayer(
                 // Transport controls: Previous, Play/Pause, Next
                 PlaybackCookieButton(
                     color = MaterialTheme.colorScheme.secondaryContainer,
+                    faceFraction = 0.78f,
                     enabled = canSkipPrevious && !isListenTogetherGuest,
                     onClick = {
                         val now = android.os.SystemClock.uptimeMillis()
@@ -526,10 +528,10 @@ private fun NewMiniPlayer(
                     modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.skip_previous),
+                        painter = painterResource(R.drawable.immersive_previous),
                         contentDescription = stringResource(R.string.previous_track),
                         tint = if (canSkipPrevious && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
@@ -566,8 +568,8 @@ private fun NewMiniPlayer(
                                 when {
                                     isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
                                     playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                    playing -> R.drawable.pause
-                                    else -> R.drawable.play
+                                    playing -> R.drawable.transport_pause
+                                    else -> R.drawable.transport_play
                                 }
                             ),
                             contentDescription = if (isListenTogetherGuest) {
@@ -583,6 +585,7 @@ private fun NewMiniPlayer(
 
                 PlaybackCookieButton(
                     color = MaterialTheme.colorScheme.secondaryContainer,
+                    faceFraction = 0.78f,
                     enabled = canSkipNext && !isListenTogetherGuest,
                     onClick = {
                         val now = android.os.SystemClock.uptimeMillis()
@@ -596,10 +599,10 @@ private fun NewMiniPlayer(
                     modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
-                        painter = painterResource(R.drawable.skip_next),
-                        contentDescription = stringResource(R.string.next),
+                        painter = painterResource(R.drawable.immersive_next),
+                        contentDescription = stringResource(R.string.next_track),
                         tint = if (canSkipNext && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }
@@ -709,7 +712,7 @@ private fun NewMiniPlayerPlayButton(
                     painter = painterResource(
                         if (isListenTogetherGuest) {
                             if (isMuted) R.drawable.volume_off else R.drawable.volume_up
-                        } else if (playbackState == Player.STATE_ENDED) R.drawable.replay else R.drawable.play
+                        } else if (playbackState == Player.STATE_ENDED) R.drawable.replay else R.drawable.transport_play
                     ),
                     contentDescription = if (isListenTogetherGuest) {
                         if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
@@ -1034,6 +1037,7 @@ private fun LegacyMiniPlayer(
 
             PlaybackCookieButton(
                 color = MaterialTheme.colorScheme.secondaryContainer,
+                faceFraction = 0.78f,
                 enabled = canSkipPrevious && !isListenTogetherGuest,
                 onClick = {
                     val now = android.os.SystemClock.uptimeMillis()
@@ -1047,10 +1051,10 @@ private fun LegacyMiniPlayer(
                 modifier = Modifier.size(48.dp)
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.skip_previous),
+                    painter = painterResource(R.drawable.immersive_previous),
                     contentDescription = stringResource(R.string.previous_track),
                     tint = if (canSkipPrevious && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
 
@@ -1064,6 +1068,7 @@ private fun LegacyMiniPlayer(
 
             PlaybackCookieButton(
                 color = MaterialTheme.colorScheme.secondaryContainer,
+                faceFraction = 0.78f,
                 enabled = canSkipNext && !isListenTogetherGuest,
                 onClick = {
                     val now = android.os.SystemClock.uptimeMillis()
@@ -1077,10 +1082,10 @@ private fun LegacyMiniPlayer(
                 modifier = Modifier.size(48.dp)
             ) {
                 Icon(
-                    painter = painterResource(R.drawable.skip_next),
-                    contentDescription = stringResource(R.string.next),
+                    painter = painterResource(R.drawable.immersive_next),
+                    contentDescription = stringResource(R.string.next_track),
                     tint = if (canSkipNext && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(24.dp)
                 )
             }
         }
@@ -1130,8 +1135,8 @@ private fun LegacyPlayPauseButton(
                     when {
                         isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
                         playbackState == Player.STATE_ENDED -> R.drawable.replay
-                        playing -> R.drawable.pause
-                        else -> R.drawable.play
+                        playing -> R.drawable.transport_pause
+                        else -> R.drawable.transport_play
                     }
                 ),
                 contentDescription = if (isListenTogetherGuest) {
@@ -1139,6 +1144,7 @@ private fun LegacyPlayPauseButton(
                 } else {
                     if (playing) stringResource(R.string.pause) else stringResource(R.string.play)
                 },
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
                 modifier = Modifier.size(26.dp)
             )
         }
@@ -1253,25 +1259,25 @@ internal fun MiniPlayerColorExtractor(
                         .build()
 
                     val result = runCatching { context.imageLoader.execute(request) }.getOrNull()
-                    if (result != null) {
-                        val bitmap = result.image?.toBitmap()
-                        if (bitmap != null) {
-                            val palette = withContext(Dispatchers.Default) {
-                                Palette.from(bitmap)
-                                    .maximumColorCount(8)
-                                    .resizeBitmapArea(100 * 100)
-                                    .generate()
-                            }
-                            val extractedColors = listOfNotNull(
-                                palette.getVibrantColor(fallbackColor).let { Color(it) },
-                                palette.getLightVibrantColor(fallbackColor).let { Color(it) },
-                                palette.getDarkVibrantColor(fallbackColor).let { Color(it) },
-                                palette.getMutedColor(fallbackColor).let { Color(it) },
-                                palette.getLightMutedColor(fallbackColor).let { Color(it) },
-                                palette.getDarkMutedColor(fallbackColor).let { Color(it) }
-                            ).distinct()
-                            withContext(Dispatchers.Main) { onGradientColorsChange(extractedColors) }
+                    val bitmap = result?.image?.toBitmap()
+                    if (bitmap != null) {
+                        val palette = withContext(Dispatchers.Default) {
+                            Palette.from(bitmap)
+                                .maximumColorCount(8)
+                                .resizeBitmapArea(100 * 100)
+                                .generate()
                         }
+                        val extractedColors = listOfNotNull(
+                            palette.getVibrantColor(fallbackColor).let { Color(it) },
+                            palette.getLightVibrantColor(fallbackColor).let { Color(it) },
+                            palette.getDarkVibrantColor(fallbackColor).let { Color(it) },
+                            palette.getMutedColor(fallbackColor).let { Color(it) },
+                            palette.getLightMutedColor(fallbackColor).let { Color(it) },
+                            palette.getDarkMutedColor(fallbackColor).let { Color(it) }
+                        ).distinct()
+                        withContext(Dispatchers.Main) { onGradientColorsChange(extractedColors) }
+                    } else {
+                        withContext(Dispatchers.Main) { onGradientColorsChange(emptyList()) }
                     }
                 }
             } else {
@@ -1301,27 +1307,6 @@ internal fun MiniPlayerBackgroundLayer(
     }
     
     when (style) {
-        PlayerBackgroundStyle.BLUR -> {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                AsyncImage(
-                    model = ImageRequest.Builder(context)
-                        .data(mediaMetadata?.thumbnailUrl)
-                        .size(128, 128)
-                        .allowHardware(false)
-                        .build(),
-                    contentDescription = null,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .blur(30.dp)
-                )
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.45f))
-                )
-            }
-        }
         PlayerBackgroundStyle.GRADIENT -> {
             if (gradientColors.isNotEmpty()) {
                 Box(
@@ -1333,7 +1318,9 @@ internal fun MiniPlayerBackgroundLayer(
             }
         }
         PlayerBackgroundStyle.GLOW_ANIMATED -> {
-            if (gradientColors.isNotEmpty()) {
+            if (gradientColors.isEmpty()) {
+                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainer))
+            } else {
                 val progress = if (animate) {
                     rememberInfiniteTransition(label = "GlowAnimation").animateFloat(
                         initialValue = 0f,

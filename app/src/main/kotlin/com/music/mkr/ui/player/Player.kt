@@ -171,6 +171,7 @@ import com.music.mkr.constants.EnableLyricsThumbnailPlayPauseKey
 import com.music.mkr.constants.KeepScreenOn
 import com.music.mkr.constants.PlayerBackgroundStyle
 import com.music.mkr.constants.PlayerBackgroundStyleKey
+import com.music.mkr.constants.resolveFullPlayerBackground
 import com.music.mkr.constants.PlayerButtonsStyle
 import com.music.mkr.constants.PlayerButtonsStyleKey
 import com.music.mkr.constants.PlayerHorizontalPadding
@@ -264,10 +265,10 @@ fun BottomSheetPlayer(
     )
     val (hidePlayerThumbnail, onHidePlayerThumbnailChange) = rememberPreference(HidePlayerThumbnailKey, false)
     val cropAlbumArt by rememberPreference(CropAlbumArtKey, false)
-    val playerBackground by rememberEnumPreference(
-        key = PlayerBackgroundStyleKey,
-        defaultValue = PlayerBackgroundStyle.DEFAULT
-    )
+    val playerStyleName by rememberPreference(PlayerStyleKey, PlayerStyle.DEFAULT.name)
+    val playerStyle = remember(playerStyleName) { PlayerStyle.fromString(playerStyleName) }
+    val savedPlayerBackground by rememberPreference(PlayerBackgroundStyleKey, "")
+    val playerBackground = resolveFullPlayerBackground(savedPlayerBackground, playerStyle)
     val playerButtonsStyle by rememberEnumPreference(
         key = PlayerButtonsStyleKey,
         defaultValue = PlayerButtonsStyle.DEFAULT
@@ -281,8 +282,8 @@ fun BottomSheetPlayer(
 
     val shouldUseDarkButtonColors = remember(playerBackground, useDarkTheme) {
         when (playerBackground) {
-            PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.LIVE_MESH -> true
             PlayerBackgroundStyle.DEFAULT -> useDarkTheme
+            else -> true
         }
     }
 
@@ -298,12 +299,10 @@ fun BottomSheetPlayer(
             val insetsController = WindowCompat.getInsetsController(window, window.decorView)
             
             when (playerBackground) {
-                PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.LIVE_MESH -> {
-                    insetsController.isAppearanceLightStatusBars = false
-                }
                 PlayerBackgroundStyle.DEFAULT -> {
                     insetsController.isAppearanceLightStatusBars = !useDarkTheme
                 }
+                else -> insetsController.isAppearanceLightStatusBars = false
             }
 
             if (keepScreenOn && state.isExpanded)
@@ -560,19 +559,13 @@ fun BottomSheetPlayer(
     val icBackgroundColor by animateColorAsState(
         targetValue = when (playerBackground) {
             PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.surface
-            PlayerBackgroundStyle.BLUR -> Color.Black
-            PlayerBackgroundStyle.GRADIENT -> Color.Black
-            PlayerBackgroundStyle.GLOW_ANIMATED -> Color.Black
-            PlayerBackgroundStyle.LIVE_MESH -> Color.Black
+            else -> Color.Black
         },
         label = "icBackgroundColor"
     )
 
     val (textButtonColor, iconButtonColor) = when {
-        playerBackground == PlayerBackgroundStyle.BLUR || 
-        playerBackground == PlayerBackgroundStyle.GRADIENT ||
-        playerBackground == PlayerBackgroundStyle.GLOW_ANIMATED ||
-        playerBackground == PlayerBackgroundStyle.LIVE_MESH -> {
+        playerBackground != PlayerBackgroundStyle.DEFAULT -> {
             when (playerButtonsStyle) {
                 PlayerButtonsStyle.DEFAULT -> Pair(artworkPalette.primaryAccent, com.music.mkr.ui.theme.PlayerColorExtractor.CharcoalDark)
                 PlayerButtonsStyle.PRIMARY -> Pair(
@@ -684,7 +677,7 @@ fun BottomSheetPlayer(
     )
 
     val bottomSheetBackgroundColor = when (playerBackground) {
-        PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED ->
+        PlayerBackgroundStyle.IMMERSIVE_ARTWORK, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED ->
             PlayerColorExtractor.CharcoalDark
         PlayerBackgroundStyle.LIVE_MESH ->
             Color.Black
@@ -713,30 +706,14 @@ fun BottomSheetPlayer(
             ) {
                 if (backgroundVisible && backgroundAlpha > 0.01f) {
                     when (playerBackground) {
-                    PlayerBackgroundStyle.BLUR -> {
-                        AnimatedContent(
-                            targetState = backgroundArtwork,
-                            modifier = Modifier.fillMaxSize(),
-                            transitionSpec = {
-                                val duration = if (animateBackground) 800 else 0
-                                fadeIn(tween(duration)).togetherWith(fadeOut(tween(duration)))
-                            },
-                            label = "blurBackground",
-                        ) { artworkUrl ->
-                            Image(
-                                painter = rememberPlayerBackgroundPainter(artworkUrl, 14, animateBackground),
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .alpha(backgroundAlpha),
-                            )
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Black.copy(alpha = 0.55f * backgroundAlpha))
-                            )
-                        }
+                    PlayerBackgroundStyle.IMMERSIVE_ARTWORK -> {
+                        ImmersiveArtworkBackground(
+                            trackId = mediaMetadata?.id.orEmpty(),
+                            thumbnail = mediaMetadata?.thumbnailUrl,
+                            itemArtwork = currentItemArtwork,
+                            animate = animateBackground,
+                            modifier = Modifier.fillMaxSize().alpha(backgroundAlpha),
+                        )
                     }
                     PlayerBackgroundStyle.GRADIENT -> {
                         AnimatedContent(
@@ -1043,8 +1020,6 @@ fun BottomSheetPlayer(
             )
         },
     ) {
-        val playerStyleName by rememberPreference(PlayerStyleKey, PlayerStyle.DEFAULT.name)
-        val playerStyle = remember(playerStyleName) { PlayerStyle.fromString(playerStyleName) }
         val transportState = if (isCasting) Player.STATE_READY else playbackState
         val isLoading = if (isCasting) castIsBuffering else playbackState == Player.STATE_BUFFERING
         val effectiveDuration = if (isCasting) castDuration else duration
@@ -1235,8 +1210,8 @@ fun BottomSheetPlayer(
                                 itemArtwork = currentItemArtwork,
                                 animateArtwork = animateBackground,
                                 foreground = immersiveForeground,
+                                artworkIsBackdrop = playerBackground == PlayerBackgroundStyle.IMMERSIVE_ARTWORK,
                                 primaryButtonColor = textButtonColor,
-                                primaryIconColor = iconButtonColor,
                                 playbackState = transportState,
                                 isPlaying = effectiveIsPlaying,
                                 isLoading = isLoading,

@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -73,8 +74,8 @@ fun ImmersivePlayer(
     itemArtwork: String?,
     animateArtwork: Boolean,
     foreground: Color,
+    artworkIsBackdrop: Boolean,
     primaryButtonColor: Color,
-    primaryIconColor: Color,
     playbackState: Int,
     isPlaying: Boolean,
     isLoading: Boolean,
@@ -103,6 +104,23 @@ fun ImmersivePlayer(
     val closeLabel = stringResource(R.string.close)
     val sheetScrollConnection = remember(state) { state.preUpPostDownNestedScrollConnection }
 
+    val menuButton: @Composable (Modifier) -> Unit = { buttonModifier ->
+        IconButton(
+            onClick = onShowMenu,
+            modifier = buttonModifier.size(48.dp),
+            colors = IconButtonDefaults.iconButtonColors(
+                containerColor = foreground.copy(alpha = 0.12f),
+                contentColor = foreground,
+            ),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.more_horiz),
+                contentDescription = stringResource(R.string.more_label),
+                modifier = Modifier.size(22.dp),
+            )
+        }
+    }
+
     AdaptivePlayerLayout(
         modifier = modifier
             .fillMaxSize()
@@ -112,15 +130,19 @@ fun ImmersivePlayer(
         artworkFraction = 1f,
         immersive = true,
         artwork = { size ->
-            ImmersiveArtwork(
-                trackId = mediaMetadata.id,
-                thumbnail = mediaMetadata.thumbnailUrl,
-                itemArtwork = itemArtwork,
-                animate = animateArtwork,
-                backgroundColor = foreground.copy(alpha = 0.05f),
-                modifier = Modifier.size(size).clip(MaterialTheme.shapes.large),
-                contentDescription = mediaMetadata.title,
-            )
+            if (artworkIsBackdrop) {
+                Spacer(Modifier.size(size))
+            } else {
+                ImmersiveArtwork(
+                    trackId = mediaMetadata.id,
+                    thumbnail = mediaMetadata.thumbnailUrl,
+                    itemArtwork = itemArtwork,
+                    animate = animateArtwork,
+                    backgroundColor = foreground.copy(alpha = 0.05f),
+                    modifier = Modifier.size(size).clip(MaterialTheme.shapes.large),
+                    contentDescription = mediaMetadata.title,
+                )
+            }
         },
         header = {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -138,66 +160,66 @@ fun ImmersivePlayer(
                     )
                 }
 
-                IconButton(
-                    onClick = onShowMenu,
-                    modifier = Modifier.align(Alignment.CenterEnd).size(48.dp),
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.more_vert),
-                        contentDescription = stringResource(R.string.more_label),
-                        tint = foreground,
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
+                if (maxWidth < 232.dp) menuButton(Modifier.align(Alignment.CenterEnd))
             }
         },
     ) {
         Column(Modifier.fillMaxWidth()) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(
-                        text = mediaMetadata.title,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
-                        color = foreground,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.clickable { titleActions.onTitleClick() }
-                    )
-                    Spacer(Modifier.height(4.dp))
-                    ClickableArtists(
-                        artists = mediaMetadata.artists,
-                        onArtistClick = titleActions.onArtistClick,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = secondaryForeground,
-                        modifier = if (animateArtwork) Modifier.basicMarquee() else Modifier
-                    )
-                    Text(
-                        text = "${stringResource(R.string.playing_from)} · $subtitle",
-                        style = MaterialTheme.typography.labelMedium,
-                        color = secondaryForeground,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(top = 4.dp),
-                    )
-                }
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                val showMenuNextToLike = maxWidth >= 232.dp
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = mediaMetadata.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = foreground,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.clickable { titleActions.onTitleClick() }
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        ClickableArtists(
+                            artists = mediaMetadata.artists,
+                            onArtistClick = titleActions.onArtistClick,
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = secondaryForeground,
+                            modifier = if (animateArtwork) Modifier.basicMarquee() else Modifier
+                        )
+                        Text(
+                            text = "${stringResource(R.string.playing_from)} · $subtitle",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = secondaryForeground,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(top = 4.dp),
+                        )
+                    }
 
-                Spacer(Modifier.width(8.dp))
+                    Spacer(Modifier.width(8.dp))
 
-                IconButton(onClick = {
-                    haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                    playerConnection.toggleLike()
-                }) {
-                    Icon(
-                        painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
-                        contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
-                        tint = if (isLiked) primaryButtonColor else foreground,
-                        modifier = Modifier.size(26.dp)
-                    )
+                    IconButton(
+                        onClick = {
+                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                            playerConnection.toggleLike()
+                        },
+                        colors = IconButtonDefaults.iconButtonColors(containerColor = foreground.copy(alpha = 0.12f)),
+                    ) {
+                        Icon(
+                            painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.favorite_border),
+                            contentDescription = stringResource(if (isLiked) R.string.action_remove_like else R.string.action_like),
+                            tint = if (isLiked) primaryButtonColor else foreground,
+                            modifier = Modifier.size(26.dp)
+                        )
+                    }
+                    if (showMenuNextToLike) {
+                        Spacer(Modifier.width(4.dp))
+                        menuButton(Modifier)
+                    }
                 }
             }
 
@@ -256,16 +278,16 @@ fun ImmersivePlayer(
                 onSkipPrevious = { playerConnection.seekToPrevious() },
                 onSkipNext = { playerConnection.seekToNext() },
                 variant = TransportVariant.IMMERSIVE,
-                primaryContainerColor = primaryButtonColor,
-                primaryContentColor = primaryIconColor,
-                secondaryContainerColor = foreground.copy(alpha = 0.06f),
+                primaryContainerColor = Color.Transparent,
+                primaryContentColor = foreground,
+                secondaryContainerColor = Color.Transparent,
                 secondaryContentColor = foreground,
-                playButtonWidth = 100.dp,
-                playButtonHeight = 68.dp,
-                sideButtonWidth = 56.dp,
-                sideButtonHeight = 68.dp,
-                playIconSize = 34.dp,
-                sideIconSize = 30.dp,
+                playButtonWidth = 72.dp,
+                playButtonHeight = 64.dp,
+                sideButtonWidth = 64.dp,
+                sideButtonHeight = 60.dp,
+                playIconSize = 44.dp,
+                sideIconSize = 40.dp,
                 haptic = haptic,
                 leadingControl = {
                     IconButton(
