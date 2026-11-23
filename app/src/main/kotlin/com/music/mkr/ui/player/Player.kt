@@ -224,7 +224,6 @@ import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.utils.rememberPreference
 import dagger.hilt.android.EntryPointAccessors
-import com.music.mkr.ui.theme.PlayerColorExtractor
 import kotlinx.coroutines.CancellationException
 import timber.log.Timber
 import kotlinx.coroutines.Dispatchers

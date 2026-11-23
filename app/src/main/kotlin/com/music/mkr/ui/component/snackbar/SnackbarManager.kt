@@ -46,9 +46,14 @@ object SnackbarManager {
     ) {
         _events.tryEmit(
             SnackbarEvent(
-                messageResource = messageResource,
+                resolveMessage = { context ->
+                    if (messageArgs == null) {
+                        context.getString(messageResource)
+                    } else {
+                        context.getString(messageResource, messageArgs)
+                    }
+                },
                 actionLabel = actionLabel,
-                messageArgs = messageArgs,
                 onAction = onAction,
                 duration = duration,
                 iconRes = iconRes,
