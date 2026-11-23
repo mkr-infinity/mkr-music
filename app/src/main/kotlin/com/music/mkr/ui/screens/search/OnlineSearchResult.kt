@@ -9,6 +9,7 @@ import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -265,6 +266,15 @@ fun OnlineSearchResult(
         )
     }
 
+    val categoryControls: @Composable () -> Unit = {
+        SearchCategoryFilters(onlineFilters, filter) {
+            if (filter != it) {
+                viewModel.selectFilter(it)
+                scope.launch { grid.scrollToItem(0) }
+            }
+        }
+    }
+
     Scaffold(
         modifier = Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Horizontal)),
         containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.background,
@@ -295,69 +305,71 @@ fun OnlineSearchResult(
                 )
             } else {
                 val bottom = LocalPlayerAwareWindowInsets.current.asPaddingValues().calculateBottomPadding()
-                LazyVerticalGrid(
-                    columns = GridCells.Adaptive(320.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)),
-                    state = grid,
-                    modifier = Modifier.widthIn(max = 1080.dp).fillMaxSize(),
-                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottom + 12.dp),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                ) {
-                    if (featured != null) {
-                        item(key = "top_song_match", span = { GridItemSpan(maxLineSpan) }) {
-                            TopSongMatchCard(
-                                song = featured,
-                                onPlay = { playSong(featured, fromHero = true) },
-                                onPlayNext = { enqueueSearchMatch(connection, featured.toMediaItem()) },
-                                onMenu = { openMenu(featured) },
-                            )
-                        }
-                    }
-                    item(key = "categories", span = { GridItemSpan(maxLineSpan) }) {
-                        SearchCategoryFilters(onlineFilters, filter) {
-                            if (filter != it) {
-                                viewModel.selectFilter(it)
-                                scope.launch { grid.scrollToItem(0) }
+                BoxWithConstraints(Modifier.widthIn(max = 1080.dp).fillMaxSize()) {
+                    val keepFiltersVisible = maxHeight >= 260.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
+                    Column(Modifier.fillMaxSize()) {
+                        if (keepFiltersVisible) Box(Modifier.padding(horizontal = 16.dp)) { categoryControls() }
+
+                        LazyVerticalGrid(
+                            columns = GridCells.Adaptive(320.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)),
+                            state = grid,
+                            modifier = Modifier.weight(1f).fillMaxWidth(),
+                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = bottom + 12.dp),
+                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                        ) {
+                            if (!keepFiltersVisible) {
+                                item(key = "categories", span = { GridItemSpan(maxLineSpan) }) { categoryControls() }
                             }
-                        }
-                    }
-                    if (filter == null) {
-                        sections.forEachIndexed { index, shelf ->
-                            item(key = "section-$index", span = { GridItemSpan(maxLineSpan) }) {
-                                Text(
-                                    shelf.title,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    modifier = Modifier.padding(top = 8.dp).semantics { heading() },
-                                )
-                            }
-                            items(shelf.items, key = { "section-$index/${it::class.simpleName}/${it.id}" }) {
-                                resultContent(it, Modifier.animateItem())
-                            }
-                        }
-                    } else {
-                        items(filtered, key = { "filtered/${it::class.simpleName}/${it.id}" }) {
-                            resultContent(it, Modifier.animateItem())
-                        }
-                        page?.continuation?.let { continuation ->
-                            item(key = "continuation", span = { GridItemSpan(maxLineSpan) }) {
-                                SearchLoadStatus(viewModel.pageFailed(filter, continuation)) {
-                                    viewModel.loadMore(filter, continuation, retry = true)
+                            if (featured != null) {
+                                item(key = "top_song_match", span = { GridItemSpan(maxLineSpan) }) {
+                                    TopSongMatchCard(
+                                        song = featured,
+                                        onPlay = { playSong(featured, fromHero = true) },
+                                        onPlayNext = { enqueueSearchMatch(connection, featured.toMediaItem()) },
+                                        onMenu = { openMenu(featured) },
+                                    )
                                 }
                             }
-                        }
-                    }
+                            if (filter == null) {
+                                sections.forEachIndexed { index, shelf ->
+                                    item(key = "section-$index", span = { GridItemSpan(maxLineSpan) }) {
+                                        Text(
+                                            shelf.title,
+                                            style = MaterialTheme.typography.titleMedium,
+                                            modifier = Modifier.padding(top = 8.dp).semantics { heading() },
+                                        )
+                                    }
+                                    items(shelf.items, key = { "section-$index/${it::class.simpleName}/${it.id}" }) {
+                                        resultContent(it, Modifier.animateItem())
+                                    }
+                                }
+                            } else {
+                                items(filtered, key = { "filtered/${it::class.simpleName}/${it.id}" }) {
+                                    resultContent(it, Modifier.animateItem())
+                                }
+                                page?.continuation?.let { continuation ->
+                                    item(key = "continuation", span = { GridItemSpan(maxLineSpan) }) {
+                                        SearchLoadStatus(viewModel.pageFailed(filter, continuation)) {
+                                            viewModel.loadMore(filter, continuation, retry = true)
+                                        }
+                                    }
+                                }
+                            }
 
-                    val pending = if (filter == null) summary == null else page == null
-                    val sourceEmpty = if (filter == null) summary?.summaries?.isEmpty() == true
-                        else page != null && page.items.isEmpty() && page.continuation == null
-                    if (pending) {
-                        item(key = "initial", span = { GridItemSpan(maxLineSpan) }) {
-                            SearchLoadStatus(viewModel.initialFailed(filter), viewModel::retryInitial)
-                        }
-                    } else if (sourceEmpty) {
-                        item(key = "empty", span = { GridItemSpan(maxLineSpan) }) {
-                            EmptyPlaceholder(R.drawable.search, stringResource(R.string.no_results_found),
-                                description = stringResource(R.string.search_no_match_hint))
+                            val pending = if (filter == null) summary == null else page == null
+                            val sourceEmpty = if (filter == null) summary?.summaries?.isEmpty() == true
+                                else page != null && page.items.isEmpty() && page.continuation == null
+                            if (pending) {
+                                item(key = "initial", span = { GridItemSpan(maxLineSpan) }) {
+                                    SearchLoadStatus(viewModel.initialFailed(filter), viewModel::retryInitial)
+                                }
+                            } else if (sourceEmpty) {
+                                item(key = "empty", span = { GridItemSpan(maxLineSpan) }) {
+                                    EmptyPlaceholder(R.drawable.search, stringResource(R.string.no_results_found),
+                                        description = stringResource(R.string.search_no_match_hint))
+                                }
+                            }
                         }
                     }
                 }
