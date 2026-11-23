@@ -48,17 +48,8 @@ class SuggestionsViewModel @Inject constructor(
 ) : ViewModel() {
     private var currentLoadedRegion: String? = null
     
-    private val _suggestionTracks = MutableStateFlow<List<SuggestionTrack>?>(null)
-    val suggestionTracks: StateFlow<List<SuggestionTrack>?> = _suggestionTracks
-
-    private val _suggestionArtists = MutableStateFlow<List<SuggestionArtist>?>(null)
-    val suggestionArtists: StateFlow<List<SuggestionArtist>?> = _suggestionArtists
-
     private val _suggestionAlbums = MutableStateFlow<List<SuggestionAlbum>?>(null)
     val suggestionAlbums: StateFlow<List<SuggestionAlbum>?> = _suggestionAlbums
-
-    private val _suggestionVideos = MutableStateFlow<List<SuggestionTrack>?>(null)
-    val suggestionVideos: StateFlow<List<SuggestionTrack>?> = _suggestionVideos
 
     private val _youtubeNewReleases = MutableStateFlow<List<AlbumItem>?>(null)
     val youtubeNewReleases: StateFlow<List<AlbumItem>?> = _youtubeNewReleases
@@ -84,10 +75,7 @@ class SuggestionsViewModel @Inject constructor(
             var wasOffline = false
             networkConnectivityObserver.networkStatus.collect { isConnected ->
                 if (isConnected) {
-                    val hasData = _suggestionTracks.value != null ||
-                            _suggestionAlbums.value != null ||
-                            _suggestionVideos.value != null ||
-                            _youtubeNewReleases.value != null
+                    val hasData = _suggestionAlbums.value != null || _youtubeNewReleases.value != null
 
                     if (wasOffline || !hasData) {
                         val regionCode = context.dataStore.data.first()[SuggestionRegionKey] ?: "system"
@@ -119,10 +107,7 @@ class SuggestionsViewModel @Inject constructor(
             
             // Clear current data if we are switching regions or forcing a fresh load
             if (currentLoadedRegion != resolvedCode || force) {
-                _suggestionTracks.value = null
-                _suggestionArtists.value = null
                 _suggestionAlbums.value = null
-                _suggestionVideos.value = null
                 _youtubeNewReleases.value = null
             }
 
@@ -131,35 +116,12 @@ class SuggestionsViewModel @Inject constructor(
                     // Launch each fetch in its own job so they update the UI independently
                     launch {
                         try {
-                            val tracks = AppleMusicScraper.fetchTopSongs(context, resolvedCode)
-                            if (tracks.isNotEmpty()) {
-                                _suggestionTracks.value = tracks
-                                _suggestionArtists.value = AppleMusicScraper.getTrendingArtists(tracks)
-                            }
-                        } catch (e: Exception) {
-                            Log.e("SuggestionsViewModel", "Failed to fetch songs", e)
-                        }
-                    }
-
-                    launch {
-                        try {
                             val albums = AppleMusicScraper.fetchTopAlbums(context, resolvedCode)
                             if (albums.isNotEmpty()) {
                                 _suggestionAlbums.value = albums
                             }
                         } catch (e: Exception) {
                             Log.e("SuggestionsViewModel", "Failed to fetch albums", e)
-                        }
-                    }
-
-                    launch {
-                        try {
-                            val videos = AppleMusicScraper.fetchTopVideos(context, resolvedCode)
-                            if (videos.isNotEmpty()) {
-                                _suggestionVideos.value = videos
-                            }
-                        } catch (e: Exception) {
-                            Log.e("SuggestionsViewModel", "Failed to fetch videos", e)
                         }
                     }
 
@@ -199,10 +161,7 @@ class SuggestionsViewModel @Inject constructor(
                     }
                 }
 
-                val hasData = _suggestionTracks.value != null ||
-                        _suggestionAlbums.value != null ||
-                        _suggestionVideos.value != null ||
-                        _youtubeNewReleases.value != null
+                val hasData = _suggestionAlbums.value != null || _youtubeNewReleases.value != null
 
                 if (hasData) {
                     currentLoadedRegion = resolvedCode

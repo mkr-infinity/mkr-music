@@ -68,32 +68,6 @@ object AppleMusicScraper {
         }
     }
 
-    fun fetchTopSongs(context: Context, countryCode: String = "us"): List<SuggestionTrack> {
-        val tracks = mutableListOf<SuggestionTrack>()
-        try {
-            val url = "https://rss.applemarketingtools.com/api/v2/$countryCode/music/most-played/100/songs.json"
-            val response = fetchWithCache(context, url, "apple_songs_$countryCode.json") ?: return tracks
-            
-            val json = JSONObject(response)
-            val results = json.getJSONObject("feed").getJSONArray("results")
-            
-            for (i in 0 until results.length()) {
-                val item = results.getJSONObject(i)
-                val rank = i + 1
-                val title = item.getString("name")
-                val artist = item.getString("artistName")
-                val artwork = item.getString("artworkUrl100")
-                    .replace(Regex("(\\d+)x(\\d+)"), "1400x1400")
-                val appleUrl = item.getString("url")
-                
-                tracks.add(SuggestionTrack(rank, title, artist, artwork, appleUrl))
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching Apple Music Top Songs for $countryCode", e)
-        }
-        return tracks
-    }
-
     fun fetchTopAlbums(context: Context, countryCode: String = "us"): List<SuggestionAlbum> {
         val albums = mutableListOf<SuggestionAlbum>()
         try {
@@ -118,63 +92,5 @@ object AppleMusicScraper {
             Log.e(TAG, "Error fetching Apple Music Top Albums for $countryCode", e)
         }
         return albums
-    }
-
-    fun fetchTopVideos(context: Context, countryCode: String = "us"): List<SuggestionTrack> {
-        val videos = mutableListOf<SuggestionTrack>()
-        try {
-            val url = "https://rss.applemarketingtools.com/api/v2/$countryCode/music/most-played/20/music-videos.json"
-            val response = fetchWithCache(context, url, "apple_videos_$countryCode.json") ?: return videos
-            
-            val json = JSONObject(response)
-            val results = json.getJSONObject("feed").getJSONArray("results")
-            
-            val ids = mutableListOf<String>()
-            val videoMap = mutableMapOf<String, SuggestionTrack>()
-
-            for (i in 0 until results.length()) {
-                val item = results.getJSONObject(i)
-                val id = item.getString("id")
-                val rank = i + 1
-                val title = item.getString("name")
-                val artist = item.getString("artistName")
-                val artwork = item.getString("artworkUrl100")
-                    .replace(Regex("(\\d+)x(\\d+)"), "1920x1080")
-                val appleUrl = item.getString("url")
-                
-                ids.add(id)
-                videoMap[id] = SuggestionTrack(rank, title, artist, artwork, appleUrl)
-            }
-
-            // Batch lookup for preview URLs removed
-
-            videos.addAll(videoMap.values.sortedBy { it.rank })
-        } catch (e: Exception) {
-            Log.e(TAG, "Error fetching Apple Music Top Videos for $countryCode", e)
-        }
-        return videos
-    }
-
-    fun getTrendingArtists(tracks: List<SuggestionTrack>): List<SuggestionArtist> {
-        // Extract top unique artists from the tracks list
-        val artistCounts = mutableMapOf<String, Int>()
-        val artistImages = mutableMapOf<String, String?>()
-        
-        tracks.forEach { track ->
-            // Handle multiple artists in string
-            val mainArtist = track.artist.split(",", "&", "feat.", "ft.").first().trim()
-            artistCounts[mainArtist] = (artistCounts[mainArtist] ?: 0) + 1
-            if (artistImages[mainArtist] == null) {
-                // Use a smaller but still high quality version for artist circles
-                artistImages[mainArtist] = track.thumbnailUrl?.replace("1920x1080", "500x500")
-            }
-        }
-        
-        return artistCounts.toList()
-            .sortedByDescending { it.second }
-            .take(15)
-            .mapIndexed { index, pair ->
-                SuggestionArtist(index + 1, pair.first, artistImages[pair.first])
-            }
     }
 }
