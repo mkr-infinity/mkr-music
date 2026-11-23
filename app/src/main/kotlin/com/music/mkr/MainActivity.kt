@@ -219,6 +219,7 @@ import com.music.mkr.playback.MusicService.MusicBinder
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.playback.queues.YouTubeQueue
 import com.music.mkr.ui.component.AppNavigationBar
+import com.music.mkr.ui.component.floatingGlassNavigationHeight
 import com.music.mkr.ui.component.AppNavigationRail
 import com.music.mkr.ui.component.BottomSheetMenu
 import com.music.mkr.ui.component.BottomSheetPage
@@ -905,7 +906,11 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 val bottomNavVisible = shouldShowNavigationBar && !showRail && !navHiddenByScroll
-                val fullNavHeight = if (slimNav) SlimNavBarHeight else NavigationBarHeight
+                val fullNavHeight = when {
+                    floatingNav && navigationStyle == NavigationStyle.FLOATING_GLASS -> floatingGlassNavigationHeight(slimNav)
+                    slimNav -> SlimNavBarHeight
+                    else -> NavigationBarHeight
+                }
                 val navPadding = if (bottomNavVisible) fullNavHeight else 0.dp
 
                 val navigationBarHeight by animateDpAsState(

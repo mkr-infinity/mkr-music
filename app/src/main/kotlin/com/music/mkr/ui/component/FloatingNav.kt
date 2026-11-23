@@ -282,6 +282,12 @@ private fun AmberDockItem(
     }
 }
 
+private fun floatingGlassCapsuleHeight(slim: Boolean) = if (slim) 52.dp else 56.dp
+private fun floatingGlassBottomPadding(slim: Boolean) = if (slim) 6.dp else 8.dp
+
+internal fun floatingGlassNavigationHeight(slim: Boolean) =
+    floatingGlassCapsuleHeight(slim) + floatingGlassBottomPadding(slim)
+
 @Composable
 fun FloatingGlassNavigationBar(
     navigationItems: List<Screens>,
@@ -328,7 +334,15 @@ private fun CapsuleNavigationBar(
     val colors = MaterialTheme.colorScheme
     val animate by rememberPreference(InterfaceAnimationsKey, true)
     val labelScale = LocalDensity.current.fontScale
-    val bottomPadding = if (anchored) 4.dp else if (slimNav) 8.dp else if (compact) 14.dp else 10.dp
+    val floatingGlass = !compact && !anchored
+    val bottomPadding = when {
+        floatingGlass -> floatingGlassBottomPadding(slimNav)
+        anchored -> 4.dp
+        slimNav -> 8.dp
+        else -> 14.dp
+    }
+    val capsuleHeight = if (floatingGlass) floatingGlassCapsuleHeight(slimNav)
+        else if (slimNav || compact) 56.dp else 66.dp
     BoxWithConstraints(
         modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = bottomInset + bottomPadding),
         contentAlignment = Alignment.Center,
@@ -339,15 +353,15 @@ private fun CapsuleNavigationBar(
             modifier = Modifier
                 .widthIn(max = if (compact) 320.dp else 500.dp)
                 .fillMaxWidth()
-                .height(if (slimNav || compact) 56.dp else 66.dp)
-                .shadow(3.dp, CircleShape)
+                .height(capsuleHeight)
+                .shadow(if (floatingGlass) 2.dp else 3.dp, CircleShape)
                 .navigationGlass(CircleShape, pureBlack)
-                .padding(horizontal = 6.dp, vertical = 4.dp),
+                .padding(horizontal = 6.dp, vertical = if (floatingGlass) 2.dp else 4.dp),
         ) {
             val selectedIndex = navigationItems.indexOfFirst {
                 isNavRouteSelected(currentRoute, it.route, navigationItems)
             }
-            if (!compact && !anchored && selectedIndex >= 0) {
+            if (floatingGlass && selectedIndex >= 0) {
                 val cellWidth = (maxWidth - 4.dp * (navigationItems.size - 1)) / navigationItems.size
                 val targetOffset = (cellWidth + 4.dp) * selectedIndex + 2.dp
                 val indicatorOffset by animateDpAsState(
@@ -368,8 +382,8 @@ private fun CapsuleNavigationBar(
                 Box(
                     Modifier.offset { IntOffset((if (animate) indicatorOffset else targetOffset).roundToPx(), 0) }
                         .width((cellWidth - 4.dp).coerceAtLeast(0.dp))
-                        .fillMaxHeight()
-                        .padding(vertical = 1.dp)
+                        .fillMaxHeight(0.92f)
+                        .align(Alignment.CenterStart)
                         .background(colors.secondaryContainer, indicatorShape),
                 )
             }
