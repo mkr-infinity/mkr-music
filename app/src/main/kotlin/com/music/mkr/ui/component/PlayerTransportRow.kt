@@ -21,6 +21,8 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -166,131 +168,145 @@ fun PlayerTransportRow(
         secondaryContainerColor
     }
 
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = if (leadingControl != null || trailingControl != null) Arrangement.SpaceEvenly else Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (leadingControl != null) {
-            leadingControl()
-        }
-
-        // Skip Previous
-        Surface(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onSkipPrevious()
-            },
-            enabled = canSkipPrevious,
-            shape = CircleShape,
-            color = Color.Transparent,
-            interactionSource = prevInteractionSource,
-            modifier = Modifier
-                .scale(prevScale)
-                .size(width = effectiveSideWidth, height = effectiveSideHeight)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val auxiliaryCount = listOfNotNull(leadingControl, trailingControl).size
+        val inlineAuxiliary = maxWidth >= effectivePlayWidth + effectiveSideWidth * 2 + 48.dp * auxiliaryCount + 24.dp
+        val gap = if (inlineAuxiliary) 12.dp else 4.dp
+        val widthBudget = (maxWidth - gap * 2 - if (inlineAuxiliary) 48.dp * auxiliaryCount else 0.dp)
+            .coerceAtLeast(144.dp)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
             ) {
-                PlaybackCookieFace(sideFace.copy(alpha = if (canSkipPrevious) sideFace.alpha else sideFace.alpha * 0.4f))
-                Icon(
-                    painter = painterResource(R.drawable.skip_previous),
-                    contentDescription = stringResource(R.string.previous_track),
-                    tint = secondaryContentColor.copy(alpha = if (canSkipPrevious) 1f else 0.38f),
-                    modifier = Modifier.size(sideIconSize)
-                )
-            }
-        }
+                if (inlineAuxiliary) leadingControl?.invoke(this)
 
-        Spacer(Modifier.width(if (leadingControl != null) 12.dp else 20.dp))
-
-        // Play / Pause / Replay Central Button
-        Surface(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onPlayPause()
-            },
-            shape = CircleShape,
-            color = Color.Transparent,
-            interactionSource = playInteractionSource,
-            modifier = Modifier
-                .scale(playScale)
-                .size(width = effectivePlayWidth, height = effectivePlayHeight)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                PlaybackCookieFace(primaryContainerColor)
-                AnimatedContent(
-                    targetState = Triple(isLoading, playbackState == Player.STATE_ENDED, isPlaying),
-                    transitionSpec = {
-                        if (interfaceAnimations) {
-                            (fadeIn(animationSpec = tween(180, easing = LinearEasing)) + scaleIn(initialScale = 0.85f, animationSpec = tween(180)))
-                                .togetherWith(fadeOut(animationSpec = tween(140, easing = LinearEasing)) + scaleOut(targetScale = 0.85f, animationSpec = tween(140)))
-                        } else {
-                            fadeIn(animationSpec = snap()).togetherWith(fadeOut(animationSpec = snap()))
-                        }
+                // Skip Previous
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onSkipPrevious()
                     },
-                    label = "playPauseCrossfade"
-                ) { (loading, ended, playing) ->
-                    if (loading) {
-                        CircularProgressIndicator(
-                            color = primaryContentColor,
-                            strokeWidth = 3.dp,
-                            modifier = Modifier.size(playIconSize * 0.85f)
-                        )
-                    } else {
+                    enabled = canSkipPrevious,
+                    shape = CircleShape,
+                    color = Color.Transparent,
+                    interactionSource = prevInteractionSource,
+                    modifier = Modifier
+                        .scale(prevScale)
+                        .size(width = minOf(effectiveSideWidth, widthBudget * 0.30f).coerceAtLeast(48.dp), height = effectiveSideHeight.coerceAtLeast(48.dp))
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        PlaybackCookieFace(sideFace.copy(alpha = if (canSkipPrevious) sideFace.alpha else sideFace.alpha * 0.4f))
                         Icon(
-                            painter = painterResource(
-                                when {
-                                    ended -> R.drawable.replay
-                                    playing -> R.drawable.pause
-                                    else -> R.drawable.play
-                                }
-                            ),
-                            contentDescription = stringResource(if (playing) R.string.pause else R.string.play),
-                            tint = primaryContentColor,
-                            modifier = Modifier.size(playIconSize)
+                            painter = painterResource(R.drawable.skip_previous),
+                            contentDescription = stringResource(R.string.previous_track),
+                            tint = secondaryContentColor.copy(alpha = if (canSkipPrevious) 1f else 0.38f),
+                            modifier = Modifier.size(sideIconSize)
                         )
                     }
                 }
+
+                Spacer(Modifier.width(gap))
+
+                // Play / Pause / Replay Central Button
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onPlayPause()
+                    },
+                    shape = CircleShape,
+                    color = Color.Transparent,
+                    interactionSource = playInteractionSource,
+                    modifier = Modifier
+                        .scale(playScale)
+                        .size(width = minOf(effectivePlayWidth, widthBudget * 0.40f).coerceAtLeast(48.dp), height = effectivePlayHeight.coerceAtLeast(48.dp))
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        PlaybackCookieFace(primaryContainerColor)
+                        AnimatedContent(
+                            targetState = Triple(isLoading, playbackState == Player.STATE_ENDED, isPlaying),
+                            transitionSpec = {
+                                if (interfaceAnimations) {
+                                    (fadeIn(animationSpec = tween(180, easing = LinearEasing)) + scaleIn(initialScale = 0.85f, animationSpec = tween(180)))
+                                        .togetherWith(fadeOut(animationSpec = tween(140, easing = LinearEasing)) + scaleOut(targetScale = 0.85f, animationSpec = tween(140)))
+                                } else {
+                                    fadeIn(animationSpec = snap()).togetherWith(fadeOut(animationSpec = snap()))
+                                }
+                            },
+                            label = "playPauseCrossfade"
+                        ) { (loading, ended, playing) ->
+                            if (loading) {
+                                CircularProgressIndicator(
+                                    color = primaryContentColor,
+                                    strokeWidth = 3.dp,
+                                    modifier = Modifier.size(playIconSize * 0.85f)
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(
+                                        when {
+                                            ended -> R.drawable.replay
+                                            playing -> R.drawable.pause
+                                            else -> R.drawable.play
+                                        }
+                                    ),
+                                    contentDescription = stringResource(if (playing) R.string.pause else R.string.play),
+                                    tint = primaryContentColor,
+                                    modifier = Modifier.size(playIconSize)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Spacer(Modifier.width(gap))
+
+                // Skip Next
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onSkipNext()
+                    },
+                    enabled = canSkipNext,
+                    shape = CircleShape,
+                    color = Color.Transparent,
+                    interactionSource = nextInteractionSource,
+                    modifier = Modifier
+                        .scale(nextScale)
+                        .size(width = minOf(effectiveSideWidth, widthBudget * 0.30f).coerceAtLeast(48.dp), height = effectiveSideHeight.coerceAtLeast(48.dp))
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        PlaybackCookieFace(sideFace.copy(alpha = if (canSkipNext) sideFace.alpha else sideFace.alpha * 0.4f))
+                        Icon(
+                            painter = painterResource(R.drawable.skip_next),
+                            contentDescription = stringResource(R.string.next_track),
+                            tint = secondaryContentColor.copy(alpha = if (canSkipNext) 1f else 0.38f),
+                            modifier = Modifier.size(sideIconSize)
+                        )
+                    }
+                }
+
+                if (inlineAuxiliary) trailingControl?.invoke(this)
             }
-        }
-
-        Spacer(Modifier.width(if (trailingControl != null) 12.dp else 20.dp))
-
-        // Skip Next
-        Surface(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onSkipNext()
-            },
-            enabled = canSkipNext,
-            shape = CircleShape,
-            color = Color.Transparent,
-            interactionSource = nextInteractionSource,
-            modifier = Modifier
-                .scale(nextScale)
-                .size(width = effectiveSideWidth, height = effectiveSideHeight)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                PlaybackCookieFace(sideFace.copy(alpha = if (canSkipNext) sideFace.alpha else sideFace.alpha * 0.4f))
-                Icon(
-                    painter = painterResource(R.drawable.skip_next),
-                    contentDescription = stringResource(R.string.next_track),
-                    tint = secondaryContentColor.copy(alpha = if (canSkipNext) 1f else 0.38f),
-                    modifier = Modifier.size(sideIconSize)
-                )
+            if (!inlineAuxiliary && auxiliaryCount > 0) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    leadingControl?.invoke(this)
+                    trailingControl?.invoke(this)
+                }
             }
-        }
-
-        if (trailingControl != null) {
-            trailingControl()
         }
     }
 }

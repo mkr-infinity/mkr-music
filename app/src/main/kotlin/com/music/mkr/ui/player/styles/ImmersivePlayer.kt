@@ -55,6 +55,7 @@ import com.music.mkr.ui.player.rememberPlayerBackgroundPainter
 import com.music.mkr.ui.player.AudioQualityBadge
 import androidx.media3.common.Player
 import androidx.navigation.NavController
+import coil3.compose.AsyncImage
 import com.music.mkr.R
 import com.music.mkr.db.entities.FormatEntity
 import com.music.mkr.models.MediaMetadata
@@ -149,8 +150,7 @@ fun ImmersivePlayer(
 
         val insets = WindowInsets.systemBars.asPaddingValues()
         // Player Content
-        Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
+        AdaptivePlayerLayout(
             modifier = Modifier
                 .fillMaxSize()
                 .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
@@ -159,77 +159,81 @@ fun ImmersivePlayer(
                     bottom = QueuePeekHeight + insets.calculateBottomPadding() + 8.dp,
                     start = 20.dp,
                     end = 20.dp
+                ),
+            artworkFraction = 0.92f,
+            artwork = { size ->
+                AsyncImage(
+                    model = mediaMetadata.thumbnailUrl,
+                    contentDescription = mediaMetadata.title,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.size(size).clip(MaterialTheme.shapes.large),
                 )
-        ) {
-            // Header Top Bar
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Surface(
-                    shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.14f),
-                    onClick = { state.collapseSoft() },
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(R.drawable.expand_more),
-                            contentDescription = "Collapse",
-                            tint = contentColor,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                }
-
-                val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
-                Column(
+            },
+            header = {
+                // Header Top Bar
+                Row(
                     modifier = Modifier
-                        .weight(1f)
-                        .padding(horizontal = 12.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
+                        .fillMaxWidth()
+                        .padding(top = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(
-                        text = stringResource(R.string.playing_from),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = secondaryColor.copy(alpha = 0.7f)
-                    )
-                    Text(
-                        text = subtitle,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = contentColor,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis
-                    )
-                }
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.14f),
+                        onClick = { state.collapseSoft() },
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                painter = painterResource(R.drawable.expand_more),
+                                contentDescription = "Collapse",
+                                tint = contentColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+                    }
 
-                Surface(
-                    shape = CircleShape,
-                    color = Color.White.copy(alpha = 0.14f),
-                    onClick = onShowMenu,
-                    modifier = Modifier.size(40.dp)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(R.drawable.more_vert),
-                            contentDescription = stringResource(R.string.more_label),
-                            tint = contentColor,
-                            modifier = Modifier.size(22.dp)
+                    val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(horizontal = 12.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = stringResource(R.string.playing_from),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = secondaryColor.copy(alpha = 0.7f)
+                        )
+                        Text(
+                            text = subtitle,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = contentColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
+
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.14f),
+                        onClick = onShowMenu,
+                        modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(contentAlignment = Alignment.Center) {
+                            Icon(
+                                painter = painterResource(R.drawable.more_vert),
+                                contentDescription = stringResource(R.string.more_label),
+                                tint = contentColor,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+                    }
                 }
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            Spacer(Modifier.weight(1f))
-
-            Spacer(Modifier.height(16.dp))
-
+            },
+        ) {
             // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
             AudioQualityBadge(
                 videoId = mediaMetadata.id,

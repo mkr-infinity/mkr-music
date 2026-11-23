@@ -120,8 +120,7 @@ fun MinimalPlayer(
     )
 
     val insets = WindowInsets.systemBars.asPaddingValues()
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    AdaptivePlayerLayout(
         modifier = modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
@@ -130,16 +129,9 @@ fun MinimalPlayer(
                 bottom = QueuePeekHeight + insets.calculateBottomPadding() + 8.dp,
                 start = 20.dp,
                 end = 20.dp
-            )
-    ) {
-        // Clean Artwork with sharp minimal corners
-        BoxWithConstraints(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            val size = minOf(maxWidth * 0.85f, maxHeight * 0.95f)
+            ),
+        artworkFraction = 0.85f,
+        artwork = { size ->
             Surface(
                 shape = RoundedCornerShape(18.dp),
                 shadowElevation = if (isPlaying) 10.dp else 4.dp,
@@ -157,9 +149,8 @@ fun MinimalPlayer(
                     modifier = Modifier.fillMaxSize()
                 )
             }
-        }
-
-        Spacer(Modifier.height(20.dp))
+        },
+    ) {
 
         // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
         AudioQualityBadge(

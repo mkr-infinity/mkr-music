@@ -118,8 +118,7 @@ fun CinematicPlayer(
     )
 
     val insets = WindowInsets.systemBars.asPaddingValues()
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    AdaptivePlayerLayout(
         modifier = modifier
             .fillMaxSize()
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
@@ -128,16 +127,9 @@ fun CinematicPlayer(
                 bottom = QueuePeekHeight + insets.calculateBottomPadding() + 8.dp,
                 start = 20.dp,
                 end = 20.dp
-            )
-    ) {
-        // Center Artwork
-        BoxWithConstraints(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            val size = minOf(maxWidth * 0.90f, maxHeight * 0.95f)
+            ),
+        artworkFraction = 0.90f,
+        artwork = { size ->
             Surface(
                 shape = RoundedCornerShape(26.dp),
                 shadowElevation = if (isPlaying) 16.dp else 8.dp,
@@ -155,9 +147,8 @@ fun CinematicPlayer(
                     modifier = Modifier.fillMaxSize()
                 )
             }
-        }
-
-        Spacer(Modifier.height(20.dp))
+        },
+    ) {
 
         // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
         AudioQualityBadge(
