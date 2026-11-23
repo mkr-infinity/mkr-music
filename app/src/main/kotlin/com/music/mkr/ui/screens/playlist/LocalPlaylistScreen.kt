@@ -1492,13 +1492,10 @@ fun LocalPlaylistHeader(
 
         Spacer(Modifier.height(24.dp))
 
-        val staticDescription = remember(songCount, totalDuration) {
-            val name = playlist.playlist.name
-            val trackCountText = context.resources.getQuantityString(R.plurals.n_song, songCount, songCount)
-            "$name is a custom playlist featuring $trackCountText.${
-                if (totalDuration != null && totalDuration > 0) " Combined duration is ${makeTimeString(totalDuration * 1000L)}." else ""
-            }"
-        }
+        val trackCountText = pluralStringResource(R.plurals.n_song, songCount, songCount)
+        val playlistDescription = "${playlist.playlist.name} is a custom playlist featuring $trackCountText.${
+            if (totalDuration != null && totalDuration > 0) " Combined duration is ${makeTimeString(totalDuration * 1000L)}." else ""
+        }"
 
         Column(
             modifier = Modifier
@@ -1514,7 +1511,7 @@ fun LocalPlaylistHeader(
             )
 
             ExpandableText(
-                text = staticDescription,
+                text = playlistDescription,
                 runs = null,
                 collapsedMaxLines = 3
             )

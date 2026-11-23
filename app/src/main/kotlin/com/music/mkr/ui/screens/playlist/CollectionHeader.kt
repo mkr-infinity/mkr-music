@@ -43,9 +43,10 @@ internal fun CollectionHeader(
             Modifier.widthIn(max = 920.dp).fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
             val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
-            val wide = maxWidth >= 560.dp && fontScale <= 1.5f
+            val wide = maxWidth >= 560.dp
             val padding = if (wide) 20.dp else 12.dp
-            val artworkSize = (maxWidth - padding * 2).coerceAtLeast(0.dp) * (if (wide) 0.29f else 0.31f)
+            val artworkFraction = (if (wide) 0.29f else 0.31f) / fontScale.coerceAtMost(1.6f)
+            val artworkSize = (maxWidth - padding * 2).coerceAtLeast(0.dp) * artworkFraction
             Row(
                 modifier = Modifier.fillMaxWidth().clip(MaterialTheme.shapes.large)
                     .background(MaterialTheme.colorScheme.surfaceContainerLow).padding(padding),
@@ -62,7 +63,8 @@ internal fun CollectionHeader(
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
                         title,
-                        style = if (wide) MaterialTheme.typography.headlineLarge else MaterialTheme.typography.titleLarge,
+                        style = if (maxWidth >= 560.dp * fontScale) MaterialTheme.typography.headlineLarge
+                            else MaterialTheme.typography.titleLarge,
                         modifier = Modifier.semantics { heading() },
                     )
                     Text(
