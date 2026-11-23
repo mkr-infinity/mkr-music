@@ -1255,6 +1255,8 @@ fun BottomSheetPlayer(
                             )
                             PlayerStyle.MINIMAL -> MinimalPlayer(
                                 mediaMetadata = metadata,
+                                itemArtwork = currentItemArtwork,
+                                animateArtwork = animateBackground,
                                 playbackState = playbackState,
                                 isPlaying = isPlaying,
                                 isLoading = isLoading,
@@ -1284,6 +1286,8 @@ fun BottomSheetPlayer(
                             )
                             PlayerStyle.CINEMATIC -> CinematicPlayer(
                                 mediaMetadata = metadata,
+                                itemArtwork = currentItemArtwork,
+                                animateArtwork = animateBackground,
                                 playbackState = playbackState,
                                 isPlaying = isPlaying,
                                 isLoading = isLoading,

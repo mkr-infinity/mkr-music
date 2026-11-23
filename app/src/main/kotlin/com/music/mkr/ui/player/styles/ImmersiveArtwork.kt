@@ -76,6 +76,7 @@ internal fun ImmersiveArtwork(
     animate: Boolean,
     backgroundColor: Color,
     modifier: Modifier = Modifier,
+    contentDescription: String? = null,
 ) {
     val (dataSaver) = rememberPreference(DataSaverKey, defaultValue = false)
     val context = LocalContext.current
@@ -105,7 +106,7 @@ internal fun ImmersiveArtwork(
             }
             AsyncImage(
                 model = request,
-                contentDescription = null,
+                contentDescription = contentDescription,
                 contentScale = ContentScale.Fit,
                 placeholder = placeholder,
                 fallback = placeholder,

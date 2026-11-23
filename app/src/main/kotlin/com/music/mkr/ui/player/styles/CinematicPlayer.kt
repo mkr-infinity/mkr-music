@@ -44,8 +44,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
@@ -57,9 +55,6 @@ import com.music.mkr.ui.component.PlayerTransportRow
 import com.music.mkr.ui.component.TransportVariant
 import androidx.media3.common.Player
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.music.mkr.R
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.PlayerConnection
@@ -81,6 +76,8 @@ import com.music.mkr.utils.makeTimeString
 @Composable
 fun CinematicPlayer(
     mediaMetadata: MediaMetadata,
+    itemArtwork: String?,
+    animateArtwork: Boolean,
     playbackState: Int,
     isPlaying: Boolean,
     isLoading: Boolean,
@@ -137,14 +134,14 @@ fun CinematicPlayer(
                     .size(size)
                     .scale(artworkScale)
             ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(mediaMetadata.thumbnailUrl)
-                        .crossfade(true)
-                        .build(),
+                ImmersiveArtwork(
+                    trackId = mediaMetadata.id,
+                    thumbnail = mediaMetadata.thumbnailUrl,
+                    itemArtwork = itemArtwork,
+                    animate = animateArtwork,
+                    backgroundColor = Color.Transparent,
+                    modifier = Modifier.fillMaxSize(),
                     contentDescription = mediaMetadata.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
                 )
             }
         },

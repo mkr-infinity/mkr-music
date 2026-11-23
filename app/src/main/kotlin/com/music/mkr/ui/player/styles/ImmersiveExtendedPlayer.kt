@@ -115,7 +115,7 @@ fun ImmersiveExtendedPlayer(
             .windowInsetsPadding(WindowInsets.safeDrawing)
             .padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = QueuePeekHeight + 8.dp),
         artworkFraction = 0.92f,
-        scrollStackedContent = true,
+        immersive = true,
         artwork = { size ->
             ImmersiveArtwork(
                 trackId = mediaMetadata.id,

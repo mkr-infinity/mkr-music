@@ -1,6 +1,5 @@
 package com.music.mkr.ui.player.styles
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -27,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInWindow
 import androidx.compose.ui.platform.LocalDensity
@@ -41,7 +40,7 @@ internal fun AdaptivePlayerLayout(
     artworkFraction: Float,
     artwork: @Composable (Dp) -> Unit,
     header: @Composable () -> Unit = {},
-    scrollStackedContent: Boolean = false,
+    immersive: Boolean = false,
     controls: @Composable () -> Unit,
 ) {
     val posture = currentWindowAdaptiveInfo().windowPosture
@@ -64,7 +63,6 @@ internal fun AdaptivePlayerLayout(
             ?.takeIf { it in 1.dp..areaHeight }
         val bottom = horizontalHinge?.let { with(density) { (it.bottom - windowOrigin.y).toDp() } }
             ?.takeIf { it in 1.dp..areaHeight }
-        val controlsHeight = 340.dp * density.fontScale.coerceAtLeast(1f)
 
         val cover: @Composable (Modifier, Dp) -> Unit = { pane, size ->
             Box(pane, contentAlignment = Alignment.Center) { artwork(size.coerceAtLeast(0.dp)) }
@@ -103,34 +101,49 @@ internal fun AdaptivePlayerLayout(
             }
             areaWidth >= 540.dp && (areaWidth > areaHeight || areaWidth >= 800.dp) -> {
                 Row(Modifier.fillMaxSize(), verticalAlignment = Alignment.CenterVertically) {
-                    val artworkWidth = if (scrollStackedContent) areaWidth / 2 else areaWidth * 0.46f
+                    val artworkWidth = if (immersive) areaWidth / 2 else areaWidth * 0.46f
                     cover(Modifier.weight(1f).fillMaxHeight(), minOf(artworkWidth, areaHeight) * artworkFraction)
                     controlPane(Modifier.weight(1f).fillMaxHeight().padding(start = 12.dp), true)
                 }
             }
-            scrollStackedContent -> Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .heightIn(min = areaHeight),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically),
-            ) {
-                Column(Modifier.widthIn(max = 560.dp).fillMaxWidth()) { header() }
-                artwork(immersiveStackedArtworkSize(areaWidth, areaHeight, controlsHeight) * artworkFraction)
-                Column(Modifier.widthIn(max = 560.dp).fillMaxWidth()) { controls() }
-            }
-            else -> Column(
-                Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center,
-            ) {
-                Column(Modifier.widthIn(max = 560.dp).fillMaxWidth()) { header() }
-                val artHeight = (areaHeight - controlsHeight).coerceIn(0.dp, areaHeight * 0.55f)
-                if (artHeight > 0.dp) {
-                    cover(Modifier.fillMaxWidth().height(artHeight), minOf(areaWidth, artHeight) * artworkFraction)
+            else -> SubcomposeLayout(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+            ) { constraints ->
+                val contentWidth = minOf(constraints.maxWidth, 560.dp.roundToPx())
+                val contentConstraints = constraints.copy(minWidth = 0, maxWidth = contentWidth, minHeight = 0)
+                val topBar = subcompose("header") {
+                    Column(Modifier.fillMaxWidth()) { header() }
+                }.single().measure(contentConstraints)
+                val controlsPanel = subcompose("controls") {
+                    Column(Modifier.fillMaxWidth()) { controls() }
+                }.single().measure(contentConstraints)
+                val gap = (if (immersive) 8.dp else 20.dp).roundToPx()
+                val remaining = areaHeight.roundToPx() - topBar.height - controlsPanel.height - gap
+                val minimum = minOf(160.dp, areaHeight * 0.55f, areaWidth)
+                val coverSize = if (immersive) {
+                    immersiveStackedArtworkSize(
+                        areaWidth, areaHeight, (topBar.height + controlsPanel.height + gap * 2).toDp(),
+                    )
+                } else {
+                    remaining.toDp().coerceIn(minimum, areaWidth)
                 }
-                controlPane(Modifier.weight(1f, fill = false).fillMaxWidth(), false)
+                val cover = subcompose("artwork") {
+                    Box(contentAlignment = Alignment.Center) { artwork(coverSize * artworkFraction) }
+                }.single().measure(contentConstraints)
+                val artworkSlot = maxOf(remaining - (if (immersive) gap else 0), cover.height)
+                val topGap = if (immersive) gap else 0
+                val height = topBar.height + topGap + artworkSlot + gap + controlsPanel.height
+                layout(constraints.maxWidth, maxOf(constraints.minHeight, height)) {
+                    topBar.placeRelative((constraints.maxWidth - topBar.width) / 2, 0)
+                    cover.placeRelative(
+                        (constraints.maxWidth - cover.width) / 2,
+                        topBar.height + topGap + (artworkSlot - cover.height) / 2,
+                    )
+                    controlsPanel.placeRelative(
+                        (constraints.maxWidth - controlsPanel.width) / 2,
+                        topBar.height + topGap + artworkSlot + gap,
+                    )
+                }
             }
         }
     }
