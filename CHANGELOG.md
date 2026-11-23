@@ -46,6 +46,7 @@
 - **Top Song Match placement** — A smaller card appears below the filters in All and Songs when there’s a match. · *Search → Results*
 - **Queue reliability** — Reorder and remove tracks more safely. Wide screens get a side panel. · *Full player → Queue*
 - **Adaptive full player** — Artwork stays visible when the window is short. Scroll to reach all controls. · *Full player*
+- **Player sheet gestures** — Slow drags settle at the nearest position, including in short windows. · *Full player and Queue*
 - **Minimal player** — Swipe down at the top to collapse the player. Artwork effects fill the background. · *Full player → Minimal*
 - **Cinematic player** — Swipe down to collapse and a seek bar that follows the selected background. · *Full player → Cinematic*
 - **Cast controls** — Play, pause, and seek from the full player while casting. · *Full player*

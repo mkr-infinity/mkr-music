@@ -152,6 +152,7 @@ class BottomSheetState(
     draggableState: DraggableState,
     private val coroutineScope: CoroutineScope,
     private val animatable: Animatable<Dp, AnimationVector1D>,
+    private val targetAnchor: () -> Int,
     private val onAnchorChanged: (Int) -> Unit,
     val collapsedBound: Dp,
 ) : DraggableState by draggableState {
@@ -164,19 +165,21 @@ class BottomSheetState(
     val value by animatable.asState()
 
     val isDismissed by derivedStateOf {
-        value == animatable.lowerBound!!
-    }
-
-    val isCollapsed by derivedStateOf {
-        value == collapsedBound
+        value == dismissedBound && (value != collapsedBound || targetAnchor() == dismissedAnchor)
     }
 
     val isExpanded by derivedStateOf {
-        value == animatable.upperBound
+        value == expandedBound && (value != collapsedBound || targetAnchor() == expandedAnchor)
+    }
+
+    val isCollapsed by derivedStateOf {
+        value == collapsedBound && !isDismissed && !isExpanded
     }
 
     val progress by derivedStateOf {
-        1f - (animatable.upperBound!! - animatable.value) / (animatable.upperBound!! - collapsedBound)
+        val travel = expandedBound - collapsedBound
+        if (travel > 0.dp) ((value - collapsedBound) / travel).coerceIn(0f, 1f)
+        else if (isExpanded) 1f else 0f
     }
 
     fun collapse(animationSpec: AnimationSpec<Dp>) {
@@ -238,24 +241,15 @@ class BottomSheetState(
                 collapse()
             }
         } else {
-            val l0 = dismissedBound
-            val l1 = (collapsedBound - dismissedBound) / 2
-            val l2 = (expandedBound - collapsedBound) / 2
-            val l3 = expandedBound
-
-            when (value) {
-                in l0..l1 -> {
-                    if (onDismiss != null) {
-                        dismiss()
-                        onDismiss.invoke()
-                    } else {
-                        collapse()
-                    }
+            val dismissThreshold = dismissedBound + (collapsedBound - dismissedBound) / 2
+            val expandThreshold = collapsedBound + (expandedBound - collapsedBound) / 2
+            when {
+                value < dismissThreshold && onDismiss != null -> {
+                    dismiss()
+                    onDismiss()
                 }
-
-                in l1..l2 -> collapse()
-                in l2..l3 -> expand()
-                else -> Unit
+                value > expandThreshold || isExpanded -> expand()
+                else -> collapse()
             }
         }
     }
@@ -325,6 +319,8 @@ fun rememberBottomSheetState(
 ): BottomSheetState {
     val density = LocalDensity.current
     val coroutineScope = rememberCoroutineScope()
+    val minimum = dismissedBound.coerceAtMost(expandedBound)
+    val collapsed = collapsedBound.coerceIn(minimum, expandedBound)
 
     var previousAnchor by rememberSaveable {
         mutableIntStateOf(initialAnchor)
@@ -333,15 +329,15 @@ fun rememberBottomSheetState(
         Animatable(0.dp, Dp.VectorConverter)
     }
 
-    return remember(dismissedBound, expandedBound, collapsedBound, coroutineScope) {
+    return remember(minimum, expandedBound, collapsed, coroutineScope) {
         val initialValue = when (previousAnchor) {
             expandedAnchor -> expandedBound
-            collapsedAnchor -> collapsedBound
-            dismissedAnchor -> dismissedBound
+            collapsedAnchor -> collapsed
+            dismissedAnchor -> minimum
             else -> error("Unknown BottomSheet anchor")
         }
 
-        animatable.updateBounds(dismissedBound.coerceAtMost(expandedBound), expandedBound)
+        animatable.updateBounds(minimum, expandedBound)
         coroutineScope.launch {
             animatable.animateTo(initialValue, NavigationBarAnimationSpec)
         }
@@ -352,10 +348,11 @@ fun rememberBottomSheetState(
                     animatable.snapTo(animatable.value - with(density) { delta.toDp() })
                 }
             },
+            targetAnchor = { previousAnchor },
             onAnchorChanged = { previousAnchor = it },
             coroutineScope = coroutineScope,
             animatable = animatable,
-            collapsedBound = collapsedBound
+            collapsedBound = collapsed
         )
     }
 }
