@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
+import com.music.mkr.R
 import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.ui.screens.Screens
