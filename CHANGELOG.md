@@ -6,10 +6,13 @@
 
 ---
 
-## [Unreleased]
+## [v2.0.0] - 2026-11-25
 
 ### Added
 
+- **Language & Mood Queue Recommendations** — Auto-queue suggestions now prioritize tracks matching the active song's language and acoustic mood. · *Full player → Queue*
+- **Audio Focus Auto-Resume** — Supports delayed audio focus gain and transient interruptions so playback resumes automatically when other apps release the speaker. · *Playback service*
+- **Update Install Permission Onboarding** — Added Unknown Apps install permission card on onboarding Page 2 for seamless in-app updates. · *Onboarding → Required Permissions*
 - **Auto-hide navigation** — On by default. Scroll down to hide the bar and up to reveal it. · *Settings → Appearance → Misc → Auto-hide bottom navigation*
 - **Top Song Match** — Play the best match or queue it next. · *Search → Top Song Match*
 - **APK download progress** — Track the download in a notification and tap when ready to install. · *Settings → System Updates → Download APK*
@@ -17,7 +20,9 @@
 
 ### Changed
 
-- **Onboarding** — Opens on first install and once per update, with existing settings kept. · *App launch*
+- **Expressive Onboarding Redesign** — Animated wavy hero, spinning cookie-styled dynamic version badge, structured typography, and wavy cookie-bordered feature cards. · *Onboarding*
+- **Onboarding Update Trigger** — Opens on first install and once per APK update (using package update timestamp) without modifying or deleting user data. · *App launch*
+- **Player Defaults** — Squiggly slider and Classic mini-player (following theme) set as defaults. · *Settings → Appearance*
 - **Navigation styles** — Three layouts with matching icons. Material 3 is the default and highlights the active tab with a soft cookie shape. · *Settings → Appearance → Misc → Navigation style*
 - **Floating Glass** — A compact active capsule scales with your screen. · *Bottom navigation → Floating Glass*
 - **Top actions** — History, Account, and Settings use matching cookie buttons. · *Home and Library*
@@ -43,6 +48,8 @@
 
 ### Fixed
 
+- **Backup & Restore Stability** — Cleanly stops playback service before staging/restoring archives to prevent mid-restore playback restarts, crash loops, and unintended onboarding resets. · *Settings → Backup and restore*
+- **Custom Playlist Reordering** — Drag handles on custom-sorted local playlists now sync order changes reliably. · *Library → Local playlist*
 - **Settings entry** — Uses the current destination’s app bar from the first frame. · *Home or Library → Settings*
 - **Top Song Match** — Eligible matches appear below the filters in All and Songs without scrolling. · *Search → Results*
 - **Mini-player backgrounds** — Classic uses the selected background, and Pure Black overrides every style. · *Settings → Appearance → Mini-player*
@@ -65,6 +72,8 @@
 
 ### Removed
 
+- **Expressive Wavy Slider & Thumbnail Play/Pause** — Removed from Full Player slider styles and Appearance settings. · *Settings → Appearance*
+- **Show Comments Setting** — Removed from Appearance settings. · *Settings → Appearance*
 - **Cached Songs scrollbar** — Scroll and fling directly on the song list. · *Library → Cached Songs*
 - **MKR Signature Navigation** — Saved selections fall back to Material 3 Navigation. · *Settings → Appearance → Misc → Navigation style*
 - **Mini-player effects** — Removed Micro Equalizer, Artwork Transition, and Capsule Morph. · *Settings → Appearance → Mini-player*

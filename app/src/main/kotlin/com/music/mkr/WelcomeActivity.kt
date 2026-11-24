@@ -1411,69 +1411,63 @@ private fun WelcomePageContent(
                     )
                 }
 
-                // Right Column: Branding, Minimal Typography, Feature Badges & Developer Attribution
+                // Right Column: Branding, Structured Typography, Expressive Cookie Version Tag & Developer Attribution
                 Column(
                     modifier = Modifier
                         .weight(1.2f)
                         .then(if (isCompactHeight) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 16.dp),
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Version / Brand Badge
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text(
-                            text = com.music.mkr.github.GitHubConfig.VERSION_LABEL,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = GoogleSansFlex,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            text = "MKR",
+                            style = thinHeaderStyle.copy(fontSize = 44.sp),
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            text = "Music",
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 44.sp,
+                            letterSpacing = (-0.8).sp,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = "MKR Music",
-                        style = thinHeaderStyle.copy(
-                            fontSize = 44.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = MaterialTheme.colorScheme.primary,
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
                         text = "Your Music. Your Mood. Your World.",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontFamily = GoogleSansFlex,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = (-0.2).sp
+                            fontWeight = FontWeight.Medium,
+                            letterSpacing = 0.sp,
+                            lineHeight = 28.sp
                         ),
-                        color = MaterialTheme.colorScheme.onBackground,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Start
                     )
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    // Alive Material Expressive sound badge
-                    AliveCookieBadge()
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Expressive cookie-style dynamic version tag (driven by version.properties)
+                        AliveCookieBadge()
 
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Developer attribution chip linking to profile
-                    WelcomeDeveloperChip(
-                        onClick = { onOpenUrl(com.music.mkr.github.GitHubConfig.DEV_GITHUB_URL) }
-                    )
+                        // Developer attribution chip linking to profile
+                        WelcomeDeveloperChip(
+                            onClick = { onOpenUrl(com.music.mkr.github.GitHubConfig.DEV_GITHUB_URL) }
+                        )
+                    }
                 }
             }
         } else {
@@ -1482,7 +1476,7 @@ private fun WelcomePageContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(if (isCompactHeight) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -1492,45 +1486,59 @@ private fun WelcomePageContent(
                     compact = isCompactHeight
                 )
 
-                Spacer(modifier = Modifier.height(if (isCompactHeight) 10.dp else 18.dp))
+                Spacer(modifier = Modifier.height(if (isCompactHeight) 14.dp else 24.dp))
 
-                // Brand Name
-                Text(
-                    text = "MKR Music",
-                    style = thinHeaderStyle.copy(
-                        fontSize = if (isCompactHeight) 34.sp else 42.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center
-                )
+                // Structured Brand Name
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                ) {
+                    Text(
+                        text = "MKR",
+                        style = thinHeaderStyle.copy(
+                            fontSize = if (isCompactHeight) 36.sp else 42.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = "Music",
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = if (isCompactHeight) 36.sp else 42.sp,
+                        letterSpacing = (-0.8).sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(if (isCompactHeight) 6.dp else 10.dp))
 
-                // Punchy Tagline
+                // Tagline
                 Text(
                     text = "Your Music. Your Mood. Your World.",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = (-0.2).sp
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.sp,
+                        lineHeight = 24.sp
                     ),
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(if (isCompactHeight) 12.dp else 18.dp))
+                Spacer(modifier = Modifier.height(if (isCompactHeight) 16.dp else 26.dp))
 
-                // Alive Material Expressive sound badge
-                AliveCookieBadge()
+                // Structured Metadata Row: Expressive Cookie Version Tag + Developer Chip
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically
+                ) {
+                    AliveCookieBadge()
 
-                Spacer(modifier = Modifier.height(if (isCompactHeight) 12.dp else 20.dp))
-
-                // Developer attribution chip linking to profile
-                WelcomeDeveloperChip(
-                    onClick = { onOpenUrl(com.music.mkr.github.GitHubConfig.DEV_GITHUB_URL) }
-                )
+                    WelcomeDeveloperChip(
+                        onClick = { onOpenUrl(com.music.mkr.github.GitHubConfig.DEV_GITHUB_URL) }
+                    )
+                }
             }
         }
     }
@@ -1817,36 +1825,37 @@ private fun AliveCookieBadge(
     )
 
     Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
+        border = BorderStroke(1.2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
         modifier = modifier
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
+            modifier = Modifier.padding(start = 8.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(20.dp)
+                    .size(22.dp)
                     .graphicsLayer { rotationZ = cookieRotation }
                     .background(MaterialTheme.colorScheme.primary, MaterialShapes.Cookie12Sided.toShape()),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .size(6.dp)
-                        .background(MaterialTheme.colorScheme.onPrimary, CircleShape)
+                        .size(7.dp)
+                        .background(MaterialTheme.colorScheme.onPrimary, MaterialShapes.Cookie6Sided.toShape())
                 )
             }
             Text(
-                text = "Expressive Sound Experience",
-                style = MaterialTheme.typography.labelMedium.copy(
+                text = "v${BuildConfig.VERSION_NAME}",
+                style = MaterialTheme.typography.labelLarge.copy(
                     fontFamily = GoogleSansFlex,
-                    fontWeight = FontWeight.SemiBold
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.4.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     }
