@@ -30,19 +30,16 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import com.music.mkr.constants.QueuePeekHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -50,11 +47,9 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.media3.common.Player
 import androidx.navigation.NavController
 import com.music.mkr.R
 import com.music.mkr.models.MediaMetadata
@@ -68,7 +63,6 @@ import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
 import com.music.mkr.ui.theme.PlayerSliderColors
 import com.music.mkr.constants.PlayerBackgroundStyle
-import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
@@ -88,8 +82,6 @@ fun MinimalPlayer(
     sliderPosition: Long?,
     position: Long,
     duration: Long,
-    repeatMode: Int,
-    shuffleModeEnabled: Boolean,
     isLiked: Boolean,
     playerConnection: PlayerConnection,
     navController: NavController,
@@ -131,25 +123,14 @@ fun MinimalPlayer(
             ),
         artworkFraction = 0.85f,
         artwork = { size ->
-            Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.surface
+            FullPlayerArtwork(
+                metadata = mediaMetadata,
+                itemArtwork = itemArtwork,
+                animate = animateArtwork,
+                backgroundColor = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.surface
                     else Color.Transparent,
-                shadowElevation = if (isPlaying) 10.dp else 4.dp,
-                modifier = Modifier
-                    .size(size)
-                    .scale(artworkScale)
-            ) {
-                ImmersiveArtwork(
-                    trackId = mediaMetadata.id,
-                    thumbnail = mediaMetadata.thumbnailUrl,
-                    itemArtwork = itemArtwork,
-                    animate = animateArtwork,
-                    backgroundColor = Color.Transparent,
-                    modifier = Modifier.fillMaxSize(),
-                    contentDescription = mediaMetadata.title,
-                )
-            }
+                modifier = Modifier.size(size).scale(artworkScale),
+            )
         },
     ) {
 
@@ -265,49 +246,6 @@ fun MinimalPlayer(
             playIconSize = 32.dp,
             sideIconSize = 32.dp,
             haptic = haptic,
-            leadingControl = {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable(role = Role.Button) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.shuffle),
-                        contentDescription = stringResource(R.string.shuffle),
-                        tint = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 1f else 0.4f),
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            },
-            trailingControl = {
-                Box(
-                    modifier = Modifier
-                        .size(40.dp)
-                        .clip(RoundedCornerShape(10.dp))
-                        .clickable(role = Role.Button) {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.player.toggleRepeatMode()
-                        },
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        painter = painterResource(
-                            when {
-                                repeatMode == Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                                else -> R.drawable.repeat
-                            }
-                        ),
-                        contentDescription = stringResource(R.string.repeat),
-                        tint = textBackgroundColor.copy(alpha = if (repeatMode == Player.REPEAT_MODE_OFF) 0.4f else 1f),
-                        modifier = Modifier.size(22.dp)
-                    )
-                }
-            }
         )
 
         Spacer(Modifier.height(16.dp))

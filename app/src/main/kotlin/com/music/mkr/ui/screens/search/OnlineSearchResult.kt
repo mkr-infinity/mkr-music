@@ -190,6 +190,10 @@ fun OnlineSearchResult(
 
     BackHandler(enabled = searchActive, onBack = ::dismissInput)
 
+    LaunchedEffect(searchActive, filter, featured != null) {
+        if (!searchActive && featured != null) grid.requestScrollToItem(0)
+    }
+
     LaunchedEffect(grid, filter) {
         snapshotFlow {
             filter?.value?.let { viewModel.viewStateMap[it]?.continuation }?.takeIf {

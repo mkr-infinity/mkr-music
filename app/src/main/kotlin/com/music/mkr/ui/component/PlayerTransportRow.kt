@@ -168,7 +168,8 @@ fun PlayerTransportRow(
         val inlineAuxiliary = !immersive &&
             maxWidth >= effectivePlayWidth + effectiveSideWidth * 2 + 48.dp * auxiliaryCount + 24.dp
         val gap = when {
-            immersive -> 8.dp
+            immersive -> 12.dp
+            auxiliaryCount == 0 -> 24.dp
             inlineAuxiliary -> 12.dp
             else -> 4.dp
         }

@@ -14,7 +14,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -60,8 +59,6 @@ import com.music.mkr.listentogether.ListenTogetherManager
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.CastConnectionHandler
 import com.music.mkr.playback.PlayerConnection
-import com.music.mkr.ui.screens.settings.DarkMode
-import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
@@ -79,14 +76,10 @@ internal fun AppleMiniPlayer(
     
     // Theme settings
     val pureBlack by rememberPreference(PureBlackMiniPlayerKey, defaultValue = false)
-    val isSystemInDarkTheme = isSystemInDarkTheme()
-    val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
-    val useDarkTheme = remember(darkTheme, isSystemInDarkTheme) {
-        if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
-    }
     
     val savedMiniPlayerBackground by rememberPreference(MiniPlayerBackgroundStyleKey, "")
-    val miniPlayerBackground = resolveMiniPlayerBackground(savedMiniPlayerBackground)
+    val miniPlayerBackground = if (pureBlack) PlayerBackgroundStyle.DEFAULT
+        else resolveMiniPlayerBackground(savedMiniPlayerBackground)
     
     // Player states
     val playbackState by playerConnection.playbackState.collectAsState()
@@ -151,11 +144,11 @@ internal fun AppleMiniPlayer(
     
     // Dynamic cohesive colors
     val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
-    val backgroundColor = if (pureBlack && useDarkTheme) Color.Black else if (isDynamicBackground) Color.Transparent else artworkPalette.surfaceElevated
+    val backgroundColor = if (pureBlack) Color.Black else if (isDynamicBackground) Color.Transparent else artworkPalette.surfaceElevated
     
     val primaryColor = artworkPalette.primaryAccent
     val outlineColor = if (isDynamicBackground) Color.White.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline
-    val onSurfaceColor = artworkPalette.textPrimary
+    val onSurfaceColor = if (pureBlack) Color.White else artworkPalette.textPrimary
     val errorColor = MaterialTheme.colorScheme.error
 
     val previousTrackLabel = stringResource(R.string.previous_track)

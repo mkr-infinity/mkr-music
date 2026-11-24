@@ -30,12 +30,10 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import com.music.mkr.constants.QueuePeekHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -54,7 +52,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.music.mkr.ui.component.PlayerTransportRow
 import com.music.mkr.ui.component.TransportVariant
-import androidx.media3.common.Player
 import androidx.navigation.NavController
 import com.music.mkr.R
 import com.music.mkr.models.MediaMetadata
@@ -66,7 +63,6 @@ import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
 import com.music.mkr.ui.theme.PlayerSliderColors
 import com.music.mkr.constants.PlayerBackgroundStyle
-import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
@@ -86,8 +82,6 @@ fun CinematicPlayer(
     sliderPosition: Long?,
     position: Long,
     duration: Long,
-    repeatMode: Int,
-    shuffleModeEnabled: Boolean,
     isLiked: Boolean,
     playerConnection: PlayerConnection,
     navController: NavController,
@@ -129,25 +123,14 @@ fun CinematicPlayer(
             ),
         artworkFraction = 0.90f,
         artwork = { size ->
-            Surface(
-                shape = RoundedCornerShape(26.dp),
-                color = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.surface
+            FullPlayerArtwork(
+                metadata = mediaMetadata,
+                itemArtwork = itemArtwork,
+                animate = animateArtwork,
+                backgroundColor = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.surface
                     else Color.Transparent,
-                shadowElevation = if (isPlaying) 16.dp else 8.dp,
-                modifier = Modifier
-                    .size(size)
-                    .scale(artworkScale)
-            ) {
-                ImmersiveArtwork(
-                    trackId = mediaMetadata.id,
-                    thumbnail = mediaMetadata.thumbnailUrl,
-                    itemArtwork = itemArtwork,
-                    animate = animateArtwork,
-                    backgroundColor = Color.Transparent,
-                    modifier = Modifier.fillMaxSize(),
-                    contentDescription = mediaMetadata.title,
-                )
-            }
+                modifier = Modifier.size(size).scale(artworkScale),
+            )
         },
     ) {
 
@@ -264,51 +247,6 @@ fun CinematicPlayer(
             playIconSize = 40.dp,
             sideIconSize = 32.dp,
             haptic = haptic,
-            leadingControl = {
-                Surface(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    color = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 0.22f else 0.08f),
-                    modifier = Modifier.size(46.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(R.drawable.shuffle),
-                            contentDescription = stringResource(R.string.shuffle),
-                            tint = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 1f else 0.6f),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-            },
-            trailingControl = {
-                Surface(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.player.toggleRepeatMode()
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    color = textBackgroundColor.copy(alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.22f else 0.08f),
-                    modifier = Modifier.size(46.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(
-                                when (repeatMode) {
-                                    Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                                    else -> R.drawable.repeat
-                                }
-                            ),
-                            contentDescription = stringResource(R.string.repeat),
-                            tint = textBackgroundColor.copy(alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 1f else 0.6f),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-            }
         )
 
         Spacer(Modifier.height(16.dp))

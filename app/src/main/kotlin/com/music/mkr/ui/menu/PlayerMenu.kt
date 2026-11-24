@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
@@ -83,6 +84,7 @@ import com.music.mkr.utils.oem.SystemMediaControlResolver
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.ListItemHeight
+import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.listentogether.ConnectionState
 import com.music.mkr.listentogether.ListenTogetherEvent
 import com.music.mkr.models.MediaMetadata
@@ -373,6 +375,37 @@ fun PlayerMenu(
             Material3MenuGroup(
                 expressive = true,
                 items = buildList {
+                    if (isQueueTrigger != true && !isListenTogetherGuest) {
+                        add(
+                            Material3MenuItemData(
+                                title = { Text(stringResource(R.string.shuffle)) },
+                                description = {
+                                    val enabled by playerConnection.shuffleModeEnabled.collectAsState()
+                                    Text(stringResource(if (enabled) R.string.enabled else R.string.disabled))
+                                },
+                                icon = { Icon(painterResource(R.drawable.shuffle), contentDescription = null) },
+                                onClick = {
+                                    val player = playerConnection.player
+                                    player.shuffleModeEnabled = !player.shuffleModeEnabled
+                                },
+                            )
+                        )
+                        add(
+                            Material3MenuItemData(
+                                title = { Text(stringResource(R.string.repeat)) },
+                                description = {
+                                    val mode by playerConnection.repeatMode.collectAsState()
+                                    Text(stringResource(when (mode) {
+                                        Player.REPEAT_MODE_ONE -> R.string.repeat_mode_one
+                                        Player.REPEAT_MODE_ALL -> R.string.repeat_mode_all
+                                        else -> R.string.repeat_mode_off
+                                    }))
+                                },
+                                icon = { Icon(painterResource(R.drawable.repeat), contentDescription = null) },
+                                onClick = { playerConnection.player.toggleRepeatMode() },
+                            )
+                        )
+                    }
                     // ── Single smart Retry button ────────────────────────────
                     // Always visible. Re-triggers the full resolution chain.
                     add(

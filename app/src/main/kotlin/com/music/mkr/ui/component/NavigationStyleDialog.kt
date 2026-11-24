@@ -232,21 +232,6 @@ private fun NavigationStyleMiniPreview(
         contentAlignment = Alignment.Center
     ) {
         when (style) {
-            NavigationStyle.AMBER_DOCK -> {
-                // Dock with an underline under the active tab.
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
-                        Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)))
-                        Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)))
-                    }
-                    Spacer(Modifier.height(3.dp))
-                    Box(Modifier.width(12.dp).height(2.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
-                }
-            }
             NavigationStyle.FLOATING_GLASS, NavigationStyle.EXPRESSIVE_PILL -> {
                 val compact = style == NavigationStyle.EXPRESSIVE_PILL
                 val colors = MaterialTheme.colorScheme
@@ -283,8 +268,8 @@ private fun NavigationStyleMiniPreview(
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        Modifier.size(width = 15.dp, height = 11.dp)
-                            .background(MaterialTheme.colorScheme.primaryContainer, navigationFace(1f)),
+                        Modifier.size(12.dp)
+                            .background(MaterialTheme.colorScheme.primaryContainer, navigationFace(0f)),
                         contentAlignment = Alignment.Center,
                     ) {
                         Box(Modifier.size(4.dp).background(MaterialTheme.colorScheme.onPrimaryContainer, CircleShape))

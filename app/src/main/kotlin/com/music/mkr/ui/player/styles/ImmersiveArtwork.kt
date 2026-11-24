@@ -8,6 +8,9 @@ package com.music.mkr.ui.player.styles
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
@@ -17,10 +20,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -28,12 +33,58 @@ import coil3.request.crossfade
 import coil3.size.Scale
 import com.music.mkr.R
 import com.music.mkr.constants.DataSaverKey
+import com.music.mkr.constants.CropAlbumArtKey
+import com.music.mkr.constants.HidePlayerThumbnailKey
+import com.music.mkr.constants.PlayerThumbnailShadowElevationKey
+import com.music.mkr.constants.RotatingThumbnailKey
+import com.music.mkr.constants.ShowPlayerThumbnailShadowKey
+import com.music.mkr.constants.ThumbnailCornerRadiusKey
+import com.music.mkr.models.MediaMetadata
+import com.music.mkr.ui.component.LocalPlaybackCookieAngle
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.rememberPreference
 
 private const val LibraryArtworkSize = 544
 private const val ExpandedArtworkSize = 1200
 private const val DecodeSizeStep = 128
+
+@Composable
+internal fun FullPlayerArtwork(
+    metadata: MediaMetadata,
+    itemArtwork: String?,
+    animate: Boolean,
+    backgroundColor: Color,
+    modifier: Modifier = Modifier,
+) {
+    val hidden by rememberPreference(HidePlayerThumbnailKey, false)
+    if (hidden) return
+
+    val crop by rememberPreference(CropAlbumArtKey, false)
+    val radius by rememberPreference(ThumbnailCornerRadiusKey, 3f)
+    val showShadow by rememberPreference(ShowPlayerThumbnailShadowKey, false)
+    val shadow by rememberPreference(PlayerThumbnailShadowElevationKey, 8f)
+    val rotate by rememberPreference(RotatingThumbnailKey, false)
+    val angle = LocalPlaybackCookieAngle.current
+    Surface(
+        modifier = modifier,
+        shape = if (rotate) CircleShape else RoundedCornerShape(radius.coerceIn(0f, 45f).dp),
+        color = backgroundColor,
+        shadowElevation = if (showShadow) shadow.coerceAtLeast(0f).dp else 0.dp,
+    ) {
+        ImmersiveArtwork(
+            trackId = metadata.id,
+            thumbnail = metadata.thumbnailUrl,
+            itemArtwork = itemArtwork,
+            animate = animate,
+            backgroundColor = Color.Transparent,
+            contentScale = if (crop) ContentScale.Crop else ContentScale.Fit,
+            contentDescription = metadata.title,
+            modifier = Modifier.fillMaxSize().graphicsLayer {
+                rotationZ = if (rotate && animate) angle?.value ?: 0f else 0f
+            },
+        )
+    }
+}
 
 internal data class ImmersiveArtworkSource(
     val url: String,

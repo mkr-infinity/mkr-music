@@ -164,7 +164,6 @@ import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.AudioQuality
 import com.music.mkr.constants.AudioQualityKey
-import com.music.mkr.constants.CropAlbumArtKey
 import com.music.mkr.constants.DarkModeKey
 import com.music.mkr.constants.HidePlayerThumbnailKey
 import com.music.mkr.constants.EnableLyricsThumbnailPlayPauseKey
@@ -191,7 +190,6 @@ import com.music.mkr.constants.ShowAudioQualityBadgeKey
 import com.music.mkr.db.entities.LyricsEntity
 import com.music.mkr.extensions.SwipeGesture
 import com.music.mkr.extensions.togglePlayPause
-import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.listentogether.RoomRole
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.ExoDownloadService
@@ -264,7 +262,6 @@ fun BottomSheetPlayer(
         defaultValue = true
     )
     val (hidePlayerThumbnail, onHidePlayerThumbnailChange) = rememberPreference(HidePlayerThumbnailKey, false)
-    val cropAlbumArt by rememberPreference(CropAlbumArtKey, false)
     val playerStyleName by rememberPreference(PlayerStyleKey, PlayerStyle.DEFAULT.name)
     val playerStyle = remember(playerStyleName) { PlayerStyle.fromString(playerStyleName) }
     val savedPlayerBackground by rememberPreference(PlayerBackgroundStyleKey, "")
@@ -336,7 +333,6 @@ fun BottomSheetPlayer(
     val currentLyrics by playerConnection.currentLyrics.collectAsState(initial = null)
     val currentFormat by playerConnection.currentFormat.collectAsState(initial = null)
     val automix by playerConnection.service.automixItems.collectAsState()
-    val repeatMode by playerConnection.repeatMode.collectAsState()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
     val isMuted by playerConnection.isMuted.collectAsState()
@@ -1161,8 +1157,6 @@ fun BottomSheetPlayer(
                                 sliderPosition = sliderPosition,
                                 position = effectivePosition,
                                 duration = effectiveDuration,
-                                repeatMode = repeatMode,
-                                shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
                                 isLiked = isCurrentTrackLiked,
                                 playerConnection = playerConnection,
                                 navController = navController,
@@ -1189,8 +1183,6 @@ fun BottomSheetPlayer(
                                 sliderPosition = sliderPosition,
                                 position = effectivePosition,
                                 duration = effectiveDuration,
-                                repeatMode = repeatMode,
-                                shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
                                 isLiked = isCurrentTrackLiked,
                                 playerConnection = playerConnection,
                                 navController = navController,
@@ -1220,8 +1212,6 @@ fun BottomSheetPlayer(
                                 sliderPosition = sliderPosition,
                                 position = effectivePosition,
                                 duration = effectiveDuration,
-                                repeatMode = repeatMode,
-                                shuffleModeEnabled = playerConnection.player.shuffleModeEnabled,
                                 isLiked = isCurrentTrackLiked,
                                 currentFormat = currentFormat,
                                 playerConnection = playerConnection,

@@ -34,7 +34,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -42,17 +41,14 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.media3.common.Player
 import androidx.navigation.NavController
 import com.music.mkr.R
 import com.music.mkr.constants.QueuePeekHeight
 import com.music.mkr.db.entities.FormatEntity
-import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.ui.component.BottomSheetState
@@ -84,8 +80,6 @@ fun ImmersivePlayer(
     sliderPosition: Long?,
     position: Long,
     duration: Long,
-    repeatMode: Int,
-    shuffleModeEnabled: Boolean,
     isLiked: Boolean,
     currentFormat: FormatEntity?,
     playerConnection: PlayerConnection,
@@ -100,7 +94,6 @@ fun ImmersivePlayer(
     val titleActions = rememberPlayerTitleActions(mediaMetadata, navController, state)
 
     val secondaryForeground = foreground.copy(alpha = 0.82f)
-    val subtitle = mediaMetadata.album?.title ?: stringResource(R.string.queue)
     val closeLabel = stringResource(R.string.close)
     val sheetScrollConnection = remember(state) { state.preUpPostDownNestedScrollConnection }
 
@@ -133,14 +126,12 @@ fun ImmersivePlayer(
             if (artworkIsBackdrop) {
                 Spacer(Modifier.size(size))
             } else {
-                ImmersiveArtwork(
-                    trackId = mediaMetadata.id,
-                    thumbnail = mediaMetadata.thumbnailUrl,
+                FullPlayerArtwork(
+                    metadata = mediaMetadata,
                     itemArtwork = itemArtwork,
                     animate = animateArtwork,
                     backgroundColor = foreground.copy(alpha = 0.05f),
-                    modifier = Modifier.size(size).clip(MaterialTheme.shapes.large),
-                    contentDescription = mediaMetadata.title,
+                    modifier = Modifier.size(size),
                 )
             }
         },
@@ -156,7 +147,7 @@ fun ImmersivePlayer(
                     Box(
                         Modifier
                             .size(width = 32.dp, height = 4.dp)
-                            .background(secondaryForeground, CircleShape)
+                            .background(Color.Transparent, CircleShape)
                     )
                 }
 
@@ -178,9 +169,11 @@ fun ImmersivePlayer(
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold,
                             color = foreground,
-                            maxLines = 2,
+                            maxLines = 1,
+                            softWrap = false,
                             overflow = TextOverflow.Ellipsis,
                             modifier = Modifier.clickable { titleActions.onTitleClick() }
+                                .then(if (animateArtwork) Modifier.basicMarquee() else Modifier),
                         )
                         Spacer(Modifier.height(4.dp))
                         ClickableArtists(
@@ -189,14 +182,6 @@ fun ImmersivePlayer(
                             style = MaterialTheme.typography.bodyLarge,
                             color = secondaryForeground,
                             modifier = if (animateArtwork) Modifier.basicMarquee() else Modifier
-                        )
-                        Text(
-                            text = "${stringResource(R.string.playing_from)} · $subtitle",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = secondaryForeground,
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                            modifier = Modifier.padding(top = 4.dp),
                         )
                     }
 
@@ -289,43 +274,6 @@ fun ImmersivePlayer(
                 playIconSize = 44.dp,
                 sideIconSize = 40.dp,
                 haptic = haptic,
-                leadingControl = {
-                    IconButton(
-                        modifier = Modifier.semantics { selected = shuffleModeEnabled },
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
-                        },
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.shuffle),
-                            contentDescription = stringResource(R.string.shuffle),
-                            tint = if (shuffleModeEnabled) primaryButtonColor else secondaryForeground,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                },
-                trailingControl = {
-                    IconButton(
-                        modifier = Modifier.semantics { selected = repeatMode != Player.REPEAT_MODE_OFF },
-                        onClick = {
-                            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                            playerConnection.player.toggleRepeatMode()
-                        },
-                    ) {
-                        Icon(
-                            painter = painterResource(
-                                when (repeatMode) {
-                                    Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                                    else -> R.drawable.repeat
-                                }
-                            ),
-                            contentDescription = stringResource(R.string.repeat),
-                            tint = if (repeatMode != Player.REPEAT_MODE_OFF) primaryButtonColor else secondaryForeground,
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
             )
 
             Spacer(Modifier.height(16.dp))

@@ -153,26 +153,9 @@ fun AppNavigationBar(
     slimNav: Boolean = false,
     onSearchLongClick: (() -> Unit)? = null,
     navigationStyle: NavigationStyle = NavigationStyle.DEFAULT,
-    floatingNav: Boolean = true,
     bottomInset: Dp = 0.dp
 ) {
-    val effectiveStyle = if (!floatingNav && navigationStyle == NavigationStyle.DEFAULT) {
-        NavigationStyle.CLEAN_MATERIAL
-    } else {
-        navigationStyle
-    }
-
-    when (effectiveStyle) {
-        NavigationStyle.AMBER_DOCK -> AmberDockNavigationBar(
-            navigationItems = navigationItems,
-            currentRoute = currentRoute,
-            onItemClick = onItemClick,
-            modifier = modifier,
-            pureBlack = pureBlack,
-            slimNav = slimNav,
-            onSearchLongClick = onSearchLongClick,
-            bottomInset = bottomInset
-        )
+    when (navigationStyle) {
         NavigationStyle.FLOATING_GLASS -> FloatingGlassNavigationBar(
             navigationItems = navigationItems,
             currentRoute = currentRoute,

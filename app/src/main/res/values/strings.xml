@@ -305,9 +305,7 @@
     <string name="nav_style_expressive_pill">Expressive Expanding Navigation</string>
     <string name="nav_style_expressive_pill_desc">Compact glass capsule that expands to reveal the active label</string>
     <string name="nav_style_clean_material">Material 3 Navigation</string>
-    <string name="nav_style_clean_material_desc">Edge-aligned Material 3 bar with a growing selection indicator</string>
-    <string name="nav_style_amber_dock">MKR Signature Navigation</string>
-    <string name="nav_style_amber_dock_desc">Raised glass dock with a lifting tab and signature underline</string>
+    <string name="nav_style_clean_material_desc">Labeled tabs with a soft cookie-shaped highlight</string>
     <string name="customize_navigation_tabs">Customize navigation tabs</string>
     <string name="player">Player</string>
     <string name="player_text_alignment">Player text alignment</string>

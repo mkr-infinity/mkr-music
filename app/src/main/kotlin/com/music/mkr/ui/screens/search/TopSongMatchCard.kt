@@ -72,17 +72,17 @@ internal fun TopSongMatchCard(
 
     Box(modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
         Surface(
-            modifier = Modifier.widthIn(max = 480.dp).fillMaxWidth(),
+            modifier = Modifier.widthIn(max = 520.dp).fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
             color = colors.surfaceContainer,
         ) {
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    horizontalArrangement = Arrangement.spacedBy(14.dp),
                 ) {
-                    SearchArtwork(song, Modifier.size(48.dp), MaterialTheme.shapes.medium, pixels = 256)
-                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    SearchArtwork(song, Modifier.size(80.dp), MaterialTheme.shapes.large, pixels = 256)
+                    Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                         Text(
                             stringResource(R.string.search_top_song_match),
                             style = MaterialTheme.typography.labelSmall,
@@ -92,7 +92,7 @@ internal fun TopSongMatchCard(
                         Text(
                             song.title,
                             style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
+                            fontWeight = FontWeight.Bold,
                             maxLines = 2,
                             overflow = TextOverflow.Ellipsis,
                         )
@@ -110,8 +110,8 @@ internal fun TopSongMatchCard(
                 }
 
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
                     AnimatedActionButton(
                         onClick = {
@@ -122,10 +122,10 @@ internal fun TopSongMatchCard(
                             }
                         },
                         animate = animate,
-                        compact = true,
+                        compact = false,
                     ) {
-                        Icon(painterResource(R.drawable.play), null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
+                        Icon(painterResource(R.drawable.play), null, Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.play))
                     }
                     AnimatedActionButton(
@@ -137,11 +137,11 @@ internal fun TopSongMatchCard(
                             }
                         },
                         animate = animate,
-                        compact = true,
+                        compact = false,
                         emphasis = ActionButtonEmphasis.Tonal,
                     ) {
-                        Icon(painterResource(R.drawable.playlist_play), null, Modifier.size(18.dp))
-                        Spacer(Modifier.width(6.dp))
+                        Icon(painterResource(R.drawable.playlist_play), null, Modifier.size(20.dp))
+                        Spacer(Modifier.width(8.dp))
                         Text(stringResource(R.string.search_add_to_play_next))
                     }
                 }

@@ -132,6 +132,10 @@ fun LocalSearchScreen(
         viewModel.query.value = lookupQuery
     }
 
+    LaunchedEffect(lookupQuery, searchFilter, featured != null) {
+        if (featured != null) lazyListState.requestScrollToItem(0)
+    }
+
     Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
         LazyVerticalGrid(
             columns = GridCells.Adaptive(320.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)),

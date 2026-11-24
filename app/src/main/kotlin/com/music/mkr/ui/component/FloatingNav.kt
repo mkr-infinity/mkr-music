@@ -9,7 +9,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -26,7 +25,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,7 +33,6 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -77,6 +74,7 @@ import androidx.compose.ui.unit.dp
 import androidx.graphics.shapes.Morph
 import com.music.mkr.R
 import com.music.mkr.constants.InterfaceAnimationsKey
+import com.music.mkr.constants.NavigationStyle
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.ui.screens.Screens
 
@@ -133,173 +131,16 @@ fun isNavRouteSelected(currentRoute: String?, screenRoute: String, navigationIte
             currentRoute.startsWith("$screenRoute/")
 }
 
-// ---------------------------------------------------------------------------
-// MKR Signature Navigation
-// A raised glass dock with a lifting selection and signature underline.
-// ---------------------------------------------------------------------------
-@Composable
-fun AmberDockNavigationBar(
-    navigationItems: List<Screens>,
-    currentRoute: String?,
-    onItemClick: (Screens, Boolean) -> Unit,
-    modifier: Modifier = Modifier,
-    pureBlack: Boolean = false,
-    slimNav: Boolean = false,
-    onSearchLongClick: (() -> Unit)? = null,
-    bottomInset: Dp = 0.dp,
-) {
-    val amberBorderColor = if (pureBlack) {
-        Color(0x55F59E0B)
-    } else {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)
-    }
-
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = 20.dp)
-            .padding(bottom = bottomInset + 12.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Row(
-            modifier = Modifier
-                .widthIn(max = 500.dp)
-                .fillMaxWidth()
-                .height(68.dp)
-                .shadow(5.dp, CircleShape)
-                .navigationGlass(CircleShape, pureBlack, rim = amberBorderColor)
-                .padding(horizontal = 8.dp)
-                .selectableGroup(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceEvenly
-        ) {
-            navigationItems.forEach { screen ->
-                val isSelected = remember(currentRoute, screen.route) {
-                    isNavRouteSelected(currentRoute, screen.route, navigationItems)
-                }
-
-                AmberDockItem(
-                    screen = screen,
-                    isSelected = isSelected,
-                    onClick = { onItemClick(screen, isSelected) },
-                    slimNav = slimNav,
-                    modifier = Modifier.weight(1f).fillMaxHeight(),
-                    onSearchLongClick = onSearchLongClick
-                )
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun AmberDockItem(
-    screen: Screens,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    slimNav: Boolean,
-    modifier: Modifier = Modifier,
-    onSearchLongClick: (() -> Unit)? = null,
-) {
-    val interactionSource = remember { MutableInteractionSource() }
-    val animate by rememberPreference(InterfaceAnimationsKey, true)
-    val lift by animateDpAsState(
-        targetValue = if (isSelected) (-2).dp else 0.dp,
-        animationSpec = spring(stiffness = Spring.StiffnessMediumLow),
-        label = "dock_selection_lift",
-    )
-
-    val targetShape = if (isSelected) 0.82f else 1f
-    val morph by animateFloatAsState(targetShape, label = "signature_tab_shape")
-    val faceShape = navigationFace(if (animate) morph else targetShape)
-    val iconRes = if (isSelected) screen.iconIdActive else screen.iconIdInactive
-    val contentColor = if (isSelected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-
-    val targetSlotColor = if (isSelected) {
-        MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.70f)
-    } else {
-        Color.Transparent
-    }
-    val slotBgColor by animateColorAsState(
-        targetValue = targetSlotColor,
-        animationSpec = tween(durationMillis = 180, easing = FastOutSlowInEasing),
-        label = "amberSlotBg"
-    )
-
-    val indicatorWidth by animateDpAsState(
-        targetValue = if (isSelected) 28.dp else 0.dp,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioNoBouncy,
-            stiffness = Spring.StiffnessMediumLow
-        ),
-        label = "amberIndicatorWidth"
-    )
-
-    Box(
-        modifier = modifier
-            .semantics { selected = isSelected }
-            .clip(RoundedCornerShape(16.dp))
-            .combinedClickable(
-                interactionSource = interactionSource,
-                indication = ripple(),
-                role = Role.Tab,
-                onClick = onClick,
-                onLongClick = onSearchLongClick.takeIf { screen == Screens.Search },
-            ),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .mkrPressFeedback(0.96f, interactionSource, animate)
-                .graphicsLayer { translationY = if (animate) lift.toPx() else 0f }
-                .background(if (animate) slotBgColor else targetSlotColor, faceShape)
-                .padding(vertical = 5.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Icon(
-                painter = painterResource(id = iconRes),
-                contentDescription = if (slimNav) stringResource(screen.titleId) else null,
-                tint = contentColor,
-                modifier = Modifier.size(23.dp)
-            )
-
-            if (!slimNav) {
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = stringResource(screen.titleId),
-                    color = contentColor,
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Spacer(modifier = Modifier.height(3.dp))
-
-            // Signature underline.
-            Box(
-                modifier = Modifier
-                    .width(if (animate) indicatorWidth else if (isSelected) 28.dp else 0.dp)
-                    .height(3.dp)
-                    .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.primary)
-            )
-        }
-    }
-}
-
 private fun floatingGlassCapsuleHeight(slim: Boolean) = if (slim) 52.dp else 56.dp
 private fun floatingGlassBottomPadding(slim: Boolean) = if (slim) 6.dp else 8.dp
 
-internal fun floatingGlassNavigationHeight(slim: Boolean) =
-    floatingGlassCapsuleHeight(slim) + floatingGlassBottomPadding(slim)
+private fun materialNavigationHeight(slim: Boolean) = if (slim) 56.dp else 72.dp
+
+internal fun bottomNavigationHeight(style: NavigationStyle, slim: Boolean): Dp = when (style) {
+    NavigationStyle.FLOATING_GLASS -> floatingGlassCapsuleHeight(slim) + floatingGlassBottomPadding(slim)
+    NavigationStyle.EXPRESSIVE_PILL -> 56.dp + if (slim) 8.dp else 14.dp
+    NavigationStyle.CLEAN_MATERIAL -> materialNavigationHeight(slim) + 4.dp
+}
 
 @Composable
 fun FloatingGlassNavigationBar(
@@ -354,10 +195,17 @@ private fun CapsuleNavigationBar(
         slimNav -> 8.dp
         else -> 14.dp
     }
-    val capsuleHeight = if (floatingGlass) floatingGlassCapsuleHeight(slimNav)
-        else if (slimNav || compact) 56.dp else 66.dp
-    val capsuleSurface = if (floatingGlass) Modifier.frostedNavigationCapsule(pureBlack)
-        else Modifier.navigationGlass(CircleShape, pureBlack)
+    val capsuleHeight = when {
+        floatingGlass -> floatingGlassCapsuleHeight(slimNav)
+        anchored -> materialNavigationHeight(slimNav)
+        else -> 56.dp
+    }
+    val shell = if (anchored) RoundedCornerShape(22.dp) else CircleShape
+    val capsuleSurface = when {
+        floatingGlass -> Modifier.frostedNavigationCapsule(pureBlack)
+        anchored -> Modifier.background(if (pureBlack) Color.Black else colors.surfaceContainer, shell)
+        else -> Modifier.navigationGlass(shell, pureBlack)
+    }
     BoxWithConstraints(
         modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = bottomInset + bottomPadding),
         contentAlignment = Alignment.Center,
@@ -374,7 +222,7 @@ private fun CapsuleNavigationBar(
             modifier = Modifier
                 .width(capsuleWidth)
                 .height(capsuleHeight)
-                .shadow(if (floatingGlass) 2.dp else 3.dp, CircleShape)
+                .shadow(if (anchored) 0.dp else if (floatingGlass) 2.dp else 3.dp, shell)
                 .then(capsuleSurface)
                 .padding(horizontal = 6.dp, vertical = if (floatingGlass) 2.dp else 4.dp),
         ) {
@@ -422,7 +270,6 @@ private fun CapsuleNavigationBar(
                         showLabel = labelsFit && (!compact || isSelected),
                         inlineLabel = compact,
                         ownIndicator = compact || anchored,
-                        floatingGlass = floatingGlass,
                         anchored = anchored,
                         animate = animate,
                         onClick = { onItemClick(screen, isSelected) },
@@ -443,7 +290,6 @@ private fun CapsuleNavigationItem(
     showLabel: Boolean,
     inlineLabel: Boolean,
     ownIndicator: Boolean,
-    floatingGlass: Boolean,
     anchored: Boolean,
     animate: Boolean,
     onClick: () -> Unit,
@@ -481,24 +327,15 @@ private fun CapsuleNavigationItem(
             ),
         contentAlignment = Alignment.Center,
     ) {
-        if (anchored) {
-            val width = if (animate) morph else targetMorph
-            Box(
-                Modifier.align(Alignment.Center)
-                    .width(70.dp)
-                    .fillMaxHeight(0.86f)
-                    .graphicsLayer { scaleX = width }
-                    .background(colors.primaryContainer, shape),
-            )
-        }
         val face = Modifier.fillMaxSize().padding(horizontal = 2.dp)
             .mkrPressFeedback(0.97f, interaction, animate)
             .then(if (ownIndicator) Modifier.background(if (animate) fill else targetColor, shape) else Modifier)
             .padding(horizontal = 5.dp)
         val icon: @Composable () -> Unit = {
             val iconId = when {
-                floatingGlass && screen == Screens.Search -> R.drawable.nav_search
-                floatingGlass && screen == Screens.Library -> R.drawable.nav_library
+                screen == Screens.Search -> R.drawable.nav_search
+                screen == Screens.Library -> R.drawable.nav_library
+                screen == Screens.Home -> screen.iconIdInactive
                 isSelected -> screen.iconIdActive
                 else -> screen.iconIdInactive
             }
@@ -520,7 +357,29 @@ private fun CapsuleNavigationItem(
             )
         }
 
-        if (inlineLabel) {
+        if (anchored) {
+            val selection = if (animate) morph else targetMorph
+            val cookie = navigationFace(0f)
+            Column(
+                face,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
+            ) {
+                Box(Modifier.size(if (showLabel) 36.dp else 38.dp), contentAlignment = Alignment.Center) {
+                    Box(
+                        Modifier.fillMaxSize()
+                            .graphicsLayer {
+                                alpha = selection
+                                scaleX = 0.84f + selection * 0.16f
+                                scaleY = scaleX
+                            }
+                            .background(colors.primaryContainer, cookie)
+                    )
+                    icon()
+                }
+                if (showLabel) text()
+            }
+        } else if (inlineLabel) {
             Row(
                 face,
                 horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally),

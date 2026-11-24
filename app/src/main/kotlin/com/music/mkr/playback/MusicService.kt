@@ -2670,6 +2670,8 @@ class MusicService :
     override fun onIsPlayingChanged(isPlaying: Boolean) {
         updateOutgoingPlayback()
         if (isPlaying) {
+            mediaButtonStartupJob?.cancel()
+            mediaButtonStartupJob = null
             val mediaId = player.currentMediaItem?.mediaId
             if (mediaId != null) {
                 scheduleDelayedCache(mediaId)
@@ -4052,7 +4054,9 @@ class MusicService :
         mediaButtonStartupJob?.cancel()
         mediaButtonStartupJob = scope.launch {
             delay(5_000L)
-            if (!isPlaybackOngoing()) {
+            val playbackStarting = player.playWhenReady &&
+                (player.playbackState == Player.STATE_BUFFERING || player.playbackState == Player.STATE_READY)
+            if (!isPlaybackOngoing() && !playbackStarting) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf(startId)
             }

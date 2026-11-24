@@ -18,12 +18,13 @@
 ### Changed
 
 - **Onboarding** — Opens on first install and once per update, with existing settings kept. · *App launch*
-- **Navigation styles** — Connected capsules with distinct tab animations. Floating Glass takes up less space. · *Settings → Appearance → Misc → Navigation style*
+- **Navigation styles** — Three layouts with matching icons. Material 3 is the default and highlights the active tab with a soft cookie shape. · *Settings → Appearance → Misc → Navigation style*
 - **Floating Glass** — A compact active capsule scales with your screen. · *Bottom navigation → Floating Glass*
 - **Top actions** — History, Account, and Settings use matching cookie buttons. · *Home and Library*
 - **Player style picker** — Capsule previews and a clear selected style. · *Settings → Appearance → Full Player → Player style*
 - **Appearance selections** — Settings show the chosen player styles, backgrounds, and artwork corner radius. · *Settings → Appearance*
-- **Immersive player** — Larger artwork, compact song details, and icon-only transport controls. · *Settings → Appearance → Full Player → Player style → Immersive*
+- **Immersive player** — Larger artwork, scrolling title and artist, and a transparent dismiss handle. · *Settings → Appearance → Full Player → Player style → Immersive*
+- **Shuffle and repeat** — Moved into the expanded player's three-dot menu. · *Full player → More options*
 - **Mini-player controls** — Rounded transport icons with smaller Previous and Next cookies. · *Mini-player*
 - **Mini-player background** — Glow Motion is the default and replaces saved Blur selections. · *Settings → Appearance → Mini-player → Background style*
 - **Full-player settings** — Style and background controls now sit together. · *Settings → Appearance → Full Player*
@@ -43,7 +44,9 @@
 ### Fixed
 
 - **Settings entry** — Uses the current destination’s app bar from the first frame. · *Home or Library → Settings*
-- **Top Song Match placement** — A smaller card appears below the filters in All and Songs when there’s a match. · *Search → Results*
+- **Top Song Match** — Eligible matches appear below the filters in All and Songs without scrolling. · *Search → Results*
+- **Mini-player backgrounds** — Classic uses the selected background, and Pure Black overrides every style. · *Settings → Appearance → Mini-player*
+- **Player thumbnails** — Foreground covers honor crop, corner radius, and shadow. · *Settings → Appearance → Full Player*
 - **Queue reliability** — Reorder and remove tracks more safely. Wide screens get a side panel. · *Full player → Queue*
 - **Adaptive full player** — Artwork stays visible when the window is short. Scroll to reach all controls. · *Full player*
 - **Player sheet gestures** — Slow drags settle at the nearest position, including in short windows. · *Full player and Queue*
@@ -58,10 +61,12 @@
 - **Playlist feedback** — Closes the picker and confirms successful adds at the top. · *Song menu → Add to playlist*
 - **Crossfade startup** — Improved automatic track transitions. · *Settings → Player and audio → Crossfade*
 - **Idle media notification** — Clears when playback is dismissed. · *Mini-player → Close*
+- **Playback notification** — Startup cleanup leaves active or buffering playback alone. · *Android media controls*
 
 ### Removed
 
 - **Cached Songs scrollbar** — Scroll and fling directly on the song list. · *Library → Cached Songs*
+- **MKR Signature Navigation** — Saved selections fall back to Material 3 Navigation. · *Settings → Appearance → Misc → Navigation style*
 - **Mini-player effects** — Removed Micro Equalizer, Artwork Transition, and Capsule Morph. · *Settings → Appearance → Mini-player*
 - **Liquid Mini Player** — Saved selections use the default mini-player. · *Settings → Appearance → Mini-player*
 - **Material Extended, Modern, and Classic** — Saved selections use Cinematic. · *Settings → Appearance → Full Player → Player style*

@@ -197,13 +197,11 @@ import com.music.mkr.constants.PureBlackKey
 import com.music.mkr.constants.SYSTEM_DEFAULT
 import com.music.mkr.constants.SelectedThemeColorKey
 import com.music.mkr.constants.AutoHideNavBarKey
-import com.music.mkr.constants.SlimNavBarHeight
 import com.music.mkr.constants.SlimNavBarKey
 import com.music.mkr.constants.FloatingNavBarKey
 import com.music.mkr.constants.NavigationStyle
 import com.music.mkr.constants.NavigationStyleKey
 import com.music.mkr.constants.UseNewMiniPlayerDesignKey
-import com.music.mkr.constants.UseAppleMiniPlayerKey
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.SearchHistory
 import com.music.mkr.extensions.toEnum
@@ -215,7 +213,7 @@ import com.music.mkr.playback.MusicService.MusicBinder
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.playback.queues.YouTubeQueue
 import com.music.mkr.ui.component.AppNavigationBar
-import com.music.mkr.ui.component.floatingGlassNavigationHeight
+import com.music.mkr.ui.component.bottomNavigationHeight
 import com.music.mkr.ui.component.AppNavigationRail
 import com.music.mkr.ui.component.BottomSheetMenu
 import com.music.mkr.ui.component.BottomSheetPage
@@ -798,9 +796,11 @@ class MainActivity : ComponentActivity() {
                 val interfaceAnimations by rememberPreference(InterfaceAnimationsKey, true)
                 val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
                 val (floatingNav) = rememberPreference(FloatingNavBarKey, defaultValue = true)
-                val (navigationStyle) = rememberEnumPreference(NavigationStyleKey, defaultValue = NavigationStyle.DEFAULT)
+                val (configuredNavigationStyle) = rememberEnumPreference(NavigationStyleKey, defaultValue = NavigationStyle.DEFAULT)
+                val navigationStyle = if (!floatingNav && configuredNavigationStyle == NavigationStyle.FLOATING_GLASS) {
+                    NavigationStyle.CLEAN_MATERIAL
+                } else configuredNavigationStyle
                 val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
-                val (useAppleMiniPlayer) = rememberPreference(UseAppleMiniPlayerKey, defaultValue = false)
                 val defaultOpenTab = remember {
                     dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)
                 }
@@ -897,11 +897,8 @@ class MainActivity : ComponentActivity() {
                     }
                 }
                 val bottomNavVisible = shouldShowNavigationBar && !showRail && !navHiddenByScroll
-                val fullNavHeight = when {
-                    floatingNav && navigationStyle == NavigationStyle.FLOATING_GLASS -> floatingGlassNavigationHeight(slimNav)
-                    slimNav -> SlimNavBarHeight
-                    else -> NavigationBarHeight
-                }
+                val fullNavHeight = bottomNavigationHeight(navigationStyle, slimNav)
+                val miniPlayerGap = if (bottomNavVisible && navigationStyle.isFloating) MiniPlayerBottomSpacing else 0.dp
                 val navPadding = if (bottomNavVisible) fullNavHeight else 0.dp
 
                 val navigationBarHeight by animateDpAsState(
@@ -915,9 +912,7 @@ class MainActivity : ComponentActivity() {
                     dismissedBound = 0.dp,
                     collapsedBound = bottomInset +
                         navPadding +
-                        (if (useNewMiniPlayerDesign || useAppleMiniPlayer) {
-                            if (navigationStyle == NavigationStyle.CLEAN_MATERIAL) 0.dp else MiniPlayerBottomSpacing
-                        } else 0.dp) +
+                        miniPlayerGap +
                         MiniPlayerHeight,
                     expandedBound = maxHeight,
                 )
@@ -925,11 +920,12 @@ class MainActivity : ComponentActivity() {
                 val playerAwareWindowInsets = remember(
                     bottomInset,
                     navPadding,
+                    miniPlayerGap,
                     playerBottomSheetState.isDismissed,
                     windowsInsets,
                 ) {
                     var bottom = bottomInset + navPadding
-                    if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight
+                    if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight + miniPlayerGap
                     windowsInsets
                         .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
                         .add(WindowInsets(top = AppBarHeight, bottom = bottom))
@@ -1349,7 +1345,6 @@ class MainActivity : ComponentActivity() {
                                         slimNav = slimNav,
                                         onSearchLongClick = onSearchLongClick,
                                         navigationStyle = navigationStyle,
-                                        floatingNav = floatingNav,
                                         bottomInset = bottomInset,
                                         modifier = Modifier
                                             .align(Alignment.BottomCenter)

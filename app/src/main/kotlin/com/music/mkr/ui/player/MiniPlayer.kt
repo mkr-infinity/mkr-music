@@ -29,7 +29,6 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -123,7 +122,6 @@ import com.music.mkr.ui.component.rememberPlaybackCookieAngle
 import com.music.mkr.R
 import com.music.mkr.constants.MiniPlayerDesignOption
 import com.music.mkr.constants.CropAlbumArtKey
-import com.music.mkr.constants.DarkModeKey
 import com.music.mkr.constants.MiniPlayerBackgroundStyleKey
 import com.music.mkr.constants.resolveMiniPlayerBackground
 import com.music.mkr.constants.MiniPlayerHeight
@@ -142,10 +140,8 @@ import com.music.mkr.listentogether.ListenTogetherManager
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.CastConnectionHandler
 import com.music.mkr.playback.PlayerConnection
-import com.music.mkr.ui.screens.settings.DarkMode
 import com.music.mkr.ui.theme.PlayerColorExtractor
 import com.music.mkr.ui.utils.resize
-import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.mkrmusic.AudioDeviceBottomSheet
 import kotlinx.coroutines.Dispatchers
@@ -228,14 +224,10 @@ private fun NewMiniPlayer(
     
     // Theme settings - these rarely change
     val pureBlack by rememberPreference(PureBlackMiniPlayerKey, defaultValue = false)
-    val isSystemInDarkTheme = isSystemInDarkTheme()
-    val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
-    val useDarkTheme = remember(darkTheme, isSystemInDarkTheme) {
-        if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
-    }
     
     val savedMiniPlayerBackground by rememberPreference(MiniPlayerBackgroundStyleKey, "")
-    val miniPlayerBackground = resolveMiniPlayerBackground(savedMiniPlayerBackground)
+    val miniPlayerBackground = if (pureBlack) PlayerBackgroundStyle.DEFAULT
+        else resolveMiniPlayerBackground(savedMiniPlayerBackground)
     
     // Player states - only collect what's needed at this level
     val playbackState by playerConnection.playbackState.collectAsState()
@@ -307,11 +299,11 @@ private fun NewMiniPlayer(
     
     // Cohesive colors with charcoal/amber baseline
     val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
-    val backgroundColor = if (pureBlack && useDarkTheme) Color.Black else if (isDynamicBackground) Color.Transparent else artworkPalette.surfaceElevated
+    val backgroundColor = if (pureBlack) Color.Black else if (isDynamicBackground) Color.Transparent else artworkPalette.surfaceElevated
     
     val primaryColor = artworkPalette.primaryAccent
     val outlineColor = if (isDynamicBackground) Color.White.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline
-    val onSurfaceColor = artworkPalette.textPrimary
+    val onSurfaceColor = if (pureBlack) Color.White else artworkPalette.textPrimary
     val errorColor = MaterialTheme.colorScheme.error
 
     val previousTrackLabel = stringResource(R.string.previous_track)
@@ -815,6 +807,12 @@ private fun LegacyMiniPlayer(
     
     val playbackState by playerConnection.playbackState.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
+    val savedMiniPlayerBackground by rememberPreference(MiniPlayerBackgroundStyleKey, "")
+    val miniPlayerBackground = if (pureBlack) PlayerBackgroundStyle.DEFAULT
+        else resolveMiniPlayerBackground(savedMiniPlayerBackground)
+    val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
+    var gradientColors by remember { mutableStateOf(emptyList<Color>()) }
+    MiniPlayerColorExtractor(mediaMetadata, miniPlayerBackground) { gradientColors = it }
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     
@@ -896,8 +894,11 @@ private fun LegacyMiniPlayer(
 
                 restingRadius = 16.dp,
 
-                color = if (pureBlack && isSystemInDarkTheme()) Color.Black
-                    else MaterialTheme.colorScheme.surfaceContainer,
+                color = when {
+                    pureBlack -> Color.Black
+                    isDynamicBackground -> PlayerColorExtractor.CharcoalDark
+                    else -> MaterialTheme.colorScheme.surfaceContainer
+                },
                 topOnly = true,
             )
             .let { baseModifier ->
@@ -994,6 +995,13 @@ private fun LegacyMiniPlayer(
                 } else baseModifier
             }
     ) {
+        MiniPlayerBackgroundLayer(
+            style = miniPlayerBackground,
+            mediaMetadata = mediaMetadata,
+            gradientColors = gradientColors,
+            interfaceAnimations = interfaceAnimations,
+        )
+
         // Directional swipe indicator revealed during horizontal swipe
         DirectionalSwipeIndicator(
             offsetX = offsetXAnimatable.value,
@@ -1030,6 +1038,7 @@ private fun LegacyMiniPlayer(
 
                         mediaMetadata = it,
                         pureBlack = pureBlack,
+                        lightForeground = pureBlack || isDynamicBackground,
                         modifier = Modifier.padding(horizontal = 6.dp),
                     )
                 }
@@ -1156,6 +1165,7 @@ private fun LegacyMiniMediaInfo(
 
     mediaMetadata: MediaMetadata,
     pureBlack: Boolean,
+    lightForeground: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val error by LocalPlayerConnection.current?.error?.collectAsState() ?: remember { mutableStateOf(null) }
@@ -1211,7 +1221,7 @@ private fun LegacyMiniMediaInfo(
         ) {
             Text(
                 text = mediaMetadata.title,
-                color = MaterialTheme.colorScheme.onSurface,
+                color = if (lightForeground) Color.White else MaterialTheme.colorScheme.onSurface,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
@@ -1223,7 +1233,7 @@ private fun LegacyMiniMediaInfo(
             if (mediaMetadata.artists.any { it.name.isNotBlank() }) {
                 Text(
                     text = mediaMetadata.artists.joinToString { it.name },
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = if (lightForeground) Color.White.copy(alpha = 0.76f) else MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
@@ -1319,7 +1329,7 @@ internal fun MiniPlayerBackgroundLayer(
         }
         PlayerBackgroundStyle.GLOW_ANIMATED -> {
             if (gradientColors.isEmpty()) {
-                Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.surfaceContainer))
+                Box(Modifier.fillMaxSize().background(PlayerColorExtractor.CharcoalDark))
             } else {
                 val progress = if (animate) {
                     rememberInfiniteTransition(label = "GlowAnimation").animateFloat(
