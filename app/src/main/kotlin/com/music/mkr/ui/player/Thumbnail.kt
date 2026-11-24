@@ -249,7 +249,7 @@ fun Thumbnail(
     val playerStyleName by rememberPreference(PlayerStyleKey, PlayerStyle.DEFAULT.name)
     val savedPlayerBackground by rememberPreference(PlayerBackgroundStyleKey, "")
     val playerBackground = resolveFullPlayerBackground(savedPlayerBackground, PlayerStyle.fromString(playerStyleName))
-    val thumbnailCornerRadius by rememberPreference(ThumbnailCornerRadiusKey, defaultValue = 3f)
+    val thumbnailCornerRadius by rememberPreference(ThumbnailCornerRadiusKey, defaultValue = 32f)
     
     // Pre-calculate text color based on background style
     val textBackgroundColor = getTextColor(playerBackground)

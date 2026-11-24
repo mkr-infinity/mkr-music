@@ -60,7 +60,7 @@ internal fun FullPlayerArtwork(
     if (hidden) return
 
     val crop by rememberPreference(CropAlbumArtKey, false)
-    val radius by rememberPreference(ThumbnailCornerRadiusKey, 3f)
+    val radius by rememberPreference(ThumbnailCornerRadiusKey, 32f)
     val showShadow by rememberPreference(ShowPlayerThumbnailShadowKey, false)
     val shadow by rememberPreference(PlayerThumbnailShadowElevationKey, 8f)
     val rotate by rememberPreference(RotatingThumbnailKey, false)

@@ -298,7 +298,7 @@ fun AppearanceSettings(
 
     val (sliderStyle, onSliderStyleChange) = rememberEnumPreference(
         SliderStyleKey,
-        defaultValue = SliderStyle.WAVY
+        defaultValue = SliderStyle.EXPRESSIVE
     )
     val (squigglySlider, onSquigglySliderChange) = rememberPreference(
         SquigglySliderKey,
@@ -1160,7 +1160,7 @@ fun AppearanceSettings(
 
         val (thumbnailCornerRadius, onThumbnailCornerRadiusChange) = rememberPreference(
             ThumbnailCornerRadiusKey,
-            defaultValue = 3f
+            defaultValue = 32f
         )
         
         var showSensitivityDialog by rememberSaveable { mutableStateOf(false) }

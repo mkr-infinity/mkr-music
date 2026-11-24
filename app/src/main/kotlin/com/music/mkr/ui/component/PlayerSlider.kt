@@ -16,6 +16,10 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.lerp
@@ -44,28 +48,57 @@ fun PlayerSliderTrack(
     trackHeight: Dp = 10.dp,
     isPlaying: Boolean = true,
 ) {
-    val sliderStyle by rememberEnumPreference(SliderStyleKey, defaultValue = SliderStyle.WAVY)
+    val sliderStyle by rememberEnumPreference(SliderStyleKey, defaultValue = SliderStyle.EXPRESSIVE)
     val squigglySlider by rememberPreference(SquigglySliderKey, defaultValue = false)
-    val safeValue = if (value.isNaN()) valueRange.start else value.coerceIn(valueRange.start, valueRange.endInclusive)
+
+    val effectiveRange = if (valueRange.endInclusive <= valueRange.start) {
+        valueRange.start..(valueRange.start + 1f)
+    } else {
+        valueRange
+    }
+    val safeValue = if (value.isNaN()) effectiveRange.start else value.coerceIn(effectiveRange.start, effectiveRange.endInclusive)
+
+    var isDragging by remember { mutableStateOf(false) }
+    var dragProgress by remember { mutableFloatStateOf(safeValue) }
+
+    if (!isDragging) {
+        dragProgress = safeValue
+    }
+
+    val currentSliderValue = if (isDragging) dragProgress else safeValue
 
     when (sliderStyle) {
         SliderStyle.WAVY -> {
             if (squigglySlider) {
                 SquigglySlider(
-                    value = safeValue,
-                    valueRange = valueRange,
-                    onValueChange = onValueChange,
-                    onValueChangeFinished = onValueChangeFinished,
+                    value = currentSliderValue,
+                    valueRange = effectiveRange,
+                    onValueChange = {
+                        isDragging = true
+                        dragProgress = it
+                        onValueChange(it)
+                    },
+                    onValueChangeFinished = {
+                        isDragging = false
+                        onValueChangeFinished?.invoke()
+                    },
                     colors = sliderColors,
                     isPlaying = isPlaying,
                     modifier = modifier
                 )
             } else {
                 WavySlider(
-                    value = safeValue,
-                    valueRange = valueRange,
-                    onValueChange = onValueChange,
-                    onValueChangeFinished = onValueChangeFinished,
+                    value = currentSliderValue,
+                    valueRange = effectiveRange,
+                    onValueChange = {
+                        isDragging = true
+                        dragProgress = it
+                        onValueChange(it)
+                    },
+                    onValueChangeFinished = {
+                        isDragging = false
+                        onValueChangeFinished?.invoke()
+                    },
                     colors = sliderColors,
                     isPlaying = isPlaying,
                     modifier = modifier
@@ -74,10 +107,17 @@ fun PlayerSliderTrack(
         }
         SliderStyle.EXPRESSIVE -> {
             ExpressiveWavySlider(
-                value = { safeValue },
-                valueRange = valueRange,
-                onValueChange = onValueChange,
-                onValueChangeFinished = onValueChangeFinished,
+                value = { currentSliderValue },
+                valueRange = effectiveRange,
+                onValueChange = {
+                    isDragging = true
+                    dragProgress = it
+                    onValueChange(it)
+                },
+                onValueChangeFinished = {
+                    isDragging = false
+                    onValueChangeFinished?.invoke()
+                },
                 activeTrackColor = sliderColors.activeTrackColor,
                 thumbColor = sliderColors.thumbColor,
                 isPlaying = isPlaying,
@@ -86,10 +126,17 @@ fun PlayerSliderTrack(
         }
         SliderStyle.SLIM -> {
             androidx.compose.material3.Slider(
-                value = safeValue,
-                valueRange = valueRange,
-                onValueChange = onValueChange,
-                onValueChangeFinished = onValueChangeFinished,
+                value = currentSliderValue,
+                valueRange = effectiveRange,
+                onValueChange = {
+                    isDragging = true
+                    dragProgress = it
+                    onValueChange(it)
+                },
+                onValueChangeFinished = {
+                    isDragging = false
+                    onValueChangeFinished?.invoke()
+                },
                 colors = sliderColors,
                 thumb = { Spacer(modifier = Modifier.size(0.dp)) },
                 track = { sliderState ->
@@ -104,10 +151,17 @@ fun PlayerSliderTrack(
         }
         SliderStyle.DEFAULT -> {
             androidx.compose.material3.Slider(
-                value = safeValue,
-                onValueChange = onValueChange,
-                onValueChangeFinished = onValueChangeFinished,
-                valueRange = valueRange,
+                value = currentSliderValue,
+                onValueChange = {
+                    isDragging = true
+                    dragProgress = it
+                    onValueChange(it)
+                },
+                onValueChangeFinished = {
+                    isDragging = false
+                    onValueChangeFinished?.invoke()
+                },
+                valueRange = effectiveRange,
                 colors = sliderColors,
                 modifier = modifier
             )

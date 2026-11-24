@@ -309,7 +309,7 @@ fun BottomSheetPlayer(
         AudioQualityKey,
         defaultValue = AudioQuality.AUTO
     )
-    val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.WAVY)
+    val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.EXPRESSIVE)
     val squigglySlider by rememberPreference(SquigglySliderKey, defaultValue = false)
     
     // Cast state - safely access castConnectionHandler to prevent crashes during service lifecycle changes
@@ -872,7 +872,14 @@ fun BottomSheetPlayer(
         val isLoading = if (isCasting) castIsBuffering else playbackState == Player.STATE_BUFFERING
         val effectiveDuration = if (isCasting) castDuration else duration
         val finishSeek: () -> Unit = {
-            sliderPosition?.let(playerConnection::seekTo)
+            sliderPosition?.let {
+                if (isCasting) {
+                    castHandler?.seekTo(it)
+                } else {
+                    playerConnection.seekTo(it)
+                }
+                position = it
+            }
             sliderPosition = null
         }
 
