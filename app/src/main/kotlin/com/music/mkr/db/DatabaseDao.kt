@@ -525,13 +525,13 @@ interface DatabaseDao {
     )
     fun artistAlbumsPreview(artistId: String, previewSize: Int = 6): Flow<List<Album>>
 
-    @Query("SELECT sum(count) from playCount WHERE song = :songId")
+    @Query("SELECT COALESCE(sum(count), 0) from playCount WHERE song = :songId")
     fun getLifetimePlayCount(songId: String?): Flow<Int>
 
-    @Query("SELECT sum(count) from playCount WHERE song = :songId AND year = :year")
+    @Query("SELECT COALESCE(sum(count), 0) from playCount WHERE song = :songId AND year = :year")
     fun getPlayCountByYear(songId: String?, year: Int): Flow<Int>
 
-    @Query("SELECT count from playCount WHERE song = :songId AND year = :year AND month = :month")
+    @Query("SELECT COALESCE((SELECT count FROM playCount WHERE song = :songId AND year = :year AND month = :month), 0)")
     fun getPlayCountByMonth(songId: String?, year: Int, month: Int): Flow<Int>
 
     @Transaction
@@ -1138,6 +1138,9 @@ interface DatabaseDao {
     @Query("UPDATE song SET dateDownload = NULL WHERE isDownloaded = 0")
     fun clearCachedSongsDateDownload()
 
+    @Query("UPDATE song SET isDownloaded = 0, dateDownload = NULL")
+    fun clearAllDownloads()
+
     @Transaction
     @Query("SELECT * FROM song WHERE isUploaded = 1 ORDER BY dateDownload")
     fun uploadedSongsByCreateDateAsc(): Flow<List<Song>>
@@ -1261,9 +1264,9 @@ interface DatabaseDao {
      */
     fun incrementPlayCount(songId: String) {
         val time = LocalDateTime.now().atOffset(ZoneOffset.UTC)
-        var oldCount: Int
+        var oldCount = 0
         runBlocking {
-            oldCount = getPlayCountByMonth(songId, time.year, time.monthValue).first()
+            oldCount = getPlayCountByMonth(songId, time.year, time.monthValue).firstOrNull() ?: 0
         }
 
         // add new

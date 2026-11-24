@@ -74,9 +74,11 @@ data class SongEntity(
     ).also {
         if (syncToYouTube) {
             CoroutineScope(Dispatchers.IO).launch {
-                // Use the new reliable method that fetches fresh tokens
-                val addToLibrary = inLibrary == null
-                YouTube.toggleSongLibrary(id, addToLibrary)
+                runCatching {
+                    // Use the new reliable method that fetches fresh tokens
+                    val addToLibrary = inLibrary == null
+                    YouTube.toggleSongLibrary(id, addToLibrary)
+                }
             }
         }
     }

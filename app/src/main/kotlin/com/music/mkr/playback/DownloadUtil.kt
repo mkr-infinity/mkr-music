@@ -143,11 +143,14 @@ constructor(
                             })
                             .proxy(YouTube.proxy)
                             .proxyAuthenticator { _, response ->
-                                YouTube.proxyAuth?.let { auth ->
+                                val auth = YouTube.proxyAuth
+                                if (auth == null || response.request.header("Proxy-Authorization") != null) {
+                                    null
+                                } else {
                                     response.request.newBuilder()
                                         .header("Proxy-Authorization", auth)
                                         .build()
-                                } ?: response.request
+                                }
                             }
                             .build(),
                     ),

@@ -107,7 +107,7 @@ fun PlayerSliderTrack(
         }
         SliderStyle.EXPRESSIVE -> {
             ExpressiveWavySlider(
-                value = { currentSliderValue },
+                value = { if (isDragging) dragProgress else safeValue },
                 valueRange = effectiveRange,
                 onValueChange = {
                     isDragging = true

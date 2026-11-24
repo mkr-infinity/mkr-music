@@ -159,35 +159,34 @@ abstract class InternalDatabase : RoomDatabase() {
         const val DB_NAME = "song.db"
         const val SCHEMA_VERSION = 34
 
-        fun newInstance(context: Context): MusicDatabase =
-            MusicDatabase(
-                delegate =
-                Room
-                    .databaseBuilder(context, InternalDatabase::class.java, DB_NAME)
-                    .addMigrations(
-                        MIGRATION_1_2,
-                        MIGRATION_21_24,
-                        MIGRATION_22_24,
-                        MIGRATION_24_25,
-                    )
-                    .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
-                    .setTransactionExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
-                    .setQueryExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
-                    .addCallback(object : RoomDatabase.Callback() {
-                        override fun onOpen(db: SupportSQLiteDatabase) {
-                            super.onOpen(db)
-                            try {
-                                db.query("PRAGMA busy_timeout = 60000").close()
-                                db.query("PRAGMA cache_size = -16000").close()
-                                db.query("PRAGMA wal_autocheckpoint = 1000").close()
-                                db.query("PRAGMA synchronous = NORMAL").close()
-                            } catch (e: Exception) {
-                                Timber.tag("MusicDatabase").e(e, "Failed to set PRAGMA settings")
-                            }
+        fun build(context: Context): InternalDatabase =
+            Room
+                .databaseBuilder(context, InternalDatabase::class.java, DB_NAME)
+                .addMigrations(
+                    MIGRATION_1_2,
+                    MIGRATION_21_24,
+                    MIGRATION_22_24,
+                    MIGRATION_24_25,
+                )
+                .setJournalMode(RoomDatabase.JournalMode.WRITE_AHEAD_LOGGING)
+                .setTransactionExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
+                .setQueryExecutor(java.util.concurrent.Executors.newFixedThreadPool(4))
+                .addCallback(object : RoomDatabase.Callback() {
+                    override fun onOpen(db: SupportSQLiteDatabase) {
+                        super.onOpen(db)
+                        try {
+                            db.execSQL("PRAGMA busy_timeout = 60000")
+                            db.execSQL("PRAGMA cache_size = -16000")
+                            db.execSQL("PRAGMA wal_autocheckpoint = 1000")
+                            db.execSQL("PRAGMA synchronous = NORMAL")
+                        } catch (e: Exception) {
+                            Timber.tag("MusicDatabase").e(e, "Failed to set PRAGMA settings")
                         }
-                    })
-                    .build(),
-            )
+                    }
+                })
+                .build()
+
+        fun newInstance(context: Context): MusicDatabase = MusicDatabase(build(context))
     }
 }
 
@@ -448,6 +447,27 @@ val MIGRATION_21_24 =
 val MIGRATION_22_24 =
     object : Migration(22, 24) {
         override fun migrate(db: SupportSQLiteDatabase) {
+            try {
+                db.execSQL("ALTER TABLE song ADD COLUMN libraryAddToken TEXT DEFAULT ''")
+            } catch (e: Exception) {
+                Timber.tag("Migration").w("Column libraryAddToken may already exist")
+            }
+            try {
+                db.execSQL("ALTER TABLE song ADD COLUMN libraryRemoveToken TEXT DEFAULT ''")
+            } catch (e: Exception) {
+                Timber.tag("Migration").w("Column libraryRemoveToken may already exist")
+            }
+            try {
+                db.execSQL("ALTER TABLE song ADD COLUMN romanizeLyrics INTEGER NOT NULL DEFAULT 1")
+            } catch (e: Exception) {
+                Timber.tag("Migration").w("Column romanizeLyrics may already exist")
+            }
+            try {
+                db.execSQL("ALTER TABLE song ADD COLUMN isDownloaded INTEGER NOT NULL DEFAULT 0")
+            } catch (e: Exception) {
+                Timber.tag("Migration").w("Column isDownloaded may already exist")
+            }
+
             // From 23→24: Add isUploaded
             var hasIsUploaded = false
             db.query("PRAGMA table_info('song')").use { cursor ->

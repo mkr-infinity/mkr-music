@@ -60,9 +60,11 @@ import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
 import coil3.annotation.ExperimentalCoilApi
 import coil3.imageLoader
+import androidx.media3.exoplayer.offline.DownloadService
 import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
+import com.music.mkr.playback.ExoDownloadService
 import com.music.mkr.R
 import com.music.mkr.constants.DisableSongCacheKey
 import com.music.mkr.constants.SongCacheDelaySecondsKey
@@ -294,10 +296,22 @@ fun StorageSettings(
             title = stringResource(R.string.clear_all_downloads),
             onDismiss = { clearDownloads = false },
             onConfirm = {
+                val keys = downloadCache.keys.toList()
                 coroutineScope.launch(Dispatchers.IO) {
-                    downloadCache.keys.forEach { key ->
-                        downloadCache.removeResource(key)
+                    keys.forEach { key ->
+                        try {
+                            downloadCache.removeResource(key)
+                        } catch (_: Exception) {}
+                        try {
+                            DownloadService.sendRemoveDownload(
+                                context,
+                                ExoDownloadService::class.java,
+                                key,
+                                false,
+                            )
+                        } catch (_: Exception) {}
                     }
+                    database.clearAllDownloads()
                 }
                 clearDownloads = false
             },

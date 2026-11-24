@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -282,7 +283,7 @@ fun RecentListensSection(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            items(recentEvents, key = { it.song.song.id }) { event ->
+            itemsIndexed(recentEvents, key = { index, it -> "${it.event.id}_$index" }) { _, event ->
                 val isActive = event.song.song.id == currentMediaId
                 RecentSearchGridItem(
                     event = event,

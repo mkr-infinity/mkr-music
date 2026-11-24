@@ -256,7 +256,7 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     composable(
-        route = "artist/{artistId}/items?browseId={browseId}?params={params}",
+        route = "artist/{artistId}/items?browseId={browseId}&params={params}",
         arguments = listOf(
             navArgument("artistId") {
                 type = NavType.StringType

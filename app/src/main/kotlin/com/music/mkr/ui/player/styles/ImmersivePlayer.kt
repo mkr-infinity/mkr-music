@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.media.AudioManager
+import androidx.core.content.ContextCompat
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
@@ -139,9 +140,13 @@ fun ImmersivePlayer(
             }
         }
         val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
-        context.registerReceiver(receiver, filter)
+        ContextCompat.registerReceiver(context, receiver, filter, ContextCompat.RECEIVER_EXPORTED)
         awaitDispose {
-            context.unregisterReceiver(receiver)
+            try {
+                context.unregisterReceiver(receiver)
+            } catch (e: Exception) {
+                // Ignore if already unregistered
+            }
         }
     }
 

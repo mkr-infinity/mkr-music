@@ -52,8 +52,10 @@ data class AlbumEntity(
 
     fun toggleLike() = localToggleLike().also {
         CoroutineScope(Dispatchers.IO).launch {
-            if (playlistId != null)
-                YouTube.likePlaylist(playlistId, bookmarkedAt == null)
+            runCatching {
+                if (playlistId != null)
+                    YouTube.likePlaylist(playlistId, bookmarkedAt == null)
+            }
         }
     }
 }

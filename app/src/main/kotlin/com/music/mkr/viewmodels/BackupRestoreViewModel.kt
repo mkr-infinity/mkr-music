@@ -52,31 +52,34 @@ class BackupRestoreViewModel @Inject constructor(
     val database: MusicDatabase,
 ) : ViewModel() {
     fun backup(context: Context, uri: Uri) {
-        runCatching {
-            val destination = checkNotNull(context.applicationContext.contentResolver.openOutputStream(uri)) {
-                "Backup destination could not be opened"
-            }
-            destination.use {
-                it.buffered().zipOutputStream().use { outputStream ->
-                    (context.filesDir / "datastore" / SETTINGS_FILENAME).inputStream().buffered()
-                        .use { inputStream ->
-                            outputStream.putNextEntry(ZipEntry(SETTINGS_FILENAME))
-                            inputStream.copyTo(outputStream)
-                        }
-                    runBlocking(Dispatchers.IO) {
-                        database.checkpoint()
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val destination = checkNotNull(context.applicationContext.contentResolver.openOutputStream(uri)) {
+                        "Backup destination could not be opened"
                     }
-                    FileInputStream(database.openHelper.writableDatabase.path).use { inputStream ->
-                        outputStream.putNextEntry(ZipEntry(InternalDatabase.DB_NAME))
-                        inputStream.copyTo(outputStream)
+                    destination.use {
+                        it.buffered().zipOutputStream().use { outputStream ->
+                            (context.filesDir / "datastore" / SETTINGS_FILENAME).inputStream().buffered()
+                                .use { inputStream ->
+                                    outputStream.putNextEntry(ZipEntry(SETTINGS_FILENAME))
+                                    inputStream.copyTo(outputStream)
+                                }
+                            database.checkpoint()
+                            FileInputStream(database.openHelper.writableDatabase.path).use { inputStream ->
+                                outputStream.putNextEntry(ZipEntry(InternalDatabase.DB_NAME))
+                                inputStream.copyTo(outputStream)
+                            }
+                        }
                     }
                 }
             }
-        }.onSuccess {
-            Toast.makeText(context, R.string.backup_create_success, Toast.LENGTH_SHORT).show()
-        }.onFailure {
-            reportException(it)
-            Toast.makeText(context, R.string.backup_create_failed, Toast.LENGTH_SHORT).show()
+            result.onSuccess {
+                Toast.makeText(context, R.string.backup_create_success, Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                reportException(it)
+                Toast.makeText(context, R.string.backup_create_failed, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 

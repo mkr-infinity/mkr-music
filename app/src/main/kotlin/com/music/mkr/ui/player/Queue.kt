@@ -1331,7 +1331,7 @@ fun Queue(
 
                         itemsIndexed(
                             items = automix,
-                            key = { _, it -> it.mediaId },
+                            key = { index, it -> "${it.mediaId}_$index" },
                         ) { index, item ->
                             val metadata = item.metadata
                             Row(

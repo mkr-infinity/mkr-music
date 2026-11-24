@@ -466,6 +466,8 @@ class MusicService :
     private var isAudioEffectSessionOpened = false
     private var openedAudioSessionId: Int? = null
     private var loudnessEnhancer: LoudnessEnhancer? = null
+    private var enhancerSessionId: Int? = null
+    private var autoLoadJob: Job? = null
 
     private var discordRpc: DiscordRPC? = null
     private var lastPlaybackSpeed = 1.0f
@@ -723,7 +725,7 @@ class MusicService :
                     songUrlCache.invalidate(mediaId)
 
                     // Discard the old automatic stream before opening the new format.
-                    runBlocking(Dispatchers.IO) {
+                    withContext(Dispatchers.IO) {
                         try {
                             playerCache.removeResource(mediaId)
                             Timber.tag("MusicService").d("Cleared player cache for $mediaId")
@@ -1317,8 +1319,6 @@ class MusicService :
     }
 
     private fun requestAudioFocus(): Boolean {
-        if (hasAudioFocus) return true
-
         audioFocusRequest?.let { request ->
             val result = audioManager.requestAudioFocus(request)
             hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
@@ -1537,6 +1537,7 @@ class MusicService :
     ) {
         if (!scope.isActive) return
         queueLoadJob?.cancel()
+        autoLoadJob?.cancel()
 
         // Safety Check : Ensuring player is initilized
         if (!playerInitialized.value) {
@@ -2098,6 +2099,7 @@ class MusicService :
 
     fun dismissPlayback() {
         queueLoadJob?.cancel()
+        autoLoadJob?.cancel()
         retryJob?.cancel()
         waitingForNetworkConnection.value = false
         mediaButtonStartupJob?.cancel()
@@ -2298,13 +2300,16 @@ class MusicService :
         }
 
         // Create or recreate enhancer if needed
-        if (loudnessEnhancer == null) {
+        if (loudnessEnhancer == null || enhancerSessionId != audioSessionId) {
+            releaseLoudnessEnhancer()
             try {
                 loudnessEnhancer = LoudnessEnhancer(audioSessionId)
+                enhancerSessionId = audioSessionId
                 Timber.tag(TAG).d("LoudnessEnhancer created for sessionId=$audioSessionId")
             } catch (e: Exception) {
                 reportException(e)
                 loudnessEnhancer = null
+                enhancerSessionId = null
                 return
             }
         }
@@ -2381,6 +2386,7 @@ class MusicService :
             Timber.tag(TAG).e(e, "Error releasing LoudnessEnhancer: ${e.message}")
         } finally {
             loudnessEnhancer = null
+            enhancerSessionId = null
         }
     }
 
@@ -2388,9 +2394,25 @@ class MusicService :
         val sessionId = player.audioSessionId
         if (isAudioEffectSessionOpened) {
             if (sessionId > 0 && sessionId != openedAudioSessionId) {
+                val oldSessionId = openedAudioSessionId
                 openedAudioSessionId = sessionId
+                if (oldSessionId != null && oldSessionId > 0) {
+                    sendBroadcast(
+                        Intent(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION).apply {
+                            putExtra(AudioEffect.EXTRA_AUDIO_SESSION, oldSessionId)
+                            putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
+                        },
+                    )
+                }
                 setupLoudnessEnhancer()
                 runCatching { equalizerController.attachSession(sessionId) }
+                sendBroadcast(
+                    Intent(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION).apply {
+                        putExtra(AudioEffect.EXTRA_AUDIO_SESSION, sessionId)
+                        putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
+                        putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC)
+                    },
+                )
             }
             return
         }
@@ -2503,10 +2525,11 @@ class MusicService :
             reason != Player.MEDIA_ITEM_TRANSITION_REASON_REPEAT &&
             player.mediaItemCount - player.currentMediaItemIndex <= 5 &&
             currentQueue.hasNextPage() &&
+            autoLoadJob?.isActive != true &&
             !(dataStore.get(DisableLoadMoreWhenRepeatAllKey, false) && player.repeatMode == REPEAT_MODE_ALL)
         ) {
             val queue = currentQueue
-            scope.launch(SilentHandler) {
+            autoLoadJob = scope.launch(SilentHandler) {
                 val mediaItems = withContext(Dispatchers.IO) {
                     queue.nextPage()
                         .filterExplicit(dataStore.get(HideExplicitKey, false))
@@ -2864,6 +2887,12 @@ class MusicService :
     ) {
         if (totalCount == 0) return
 
+        if (currentIndex !in 0 until totalCount) {
+            val shuffledIndices = IntArray(totalCount) { it }.apply { shuffle() }
+            player.setShuffleOrder(DefaultShuffleOrder(shuffledIndices, System.currentTimeMillis()))
+            return
+        }
+
         if (shufflePlaylistFirst && originalQueueSize > 0 && originalQueueSize < totalCount) {
             // Shuffle original items and added items separately
             val originalIndices = (0 until originalQueueSize).filter { it != currentIndex }.toMutableList()
@@ -3135,15 +3164,14 @@ class MusicService :
         // Stop player before touching the cache so ExoPlayer isn't mid-read
         player.stop()
 
-        // Clear all caches synchronously on IO — must finish before prepare()
-        runBlocking(Dispatchers.IO) {
-            performAggressiveCacheClear(mediaId)
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                performAggressiveCacheClear(mediaId)
+            }
+            player.seekTo(0)
+            player.prepare()
+            player.play()
         }
-
-        // Now safe to restart — ExoPlayer will fetch a fresh stream
-        player.seekTo(0)
-        player.prepare()
-        player.play()
     }
 
     /**
@@ -3415,11 +3443,14 @@ class MusicService :
                     })
                     .proxy(YouTube.proxy)
                     .proxyAuthenticator { _, response ->
-                        YouTube.proxyAuth?.let { auth ->
+                        val auth = YouTube.proxyAuth
+                        if (auth == null || response.request.header("Proxy-Authorization") != null) {
+                            null
+                        } else {
                             response.request.newBuilder()
                                 .header("Proxy-Authorization", auth)
                                 .build()
-                        } ?: response.request
+                        }
                     }
                     .build(),
             ),
@@ -4140,6 +4171,7 @@ class MusicService :
      * This is used for Google Cast to send the audio URL to Chromecast.
      */
     suspend fun getStreamUrl(mediaId: String): String? {
+        songUrlCache[mediaId]?.url?.let { return it }
         return withContext(Dispatchers.IO) {
             try {
                 val playbackData = YTPlayerUtils.playerResponseForPlayback(
