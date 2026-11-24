@@ -62,12 +62,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.toShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -325,6 +332,14 @@ private fun WelcomePagerScreen(showSetup: Boolean, onFinished: () -> Unit) {
         )
     }
 
+    var hasInstallUnknownAppsPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.packageManager.canRequestPackageInstalls()
+            } else true
+        )
+    }
+
     var isLastPageScrolledToEnd by remember { mutableStateOf(true) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -336,6 +351,9 @@ private fun WelcomePagerScreen(showSetup: Boolean, onFinished: () -> Unit) {
                         context,
                         Manifest.permission.POST_NOTIFICATIONS
                     ) == PackageManager.PERMISSION_GRANTED
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    hasInstallUnknownAppsPermission = context.packageManager.canRequestPackageInstalls()
                 }
             }
         }
@@ -459,6 +477,47 @@ private fun WelcomePagerScreen(showSetup: Boolean, onFinished: () -> Unit) {
                                         }
                                     }
                                 )
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                PermissionCard(
+                                    icon = painterResource(id = R.drawable.apk_install),
+                                    iconColor = Color(0xFF80da88),
+                                    iconTint = Color(0xFF00522c),
+                                    title = stringResource(com.music.mkr.R.string.perm_install_title),
+                                    description = stringResource(com.music.mkr.R.string.perm_install_desc),
+                                    shape = RoundedCornerShape(24.dp),
+                                    control = {
+                                        Switch(
+                                            checked = hasInstallUnknownAppsPermission,
+                                            onCheckedChange = {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    val intent = Intent(
+                                                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                                        Uri.parse("package:${context.packageName}")
+                                                    )
+                                                    context.startActivity(intent)
+                                                }
+                                            },
+                                            thumbContent = {
+                                                Icon(
+                                                    painter = painterResource(if (hasInstallUnknownAppsPermission) R.drawable.check else R.drawable.close),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        )
+                                    },
+                                    onClick = {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            val intent = Intent(
+                                                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                                Uri.parse("package:${context.packageName}")
+                                            )
+                                            context.startActivity(intent)
+                                        }
+                                    }
+                                )
                             }
                         }
                     } else {
@@ -548,6 +607,47 @@ private fun WelcomePagerScreen(showSetup: Boolean, onFinished: () -> Unit) {
                                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                                                 notificationLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                                             }
+                                        }
+                                    }
+                                )
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                PermissionCard(
+                                    icon = painterResource(id = R.drawable.apk_install),
+                                    iconColor = Color(0xFF80da88),
+                                    iconTint = Color(0xFF00522c),
+                                    title = stringResource(com.music.mkr.R.string.perm_install_title),
+                                    description = stringResource(com.music.mkr.R.string.perm_install_desc),
+                                    shape = RoundedCornerShape(24.dp),
+                                    control = {
+                                        Switch(
+                                            checked = hasInstallUnknownAppsPermission,
+                                            onCheckedChange = {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    val intent = Intent(
+                                                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                                        Uri.parse("package:${context.packageName}")
+                                                    )
+                                                    context.startActivity(intent)
+                                                }
+                                            },
+                                            thumbContent = {
+                                                Icon(
+                                                    painter = painterResource(if (hasInstallUnknownAppsPermission) R.drawable.check else R.drawable.close),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        )
+                                    },
+                                    onClick = {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            val intent = Intent(
+                                                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                                Uri.parse("package:${context.packageName}")
+                                            )
+                                            context.startActivity(intent)
                                         }
                                     }
                                 )
@@ -674,37 +774,77 @@ private fun WelcomePagerScreen(showSetup: Boolean, onFinished: () -> Unit) {
                     ),
                     label = "ambientPulseScale"
                 )
+                val cardWavyPhase by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = (2 * Math.PI).toFloat(),
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(6000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart
+                    ),
+                    label = "cardWavyPhase"
+                )
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .drawBehind {
-                            // Top-right dynamic ambient glow according to active feature
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(
-                                        dynamicBgColor.copy(alpha = 0.28f),
-                                        dynamicBgColor.copy(alpha = 0.08f),
-                                        Color.Transparent
-                                    ),
-                                    center = Offset(size.width * 0.85f, size.height * 0.12f + ambientFloatY),
-                                    radius = size.width * 0.65f * ambientPulseScale
-                                )
-                            )
-                            // Bottom-left dynamic aura glow according to active feature
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(
-                                        dynamicTintColor.copy(alpha = 0.22f),
-                                        dynamicBgColor.copy(alpha = 0.06f),
-                                        Color.Transparent
-                                    ),
-                                    center = Offset(size.width * 0.25f, size.height * 0.75f - ambientFloatY),
-                                    radius = size.width * 0.70f * ambientPulseScale
-                                )
-                            )
-                        }
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxSize()
                 ) {
+                    val density = LocalDensity.current
+                    val widthPx = with(density) { maxWidth.toPx() }
+                    val heightPx = with(density) { maxHeight.toPx() }
+                    val dotSpacingPx = with(density) { 32.dp.toPx() }
+                    val dotPoints = remember(widthPx, heightPx) {
+                        val points = ArrayList<Offset>()
+                        if (widthPx > 0 && heightPx > 0) {
+                            val cols = (widthPx / dotSpacingPx).toInt()
+                            val rows = (heightPx / dotSpacingPx).toInt()
+                            for (c in 0..cols) {
+                                for (r in 0..rows) {
+                                    points.add(Offset(c * dotSpacingPx + dotSpacingPx * 0.5f, r * dotSpacingPx + dotSpacingPx * 0.5f))
+                                }
+                            }
+                        }
+                        points
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .drawBehind {
+                                // Top-right dynamic ambient glow according to active feature
+                                drawCircle(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            dynamicBgColor.copy(alpha = 0.28f),
+                                            dynamicBgColor.copy(alpha = 0.08f),
+                                            Color.Transparent
+                                        ),
+                                        center = Offset(size.width * 0.85f, size.height * 0.12f + ambientFloatY),
+                                        radius = size.width * 0.65f * ambientPulseScale
+                                    )
+                                )
+                                // Bottom-left dynamic aura glow according to active feature
+                                drawCircle(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            dynamicTintColor.copy(alpha = 0.22f),
+                                            dynamicBgColor.copy(alpha = 0.06f),
+                                            Color.Transparent
+                                        ),
+                                        center = Offset(size.width * 0.25f, size.height * 0.75f - ambientFloatY),
+                                        radius = size.width * 0.70f * ambientPulseScale
+                                    )
+                                )
+                                // Alive animated music dot matrix overlay
+                                if (dotPoints.isNotEmpty()) {
+                                    drawPoints(
+                                        points = dotPoints,
+                                        pointMode = PointMode.Points,
+                                        color = dynamicBgColor.copy(alpha = 0.08f * ambientPulseScale),
+                                        strokeWidth = 3.dp.toPx(),
+                                        cap = StrokeCap.Round
+                                    )
+                                }
+                            }
+                    ) {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.Start
@@ -766,14 +906,17 @@ private fun WelcomePagerScreen(showSetup: Boolean, onFinished: () -> Unit) {
                                             scaleX = scale
                                             scaleY = scale
                                             this.alpha = alpha
-                                        },
+                                        }
+                                        .wavyCookieBorder(
+                                            color = item.iconColor.copy(alpha = lerp(0.35f, 0.85f, 1f - pageOffset.coerceIn(0f, 1f))),
+                                            strokeWidth = 1.6.dp,
+                                            waveAmplitude = 2.dp,
+                                            cornerRadius = 32.dp,
+                                            phase = cardWavyPhase
+                                        ),
                                     shape = RoundedCornerShape(32.dp),
                                     colors = CardDefaults.cardColors(
                                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                    ),
-                                    border = BorderStroke(
-                                        1.2.dp,
-                                        item.iconColor.copy(alpha = lerp(0.25f, 0.70f, 1f - pageOffset.coerceIn(0f, 1f)))
                                     )
                                 ) {
                                     Column(
@@ -798,7 +941,7 @@ private fun WelcomePagerScreen(showSetup: Boolean, onFinished: () -> Unit) {
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Surface(
-                                                shape = RoundedCornerShape(18.dp),
+                                                shape = MaterialShapes.Cookie12Sided.toShape(),
                                                 color = item.iconColor,
                                                 modifier = Modifier.size(54.dp)
                                             ) {
@@ -813,7 +956,7 @@ private fun WelcomePagerScreen(showSetup: Boolean, onFinished: () -> Unit) {
                                             }
 
                                             Surface(
-                                                shape = CircleShape,
+                                                shape = MaterialShapes.Cookie6Sided.toShape(),
                                                 color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                                             ) {
                                                 Text(
@@ -906,6 +1049,7 @@ private fun WelcomePagerScreen(showSetup: Boolean, onFinished: () -> Unit) {
                     }
                 }
             }
+        }
         )
     )
 
@@ -1316,15 +1460,8 @@ private fun WelcomePageContent(
 
                     Spacer(modifier = Modifier.height(18.dp))
 
-                    // Wavy musical feature chips
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        WelcomeFeatureBadge(icon = R.drawable.music_note, label = "Audio Quality")
-                        WelcomeFeatureBadge(icon = R.drawable.sparks, label = "Zero Ads")
-                        WelcomeFeatureBadge(icon = R.drawable.equalizer, label = "Pure Focus")
-                    }
+                    // Alive Material Expressive sound badge
+                    AliveCookieBadge()
 
                     Spacer(modifier = Modifier.height(20.dp))
 
@@ -1392,15 +1529,8 @@ private fun WelcomePageContent(
 
                 Spacer(modifier = Modifier.height(if (isCompactHeight) 12.dp else 18.dp))
 
-                // Wavy musical feature chips
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    WelcomeFeatureBadge(icon = R.drawable.music_note, label = "Stream Info")
-                    WelcomeFeatureBadge(icon = R.drawable.sparks, label = "Ad-Free")
-                    WelcomeFeatureBadge(icon = R.drawable.equalizer, label = "Open Source")
-                }
+                // Alive Material Expressive sound badge
+                AliveCookieBadge()
 
                 Spacer(modifier = Modifier.height(if (isCompactHeight) 12.dp else 20.dp))
 
@@ -1487,14 +1617,24 @@ private fun WavySoundwaveHero(
         label = "emblemTranslationY"
     )
 
-    val logoAuraRotation by infiniteTransition.animateFloat(
+    val cookieRotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 7500, easing = LinearEasing),
+            animation = tween(durationMillis = 20000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "logoAuraRotation"
+        label = "cookieRotation"
+    )
+
+    val cookieReverseRotation by infiniteTransition.animateFloat(
+        initialValue = 360f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 26000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "cookieReverseRotation"
     )
 
     val logoAuraPulse by infiniteTransition.animateFloat(
@@ -1579,7 +1719,7 @@ private fun WavySoundwaveHero(
                 style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
             )
 
-            // Animated Central ambient radial glow
+            // Central ambient radial glow
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
@@ -1593,38 +1733,53 @@ private fun WavySoundwaveHero(
                 radius = heroSize.toPx() * 1.4f * glowScale,
                 center = Offset(width * 0.5f, midY)
             )
+
+            // Orbiting alive musical particles
+            for (i in 0..11) {
+                val angle = (i * (Math.PI * 2 / 12) + (wavePhase * 0.5f)).toFloat()
+                val r = heroSize.toPx() * (0.85f + 0.15f * kotlin.math.sin(wavePhase.toDouble() + i).toFloat())
+                val px = width * 0.5f + kotlin.math.cos(angle.toDouble()).toFloat() * r
+                val py = midY + kotlin.math.sin(angle.toDouble()).toFloat() * r * 0.7f
+                val dotAlpha = (0.25f + 0.25f * kotlin.math.sin(wavePhase2.toDouble() + i).toFloat()).coerceIn(0.1f, 0.6f)
+                drawCircle(
+                    color = if (i % 2 == 0) primaryColor.copy(alpha = dotAlpha) else tertiaryColor.copy(alpha = dotAlpha),
+                    radius = (2.2f + (i % 3) * 0.8f).dp.toPx(),
+                    center = Offset(px, py)
+                )
+            }
         }
 
-        // Living dynamic chromatic aura behind the app logo
+        // Living dynamic chromatic spinning cookie aura behind the app logo
         Box(
             modifier = Modifier
-                .size(heroSize * 1.38f * logoAuraPulse)
+                .size(heroSize * 1.48f * logoAuraPulse)
                 .graphicsLayer {
-                    rotationZ = logoAuraRotation
+                    rotationZ = cookieRotation
                     translationY = emblemTranslationY
                 }
-                .clip(CircleShape)
+                .clip(MaterialShapes.Cookie12Sided.toShape())
                 .background(
                     Brush.sweepGradient(
                         listOf(
-                            primaryColor.copy(alpha = 0.35f),
-                            tertiaryColor.copy(alpha = 0.42f),
-                            Color(0xFFFFB300).copy(alpha = 0.25f),
-                            primaryColor.copy(alpha = 0.35f)
+                            primaryColor.copy(alpha = 0.40f),
+                            tertiaryColor.copy(alpha = 0.48f),
+                            Color(0xFFFFB300).copy(alpha = 0.32f),
+                            primaryColor.copy(alpha = 0.40f)
                         )
                     )
                 )
         )
 
-        // Pulsating living expansion ring behind logo
+        // Pulsating counter-spinning inner cookie ring behind logo
         Box(
             modifier = Modifier
-                .size(heroSize * 1.22f * emblemScale)
+                .size(heroSize * 1.28f * emblemScale)
                 .graphicsLayer {
+                    rotationZ = cookieReverseRotation
                     translationY = emblemTranslationY
                 }
-                .clip(RoundedCornerShape(36.dp))
-                .background(primaryColor.copy(alpha = 0.18f))
+                .clip(MaterialShapes.Cookie6Sided.toShape())
+                .background(primaryColor.copy(alpha = 0.22f))
         )
 
         // Layered elevated emblem with living breathing motion
@@ -1654,36 +1809,136 @@ private fun WavySoundwaveHero(
 }
 
 @Composable
-private fun WelcomeFeatureBadge(
-    icon: Int,
-    label: String
+private fun AliveCookieBadge(
+    modifier: Modifier = Modifier
 ) {
+    val infiniteTransition = rememberInfiniteTransition(label = "AliveCookieBadgeAnim")
+    val cookieRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 12000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "cookieSpin"
+    )
+
     Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f),
-        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.85f),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+        modifier = modifier
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                painter = painterResource(id = icon),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(13.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .graphicsLayer { rotationZ = cookieRotation }
+                    .background(MaterialTheme.colorScheme.primary, MaterialShapes.Cookie12Sided.toShape()),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(6.dp)
+                        .background(MaterialTheme.colorScheme.onPrimary, CircleShape)
+                )
+            }
             Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
+                text = "Expressive Sound Experience",
+                style = MaterialTheme.typography.labelMedium.copy(
                     fontFamily = GoogleSansFlex,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.SemiBold
                 ),
                 color = MaterialTheme.colorScheme.onSurface
             )
         }
     }
+}
+
+private fun Modifier.wavyCookieBorder(
+    color: Color,
+    strokeWidth: androidx.compose.ui.unit.Dp = 1.6.dp,
+    waveAmplitude: androidx.compose.ui.unit.Dp = 2.dp,
+    cornerRadius: androidx.compose.ui.unit.Dp = 32.dp,
+    phase: Float = 0f
+): Modifier = this.drawWithContent {
+    drawContent()
+    val width = size.width
+    val height = size.height
+    if (width <= 0f || height <= 0f) return@drawWithContent
+
+    val amp = waveAmplitude.toPx()
+    val r = cornerRadius.toPx().coerceAtMost(minOf(width, height) / 2f)
+    val strokePx = strokeWidth.toPx()
+
+    val path = Path().apply {
+        moveTo(r, 0f)
+        val topWidth = width - 2 * r
+        val topWaves = 6
+        for (i in 1..40) {
+            val t = i / 40f
+            val x = r + t * topWidth
+            val y = kotlin.math.sin(t * topWaves * Math.PI * 2 + phase).toFloat() * amp
+            lineTo(x, y.coerceAtLeast(0f))
+        }
+        arcTo(
+            Rect(width - 2 * r, 0f, width, 2 * r),
+            -90f,
+            90f,
+            false
+        )
+        val rightHeight = height - 2 * r
+        val rightWaves = 5
+        for (i in 1..40) {
+            val t = i / 40f
+            val y = r + t * rightHeight
+            val x = width - kotlin.math.sin(t * rightWaves * Math.PI * 2 + phase).toFloat() * amp
+            lineTo(x.coerceAtMost(width), y)
+        }
+        arcTo(
+            Rect(width - 2 * r, height - 2 * r, width, height),
+            0f,
+            90f,
+            false
+        )
+        val botWaves = 6
+        for (i in 1..40) {
+            val t = i / 40f
+            val x = width - r - t * topWidth
+            val y = height - kotlin.math.sin(t * botWaves * Math.PI * 2 + phase).toFloat() * amp
+            lineTo(x, y.coerceAtMost(height))
+        }
+        arcTo(
+            Rect(0f, height - 2 * r, 2 * r, height),
+            90f,
+            90f,
+            false
+        )
+        val leftWaves = 5
+        for (i in 1..40) {
+            val t = i / 40f
+            val y = height - r - t * rightHeight
+            val x = kotlin.math.sin(t * leftWaves * Math.PI * 2 + phase).toFloat() * amp
+            lineTo(x.coerceAtLeast(0f), y)
+        }
+        arcTo(
+            Rect(0f, 0f, 2 * r, 2 * r),
+            180f,
+            90f,
+            false
+        )
+        close()
+    }
+
+    drawPath(
+        path = path,
+        color = color,
+        style = Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    )
 }
 
 @Composable
