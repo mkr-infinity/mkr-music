@@ -56,6 +56,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Matrix
 import androidx.compose.ui.graphics.Outline
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalDensity
@@ -191,7 +192,7 @@ private fun CapsuleNavigationBar(
     val floatingGlass = !compact && !anchored
     val bottomPadding = when {
         floatingGlass -> floatingGlassBottomPadding(slimNav)
-        anchored -> 4.dp
+        anchored -> 0.dp
         slimNav -> 8.dp
         else -> 14.dp
     }
@@ -200,14 +201,16 @@ private fun CapsuleNavigationBar(
         anchored -> materialNavigationHeight(slimNav)
         else -> 56.dp
     }
-    val shell = if (anchored) RoundedCornerShape(22.dp) else CircleShape
+    val shell = if (anchored) RectangleShape else CircleShape
     val capsuleSurface = when {
         floatingGlass -> Modifier.frostedNavigationCapsule(pureBlack)
         anchored -> Modifier.background(if (pureBlack) Color.Black else colors.surfaceContainer, shell)
         else -> Modifier.navigationGlass(shell, pureBlack)
     }
     BoxWithConstraints(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 12.dp).padding(bottom = bottomInset + bottomPadding),
+        modifier = modifier.fillMaxWidth()
+            .padding(horizontal = if (anchored) 0.dp else 12.dp)
+            .padding(bottom = bottomInset + bottomPadding),
         contentAlignment = Alignment.Center,
     ) {
         // Icon descriptions carry the labels when the capsule is too small for visible text.
@@ -215,6 +218,8 @@ private fun CapsuleNavigationBar(
         val capsuleWidth = if (floatingGlass) {
             val minimumWidth = (56.dp * navigationItems.size + 20.dp).coerceAtMost(360.dp)
             (maxWidth * 0.88f).coerceIn(minimumWidth, 360.dp).coerceAtMost(maxWidth)
+        } else if (anchored) {
+            maxWidth
         } else {
             maxWidth.coerceAtMost(if (compact) 320.dp else 500.dp)
         }
@@ -224,7 +229,7 @@ private fun CapsuleNavigationBar(
                 .height(capsuleHeight)
                 .shadow(if (anchored) 0.dp else if (floatingGlass) 2.dp else 3.dp, shell)
                 .then(capsuleSurface)
-                .padding(horizontal = 6.dp, vertical = if (floatingGlass) 2.dp else 4.dp),
+                .padding(horizontal = if (anchored) 0.dp else 6.dp, vertical = if (anchored) 0.dp else if (floatingGlass) 2.dp else 4.dp),
         ) {
             val selectedIndex = navigationItems.indexOfFirst {
                 isNavRouteSelected(currentRoute, it.route, navigationItems)
@@ -335,7 +340,7 @@ private fun CapsuleNavigationItem(
             val iconId = when {
                 screen == Screens.Search -> R.drawable.nav_search
                 screen == Screens.Library -> R.drawable.nav_library
-                screen == Screens.Home -> screen.iconIdInactive
+                screen == Screens.Home -> R.drawable.nav_home
                 isSelected -> screen.iconIdActive
                 else -> screen.iconIdInactive
             }
@@ -365,7 +370,7 @@ private fun CapsuleNavigationItem(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
             ) {
-                Box(Modifier.size(if (showLabel) 36.dp else 38.dp), contentAlignment = Alignment.Center) {
+                Box(Modifier.size(if (showLabel) 40.dp else 42.dp), contentAlignment = Alignment.Center) {
                     Box(
                         Modifier.fillMaxSize()
                             .graphicsLayer {
