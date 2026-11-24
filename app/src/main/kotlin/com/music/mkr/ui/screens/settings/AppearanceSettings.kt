@@ -71,7 +71,6 @@ import com.music.mkr.constants.DensityScaleKey
 import com.music.mkr.constants.DynamicThemeKey
 import com.music.mkr.constants.EnableDynamicIconKey
 import com.music.mkr.constants.EnableHighRefreshRateKey
-import com.music.mkr.constants.EnableLyricsThumbnailPlayPauseKey
 import com.music.mkr.constants.GridItemSize
 import com.music.mkr.constants.GridItemsSizeKey
 import com.music.mkr.constants.HidePlayerThumbnailKey
@@ -123,7 +122,6 @@ import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.ui.component.PlayerSliderTrack
 import com.music.mkr.ui.component.SquigglySlider
 import com.music.mkr.ui.component.WavySlider
-import com.ermohdamaan.justforpixel.justforpixelexpressivelab.core.components.sliders.ExpressiveWavySlider
 import com.music.mkr.ui.theme.DefaultThemeColor
 import com.music.mkr.ui.theme.PlayerSliderColors
 import com.music.mkr.ui.utils.backToMain
@@ -294,7 +292,6 @@ fun AppearanceSettings(
     val (appleMusicLyricsBlur, onAppleMusicLyricsBlurChange) = rememberPreference(AppleMusicLyricsBlurKey, defaultValue = true)
     val (lyricsStandardBlur, onLyricsStandardBlurChange) = rememberPreference(LyricsStandardBlurKey, defaultValue = false)
     val (swipeLyrics, onSwipeLyricsChange) = rememberPreference(SwipeLyricsKey, defaultValue = false)
-    val (enableLyricsThumbnailPlayPause, onEnableLyricsThumbnailPlayPauseChange) = rememberPreference(EnableLyricsThumbnailPlayPauseKey, defaultValue = false)
 
     val (sliderStyle, onSliderStyleChange) = rememberEnumPreference(
         SliderStyleKey,
@@ -949,48 +946,6 @@ fun AppearanceSettings(
                         )
                     }
                 }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier
-                            .aspectRatio(1f)
-                            .weight(1f)
-                            .clip(RoundedCornerShape(16.dp))
-                            .border(
-                                1.dp,
-                                if (sliderStyle == SliderStyle.EXPRESSIVE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                RoundedCornerShape(16.dp)
-                            )
-                            .clickable {
-                                onSliderStyleChange(SliderStyle.EXPRESSIVE)
-                                onSquigglySliderChange(false)
-                                showSliderOptionDialog = false
-                            }
-                            .padding(12.dp)
-                    ) {
-                        val sliderValue = 0.5f
-                        ExpressiveWavySlider(
-                            value = { sliderValue },
-                            valueRange = 0f..1f,
-                            onValueChange = { /* preview only */ },
-                            modifier = Modifier.weight(1f),
-                            enabled = false,
-                            isPlaying = true,
-                            activeTrackColor = sliderPreviewColors.activeTrackColor,
-                            thumbColor = sliderPreviewColors.thumbColor,
-                        )
-                        Text(
-                            text = stringResource(R.string.expressive_wavy),
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                }
             }
         }
     }
@@ -1318,7 +1273,6 @@ fun AppearanceSettings(
                                     R.string.wavy
                                 )
                                 SliderStyle.SLIM -> stringResource(R.string.slim)
-                                SliderStyle.EXPRESSIVE -> stringResource(R.string.expressive_wavy)
                             }
                         )
                     },
@@ -1699,28 +1653,6 @@ fun AppearanceSettings(
                         )
                     },
                     onClick = { onSwipeLyricsChange(!swipeLyrics) }
-                ),
-                Material3SettingsItem(
-                    key = "appearance_lyrics_thumbnail_play_pause",
-                    icon = painterResource(R.drawable.play),
-                    title = { Text(stringResource(R.string.lyrics_thumbnail_play_pause)) },
-                    description = { Text(stringResource(R.string.lyrics_thumbnail_play_pause_desc)) },
-                    trailingContent = {
-                        Switch(
-                            checked = enableLyricsThumbnailPlayPause,
-                            onCheckedChange = onEnableLyricsThumbnailPlayPauseChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (enableLyricsThumbnailPlayPause) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onEnableLyricsThumbnailPlayPauseChange(!enableLyricsThumbnailPlayPause) }
                 ),
                 Material3SettingsItem(
                     key = "appearance_lyrics_providers_link",

@@ -1984,8 +1984,133 @@ class MusicService :
 
     private var moodRecommendationsJob: Job? = null
 
+    private enum class SongLanguage {
+        HINDI, BHOJPURI, PUNJABI, ENGLISH, SOUTH_INDIC, UNKNOWN
+    }
+
+    private enum class SongMood {
+        CHILL, SAD, ROCK, ROMANTIC, PARTY, GENERAL
+    }
+
+    private fun detectSongLanguage(title: String, artist: String): SongLanguage {
+        val text = "$title $artist".lowercase()
+
+        // 1. Bhojpuri check (Distinct artists & keywords)
+        val bhojpuriKeywords = listOf(
+            "pawan singh", "khesari lal", "shilpi raj", "arvind akela", "kallu", "neelkamal",
+            "ankush raja", "pramod premi", "gunjan singh", "ritesh pandey", "chandan chanchal",
+            "samar singh", "antra singh", "kalpana patowary", "manoj tiwari", "dinesh lal",
+            "nirahua", "golu gold", "shashi lal", "monu albela", "bhojpuri", "bhojpuriya",
+            "kamariya", "piya", "saiyaan", "dewara", "bhatar", "raja ji", "marad", "chunari",
+            "ghaghra", "choli", "nathuniya", "laundiya", "sutal", "chath", "bhojpuri gana"
+        )
+        if (bhojpuriKeywords.any { it in text }) return SongLanguage.BHOJPURI
+
+        // 2. Punjabi check (Gurmukhi script or distinct artists & keywords)
+        val hasGurmukhi = text.any { it in '\u0A00'..'\u0A7F' }
+        val punjabiKeywords = listOf(
+            "sidhu moose", "diljit dosanjh", "karan aujla", "ap dhillon", "shubh", "amrit maan",
+            "guru randhawa", "harrdy sandhu", "jassie gill", "ammy virk", "babbu maan",
+            "gippy grewal", "gurdas maan", "parmish verma", "jordan sandhu", "kaka",
+            "arjan dhillon", "navaan sandhu", "mankirt aulakh", "kulwinder billa", "b praak",
+            "punjabi", "jatt", "gabru", "yaar", "yaari", "sohni", "munda", "kudi", "pind",
+            "daaru", "patiala", "mutiyar", "challa"
+        )
+        if (hasGurmukhi || punjabiKeywords.any { it in text }) return SongLanguage.PUNJABI
+
+        // 3. South Indian check (Tamil, Telugu, Malayalam, Kannada scripts or artists)
+        val hasSouthScript = text.any { it in '\u0B80'..'\u0C7F' || it in '\u0C80'..'\u0D7F' }
+        val southKeywords = listOf(
+            "anirudh", "sid sriram", "harris jayaraj", "yuvan shankar", "devi sri prasad",
+            "thaman", "santhosh narayanan", "keeravaani", "sushin shyam", "chithra", "spb",
+            "balasubrahmanyam", "tamil", "telugu", "malayalam", "kannada"
+        )
+        if (hasSouthScript || southKeywords.any { it in text }) return SongLanguage.SOUTH_INDIC
+
+        // 4. Hindi / Bollywood check (Devanagari script or Bollywood/Indie artists & keywords)
+        val hasDevanagari = text.any { it in '\u0900'..'\u097F' }
+        val hindiKeywords = listOf(
+            "arijit singh", "neha kakkar", "atif aslam", "shreya ghoshal", "jubin nautiyal",
+            "darshan raval", "armaan malik", "kumar sanu", "udit narayan", "alka yagnik",
+            "sonu nigam", "mohit chauhan", "kk", "anuv jain", "prateek kuhad", "amit trivedi",
+            "pritam", "sachin-jigar", "vishal-shekhar", "vishal mishra", "a.r. rahman", "ar rahman",
+            "badshah", "honey singh", "yo yo honey", "raftaar", "seedhe maut", "divine",
+            "mc stan", "king", "kishore kumar", "lata mangeshkar", "mohammed rafi", "mukesh",
+            "rd burman", "jagjit singh", "pankaj udhas", "sunidhi chauhan", "shaan", "monali thakur",
+            "mithoon", "rochak kohli", "jasleen", "asim azhar", "ali zafar", "rahat fateh",
+            "nusrat fateh", "zaeden", "ritviz", "tanishk bagchi", "stebin ben", "hindi",
+            "bollywood", "pyar", "ishq", "dil", "tere", "meri", "hum", "tum", "khoya",
+            "tujhe", "raatan", "lambiyan", "chahun", "sanam", "zindagi", "aashiqui", "deewana",
+            "mohabbat", "khuda", "dua", "dhadkan", "humsafar", "khairiyat", "shayari",
+            "ghazal", "naina", "saathiya", "judaa"
+        )
+        if (hasDevanagari || hindiKeywords.any { it in text }) return SongLanguage.HINDI
+
+        // 5. English / Western check
+        val englishKeywords = listOf(
+            "taylor swift", "the weeknd", "drake", "ed sheeran", "billie eilish", "post malone",
+            "ariana grande", "justin bieber", "dua lipa", "eminem", "coldplay", "imagine dragons",
+            "bruno mars", "maroon 5", "adele", "harry styles", "olivia rodrigo", "kendrick lamar",
+            "travis scott", "rihanna", "kanye", "selena gomez", "charlie puth", "shawn mendes",
+            "beyonce", "lady gaga", "katy perry", "marshmello", "chainsmokers", "alan walker",
+            "avicii", "sam smith", "sia", "linkin park", "queen", "michael jackson", "beatles",
+            "arctic monkeys", "the neighbourhood", "one direction"
+        )
+        if (englishKeywords.any { it in text }) return SongLanguage.ENGLISH
+
+        val asciiCount = text.count { it in 'a'..'z' || it in '0'..'9' || it == ' ' }
+        if (text.isNotEmpty() && asciiCount.toFloat() / text.length > 0.85f) {
+            return SongLanguage.ENGLISH
+        }
+
+        return SongLanguage.UNKNOWN
+    }
+
+    private fun detectSongMood(title: String, artist: String): SongMood {
+        val text = "$title $artist".lowercase()
+
+        // 1. Chill / Lo-Fi / Acoustic
+        val chillKeywords = listOf(
+            "chill", "lofi", "lo-fi", "acoustic", "slowed", "reverb", "relax", "calm",
+            "unplugged", "ambient", "peaceful", "soft", "breeze", "night walk", "midnight",
+            "vibes", "easy", "sukoon", "study", "sleep", "coffee", "instrumental", "lounge"
+        )
+        if (chillKeywords.any { it in text }) return SongMood.CHILL
+
+        // 2. Sad / Heartbreak
+        val sadKeywords = listOf(
+            "sad", "dard", "breakup", "crying", "heartbreak", "alone", "lonely", "tears",
+            "bewafa", "judaai", "gham", "roya", "yaad", "tuta", "broken", "pain", "emotional",
+            "tribute", "loss", "tanhaai", "dukh", "ashq", "rona", "alvida", "khali", "hurt"
+        )
+        if (sadKeywords.any { it in text }) return SongMood.SAD
+
+        // 3. Rock / Metal / Alternative
+        val rockKeywords = listOf(
+            "rock", "metal", "hard rock", "punk", "guitar", "band", "drums", "electric",
+            "heavy", "grunge", "indie rock", "alternative", "rockstar", "headbang", "screamo"
+        )
+        if (rockKeywords.any { it in text }) return SongMood.ROCK
+
+        // 4. Romantic / Love
+        val romanticKeywords = listOf(
+            "romantic", "love", "ishq", "pyaar", "mohabbat", "romance", "couple", "crush",
+            "sweet", "valentine", "heart", "dil", "humsafar", "prem", "deewana", "pehla pyar"
+        )
+        if (romanticKeywords.any { it in text }) return SongMood.ROMANTIC
+
+        // 5. Party / Dance / Upbeat
+        val partyKeywords = listOf(
+            "party", "dance", "dj", "remix", "bass", "club", "bhangra", "edm", "electronic",
+            "beat", "upbeat", "fest", "carnival", "dhol", "nacho", "thumka", "dhamaka", "groove"
+        )
+        if (partyKeywords.any { it in text }) return SongMood.PARTY
+
+        return SongMood.GENERAL
+    }
+
     /**
-     * Dynamically loads recommendations strictly aligned with the mood, genre, tempo,
+     * Dynamically loads recommendations strictly aligned with the language, mood, genre,
      * and artist sphere of the currently playing track.
      */
     fun loadMoodRecommendations(videoId: String) {
@@ -2026,7 +2151,19 @@ class MusicService :
                 // 3. Combine mood cluster and related items
                 val combined = (radioItems + relatedItems).distinctBy { it.mediaId }
 
-                // 4. Boost songs from artists the user listens to frequently in this genre/mood
+                // 4. Detect Language and Mood of current playing track
+                val currentMeta = player.currentMetadata?.takeIf { it.id == videoId }
+                    ?: (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }.find { it.mediaId == videoId }?.metadata
+                val curTitle = currentMeta?.title
+                    ?: (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }.find { it.mediaId == videoId }?.mediaMetadata?.title?.toString()
+                    ?: ""
+                val curArtist = currentMeta?.artists?.joinToString(" ") { it.name }
+                    ?: (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }.find { it.mediaId == videoId }?.mediaMetadata?.artist?.toString()
+                    ?: ""
+
+                val currentLang = detectSongLanguage(curTitle, curArtist)
+                val currentMood = detectSongMood(curTitle, curArtist)
+
                 val lovedArtists = try {
                     database.mostPlayedArtists(System.currentTimeMillis() - 86400000L * 60, limit = 20).first()
                         .map { it.artist.name.lowercase().trim() }
@@ -2036,24 +2173,49 @@ class MusicService :
                     emptySet()
                 }
 
-                val resultList = if (lovedArtists.isNotEmpty() && combined.size > 4) {
-                    val familiar = combined.filter { item ->
-                        val artist = item.mediaMetadata.artist?.toString()?.lowercase() ?: ""
-                        lovedArtists.any { it in artist || artist in it }
+                // 5. Strictly rank and filter candidates by Language match first, Mood match second
+                val scoredCandidates = combined.map { item ->
+                    val candTitle = item.mediaMetadata.title?.toString() ?: ""
+                    val candArtist = item.mediaMetadata.artist?.toString() ?: ""
+                    val candLang = detectSongLanguage(candTitle, candArtist)
+                    val candMood = detectSongMood(candTitle, candArtist)
+
+                    var score = 0
+
+                    // Language priority: Hindi -> Hindi, Bhojpuri -> Bhojpuri, English -> English
+                    if (currentLang != SongLanguage.UNKNOWN) {
+                        if (candLang == currentLang) {
+                            score += 100
+                        } else if (candLang != SongLanguage.UNKNOWN) {
+                            score -= 300 // Heavy penalty to prevent cross-language queue contamination
+                        }
                     }
-                    val discovery = combined.filter { it !in familiar }
-                    // Weighted interleaving: 1 familiar artist in this mood : 2 fresh tracks in this mood
-                    val interleaved = mutableListOf<MediaItem>()
-                    var fIdx = 0
-                    var dIdx = 0
-                    while (interleaved.size < combined.size && (fIdx < familiar.size || dIdx < discovery.size)) {
-                        if (fIdx < familiar.size) interleaved.add(familiar[fIdx++])
-                        if (dIdx < discovery.size) interleaved.add(discovery[dIdx++])
-                        if (dIdx < discovery.size) interleaved.add(discovery[dIdx++])
+
+                    // Mood priority: Chill -> Chill, Sad -> Sad, Rock -> Rock
+                    if (currentMood != SongMood.GENERAL) {
+                        if (candMood == currentMood) {
+                            score += 60
+                        } else if ((currentMood == SongMood.CHILL || currentMood == SongMood.SAD) && candMood == SongMood.PARTY) {
+                            score -= 80 // Avoid party music interrupting chill/sad listening
+                        } else if (currentMood == SongMood.PARTY && (candMood == SongMood.SAD || candMood == SongMood.CHILL)) {
+                            score -= 50
+                        }
                     }
-                    if (interleaved.isNotEmpty()) interleaved else combined
+
+                    // Artist affinity (only within compatible language)
+                    if ((candLang == currentLang || currentLang == SongLanguage.UNKNOWN) &&
+                        lovedArtists.any { it in candArtist.lowercase() || candArtist.lowercase() in it }) {
+                        score += 25
+                    }
+
+                    item to score
+                }
+
+                val filtered = scoredCandidates.filter { it.second >= 0 }.sortedByDescending { it.second }.map { it.first }
+                val resultList = if (filtered.size >= 4) {
+                    filtered
                 } else {
-                    combined
+                    scoredCandidates.sortedByDescending { it.second }.map { it.first }
                 }
 
                 val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)

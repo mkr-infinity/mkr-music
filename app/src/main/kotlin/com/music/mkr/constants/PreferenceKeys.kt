@@ -95,8 +95,7 @@ val HasShownSupportPromptKey = booleanPreferencesKey("has_shown_support_prompt")
 enum class SliderStyle {
     DEFAULT,
     WAVY,
-    SLIM,
-    EXPRESSIVE
+    SLIM
 }
 
 const val SYSTEM_DEFAULT = "SYSTEM_DEFAULT"

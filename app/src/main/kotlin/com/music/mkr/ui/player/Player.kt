@@ -364,8 +364,10 @@ fun BottomSheetPlayer(
         mutableStateOf(fallbackGradient)
     }
 
-    if (!canSkipNext && automix.isNotEmpty()) {
-        playerConnection.service.addToQueueAutomix(automix[0], 0)
+    LaunchedEffect(canSkipNext, automix.firstOrNull()?.mediaId) {
+        if (!canSkipNext && automix.isNotEmpty()) {
+            playerConnection.service.addToQueueAutomix(automix[0], 0)
+        }
     }
 
     LaunchedEffect(backgroundArtwork, playerBackground, backgroundVisible) {

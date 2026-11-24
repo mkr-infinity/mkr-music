@@ -34,7 +34,6 @@ import com.music.mkr.constants.SliderStyleKey
 import com.music.mkr.constants.SquigglySliderKey
 import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.utils.rememberPreference
-import com.ermohdamaan.justforpixel.justforpixelexpressivelab.core.components.sliders.ExpressiveWavySlider
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -104,25 +103,6 @@ fun PlayerSliderTrack(
                     modifier = modifier
                 )
             }
-        }
-        SliderStyle.EXPRESSIVE -> {
-            ExpressiveWavySlider(
-                value = { if (isDragging) dragProgress else safeValue },
-                valueRange = effectiveRange,
-                onValueChange = {
-                    isDragging = true
-                    dragProgress = it
-                    onValueChange(it)
-                },
-                onValueChangeFinished = {
-                    isDragging = false
-                    onValueChangeFinished?.invoke()
-                },
-                activeTrackColor = sliderColors.activeTrackColor,
-                thumbColor = sliderColors.thumbColor,
-                isPlaying = isPlaying,
-                modifier = modifier
-            )
         }
         SliderStyle.SLIM -> {
             androidx.compose.material3.Slider(
