@@ -1067,6 +1067,7 @@ private fun LegacyMiniPlayer(
         }
     }
 }
+}
 
 @Composable
 private fun LegacyPlayPauseButton(
