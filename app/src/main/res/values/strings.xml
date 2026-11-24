@@ -299,7 +299,7 @@
     <string name="dark_theme_follow_system">Follow system</string>
     <string name="pure_black">Pure black</string>
     <string name="navigation_style">Navigation style</string>
-    <string name="navigation_style_desc">Choose between four distinct bottom navigation layouts</string>
+    <string name="navigation_style_desc">Choose between three distinct bottom navigation layouts</string>
     <string name="nav_style_floating_glass">Floating Glass Navigation</string>
     <string name="nav_style_floating_glass_desc">Wide glass capsule with a sliding selection pill</string>
     <string name="nav_style_expressive_pill">Expressive Expanding Navigation</string>

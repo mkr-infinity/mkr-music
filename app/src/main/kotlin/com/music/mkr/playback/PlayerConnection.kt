@@ -30,6 +30,8 @@ import com.music.mkr.utils.reportException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -49,6 +51,10 @@ class PlayerConnection(
     private companion object {
         private const val TAG = "PlayerConnection"
     }
+
+    private val connectionJob = SupervisorJob(scope.coroutineContext[Job])
+    private val connectionScope = CoroutineScope(scope.coroutineContext + connectionJob)
+    private var metadataJob: Job? = null
 
     val service = binder.service
     private val playerReadinessFlow = service.isPlayerReady
@@ -110,7 +116,7 @@ class PlayerConnection(
         )
         
         // Track service readiness changes in background.
-        scope.launch {
+        connectionScope.launch {
             playerReadinessFlow.collect { ready ->
                 isPlayerInitialized.value = ready
                 if (ready) {
@@ -180,7 +186,7 @@ class PlayerConnection(
     init {
         try {
             // Observe player changes (e.g. crossfade swap)
-            scope.launch {
+            connectionScope.launch {
                 service.playerFlow.collect { newPlayer ->
                     if (newPlayer != null && newPlayer != attachedPlayer) {
                         updateAttachedPlayer(newPlayer)
@@ -194,7 +200,7 @@ class PlayerConnection(
             }
 
             // Keep local mediaMetadata updated when service updates currentMediaMetadata
-            scope.launch {
+            connectionScope.launch {
                 service.currentMediaMetadata.collect { meta ->
                     if (meta != null) {
                         mediaMetadata.value = meta
@@ -547,7 +553,8 @@ class PlayerConnection(
         val rawMeta = mediaItem?.metadata ?: (try { player.currentMetadata } catch (e: Exception) { null })
         mediaMetadata.value = rawMeta
         if (rawMeta != null) {
-            scope.launch(Dispatchers.IO) {
+            metadataJob?.cancel()
+            metadataJob = connectionScope.launch(Dispatchers.IO) {
                 try {
                     val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
                     if (dbSong != null && mediaMetadata.value?.id == rawMeta.id) {
@@ -580,7 +587,8 @@ class PlayerConnection(
         val rawMeta = try { player.currentMetadata } catch (e: Exception) { null }
         mediaMetadata.value = rawMeta
         if (rawMeta != null) {
-            scope.launch(Dispatchers.IO) {
+            metadataJob?.cancel()
+            metadataJob = connectionScope.launch(Dispatchers.IO) {
                 try {
                     val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
                     if (dbSong != null && mediaMetadata.value?.id == rawMeta.id) {
@@ -650,6 +658,7 @@ class PlayerConnection(
 
     fun dispose() {
         try {
+            connectionJob.cancel()
             attachedPlayer?.removeListener(this)
             attachedPlayer = null
             Timber.tag(TAG).d("PlayerConnection disposed successfully")

@@ -572,14 +572,11 @@ fun SearchSpotlightCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                val playPressInteraction = remember { MutableInteractionSource() }
                 Surface(
-                    interactionSource = playPressInteraction,
-                    onClick = onClick,
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(48.dp).mkrPressFeedback(interactionSource = playPressInteraction)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(

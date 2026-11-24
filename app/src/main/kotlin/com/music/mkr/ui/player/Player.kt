@@ -772,7 +772,7 @@ fun BottomSheetPlayer(
                                     modifier = Modifier
                                         .fillMaxSize()
                                         .alpha(backgroundAlpha)
-                                        .drawWithCache {
+                                        .drawBehind {
                                             val progress = glowProgress?.value ?: 0f
                                             fun rotatedColorAt(index: Int): Color {
                                                 val size = colors.size
@@ -889,15 +889,13 @@ fun BottomSheetPlayer(
                                                 radius = width * r6
                                             )
 
-                                            onDrawBehind {
-                                                drawRect(color = baseColor)
-                                                drawRect(brush = brush1)
-                                                drawRect(brush = brush2)
-                                                drawRect(brush = brush3)
-                                                drawRect(brush = brush4)
-                                                drawRect(brush = brush5)
-                                                drawRect(brush = brush6)
-                                            }
+                                            drawRect(color = baseColor)
+                                            drawRect(brush = brush1)
+                                            drawRect(brush = brush2)
+                                            drawRect(brush = brush3)
+                                            drawRect(brush = brush4)
+                                            drawRect(brush = brush5)
+                                            drawRect(brush = brush6)
                                         }
                                 )
                             }

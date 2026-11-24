@@ -253,16 +253,15 @@ fun AudioDeviceBottomSheet(
         handler.postDelayed(batteryPollingRunnable, 30000)
 
         onDispose {
-            try {
+            runCatching {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && audioDeviceCallback != null) {
                     audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
                 }
-                context.unregisterReceiver(volumeChangeReceiver)
-                context.unregisterReceiver(audioDeviceReceiver)
-                context.unregisterReceiver(bluetoothReceiver)
-                handler.removeCallbacksAndMessages(null)
-            } catch (_: IllegalArgumentException) {
             }
+            runCatching { context.unregisterReceiver(volumeChangeReceiver) }
+            runCatching { context.unregisterReceiver(audioDeviceReceiver) }
+            runCatching { context.unregisterReceiver(bluetoothReceiver) }
+            runCatching { handler.removeCallbacksAndMessages(null) }
         }
     }
 

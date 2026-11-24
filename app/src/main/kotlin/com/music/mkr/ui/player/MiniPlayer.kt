@@ -626,8 +626,6 @@ private fun NewMiniPlayerPlayButton(
     val isPlaying by playerConnection.isPlaying.collectAsState()
     val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
     val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
-    val isListenTogetherGuest = listenTogetherManager?.let { it.isInRoom && !it.isHost } ?: false
-    val isMuted by playerConnection.isMuted.collectAsState()
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
 
     val trackColor = outlineColor.copy(alpha = 0.2f)
@@ -663,27 +661,13 @@ private fun NewMiniPlayerPlayButton(
             )
         }
 
-        // Thumbnail with play/pause overlay
+        // Artwork thumbnail surrounded by circular wavy progress indicator
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .size(38.dp)
                 .clip(CircleShape)
                 .border(1.dp, outlineColor.copy(alpha = 0.3f), CircleShape)
-                .clickable {
-                    if (isListenTogetherGuest) {
-                        playerConnection.toggleMute()
-                        return@clickable
-                    }
-                    if (isCasting) {
-                        if (castIsPlaying) castHandler?.pause() else castHandler?.play()
-                    } else if (playbackState == Player.STATE_ENDED) {
-                        playerConnection.player.seekTo(0, 0)
-                        playerConnection.player.playWhenReady = true
-                    } else {
-                        playerConnection.togglePlayPause()
-                    }
-                }
         ) {
             MiniPlayerArtwork(
 
@@ -692,29 +676,6 @@ private fun NewMiniPlayerPlayButton(
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize(),
             )
-
-            // Overlay for paused state or muted (guest)
-            if (isListenTogetherGuest && isMuted || (!isListenTogetherGuest && (!effectiveIsPlaying || playbackState == Player.STATE_ENDED))) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.4f), CircleShape)
-                )
-                Icon(
-                    painter = painterResource(
-                        if (isListenTogetherGuest) {
-                            if (isMuted) R.drawable.volume_off else R.drawable.volume_up
-                        } else if (playbackState == Player.STATE_ENDED) R.drawable.replay else R.drawable.transport_play
-                    ),
-                    contentDescription = if (isListenTogetherGuest) {
-                        if (isMuted) stringResource(R.string.unmute) else stringResource(R.string.mute)
-                    } else {
-                        if (effectiveIsPlaying) stringResource(R.string.pause) else stringResource(R.string.play)
-                    },
-                    tint = Color.White,
-                    modifier = Modifier.size(20.dp)
-                )
-            }
         }
     }
 }

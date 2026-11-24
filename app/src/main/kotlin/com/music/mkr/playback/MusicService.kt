@@ -23,6 +23,7 @@ import android.media.audiofx.LoudnessEnhancer
 import android.net.ConnectivityManager
 import android.os.Binder
 import android.os.Build
+import android.os.PowerManager
 import androidx.core.app.NotificationCompat
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
@@ -921,7 +922,19 @@ class MusicService :
                                 }
                             }
                         }
-                        val loopDelay = if (player.isPlaying) 250L else 1000L
+                        val loopDelay = if (player.isPlaying) {
+                            val currentPos = player.currentPosition
+                            val remainingToNext = segments
+                                .filter { it.startMs > currentPos && !skippedUuids.contains(it.uuid) }
+                                .minOfOrNull { it.startMs - currentPos }
+                            if (remainingToNext != null && remainingToNext > 1000L) {
+                                (remainingToNext - 500L).coerceIn(250L, 3000L)
+                            } else {
+                                250L
+                            }
+                        } else {
+                            1000L
+                        }
                         delay(loopDelay)
                     }
                 }
@@ -1305,7 +1318,6 @@ class MusicService :
 
     private fun requestAudioFocus(): Boolean {
         if (hasAudioFocus) return true
-        if (lastAudioFocusState == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) return false
 
         audioFocusRequest?.let { request ->
             val result = audioManager.requestAudioFocus(request)
@@ -4103,8 +4115,9 @@ class MusicService :
     private fun startWidgetUpdates() {
         widgetUpdateJob?.cancel()
         widgetUpdateJob = scope.launch {
+            val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
             while (isActive) {
-                if (player.isPlaying) {
+                if (player.isPlaying && (powerManager?.isInteractive != false)) {
                     updateWidgetUI(true)
                 }
                 delay(1000)
