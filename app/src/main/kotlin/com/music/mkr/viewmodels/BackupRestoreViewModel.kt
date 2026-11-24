@@ -101,6 +101,9 @@ class BackupRestoreViewModel @Inject constructor(
                 withContext(Dispatchers.IO) {
                     openArchive().use { BackupRestore.stage(context.applicationContext, it) }
                 }
+                runCatching {
+                    context.stopService(Intent(context, com.music.mkr.playback.MusicService::class.java))
+                }
                 val restart = Intent.makeRestartActivityTask(
                     android.content.ComponentName(context, MainActivity::class.java)
                 )

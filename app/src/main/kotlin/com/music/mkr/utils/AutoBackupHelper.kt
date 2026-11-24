@@ -33,7 +33,7 @@ object AutoBackupHelper {
 
     fun getBackupDir(context: Context): File {
         val dir = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-            File(context.getExternalFilesDir(null), "backups")
+            File(context.getExternalFilesDir(null) ?: context.filesDir, "backups")
         } else {
             val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
                 android.os.Environment.DIRECTORY_DOWNLOADS
@@ -73,8 +73,10 @@ object AutoBackupHelper {
                     }
 
                     // 2. Room Database Backup
-                    runBlocking(Dispatchers.IO) {
-                        database.checkpoint()
+                    runCatching {
+                        runBlocking(Dispatchers.IO) {
+                            database.checkpoint()
+                        }
                     }
 
                     val dbPath = context.getDatabasePath(InternalDatabase.DB_NAME)
@@ -87,39 +89,43 @@ object AutoBackupHelper {
                 }
             }
 
-            // Save the temp file to the final destination (public Download/mkrmusic)
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
-                val resolver = context.contentResolver
-                val contentValues = ContentValues().apply {
-                    put(MediaStore.Downloads.DISPLAY_NAME, fileName)
-                    put(MediaStore.Downloads.MIME_TYPE, "application/octet-stream")
-                    put(MediaStore.Downloads.RELATIVE_PATH, "Download/mkrmusic")
-                }
-                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
-                if (uri != null) {
-                    try {
-                        resolver.openOutputStream(uri)?.use { outputStream ->
-                            tempFile.inputStream().use { inputStream ->
-                                inputStream.copyTo(outputStream)
+            // Always save to app's dedicated backup directory (always writable on all Android versions)
+            val appBackupDir = getBackupDir(context)
+            val appBackupFile = File(appBackupDir, fileName)
+            tempFile.copyTo(appBackupFile, overwrite = true)
+
+            // Also attempt to export to public Downloads/mkrmusic for user convenience
+            runCatching {
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    val resolver = context.contentResolver
+                    val contentValues = ContentValues().apply {
+                        put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                        put(MediaStore.Downloads.MIME_TYPE, "application/octet-stream")
+                        put(MediaStore.Downloads.RELATIVE_PATH, "Download/mkrmusic")
+                    }
+                    val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                    if (uri != null) {
+                        try {
+                            resolver.openOutputStream(uri)?.use { outputStream ->
+                                tempFile.inputStream().use { inputStream ->
+                                    inputStream.copyTo(outputStream)
+                                }
                             }
+                        } catch (e: Exception) {
+                            resolver.delete(uri, null, null)
                         }
-                    } catch (e: Exception) {
-                        resolver.delete(uri, null, null)
-                        throw e
                     }
                 } else {
-                    throw java.io.IOException("Failed to create MediaStore entry in Downloads")
+                    val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
+                        android.os.Environment.DIRECTORY_DOWNLOADS
+                    )
+                    val publicDir = File(downloadsDir, "mkrmusic")
+                    if (!publicDir.exists()) {
+                        publicDir.mkdirs()
+                    }
+                    val targetFile = File(publicDir, fileName)
+                    tempFile.copyTo(targetFile, overwrite = true)
                 }
-            } else {
-                val downloadsDir = android.os.Environment.getExternalStoragePublicDirectory(
-                    android.os.Environment.DIRECTORY_DOWNLOADS
-                )
-                val publicDir = File(downloadsDir, "mkrmusic")
-                if (!publicDir.exists()) {
-                    publicDir.mkdirs()
-                }
-                val targetFile = File(publicDir, fileName)
-                tempFile.copyTo(targetFile, overwrite = true)
             }
             
             if (tempFile.exists()) {

@@ -71,8 +71,12 @@ class App : Application(), SingletonImageLoader.Factory {
         } else {
             runCatching { java.io.File("/proc/self/cmdline").readText().substringBefore(0.toChar()) }.getOrNull()
         }
-        if (processName == base.packageName && !BackupRestore.applyPending(base)) {
-            Toast.makeText(base, R.string.restore_failed, Toast.LENGTH_LONG).show()
+        if (processName == base.packageName) {
+            try {
+                BackupRestore.applyPending(base)
+            } catch (t: Throwable) {
+                Log.e("App", "Error applying pending backup restore in attachBaseContext", t)
+            }
         }
     }
 

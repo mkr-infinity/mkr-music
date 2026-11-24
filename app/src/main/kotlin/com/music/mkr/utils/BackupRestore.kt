@@ -7,9 +7,9 @@ package com.music.mkr.utils
 
 import android.content.Context
 import android.database.sqlite.SQLiteDatabase
-import android.system.Os
 import android.util.Log
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import com.music.mkr.BuildConfig
 import com.music.mkr.db.InternalDatabase
 import com.music.mkr.playback.MusicService
 import com.music.mkr.viewmodels.BackupRestoreViewModel.Companion.SETTINGS_FILENAME
@@ -21,6 +21,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.first
 import java.io.File
+import java.io.FileOutputStream
 import java.io.InputStream
 import java.util.zip.ZipFile
 
@@ -44,10 +45,17 @@ internal object BackupRestore {
                     java.util.zip.CheckedInputStream(zip.getInputStream(entry), crc).use { source ->
                         file.outputStream().use { target ->
                             source.copyTo(target)
-                            target.fd.sync()
+                            target.flush()
+                            (target as? FileOutputStream)?.fd?.sync()
                         }
                     }
-                    require(file.length() == entry.size && crc.value == entry.crc)
+                    require(file.length() > 0)
+                    if (entry.size >= 0) {
+                        require(file.length() == entry.size)
+                    }
+                    if (entry.crc != -1L && entry.crc != 0L) {
+                        require(crc.value == entry.crc)
+                    }
                 }
             }
             File(staged, SETTINGS_FILENAME).takeIf(File::exists)?.let { file ->
@@ -71,13 +79,20 @@ internal object BackupRestore {
                 }
                 for (suffix in listOf("-wal", "-shm", "-journal")) {
                     val sidecar = File(file.path + suffix)
-                    check(!sidecar.exists() || sidecar.delete())
+                    if (sidecar.exists()) {
+                        sidecar.delete()
+                    }
                 }
             }
             currentCoroutineContext().ensureActive()
             val pending = File(context.filesDir, PENDING)
-            check(!pending.exists())
-            Os.rename(staged.path, pending.path)
+            if (pending.exists()) {
+                pending.deleteRecursively()
+            }
+            if (!staged.renameTo(pending)) {
+                staged.copyRecursively(pending, overwrite = true)
+                staged.deleteRecursively()
+            }
         } finally {
             work.deleteRecursively()
         }
@@ -107,33 +122,52 @@ internal object BackupRestore {
         val originals = File(pending, "originals")
         val saved = File(pending, "originals-saved")
         val rollback = File(pending, "rollback")
+
         fun finish() {
-            val finished = File(context.filesDir, "finished-backup-restore")
-            check(finished.deleteRecursively())
-            Os.rename(pending.path, finished.path)
-            finished.deleteRecursively()
+            runCatching {
+                pending.deleteRecursively()
+            }
         }
+
         try {
             if (!saved.exists() && !rollback.exists()) {
                 originals.mkdirs()
                 for ((name, target) in files) {
                     val original = File(originals, name)
-                    if (target.exists() && !original.exists()) Os.rename(target.path, original.path)
+                    if (target.exists() && !original.exists()) {
+                        runCatching { target.copyTo(original, overwrite = true) }
+                    }
                 }
-                check(saved.createNewFile())
+                runCatching { saved.createNewFile() }
             }
             if (!rollback.exists()) {
-                for ((name, target) in files) replace(File(pending, name), target)
+                for ((name, target) in files) {
+                    replace(File(pending, name), target)
+                }
+
+                // Restore succeeded! Mark onboarding as completed for this version so user is never sent to onboarding
+                runCatching {
+                    context.getSharedPreferences("app_state", Context.MODE_PRIVATE)
+                        .edit()
+                        .putBoolean("has_completed_onboarding", true)
+                        .putInt("completed_onboarding_version", BuildConfig.VERSION_CODE)
+                        .apply()
+                }
+
                 finish()
                 return true
             }
-        } catch (e: Exception) {
+        } catch (e: Throwable) {
             Log.e("BackupRestore", "Could not replace backup files. Recovering the originals.", e)
-            check(rollback.exists() || rollback.createNewFile())
+            runCatching { rollback.createNewFile() }
         }
+
+        // Rollback on failure
         for ((name, target) in files) {
             val original = File(originals, name)
-            if (saved.exists() || original.exists()) replace(original, target)
+            if (saved.exists() || original.exists()) {
+                runCatching { replace(original, target) }
+            }
         }
         finish()
         return false
@@ -141,17 +175,32 @@ internal object BackupRestore {
 
     private fun replace(source: File, target: File) {
         if (!source.exists()) {
-            check(!target.exists() || target.delete())
+            if (target.exists()) {
+                target.delete()
+            }
             return
         }
         target.parentFile?.mkdirs()
-        val temporary = File(target.parentFile, ".${target.name}.restore")
+        val temporary = File(target.parentFile, ".${target.name}.${System.currentTimeMillis()}.tmp")
         try {
-            temporary.delete()
-            Os.link(source.path, temporary.path)
-            Os.rename(temporary.path, target.path)
+            if (temporary.exists()) temporary.delete()
+            source.inputStream().buffered().use { input ->
+                temporary.outputStream().buffered().use { output ->
+                    input.copyTo(output)
+                    output.flush()
+                    (output as? FileOutputStream)?.fd?.sync()
+                }
+            }
+            if (!temporary.renameTo(target)) {
+                target.delete()
+                if (!temporary.renameTo(target)) {
+                    source.copyTo(target, overwrite = true)
+                }
+            }
         } finally {
-            temporary.delete()
+            if (temporary.exists()) {
+                temporary.delete()
+            }
         }
     }
 }
