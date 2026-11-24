@@ -262,8 +262,10 @@ private fun NavigationStyleMiniPreview(
             }
             NavigationStyle.CLEAN_MATERIAL -> {
                 Row(
-                    Modifier.fillMaxWidth().padding(horizontal = 2.dp)
-                        .height(19.dp).navigationGlass(CircleShape, pureBlack = false),
+                    Modifier.fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .height(18.dp)
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {

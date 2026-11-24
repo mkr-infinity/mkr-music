@@ -202,7 +202,8 @@ fun MinimalPlayer(
             onValueChange = { onSliderValueChange(it.toLong()) },
             onValueChangeFinished = onSliderValueChangeFinished,
             valueRange = 0f..duration.coerceAtLeast(0L).toFloat(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isPlaying = isPlaying,
         )
 
         Row(

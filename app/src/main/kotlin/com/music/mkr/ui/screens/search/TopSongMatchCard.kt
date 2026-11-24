@@ -25,6 +25,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -43,9 +44,12 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
 import com.music.innertube.models.SongItem
+import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.InterfaceAnimationsKey
+import com.music.mkr.extensions.togglePlayPause
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.playback.SearchPlayNextResult
 import com.music.mkr.playback.queues.Queue
@@ -67,8 +71,12 @@ internal fun TopSongMatchCard(
     val allowAnimation by rememberPreference(InterfaceAnimationsKey, true)
     val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
     val animate = allowAnimation && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
-    var lastPlayTap by remember(song.id) { mutableLongStateOf(-500L) }
-    var lastQueueTap by remember(song.id) { mutableLongStateOf(-500L) }
+    val playerConnection = LocalPlayerConnection.current
+    val currentMetadata by playerConnection?.mediaMetadata?.collectAsState() ?: remember { mutableStateOf(null) }
+    val playbackState by playerConnection?.playbackState?.collectAsState() ?: remember { mutableStateOf(null) }
+    val isCurrentSong = currentMetadata?.id == song.id
+    val isPlaying = isCurrentSong && playbackState == Player.STATE_READY && (playerConnection?.player?.playWhenReady == true)
+    var lastActionTap by remember(song.id) { mutableLongStateOf(-500L) }
 
     Box(modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
         Surface(
@@ -109,40 +117,63 @@ internal fun TopSongMatchCard(
                     }
                 }
 
-                FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(10.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     AnimatedActionButton(
                         onClick = {
                             val now = SystemClock.elapsedRealtime()
-                            if (now - lastPlayTap >= 500L) {
-                                lastPlayTap = now
-                                onPlay()
+                            if (now - lastActionTap >= 500L) {
+                                lastActionTap = now
+                                if (isCurrentSong && playerConnection != null) {
+                                    playerConnection.togglePlayPause()
+                                } else {
+                                    onPlay()
+                                }
                             }
                         },
                         animate = animate,
-                        compact = false,
+                        compact = true,
+                        modifier = Modifier.weight(1f),
                     ) {
-                        Icon(painterResource(R.drawable.play), null, Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.play))
+                        Icon(
+                            painter = painterResource(if (isPlaying) R.drawable.pause else R.drawable.play),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(if (isPlaying) R.string.pause else R.string.play),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                     AnimatedActionButton(
                         onClick = {
                             val now = SystemClock.elapsedRealtime()
-                            if (now - lastQueueTap >= 500L) {
-                                lastQueueTap = now
+                            if (now - lastActionTap >= 500L) {
+                                lastActionTap = now
                                 onPlayNext()
                             }
                         },
                         animate = animate,
-                        compact = false,
+                        compact = true,
                         emphasis = ActionButtonEmphasis.Tonal,
+                        modifier = Modifier.weight(1.3f),
                     ) {
-                        Icon(painterResource(R.drawable.playlist_play), null, Modifier.size(20.dp))
-                        Spacer(Modifier.width(8.dp))
-                        Text(stringResource(R.string.search_add_to_play_next))
+                        Icon(
+                            painter = painterResource(R.drawable.playlist_play),
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            text = stringResource(R.string.search_add_to_play_next),
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }

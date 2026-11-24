@@ -140,7 +140,7 @@ private fun materialNavigationHeight(slim: Boolean) = if (slim) 56.dp else 72.dp
 internal fun bottomNavigationHeight(style: NavigationStyle, slim: Boolean): Dp = when (style) {
     NavigationStyle.FLOATING_GLASS -> floatingGlassCapsuleHeight(slim) + floatingGlassBottomPadding(slim)
     NavigationStyle.EXPRESSIVE_PILL -> 56.dp + if (slim) 8.dp else 14.dp
-    NavigationStyle.CLEAN_MATERIAL -> materialNavigationHeight(slim) + 4.dp
+    NavigationStyle.CLEAN_MATERIAL -> materialNavigationHeight(slim)
 }
 
 @Composable
@@ -204,11 +204,12 @@ private fun CapsuleNavigationBar(
     val shell = if (anchored) RectangleShape else CircleShape
     val capsuleSurface = when {
         floatingGlass -> Modifier.frostedNavigationCapsule(pureBlack)
-        anchored -> Modifier.background(if (pureBlack) Color.Black else colors.surfaceContainer, shell)
+        anchored -> Modifier
         else -> Modifier.navigationGlass(shell, pureBlack)
     }
     BoxWithConstraints(
         modifier = modifier.fillMaxWidth()
+            .then(if (anchored) Modifier.background(if (pureBlack) Color.Black else colors.surfaceContainer) else Modifier)
             .padding(horizontal = if (anchored) 0.dp else 12.dp)
             .padding(bottom = bottomInset + bottomPadding),
         contentAlignment = Alignment.Center,
@@ -219,7 +220,7 @@ private fun CapsuleNavigationBar(
             val minimumWidth = (56.dp * navigationItems.size + 20.dp).coerceAtMost(360.dp)
             (maxWidth * 0.88f).coerceIn(minimumWidth, 360.dp).coerceAtMost(maxWidth)
         } else if (anchored) {
-            maxWidth
+            maxWidth.coerceAtMost(640.dp)
         } else {
             maxWidth.coerceAtMost(if (compact) 320.dp else 500.dp)
         }
@@ -274,7 +275,7 @@ private fun CapsuleNavigationBar(
                         isSelected = isSelected,
                         showLabel = labelsFit && (!compact || isSelected),
                         inlineLabel = compact,
-                        ownIndicator = compact || anchored,
+                        ownIndicator = compact,
                         anchored = anchored,
                         animate = animate,
                         onClick = { onItemClick(screen, isSelected) },
@@ -322,7 +323,7 @@ private fun CapsuleNavigationItem(
     Box(
         modifier = modifier.fillMaxHeight()
             .semantics { selected = isSelected }
-            .clip(CircleShape)
+            .clip(if (anchored) RoundedCornerShape(16.dp) else CircleShape)
             .combinedClickable(
                 interactionSource = interaction,
                 indication = ripple(),

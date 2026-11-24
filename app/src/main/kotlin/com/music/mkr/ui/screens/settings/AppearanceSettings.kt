@@ -1871,7 +1871,14 @@ fun AppearanceSettings(
                     trailingContent = {
                         Switch(
                             checked = floatingNavBar,
-                            onCheckedChange = onFloatingNavBarChange,
+                            onCheckedChange = { next ->
+                                onFloatingNavBarChange(next)
+                                if (!next && navigationStyle.isFloating) {
+                                    onNavigationStyleChange(NavigationStyle.CLEAN_MATERIAL)
+                                } else if (next && !navigationStyle.isFloating) {
+                                    onNavigationStyleChange(NavigationStyle.FLOATING_GLASS)
+                                }
+                            },
                             thumbContent = {
                                 Icon(
                                     painter = painterResource(
@@ -1883,7 +1890,15 @@ fun AppearanceSettings(
                             }
                         )
                     },
-                    onClick = { onFloatingNavBarChange(!floatingNavBar) }
+                    onClick = {
+                        val next = !floatingNavBar
+                        onFloatingNavBarChange(next)
+                        if (!next && navigationStyle.isFloating) {
+                            onNavigationStyleChange(NavigationStyle.CLEAN_MATERIAL)
+                        } else if (next && !navigationStyle.isFloating) {
+                            onNavigationStyleChange(NavigationStyle.FLOATING_GLASS)
+                        }
+                    }
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.grid_view),

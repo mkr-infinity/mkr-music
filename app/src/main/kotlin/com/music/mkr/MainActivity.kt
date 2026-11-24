@@ -795,11 +795,7 @@ class MainActivity : ComponentActivity() {
                 val (autoHideNav) = rememberPreference(AutoHideNavBarKey, true)
                 val interfaceAnimations by rememberPreference(InterfaceAnimationsKey, true)
                 val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
-                val (floatingNav) = rememberPreference(FloatingNavBarKey, defaultValue = true)
-                val (configuredNavigationStyle) = rememberEnumPreference(NavigationStyleKey, defaultValue = NavigationStyle.DEFAULT)
-                val navigationStyle = if (!floatingNav && configuredNavigationStyle == NavigationStyle.FLOATING_GLASS) {
-                    NavigationStyle.CLEAN_MATERIAL
-                } else configuredNavigationStyle
+                val (navigationStyle) = rememberEnumPreference(NavigationStyleKey, defaultValue = NavigationStyle.DEFAULT)
                 val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
                 val defaultOpenTab = remember {
                     dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)

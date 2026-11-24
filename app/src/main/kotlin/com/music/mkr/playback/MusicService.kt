@@ -3001,6 +3001,11 @@ class MusicService :
     }
 
     override fun onPlayerError(error: PlaybackException) {
+        mediaButtonStartupJob?.cancel()
+        mediaButtonStartupJob = null
+        if (!isPlaybackOngoing()) {
+            stopForeground(STOP_FOREGROUND_DETACH)
+        }
         releaseCrossfadePlayers()
         super.onPlayerError(error)
 
@@ -4054,11 +4059,14 @@ class MusicService :
         mediaButtonStartupJob?.cancel()
         mediaButtonStartupJob = scope.launch {
             delay(5_000L)
+            val hasQueue = player.mediaItemCount > 0
             val playbackStarting = player.playWhenReady &&
                 (player.playbackState == Player.STATE_BUFFERING || player.playbackState == Player.STATE_READY)
-            if (!isPlaybackOngoing() && !playbackStarting) {
+            if (!isPlaybackOngoing() && !playbackStarting && !hasQueue) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf(startId)
+            } else if (!isPlaybackOngoing() && !playbackStarting && hasQueue) {
+                stopForeground(STOP_FOREGROUND_DETACH)
             }
         }
     }

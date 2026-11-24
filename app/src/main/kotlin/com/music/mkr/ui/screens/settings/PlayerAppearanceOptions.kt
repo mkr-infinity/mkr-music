@@ -198,9 +198,14 @@ internal fun MiniPlayerAppearanceSettings() {
                 icon = painterResource(R.drawable.palette),
                 title = { Text(stringResource(R.string.miniplayer_background_style)) },
                 description = {
-                    Text(stringResource(miniPlayerBackground.labelRes()))
+                    if (pureBlackMiniPlayer) {
+                        Text("${stringResource(miniPlayerBackground.labelRes())} (${stringResource(R.string.pure_black_mini_player)})")
+                    } else {
+                        Text(stringResource(miniPlayerBackground.labelRes()))
+                    }
                 },
-                onClick = { showMiniPlayerBackgroundDialog = true }
+                enabled = !pureBlackMiniPlayer,
+                onClick = { if (!pureBlackMiniPlayer) showMiniPlayerBackgroundDialog = true }
             ),
         )
     )

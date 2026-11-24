@@ -890,17 +890,6 @@ private fun LegacyMiniPlayer(
                     customActions = customActionsList
                 }
             }
-            .miniPlayerCapsule(
-
-                restingRadius = 16.dp,
-
-                color = when {
-                    pureBlack -> Color.Black
-                    isDynamicBackground -> PlayerColorExtractor.CharcoalDark
-                    else -> MaterialTheme.colorScheme.surfaceContainer
-                },
-                topOnly = true,
-            )
             .let { baseModifier ->
                 if (swipeThumbnail) {
                     baseModifier.pointerInput(Unit) {
@@ -995,13 +984,6 @@ private fun LegacyMiniPlayer(
                 } else baseModifier
             }
     ) {
-        MiniPlayerBackgroundLayer(
-            style = miniPlayerBackground,
-            mediaMetadata = mediaMetadata,
-            gradientColors = gradientColors,
-            interfaceAnimations = interfaceAnimations,
-        )
-
         // Directional swipe indicator revealed during horizontal swipe
         DirectionalSwipeIndicator(
             offsetX = offsetXAnimatable.value,
@@ -1012,26 +994,46 @@ private fun LegacyMiniPlayer(
             modifier = if (isTabletLandscape) Modifier.width(500.dp) else Modifier.fillMaxWidth()
         )
 
-        // Progress bar - uses drawWithContent to avoid recomposition
         Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(2.dp)
-                .align(Alignment.BottomCenter)
-                .drawWithContent {
-                    val progress = progressState.progress
-                    drawRect(trackColor)
-                    drawRect(primaryColor, size = Size(size.width * progress, size.height))
-                }
-        )
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxSize()
                 .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
-                .padding(end = 12.dp),
+                .miniPlayerCapsule(
+                    restingRadius = 16.dp,
+                    color = when {
+                        pureBlack -> Color.Black
+                        isDynamicBackground -> PlayerColorExtractor.CharcoalDark
+                        else -> MaterialTheme.colorScheme.surfaceContainer
+                    },
+                    topOnly = true,
+                )
         ) {
+            MiniPlayerBackgroundLayer(
+                style = miniPlayerBackground,
+                mediaMetadata = mediaMetadata,
+                gradientColors = gradientColors,
+                interfaceAnimations = interfaceAnimations,
+            )
+
+            // Progress bar - uses drawWithContent to avoid recomposition
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(2.dp)
+                    .align(Alignment.BottomCenter)
+                    .drawWithContent {
+                        val progress = progressState.progress
+                        drawRect(trackColor)
+                        drawRect(primaryColor, size = Size(size.width * progress, size.height))
+                    }
+            )
+
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(end = 12.dp),
+            ) {
             Box(Modifier.weight(1f)) {
                 mediaMetadata?.let {
                     LegacyMiniMediaInfo(
@@ -1098,8 +1100,6 @@ private fun LegacyMiniPlayer(
                 )
             }
         }
-
-
     }
 }
 
