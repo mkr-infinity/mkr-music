@@ -98,6 +98,12 @@ class BackupRestoreViewModel @Inject constructor(
         restoring = true
         viewModelScope.launch {
             try {
+                runCatching {
+                    val stopIntent = Intent(context, com.music.mkr.playback.MusicService::class.java).apply {
+                        action = com.music.mkr.playback.MusicService.ACTION_STOP
+                    }
+                    context.startService(stopIntent)
+                }
                 withContext(Dispatchers.IO) {
                     openArchive().use { BackupRestore.stage(context.applicationContext, it) }
                 }

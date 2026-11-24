@@ -184,12 +184,28 @@ private data class OnboardingFeatureItem(
 )
 
 private const val ONBOARDING_VERSION_KEY = "completed_onboarding_version"
+private const val ONBOARDING_UPDATE_TIME_KEY = "completed_onboarding_update_time"
 private const val LEGACY_ONBOARDING_KEY = "has_completed_onboarding"
 
 private fun Context.onboardingPreferences() = getSharedPreferences("app_state", Context.MODE_PRIVATE)
 
-internal fun Context.hasCompletedOnboardingForCurrentVersion(): Boolean =
-    onboardingPreferences().getInt(ONBOARDING_VERSION_KEY, 0) == BuildConfig.VERSION_CODE
+internal fun Context.getAppLastUpdateTime(): Long = runCatching {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0)).lastUpdateTime
+    } else {
+        @Suppress("DEPRECATION")
+        packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+    }
+}.getOrDefault(0L)
+
+internal fun Context.hasCompletedOnboardingForCurrentVersion(): Boolean {
+    val prefs = onboardingPreferences()
+    val completedVersion = prefs.getInt(ONBOARDING_VERSION_KEY, 0)
+    val completedUpdateTime = prefs.getLong(ONBOARDING_UPDATE_TIME_KEY, 0L)
+    val currentUpdateTime = getAppLastUpdateTime()
+
+    return completedVersion == BuildConfig.VERSION_CODE && completedUpdateTime == currentUpdateTime && currentUpdateTime != 0L
+}
 
 class WelcomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -202,8 +218,7 @@ class WelcomeActivity : ComponentActivity() {
             return
         }
 
-        val showSetup = !preferences.getBoolean(LEGACY_ONBOARDING_KEY, false) &&
-            dataStore.get(IsFirstRunKey, true)
+        val showSetup = true
 
         try {
             installSplashScreen()
@@ -238,6 +253,7 @@ class WelcomeActivity : ComponentActivity() {
                             preferences.edit()
                                 .putBoolean(LEGACY_ONBOARDING_KEY, true)
                                 .putInt(ONBOARDING_VERSION_KEY, BuildConfig.VERSION_CODE)
+                                .putLong(ONBOARDING_UPDATE_TIME_KEY, getAppLastUpdateTime())
                                 .apply()
                             if (forceShow) {
                                 finish()
@@ -1447,17 +1463,6 @@ private fun WelcomePageContent(
                         textAlign = TextAlign.Start
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Stream and discover your favorite tracks with pure sound and zero interruptions.",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = GoogleSansFlex
-                        ),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Start
-                    )
-
                     Spacer(modifier = Modifier.height(18.dp))
 
                     // Alive Material Expressive sound badge
@@ -1513,18 +1518,6 @@ private fun WelcomePageContent(
                     ),
                     color = MaterialTheme.colorScheme.onBackground,
                     textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = "Stream and discover your favorite tracks with pure sound and zero interruptions.",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = GoogleSansFlex
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 12.dp)
                 )
 
                 Spacer(modifier = Modifier.height(if (isCompactHeight) 12.dp else 18.dp))

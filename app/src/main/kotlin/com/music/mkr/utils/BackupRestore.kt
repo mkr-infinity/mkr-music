@@ -10,6 +10,7 @@ import android.database.sqlite.SQLiteDatabase
 import android.util.Log
 import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import com.music.mkr.BuildConfig
+import com.music.mkr.getAppLastUpdateTime
 import com.music.mkr.db.InternalDatabase
 import com.music.mkr.playback.MusicService
 import com.music.mkr.viewmodels.BackupRestoreViewModel.Companion.SETTINGS_FILENAME
@@ -151,6 +152,7 @@ internal object BackupRestore {
                         .edit()
                         .putBoolean("has_completed_onboarding", true)
                         .putInt("completed_onboarding_version", BuildConfig.VERSION_CODE)
+                        .putLong("completed_onboarding_update_time", context.getAppLastUpdateTime())
                         .apply()
                 }
 

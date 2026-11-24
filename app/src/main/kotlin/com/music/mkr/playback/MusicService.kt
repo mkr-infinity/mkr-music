@@ -1286,18 +1286,20 @@ class MusicService :
                 resumeAfterFocusLoss = false
                 lastAudioFocusState = focusChange
                 applyPlaybackVolume()
-                if (resume && castConnectionHandler?.isCasting?.value != true) player.play()
+                if (resume && castConnectionHandler?.isCasting?.value != true && player.mediaItemCount > 0) {
+                    player.play()
+                }
                 updateOutgoingPlayback()
                 scheduleCrossfade()
             }
 
             AudioManager.AUDIOFOCUS_LOSS -> {
-                val wasPlaying = player.playWhenReady
+                resumeAfterFocusLoss = false
                 lastAudioFocusState = focusChange
                 player.pause()
                 fadingPlayer?.pause()
                 releaseCrossfadePlayers()
-                resumeAfterFocusLoss = wasPlaying
+                abandonAudioFocus()
             }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
@@ -4223,6 +4225,17 @@ class MusicService :
             startMediaButtonForeground(startId)
         }
         when (intent?.action) {
+            ACTION_STOP -> {
+                resumeAfterFocusLoss = false
+                runCatching {
+                    player.stop()
+                    player.clearMediaItems()
+                    abandonAudioFocus()
+                    stopForeground(STOP_FOREGROUND_REMOVE)
+                    stopSelf()
+                }
+                return START_NOT_STICKY
+            }
             MusicWidgetReceiver.ACTION_PLAY_PAUSE -> {
                 if (player.isPlaying) player.pause() else player.play()
                 updateWidgetUI(player.isPlaying)
@@ -4726,6 +4739,7 @@ class MusicService :
         const val YOUTUBE_PLAYLIST = "youtube_playlist"
         const val SEARCH = "search"
         const val SHUFFLE_ACTION = "__shuffle__"
+        const val ACTION_STOP = "com.music.mkr.action.STOP"
 
         const val CHANNEL_ID = "music_channel_01"
         const val NOTIFICATION_ID = 888
