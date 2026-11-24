@@ -125,7 +125,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             description = "Extract primary and secondary accent colors dynamically from current song's album art",
             category = "Appearance & Themes",
             iconRes = R.drawable.palette,
-            route = "settings/appearance/theme",
+            route = "settings/appearance",
             targetKey = "appearance_dynamic_theme",
             keywords = listOf("dynamic", "monet", "artwork theme", "album art color", "palette extraction", "adaptive theme")
         ),
@@ -266,7 +266,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Appearance & Themes",
             iconRes = R.drawable.album,
             route = "settings/appearance",
-            targetKey = "appearance_thumbnail_radius",
+            targetKey = "appearance_thumbnail_shadow",
             keywords = listOf("shadow", "elevation", "depth", "glow", "artwork shadow", "thumbnail elevation")
         ),
         SearchableSettingItem(
@@ -450,7 +450,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Player and Audio",
             iconRes = R.drawable.skip_next,
             route = "settings/player",
-            targetKey = "player_persistent_queue",
+            targetKey = "player_auto_skip_error",
             keywords = listOf("skip on error", "playback error", "failed stream", "broken track", "skip unplayable")
         ),
         SearchableSettingItem(

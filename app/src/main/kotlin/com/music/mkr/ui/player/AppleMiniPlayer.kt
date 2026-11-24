@@ -78,8 +78,7 @@ internal fun AppleMiniPlayer(
     val pureBlack by rememberPreference(PureBlackMiniPlayerKey, defaultValue = false)
     
     val savedMiniPlayerBackground by rememberPreference(MiniPlayerBackgroundStyleKey, "")
-    val miniPlayerBackground = if (pureBlack) PlayerBackgroundStyle.DEFAULT
-        else resolveMiniPlayerBackground(savedMiniPlayerBackground)
+    val miniPlayerBackground = resolveMiniPlayerBackground(savedMiniPlayerBackground)
     
     // Player states
     val playbackState by playerConnection.playbackState.collectAsState()
@@ -369,7 +368,7 @@ internal fun AppleMiniPlayer(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             softWrap = false,
-                            modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                            modifier = Modifier.fillMaxWidth().basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 3000, velocity = 30.dp),
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Row(
@@ -388,7 +387,7 @@ internal fun AppleMiniPlayer(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     softWrap = false,
-                                    modifier = Modifier.weight(1f, fill = false).basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                                    modifier = Modifier.weight(1f, fill = false).basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 3000, velocity = 30.dp),
                                 )
                             }
                         }

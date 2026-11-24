@@ -1217,6 +1217,7 @@ fun AppearanceSettings(
                     onClick = { onHidePlayerThumbnailChange(!hidePlayerThumbnail) }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_thumbnail_shadow",
                     icon = painterResource(R.drawable.contrast),
                     title = { Text(stringResource(R.string.show_player_thumbnail_shadow)) },
                     description = { Text(stringResource(R.string.show_player_thumbnail_shadow_desc)) },

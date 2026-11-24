@@ -672,6 +672,12 @@ fun BottomSheetPlayer(
         initialAnchor = 1
     )
 
+    LaunchedEffect(state.isCollapsed) {
+        if (state.isCollapsed && queueSheetState.isExpanded) {
+            queueSheetState.collapseSoft()
+        }
+    }
+
     val bottomSheetBackgroundColor = when (playerBackground) {
         PlayerBackgroundStyle.IMMERSIVE_ARTWORK, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED ->
             PlayerColorExtractor.CharcoalDark

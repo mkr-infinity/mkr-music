@@ -4037,13 +4037,17 @@ class MusicService :
         }
 
         super.onStartCommand(intent, flags, startId)
+        val isCasting = castConnectionHandler?.isCasting?.value == true
         if (intent?.action != Intent.ACTION_MEDIA_BUTTON &&
             player.mediaItemCount == 0 && queueLoadJob?.isActive != true &&
-            castConnectionHandler?.isCasting?.value != true
+            !isCasting && !isPlaybackOngoing()
         ) {
-            stopSelf(startId)
+            val isWidgetAction = intent?.action?.startsWith("com.music.mkr.widget.") == true
+            if (!isWidgetAction) {
+                stopSelf(startId)
+            }
         }
-        return START_NOT_STICKY
+        return START_STICKY
     }
 
     private fun startMediaButtonForeground(startId: Int) {
@@ -4070,14 +4074,15 @@ class MusicService :
         }
         mediaButtonStartupJob?.cancel()
         mediaButtonStartupJob = scope.launch {
-            delay(5_000L)
+            delay(15_000L)
             val hasQueue = player.mediaItemCount > 0
+            val isResolving = queueLoadJob?.isActive == true || waitingForNetworkConnection.value
             val playbackStarting = player.playWhenReady &&
                 (player.playbackState == Player.STATE_BUFFERING || player.playbackState == Player.STATE_READY)
-            if (!isPlaybackOngoing() && !playbackStarting && !hasQueue) {
+            if (!isPlaybackOngoing() && !playbackStarting && !hasQueue && !isResolving) {
                 stopForeground(STOP_FOREGROUND_REMOVE)
                 stopSelf(startId)
-            } else if (!isPlaybackOngoing() && !playbackStarting && hasQueue) {
+            } else if (!isPlaybackOngoing() && !playbackStarting && hasQueue && !isResolving) {
                 stopForeground(STOP_FOREGROUND_DETACH)
             }
         }

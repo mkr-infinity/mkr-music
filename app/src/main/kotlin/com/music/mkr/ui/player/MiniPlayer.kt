@@ -226,8 +226,7 @@ private fun NewMiniPlayer(
     val pureBlack by rememberPreference(PureBlackMiniPlayerKey, defaultValue = false)
     
     val savedMiniPlayerBackground by rememberPreference(MiniPlayerBackgroundStyleKey, "")
-    val miniPlayerBackground = if (pureBlack) PlayerBackgroundStyle.DEFAULT
-        else resolveMiniPlayerBackground(savedMiniPlayerBackground)
+    val miniPlayerBackground = resolveMiniPlayerBackground(savedMiniPlayerBackground)
     
     // Player states - only collect what's needed at this level
     val playbackState by playerConnection.playbackState.collectAsState()
@@ -507,6 +506,7 @@ private fun NewMiniPlayer(
                 PlaybackCookieButton(
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     faceFraction = 0.78f,
+                    angle = null,
                     enabled = canSkipPrevious && !isListenTogetherGuest,
                     onClick = {
                         val now = android.os.SystemClock.uptimeMillis()
@@ -578,6 +578,7 @@ private fun NewMiniPlayer(
                 PlaybackCookieButton(
                     color = MaterialTheme.colorScheme.secondaryContainer,
                     faceFraction = 0.78f,
+                    angle = null,
                     enabled = canSkipNext && !isListenTogetherGuest,
                     onClick = {
                         val now = android.os.SystemClock.uptimeMillis()
@@ -716,7 +717,7 @@ private fun NewMiniPlayerSongInfo(
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 softWrap = false,
-                modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                modifier = Modifier.fillMaxWidth().basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 3000, velocity = 30.dp),
             )
             Spacer(modifier = Modifier.height(2.dp))
             Row(
@@ -735,7 +736,7 @@ private fun NewMiniPlayerSongInfo(
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         softWrap = false,
-                        modifier = Modifier.weight(1f, fill = false).basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                        modifier = Modifier.weight(1f, fill = false).basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 3000, velocity = 30.dp),
                     )
                 }
             }
@@ -769,8 +770,7 @@ private fun LegacyMiniPlayer(
     val playbackState by playerConnection.playbackState.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val savedMiniPlayerBackground by rememberPreference(MiniPlayerBackgroundStyleKey, "")
-    val miniPlayerBackground = if (pureBlack) PlayerBackgroundStyle.DEFAULT
-        else resolveMiniPlayerBackground(savedMiniPlayerBackground)
+    val miniPlayerBackground = resolveMiniPlayerBackground(savedMiniPlayerBackground)
     val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
     var gradientColors by remember { mutableStateOf(emptyList<Color>()) }
     MiniPlayerColorExtractor(mediaMetadata, miniPlayerBackground) { gradientColors = it }

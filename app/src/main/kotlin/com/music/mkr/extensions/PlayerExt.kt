@@ -29,7 +29,7 @@ fun Player.toggleRepeatMode() {
             REPEAT_MODE_OFF -> REPEAT_MODE_ALL
             REPEAT_MODE_ALL -> REPEAT_MODE_ONE
             REPEAT_MODE_ONE -> REPEAT_MODE_OFF
-            else -> throw IllegalStateException()
+            else -> REPEAT_MODE_OFF
         }
 }
 
@@ -38,10 +38,14 @@ fun Player.getQueueWindows(): List<Timeline.Window> {
     if (timeline.isEmpty) {
         return emptyList()
     }
+    val currentMediaItemIndex: Int = currentMediaItemIndex
+    if (currentMediaItemIndex < 0 || currentMediaItemIndex >= timeline.windowCount) {
+        val window = Timeline.Window()
+        return (0 until timeline.windowCount).map { timeline.getWindow(it, window) }
+    }
     val queue = ArrayDeque<Timeline.Window>()
     val queueSize = timeline.windowCount
 
-    val currentMediaItemIndex: Int = currentMediaItemIndex
     queue.add(timeline.getWindow(currentMediaItemIndex, Timeline.Window()))
 
     var firstMediaItemIndex = currentMediaItemIndex

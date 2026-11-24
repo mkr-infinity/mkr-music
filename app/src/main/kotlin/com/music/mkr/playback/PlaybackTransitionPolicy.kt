@@ -40,15 +40,26 @@ internal fun shouldStopPlaybackOnTaskRemoval(
 internal enum class SearchPlayNextResult { Added, AlreadyCurrent, AlreadyNext, QueueLoading, Blocked, Failed }
 
 internal fun shuffleOrderWithPlayNext(order: IntArray, insertionIndex: Int, count: Int): IntArray {
-    val currentIndex = insertionIndex - 1
+    if (count <= 0) return order
     val result = IntArray(order.size + count)
     var next = 0
+    if (insertionIndex <= 0) {
+        repeat(count) { offset -> result[next++] = offset }
+        for (index in order) {
+            result[next++] = index + count
+        }
+        return result
+    }
+    val currentIndex = insertionIndex - 1
     for (index in order) {
         result[next++] = if (index >= insertionIndex) index + count else index
         if (index == currentIndex) {
             repeat(count) { offset -> result[next++] = insertionIndex + offset }
         }
     }
-    check(next == result.size)
+    while (next < result.size) {
+        result[next] = order.size + (next - order.size)
+        next++
+    }
     return result
 }

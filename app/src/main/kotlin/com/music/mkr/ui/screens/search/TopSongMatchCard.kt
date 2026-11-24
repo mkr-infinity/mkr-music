@@ -78,7 +78,7 @@ internal fun TopSongMatchCard(
     val isPlaying = isCurrentSong && playbackState == Player.STATE_READY && (playerConnection?.player?.playWhenReady == true)
     var lastActionTap by remember(song.id) { mutableLongStateOf(-500L) }
 
-    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Surface(
             modifier = Modifier.widthIn(max = 520.dp).fillMaxWidth(),
             shape = MaterialTheme.shapes.large,
@@ -161,7 +161,7 @@ internal fun TopSongMatchCard(
                         animate = animate,
                         compact = true,
                         emphasis = ActionButtonEmphasis.Tonal,
-                        modifier = Modifier.weight(1.3f),
+                        modifier = Modifier.weight(1f),
                     ) {
                         Icon(
                             painter = painterResource(R.drawable.playlist_play),

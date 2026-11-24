@@ -6,6 +6,8 @@
 package com.music.mkr.ui.screens.search
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.music.mkr.constants.CropAlbumArtKey
+import com.music.mkr.utils.rememberPreference
 import com.music.mkr.ui.component.mkrClickable
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -519,6 +521,7 @@ fun SearchSpotlightCard(
                 }
                 val isCircle = item is ArtistItem
 
+                val (cropAlbumArt) = rememberPreference(CropAlbumArtKey, defaultValue = true)
                 Box(
                     modifier = Modifier
                         .size(52.dp)
@@ -527,7 +530,7 @@ fun SearchSpotlightCard(
                     AsyncImage(
                         model = thumbnailUrl,
                         contentDescription = null,
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        contentScale = if (isCircle || cropAlbumArt) androidx.compose.ui.layout.ContentScale.Crop else androidx.compose.ui.layout.ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
                     )
                 }

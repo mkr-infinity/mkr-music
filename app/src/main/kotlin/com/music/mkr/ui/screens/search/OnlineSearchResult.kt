@@ -101,6 +101,7 @@ import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
+import com.music.mkr.constants.CropAlbumArtKey
 import com.music.mkr.constants.PauseSearchHistoryKey
 import com.music.mkr.constants.SearchListenHistoryKey
 import com.music.mkr.constants.SearchSource
@@ -512,6 +513,7 @@ private fun SearchResultRow(
 
 @Composable
 internal fun SearchArtwork(item: YTItem, modifier: Modifier, shape: Shape, pixels: Int) {
+    val (cropAlbumArt) = rememberPreference(CropAlbumArtKey, defaultValue = true)
     val placeholder = when (item) {
         is AlbumItem -> R.drawable.album
         is ArtistItem -> R.drawable.artist_screen
@@ -527,7 +529,7 @@ internal fun SearchArtwork(item: YTItem, modifier: Modifier, shape: Shape, pixel
                 contentDescription = null,
                 placeholder = fallback,
                 error = fallback,
-                contentScale = ContentScale.Crop,
+                contentScale = if (item is ArtistItem || cropAlbumArt) ContentScale.Crop else ContentScale.Fit,
                 modifier = Modifier.fillMaxSize(),
             )
         } else {

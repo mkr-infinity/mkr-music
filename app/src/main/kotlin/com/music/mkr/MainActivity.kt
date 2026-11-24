@@ -342,6 +342,9 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        listenTogetherManager.setPlayerConnection(null)
+        playerConnection?.dispose()
+        playerConnection = null
         if (isServiceBound) {
             try {
                 unbindService(serviceConnection)
@@ -354,6 +357,13 @@ class MainActivity : ComponentActivity() {
             com.music.mkr.utils.IconUtils.applyPendingIconIfAny(this@MainActivity)
         }
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        listenTogetherManager.setPlayerConnection(null)
+        playerConnection?.dispose()
+        playerConnection = null
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -904,10 +914,11 @@ class MainActivity : ComponentActivity() {
                 )
                 val hasAnimatedNavHeight by remember { derivedStateOf { navigationBarHeight > 0.dp } }
 
+                val stableNavHeight = if (shouldShowNavigationBar && !showRail) fullNavHeight else 0.dp
                 val playerBottomSheetState = rememberBottomSheetState(
                     dismissedBound = 0.dp,
                     collapsedBound = bottomInset +
-                        navPadding +
+                        stableNavHeight +
                         miniPlayerGap +
                         MiniPlayerHeight,
                     expandedBound = maxHeight,
@@ -915,16 +926,18 @@ class MainActivity : ComponentActivity() {
 
                 val playerAwareWindowInsets = remember(
                     bottomInset,
-                    navPadding,
+                    navigationBarHeight,
                     miniPlayerGap,
                     playerBottomSheetState.isDismissed,
                     windowsInsets,
+                    inSearchScreen,
                 ) {
-                    var bottom = bottomInset + navPadding
+                    var bottom = bottomInset + navigationBarHeight
                     if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight + miniPlayerGap
+                    val top = if (inSearchScreen) 0.dp else AppBarHeight
                     windowsInsets
                         .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-                        .add(WindowInsets(top = AppBarHeight, bottom = bottom))
+                        .add(WindowInsets(top = top, bottom = bottom))
                 }
                 appBarScrollBehavior(
                     canScroll = {
@@ -1371,14 +1384,14 @@ class MainActivity : ComponentActivity() {
                                             // Use graphicsLayer for background color changes
                                             .graphicsLayer {
                                                 val progress = playerBottomSheetState.progress
-                                                alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar) || navigationStyle.isFloating) 0f else 1f
+                                                alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar) || navigationStyle.isFloating || navHiddenByScroll) 0f else 1f
                                             }
                                             .background(baseBg)
                                     )
                                 }
                             } else {
                                 if (currentRoute != "wrapped" && currentRoute != "update" && currentRoute != "listen_together/chat") {
-                                    Box(modifier = Modifier.fillMaxWidth()) {
+                                    Box(modifier = Modifier.fillMaxWidth().padding(start = if (showRail) 96.dp else 0.dp)) {
                                         BottomSheetPlayer(
                                             state = playerBottomSheetState,
                                             navController = navController,

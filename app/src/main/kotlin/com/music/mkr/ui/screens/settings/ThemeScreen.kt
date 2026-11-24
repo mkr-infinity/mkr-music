@@ -122,16 +122,7 @@ fun ThemeScreen(
     navController: NavController,
 ) {
     val (darkMode, onDarkModeChange) = rememberEnumPreference(DarkModeKey, DarkMode.AUTO)
-    val (pureBlack, onPureBlackChangeRaw) = rememberPreference(PureBlackKey, defaultValue = false)
-    val (_, onPureBlackMiniPlayerChange) = rememberPreference(
-        PureBlackMiniPlayerKey,
-        defaultValue = false
-    )
-
-    val onPureBlackChange: (Boolean) -> Unit = { enabled ->
-        onPureBlackChangeRaw(enabled)
-        onPureBlackMiniPlayerChange(enabled)
-    }
+    val (pureBlack, onPureBlackChange) = rememberPreference(PureBlackKey, defaultValue = false)
     val (selectedThemeColorInt, onSelectedThemeColorChange) = rememberPreference(
         SelectedThemeColorKey,
         Color.Transparent.toArgb()

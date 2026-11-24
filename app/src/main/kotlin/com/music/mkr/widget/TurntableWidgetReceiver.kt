@@ -9,6 +9,7 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import androidx.core.content.ContextCompat
 import com.music.mkr.playback.MusicService
 
 class TurntableWidgetReceiver : AppWidgetProvider() {
@@ -50,7 +51,7 @@ class TurntableWidgetReceiver : AppWidgetProvider() {
                     putExtras(intent)
                 }
                 try {
-                    context.startService(serviceIntent)
+                    ContextCompat.startForegroundService(context, serviceIntent)
                 } catch (e: Exception) {
                     // Service might be restricted in background
                 }
