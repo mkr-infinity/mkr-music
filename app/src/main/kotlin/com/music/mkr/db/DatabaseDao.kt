@@ -56,6 +56,7 @@ import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.ui.utils.resize
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
 import java.text.Collator

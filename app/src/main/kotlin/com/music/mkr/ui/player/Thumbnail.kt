@@ -746,32 +746,46 @@ private fun ThumbnailImage(
             }
         } else {
             var currentUrl by remember(artworkUri) {
-                mutableStateOf(artworkUri)
+                mutableStateOf<String?>(artworkUri)
             }
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(currentUrl)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .diskCachePolicy(CachePolicy.ENABLED)
-                    .networkCachePolicy(CachePolicy.ENABLED)
-                    .crossfade(true)
-                    .build(),
-                onError = {
-                    val url = currentUrl
-                    Timber.e("[Thumbnail] ThumbnailImage load FAILED: url=$url | error=${it.result.throwable}")
-                    currentUrl = when {
-                        url == null -> null
-                        url.contains("maxresdefault.jpg") -> url.replace("maxresdefault.jpg", "sddefault.jpg")
-                        url.contains("sddefault.jpg") -> url.replace("sddefault.jpg", "hqdefault.jpg")
-                        url.contains("hqdefault.jpg") -> url.replace("hqdefault.jpg", "mqdefault.jpg")
-                        artworkUri != null && url != artworkUri -> artworkUri
-                        else -> null
-                    }
-                },
-                contentDescription = null,
-                contentScale = if (cropArtwork) ContentScale.Crop else ContentScale.Fit,
-                modifier = Modifier.fillMaxSize()
-            )
+            if (currentUrl == null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.mkr_music_small_icon),
+                        contentDescription = null,
+                        tint = com.music.mkr.ui.theme.PlayerColorExtractor.WarmAmber.copy(alpha = 0.6f),
+                        modifier = Modifier.size(96.dp)
+                    )
+                }
+            } else {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(currentUrl)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .networkCachePolicy(CachePolicy.ENABLED)
+                        .crossfade(true)
+                        .build(),
+                    onError = {
+                        val url = currentUrl
+                        Timber.e("[Thumbnail] ThumbnailImage load FAILED: url=$url | error=${it.result.throwable}")
+                        currentUrl = when {
+                            url == null -> null
+                            url.contains("maxresdefault.jpg") -> url.replace("maxresdefault.jpg", "sddefault.jpg")
+                            url.contains("sddefault.jpg") -> url.replace("sddefault.jpg", "hqdefault.jpg")
+                            url.contains("hqdefault.jpg") -> url.replace("hqdefault.jpg", "mqdefault.jpg")
+                            artworkUri != null && url != artworkUri -> artworkUri
+                            else -> null
+                        }
+                    },
+                    contentDescription = null,
+                    contentScale = if (cropArtwork) ContentScale.Crop else ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }

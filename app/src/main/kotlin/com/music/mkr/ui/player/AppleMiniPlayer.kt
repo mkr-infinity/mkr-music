@@ -59,6 +59,7 @@ import com.music.mkr.listentogether.ListenTogetherManager
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.CastConnectionHandler
 import com.music.mkr.playback.PlayerConnection
+import com.music.mkr.ui.theme.PlayerColorExtractor
 import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
