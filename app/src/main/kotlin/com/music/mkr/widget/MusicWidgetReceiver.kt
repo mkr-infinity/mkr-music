@@ -9,7 +9,6 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import androidx.core.content.ContextCompat
 import com.music.mkr.playback.MusicService

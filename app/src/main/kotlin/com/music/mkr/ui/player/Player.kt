@@ -11,18 +11,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
 import android.view.WindowManager
-import android.widget.Toast
-import android.content.BroadcastReceiver
-import android.content.IntentFilter
-import android.media.AudioManager
-import android.os.Build
-import android.os.Handler
-import android.os.Looper
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.LinearEasing
@@ -33,10 +25,6 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.shrinkVertically
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloat
@@ -109,7 +97,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -136,11 +123,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.withStyle
-import dev.chrisbanes.haze.HazeState
-import dev.chrisbanes.haze.HazeStyle
-import dev.chrisbanes.haze.HazeTint
-import dev.chrisbanes.haze.hazeSource
-import dev.chrisbanes.haze.hazeEffect
 import androidx.core.net.toUri
 import androidx.core.view.WindowCompat
 import androidx.media3.common.C
@@ -159,13 +141,11 @@ import coil3.request.allowHardware
 import coil3.toBitmap
 import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalDownloadUtil
-import com.music.mkr.LocalListenTogetherManager
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.AudioQuality
 import com.music.mkr.constants.AudioQualityKey
 import com.music.mkr.constants.DarkModeKey
-import com.music.mkr.constants.HidePlayerThumbnailKey
 import com.music.mkr.constants.EnableLyricsThumbnailPlayPauseKey
 import com.music.mkr.constants.KeepScreenOn
 import com.music.mkr.constants.PlayerBackgroundStyle
@@ -186,17 +166,11 @@ import com.music.mkr.constants.SquigglySliderKey
 import com.music.mkr.constants.SwipeLyricsKey
 import com.music.mkr.constants.ThumbnailCornerRadius
 import com.music.mkr.constants.InterfaceAnimationsKey
-import com.music.mkr.constants.ShowAudioQualityBadgeKey
 import com.music.mkr.db.entities.LyricsEntity
 import com.music.mkr.extensions.SwipeGesture
 import com.music.mkr.extensions.togglePlayPause
-import com.music.mkr.listentogether.RoomRole
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.ExoDownloadService
-import com.music.mkr.mkrmusic.getConnectedBluetoothDeviceName
-import com.music.mkr.mkrmusic.isBuds
-import com.music.mkr.mkrmusic.isSpeaker
-import com.music.mkr.mkrmusic.AudioDeviceBottomSheet
 import com.music.mkr.ui.component.LocalPlaybackCookieAngle
 import com.music.mkr.ui.component.rememberPlaybackCookieAngle
 import com.music.mkr.ui.component.BottomSheet
@@ -211,7 +185,6 @@ import com.music.mkr.ui.component.WavySlider
 import com.music.mkr.ui.component.rememberBottomSheetState
 import com.music.mkr.ui.menu.LyricsMenu
 import com.music.mkr.ui.menu.PlayerMenu
-import com.music.mkr.ui.component.VolumeSlider
 import com.music.mkr.ui.screens.settings.DarkMode
 import com.music.mkr.ui.theme.PlayerColorExtractor
 import com.music.mkr.ui.theme.PlayerSliderColors
@@ -251,17 +224,11 @@ fun BottomSheetPlayer(
     val menuState = LocalMenuState.current
     val bottomSheetPageState = LocalBottomSheetPageState.current
     val playerConnection = LocalPlayerConnection.current ?: return
-    val playerHazeState = remember { HazeState() }
 
-    val (showAudioQualityBadge) = rememberPreference(
-        ShowAudioQualityBadgeKey,
-        defaultValue = false
-    )
     val (interfaceAnimations) = rememberPreference(
         InterfaceAnimationsKey,
         defaultValue = true
     )
-    val (hidePlayerThumbnail, onHidePlayerThumbnailChange) = rememberPreference(HidePlayerThumbnailKey, false)
     val playerStyleName by rememberPreference(PlayerStyleKey, PlayerStyle.DEFAULT.name)
     val playerStyle = remember(playerStyleName) { PlayerStyle.fromString(playerStyleName) }
     val savedPlayerBackground by rememberPreference(PlayerBackgroundStyleKey, "")
@@ -344,11 +311,6 @@ fun BottomSheetPlayer(
     val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.WAVY)
     val squigglySlider by rememberPreference(SquigglySliderKey, defaultValue = false)
     
-    // Listen Together state (reactive)
-    val listenTogetherManager = LocalListenTogetherManager.current
-    val listenTogetherRoleState = listenTogetherManager?.role?.collectAsState(initial = RoomRole.NONE)
-    val isListenTogetherGuest = listenTogetherRoleState?.value == RoomRole.GUEST
-    
     // Cast state - safely access castConnectionHandler to prevent crashes during service lifecycle changes
     val castHandler = remember(playerConnection) {
         try {
@@ -403,88 +365,6 @@ fun BottomSheetPlayer(
 
     if (!canSkipNext && automix.isNotEmpty()) {
         playerConnection.service.addToQueueAutomix(automix[0], 0)
-    }
-
-    val bluetoothDeviceName by produceState<String?>(initialValue = getConnectedBluetoothDeviceName(context)) {
-        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                value = getConnectedBluetoothDeviceName(context)
-            }
-        }
-
-        val callback = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            object : android.media.AudioDeviceCallback() {
-                override fun onAudioDevicesAdded(addedDevices: Array<out android.media.AudioDeviceInfo>?) {
-                    value = getConnectedBluetoothDeviceName(context)
-                }
-                override fun onAudioDevicesRemoved(removedDevices: Array<out android.media.AudioDeviceInfo>?) {
-                    value = getConnectedBluetoothDeviceName(context)
-                }
-            }
-        } else null
-
-        val filter = IntentFilter().apply {
-            addAction(AudioManager.ACTION_HEADSET_PLUG)
-            addAction("android.bluetooth.adapter.action.STATE_CHANGED")
-            addAction("android.bluetooth.device.action.ACL_CONNECTED")
-            addAction("android.bluetooth.device.action.ACL_DISCONNECTED")
-            addAction("android.media.AUDIO_BECOMING_NOISY")
-        }
-        
-        try {
-            androidx.core.content.ContextCompat.registerReceiver(
-                context,
-                receiver,
-                filter,
-                androidx.core.content.ContextCompat.RECEIVER_EXPORTED
-            )
-        } catch (e: Exception) {
-            timber.log.Timber.e(e, "Failed to register audio device receiver in Player")
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && callback != null) {
-            audioManager.registerAudioDeviceCallback(callback, Handler(Looper.getMainLooper()))
-        }
-        
-        awaitDispose {
-            try {
-                context.unregisterReceiver(receiver)
-            } catch (_: Exception) {}
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && callback != null) {
-                try {
-                    audioManager.unregisterAudioDeviceCallback(callback)
-                } catch (_: Exception) {}
-            }
-        }
-    }
-
-    val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
-    val maxSystemVolume = remember { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).toFloat() }
-    val systemVolume by produceState(initialValue = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat() / maxSystemVolume) {
-        val receiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent) {
-                if (intent.action == "android.media.VOLUME_CHANGED_ACTION") {
-                    value = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat() / maxSystemVolume
-                }
-            }
-        }
-        val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
-        try {
-            androidx.core.content.ContextCompat.registerReceiver(
-                context,
-                receiver,
-                filter,
-                androidx.core.content.ContextCompat.RECEIVER_EXPORTED
-            )
-        } catch (e: Exception) {
-            timber.log.Timber.e(e, "Failed to register volume receiver in Player")
-        }
-        awaitDispose {
-            try {
-                context.unregisterReceiver(receiver)
-            } catch (_: Exception) {}
-        }
     }
 
     LaunchedEffect(backgroundArtwork, playerBackground, backgroundVisible) {
@@ -594,41 +474,7 @@ fun BottomSheetPlayer(
     val download by LocalDownloadUtil.current.getDownload(mediaMetadata?.id ?: "")
         .collectAsState(initial = null)
 
-    val sleepTimerEnabled =
-        remember(
-            playerConnection.service.sleepTimer.triggerTime,
-            playerConnection.service.sleepTimer.pauseWhenSongEnd
-        ) {
-            playerConnection.service.sleepTimer.isActive
-        }
-
-    var sleepTimerTimeLeft by remember {
-        mutableLongStateOf(0L)
-    }
-
-    LaunchedEffect(sleepTimerEnabled) {
-        if (sleepTimerEnabled) {
-            while (isActive) {
-                sleepTimerTimeLeft =
-                    if (playerConnection.service.sleepTimer.pauseWhenSongEnd) {
-                        playerConnection.player.duration - playerConnection.player.currentPosition
-                    } else {
-                        playerConnection.service.sleepTimer.triggerTime - System.currentTimeMillis()
-                    }
-                delay(1000L)
-            }
-        }
-    }
-
-    var showChoosePlaylistDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
-
     var showInlineLyrics by rememberSaveable {
-        mutableStateOf(false)
-    }
-
-    var isFullScreen by rememberSaveable {
         mutableStateOf(false)
     }
 
@@ -1232,20 +1078,15 @@ fun BottomSheetPlayer(
             }
         }
     }
-        AnimatedVisibility(
-            visible = !isFullScreen,
-            enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-            exit = shrinkVertically(shrinkTowards = Alignment.Top) + slideOutVertically(targetOffsetY = { it }) + fadeOut()
-        ) {
-            Queue(
-                state = queueSheetState,
-                playerBottomSheetState = state,
+        Queue(
+            state = queueSheetState,
+            playerBottomSheetState = state,
             navController = navController,
             background =
             if (useBlackBackground) {
                 Color.Black
             } else {
-                MaterialTheme.colorScheme.surface //fixed the issue causing the queue ui not good surfacecontainer
+                MaterialTheme.colorScheme.surface
             },
             onBackgroundColor = onBackgroundColor,
             TextBackgroundColor = TextBackgroundColor,
@@ -1257,8 +1098,7 @@ fun BottomSheetPlayer(
             onToggleLyrics = {
                 showInlineLyrics = !showInlineLyrics
             },
-            )
-        }
+        )
     }
 }
 

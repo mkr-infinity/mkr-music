@@ -28,6 +28,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -298,11 +299,14 @@ private fun NewMiniPlayer(
     
     // Cohesive colors with charcoal/amber baseline
     val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
-    val backgroundColor = if (pureBlack) Color.Black else if (isDynamicBackground) Color.Transparent else artworkPalette.surfaceElevated
+    val isDark = isSystemInDarkTheme()
+    val defaultSurface = if (isDark) artworkPalette.surfaceElevated else MaterialTheme.colorScheme.surfaceContainer
+    val defaultText = if (isDark) artworkPalette.textPrimary else MaterialTheme.colorScheme.onSurface
+    val backgroundColor = if (isDynamicBackground) Color.Transparent else if (pureBlack && isDark) Color.Black else defaultSurface
     
     val primaryColor = artworkPalette.primaryAccent
     val outlineColor = if (isDynamicBackground) Color.White.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline
-    val onSurfaceColor = if (pureBlack) Color.White else artworkPalette.textPrimary
+    val onSurfaceColor = if (pureBlack && isDark) Color.White else defaultText
     val errorColor = MaterialTheme.colorScheme.error
 
     val previousTrackLabel = stringResource(R.string.previous_track)

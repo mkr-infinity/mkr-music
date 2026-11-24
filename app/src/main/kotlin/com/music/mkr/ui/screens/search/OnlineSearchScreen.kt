@@ -140,6 +140,16 @@ fun OnlineSearchScreen(
 
     val lazyListState = rememberLazyListState()
 
+    val backStackEntry = navController.currentBackStackEntry
+    val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
+
+    LaunchedEffect(scrollToTop?.value) {
+        if (scrollToTop?.value == true) {
+            lazyListState.animateScrollToItem(0)
+            backStackEntry?.savedStateHandle?.set("scrollToTop", false)
+        }
+    }
+
     LaunchedEffect(Unit) {
         snapshotFlow { lazyListState.firstVisibleItemScrollOffset }
             .drop(1)

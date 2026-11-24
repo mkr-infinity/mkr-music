@@ -143,6 +143,16 @@ fun OnlineSearchResult(
     val keyboard = LocalSoftwareKeyboardController.current
     val scope = rememberCoroutineScope()
     val grid = rememberLazyGridState()
+
+    val backStackEntry = navController.currentBackStackEntry
+    val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsStateWithLifecycle()
+
+    LaunchedEffect(scrollToTop?.value) {
+        if (scrollToTop?.value == true) {
+            grid.animateScrollToItem(0)
+            backStackEntry?.savedStateHandle?.set("scrollToTop", false)
+        }
+    }
     val pauseHistory by rememberPreference(PauseSearchHistoryKey, false)
     var searchActive by rememberSaveable { mutableStateOf(false) }
     var query by rememberSaveable(viewModel.query, stateSaver = TextFieldValue.Saver) {

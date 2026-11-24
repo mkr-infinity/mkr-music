@@ -1083,13 +1083,13 @@ fun Queue(
                             )
                             val dismissBoxState =
                                 rememberSwipeToDismissBoxState(
-                                    positionalThreshold = { totalDistance -> totalDistance }
+                                    positionalThreshold = { totalDistance -> totalDistance * 0.5f }
                                 )
 
                             var processedDismiss by remember { mutableStateOf(false) }
                             LaunchedEffect(dismissBoxState.currentValue) {
                                 val dv = dismissBoxState.currentValue
-                                if (!processedDismiss && !locked && !isListenTogetherGuest && (
+                                if (!processedDismiss && !locked && !isActive && !isListenTogetherGuest && (
                                             dv == SwipeToDismissBoxValue.StartToEnd ||
                                                     dv == SwipeToDismissBoxValue.EndToStart
                                             )
@@ -1263,7 +1263,7 @@ fun Queue(
                                 }
                             }
 
-                            if (locked) {
+                            if (locked || isActive) {
                                 content()
                             } else {
                                 val dismissDirection = dismissBoxState.dismissDirection

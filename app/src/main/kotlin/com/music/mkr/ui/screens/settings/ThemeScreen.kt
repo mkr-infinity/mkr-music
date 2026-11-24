@@ -80,7 +80,6 @@ import com.music.mkr.R
 import com.music.mkr.constants.DarkModeKey
 import com.music.mkr.constants.DynamicThemeKey
 import com.music.mkr.constants.PureBlackKey
-import com.music.mkr.constants.PureBlackMiniPlayerKey
 import com.music.mkr.constants.SelectedThemeColorKey
 import com.music.mkr.ui.theme.DefaultThemeColor
 import com.music.mkr.ui.theme.mkrMusicTheme

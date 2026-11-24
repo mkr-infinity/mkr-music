@@ -69,12 +69,11 @@ import com.music.mkr.utils.rememberPreference
  * Shape styling variant for the player transport controls.
  */
 enum class TransportVariant {
-    /** Classic and Minimal circular buttons */
+    /** Circular buttons */
     CIRCLE,
-    /** Proportional pill buttons used by Modern player */
-    PILL,
-    /** Smooth rounded squircle used by MaterialExtended and Apple player */
+    /** Smooth squircle used by Cinematic and Minimal player */
     EXPRESSIVE,
+    /** Immersive layout button sizing */
     IMMERSIVE,
 }
 
@@ -120,9 +119,9 @@ fun PlayerTransportRow(
 ) {
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
     val immersive = variant == TransportVariant.IMMERSIVE
-    val effectivePlayWidth = playButtonWidth ?: if (variant == TransportVariant.PILL) playButtonSize * 1.55f else playButtonSize
+    val effectivePlayWidth = playButtonWidth ?: playButtonSize
     val effectivePlayHeight = playButtonHeight ?: playButtonSize
-    val effectiveSideWidth = sideButtonWidth ?: if (variant == TransportVariant.PILL) sideButtonSize * 1.30f else sideButtonSize
+    val effectiveSideWidth = sideButtonWidth ?: sideButtonSize
     val effectiveSideHeight = sideButtonHeight ?: sideButtonSize
     val playShape = CircleShape
     val skipShape = CircleShape

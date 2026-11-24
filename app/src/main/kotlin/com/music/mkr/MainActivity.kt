@@ -33,7 +33,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -59,8 +58,6 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -75,7 +72,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import com.music.mkr.mkrmusic.updater.ReleasePreviewState
 import com.music.mkr.constants.LastSeenStarPromptVersionKey
 import com.music.mkr.constants.HasStarredRepoKey
 import com.music.mkr.constants.HasShownSupportPromptKey
@@ -198,7 +194,6 @@ import com.music.mkr.constants.SYSTEM_DEFAULT
 import com.music.mkr.constants.SelectedThemeColorKey
 import com.music.mkr.constants.AutoHideNavBarKey
 import com.music.mkr.constants.SlimNavBarKey
-import com.music.mkr.constants.FloatingNavBarKey
 import com.music.mkr.constants.NavigationStyle
 import com.music.mkr.constants.NavigationStyleKey
 import com.music.mkr.constants.UseNewMiniPlayerDesignKey
