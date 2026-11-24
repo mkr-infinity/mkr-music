@@ -21,6 +21,7 @@ import android.os.IBinder
 import android.view.View
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -196,6 +197,7 @@ import com.music.mkr.constants.AutoHideNavBarKey
 import com.music.mkr.constants.SlimNavBarKey
 import com.music.mkr.constants.NavigationStyle
 import com.music.mkr.constants.NavigationStyleKey
+import com.music.mkr.constants.UseAppleMiniPlayerKey
 import com.music.mkr.constants.UseNewMiniPlayerDesignKey
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.SearchHistory
@@ -379,6 +381,7 @@ class MainActivity : ComponentActivity() {
             Timber.e(e, "SplashScreen install failed in MainActivity")
         }
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_LTR
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
@@ -779,6 +782,7 @@ class MainActivity : ComponentActivity() {
                 val windowsInsets = WindowInsets.systemBars
                 val bottomInset = with(density) { windowsInsets.getBottom(density).toDp() }
                 val bottomInsetDp = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+                val isImeVisible = WindowInsets.ime.getBottom(density) > 0
 
                 val navController = rememberNavController()
                 val homeViewModel: HomeViewModel = hiltViewModel()
@@ -802,6 +806,7 @@ class MainActivity : ComponentActivity() {
                 val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
                 val (navigationStyle) = rememberEnumPreference(NavigationStyleKey, defaultValue = NavigationStyle.DEFAULT)
                 val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
+                val (useAppleMiniPlayer) = rememberPreference(UseAppleMiniPlayerKey, defaultValue = false)
                 val defaultOpenTab = remember {
                     dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)
                 }
@@ -899,7 +904,7 @@ class MainActivity : ComponentActivity() {
                 }
                 val bottomNavVisible = shouldShowNavigationBar && !showRail && !navHiddenByScroll
                 val fullNavHeight = bottomNavigationHeight(navigationStyle, slimNav)
-                val miniPlayerGap = if (bottomNavVisible && navigationStyle.isFloating) MiniPlayerBottomSpacing else 0.dp
+                val miniPlayerGap = if (useNewMiniPlayerDesign || useAppleMiniPlayer || navigationStyle.isFloating) MiniPlayerBottomSpacing else 0.dp
                 val navPadding = if (bottomNavVisible) fullNavHeight else 0.dp
 
                 val navigationBarHeight by animateDpAsState(
@@ -1093,6 +1098,7 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Scaffold(
                         containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
+                        contentWindowInsets = WindowInsets(0, 0, 0, 0),
                         topBar = {
                             if (currentRoute != "settings") AnimatedVisibility(
                                 visible = shouldShowTopBar,
@@ -1332,13 +1338,23 @@ class MainActivity : ComponentActivity() {
 
                             // Pre-calculate values for graphicsLayer to avoid reading state during composition
                             val navBarTotalHeight = bottomInset + fullNavHeight
+                            val playerTranslationModifier = Modifier.graphicsLayer {
+                                val progress = playerBottomSheetState.progress.coerceIn(0f, 1f)
+                                if (progress < 1f && shouldShowNavigationBar && !showRail) {
+                                    val navBarHeightPx = navigationBarHeight.toPx()
+                                    val fullNavHeightPx = fullNavHeight.toPx()
+                                    val hideOffset = (fullNavHeightPx - navBarHeightPx).coerceAtLeast(0f)
+                                    translationY = hideOffset * (1f - progress)
+                                }
+                            }
 
                             if (!showRail && currentRoute != "wrapped" && currentRoute != "update" && currentRoute != "listen_together/chat") {
                                 Box {
                                     BottomSheetPlayer(
                                         state = playerBottomSheetState,
                                         navController = navController,
-                                        pureBlack = pureBlack
+                                        pureBlack = pureBlack,
+                                        modifier = playerTranslationModifier
                                     )
 
                                     if (bottomNavVisible || hasAnimatedNavHeight) AppNavigationBar(
@@ -1379,7 +1395,7 @@ class MainActivity : ComponentActivity() {
                                             // Use graphicsLayer for background color changes
                                             .graphicsLayer {
                                                 val progress = playerBottomSheetState.progress
-                                                alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar) || navigationStyle.isFloating || navHiddenByScroll) 0f else 1f
+                                                alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar) || navigationStyle.isFloating || navHiddenByScroll || isImeVisible) 0f else 1f
                                             }
                                             .background(baseBg)
                                     )
@@ -1390,7 +1406,8 @@ class MainActivity : ComponentActivity() {
                                         BottomSheetPlayer(
                                             state = playerBottomSheetState,
                                             navController = navController,
-                                            pureBlack = pureBlack
+                                            pureBlack = pureBlack,
+                                            modifier = playerTranslationModifier
                                         )
 
                                         Box(
@@ -1401,7 +1418,7 @@ class MainActivity : ComponentActivity() {
                                                 // Use graphicsLayer for background color changes
                                                 .graphicsLayer {
                                                     val progress = playerBottomSheetState.progress
-                                                    alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar)) 0f else 1f
+                                                    alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar) || isImeVisible) 0f else 1f
                                                 }
                                                 .background(baseBg)
                                         )

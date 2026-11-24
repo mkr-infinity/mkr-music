@@ -298,15 +298,17 @@ private fun NewMiniPlayer(
     )
     
     // Cohesive colors with charcoal/amber baseline
-    val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
     val isDark = isSystemInDarkTheme()
+    val effectivePureBlack = pureBlack && isDark
+    val effectiveMiniPlayerBackground = if (effectivePureBlack) PlayerBackgroundStyle.DEFAULT else miniPlayerBackground
+    val isDynamicBackground = effectiveMiniPlayerBackground != PlayerBackgroundStyle.DEFAULT
     val defaultSurface = if (isDark) artworkPalette.surfaceElevated else MaterialTheme.colorScheme.surfaceContainer
     val defaultText = if (isDark) artworkPalette.textPrimary else MaterialTheme.colorScheme.onSurface
-    val backgroundColor = if (isDynamicBackground) Color.Transparent else if (pureBlack && isDark) Color.Black else defaultSurface
+    val backgroundColor = if (effectivePureBlack) Color.Black else if (isDynamicBackground) Color.Transparent else defaultSurface
     
     val primaryColor = artworkPalette.primaryAccent
     val outlineColor = if (isDynamicBackground) Color.White.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline
-    val onSurfaceColor = if (pureBlack && isDark) Color.White else defaultText
+    val onSurfaceColor = if (effectivePureBlack) Color.White else if (isDynamicBackground) PlayerColorExtractor.TextPrimary else defaultText
     val errorColor = MaterialTheme.colorScheme.error
 
     val previousTrackLabel = stringResource(R.string.previous_track)
@@ -458,7 +460,7 @@ private fun NewMiniPlayer(
         ) {
             // Background Layers
             MiniPlayerBackgroundLayer(
-                style = miniPlayerBackground,
+                style = effectiveMiniPlayerBackground,
                 mediaMetadata = mediaMetadata,
                 gradientColors = gradientColors,
                 interfaceAnimations = interfaceAnimations,
@@ -770,14 +772,17 @@ private fun LegacyMiniPlayer(
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
     val pureBlack by rememberPreference(PureBlackMiniPlayerKey, defaultValue = false)
+    val isDark = isSystemInDarkTheme()
+    val effectivePureBlack = pureBlack && isDark
     
     val playbackState by playerConnection.playbackState.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val savedMiniPlayerBackground by rememberPreference(MiniPlayerBackgroundStyleKey, "")
     val miniPlayerBackground = resolveMiniPlayerBackground(savedMiniPlayerBackground)
-    val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
+    val effectiveMiniPlayerBackground = if (effectivePureBlack) PlayerBackgroundStyle.DEFAULT else miniPlayerBackground
+    val isDynamicBackground = effectiveMiniPlayerBackground != PlayerBackgroundStyle.DEFAULT
     var gradientColors by remember { mutableStateOf(emptyList<Color>()) }
-    MiniPlayerColorExtractor(mediaMetadata, miniPlayerBackground) { gradientColors = it }
+    MiniPlayerColorExtractor(mediaMetadata, effectiveMiniPlayerBackground) { gradientColors = it }
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
     
@@ -966,7 +971,7 @@ private fun LegacyMiniPlayer(
                 .miniPlayerCapsule(
                     restingRadius = 16.dp,
                     color = when {
-                        pureBlack -> Color.Black
+                        effectivePureBlack -> Color.Black
                         isDynamicBackground -> PlayerColorExtractor.CharcoalDark
                         else -> MaterialTheme.colorScheme.surfaceContainer
                     },
@@ -974,7 +979,7 @@ private fun LegacyMiniPlayer(
                 )
         ) {
             MiniPlayerBackgroundLayer(
-                style = miniPlayerBackground,
+                style = effectiveMiniPlayerBackground,
                 mediaMetadata = mediaMetadata,
                 gradientColors = gradientColors,
                 interfaceAnimations = interfaceAnimations,
@@ -1273,6 +1278,7 @@ internal fun MiniPlayerBackgroundLayer(
     gradientColors: List<Color>,
     interfaceAnimations: Boolean,
 ) {
+    if (style == PlayerBackgroundStyle.DEFAULT) return
     val context = LocalContext.current
     val hasMotion = style == PlayerBackgroundStyle.GLOW_ANIMATED || style == PlayerBackgroundStyle.LIVE_MESH
     val animate = if (hasMotion && interfaceAnimations) {

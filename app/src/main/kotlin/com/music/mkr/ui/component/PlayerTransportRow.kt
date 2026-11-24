@@ -273,8 +273,8 @@ fun PlayerTransportRow(
                                     painter = painterResource(
                                         when {
                                             ended -> R.drawable.replay
-                                            playing -> R.drawable.pause
-                                            else -> R.drawable.play
+                                            playing -> if (immersive) R.drawable.transport_pause else R.drawable.pause
+                                            else -> if (immersive) R.drawable.transport_play else R.drawable.play
                                         }
                                     ),
                                     contentDescription = stringResource(if (playing) R.string.pause else R.string.play),

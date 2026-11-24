@@ -4,13 +4,19 @@ import android.graphics.Bitmap
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.painter.ColorPainter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
@@ -33,6 +39,11 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 
+private fun smootherStep(t: Float): Float {
+    val x = t.coerceIn(0f, 1f)
+    return x * x * x * (x * (x * 6f - 15f) + 10f)
+}
+
 internal fun playerBackgroundArtworkUrl(thumbnail: String?, itemArtwork: String?): String? =
     thumbnail?.takeIf { it.isNotBlank() } ?: itemArtwork?.takeIf { it.isNotBlank() }
 
@@ -45,36 +56,65 @@ internal fun ImmersiveArtworkBackground(
     modifier: Modifier = Modifier,
 ) {
     BoxWithConstraints(modifier) {
-        val shadeTrailingPane = maxWidth > maxHeight || maxWidth >= 832.dp
+        val isLandscape = maxWidth > maxHeight || maxWidth >= 832.dp
         val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
-        ImmersiveArtwork(
-            trackId = trackId,
-            thumbnail = thumbnail,
-            itemArtwork = itemArtwork,
-            animate = animate,
-            backgroundColor = Color.Transparent,
-            contentScale = ContentScale.Crop,
-            alignment = Alignment.TopCenter,
-            showPlaceholder = false,
-            modifier = Modifier.fillMaxSize(),
-        )
-        val shade = Color(0xFF101014)
+
         Box(
-            Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
-                    0f to shade.copy(alpha = 0.52f),
-                    0.14f to Color.Transparent,
-                    0.34f to Color.Transparent,
-                    0.57f to shade.copy(alpha = 0.77f),
-                    1f to shade.copy(alpha = 0.95f),
+            modifier = Modifier
+                .then(
+                    if (isLandscape) {
+                        Modifier
+                            .fillMaxHeight()
+                            .fillMaxWidth(0.55f)
+                            .align(if (rtl) Alignment.CenterEnd else Alignment.CenterStart)
+                    } else {
+                        Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight(0.68f)
+                            .align(Alignment.TopCenter)
+                    }
                 )
+                .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
+                .drawWithContent {
+                    drawContent()
+                    val brush = if (isLandscape) {
+                        val startX = if (rtl) size.width * 0.42f else size.width * (1f - 0.42f)
+                        val endX = if (rtl) 0f else size.width
+                        Brush.horizontalGradient(
+                            colorStops = Array(17) { i ->
+                                val t = i / 16f
+                                t to Color.Black.copy(alpha = 1f - smootherStep(t))
+                            },
+                            startX = startX,
+                            endX = endX,
+                        )
+                    } else {
+                        Brush.verticalGradient(
+                            colorStops = Array(17) { i ->
+                                val t = i / 16f
+                                t to Color.Black.copy(alpha = 1f - smootherStep(t))
+                            },
+                            startY = size.height * (1f - 0.42f),
+                            endY = size.height,
+                        )
+                    }
+                    drawRect(
+                        brush = brush,
+                        blendMode = BlendMode.DstIn,
+                    )
+                }
+        ) {
+            ImmersiveArtwork(
+                trackId = trackId,
+                thumbnail = thumbnail,
+                itemArtwork = itemArtwork,
+                animate = animate,
+                backgroundColor = Color.Transparent,
+                contentScale = ContentScale.Crop,
+                alignment = Alignment.TopCenter,
+                showPlaceholder = false,
+                modifier = Modifier.fillMaxSize(),
             )
-        )
-        if (shadeTrailingPane) {
-            val edge = shade.copy(alpha = 0.80f)
-            val stops = if (rtl) arrayOf(0f to edge, 0.5f to edge, 0.8f to Color.Transparent)
-                else arrayOf(0.2f to Color.Transparent, 0.5f to edge, 1f to edge)
-            Box(Modifier.fillMaxSize().background(Brush.horizontalGradient(*stops)))
         }
     }
 }

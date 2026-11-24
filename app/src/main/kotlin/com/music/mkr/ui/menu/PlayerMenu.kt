@@ -318,7 +318,7 @@ fun PlayerMenu(
                                 Icon(
                                     painter = painterResource(R.drawable.radio),
                                     contentDescription = null,
-                                    modifier = Modifier.size(32.dp),
+                                    modifier = Modifier.size(24.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             },
@@ -335,7 +335,7 @@ fun PlayerMenu(
                             Icon(
                                 painter = painterResource(R.drawable.playlist_add),
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
@@ -347,7 +347,7 @@ fun PlayerMenu(
                             Icon(
                                 painter = painterResource(R.drawable.share),
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
@@ -366,8 +366,8 @@ fun PlayerMenu(
                         }
                     )
                 ),
-                columns = if (isListenTogetherGuest) 2 else 3,
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 16.dp)
+                columns = 2,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)
             )
         }
 

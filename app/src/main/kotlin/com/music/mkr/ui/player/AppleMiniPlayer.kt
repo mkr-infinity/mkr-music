@@ -142,12 +142,13 @@ internal fun AppleMiniPlayer(
     )
     
     // Dynamic cohesive colors
-    val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
+    val effectiveBackgroundStyle = if (pureBlack) PlayerBackgroundStyle.DEFAULT else miniPlayerBackground
+    val isDynamicBackground = effectiveBackgroundStyle != PlayerBackgroundStyle.DEFAULT
     val backgroundColor = if (pureBlack) Color.Black else if (isDynamicBackground) Color.Transparent else artworkPalette.surfaceElevated
     
     val primaryColor = artworkPalette.primaryAccent
     val outlineColor = if (isDynamicBackground) Color.White.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline
-    val onSurfaceColor = if (pureBlack) Color.White else artworkPalette.textPrimary
+    val onSurfaceColor = if (pureBlack) Color.White else if (isDynamicBackground) PlayerColorExtractor.TextPrimary else artworkPalette.textPrimary
     val errorColor = MaterialTheme.colorScheme.error
 
     val previousTrackLabel = stringResource(R.string.previous_track)
@@ -299,7 +300,7 @@ internal fun AppleMiniPlayer(
         ) {
             // Background Layers
             MiniPlayerBackgroundLayer(
-                style = miniPlayerBackground,
+                style = effectiveBackgroundStyle,
                 mediaMetadata = mediaMetadata,
                 gradientColors = gradientColors,
                 interfaceAnimations = interfaceAnimations,
