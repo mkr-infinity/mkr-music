@@ -8,6 +8,8 @@ package com.music.mkr.ui.component
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -93,26 +95,18 @@ fun NavigationStyleDialog(
             }
         },
         text = {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 480.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(vertical = 4.dp)
-                ) {
-                    items(
-                        items = NavigationStyle.entries.toTypedArray(),
-                        key = { it.name }
-                    ) { style ->
-                        NavigationStyleCard(
-                            style = style,
-                            isSelected = style == current,
-                            onClick = { onSelect(style) }
-                        )
-                    }
+                NavigationStyle.entries.forEach { style ->
+                    NavigationStyleCard(
+                        style = style,
+                        isSelected = style == current,
+                        onClick = { onSelect(style) }
+                    )
                 }
             }
         },
@@ -168,31 +162,16 @@ private fun NavigationStyleCard(
                 modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = stringResource(style.titleRes),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
-                    if (style == NavigationStyle.DEFAULT) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        ) {
-                            Text(
-                                text = "Default",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
+                Text(
+                    text = if (style == NavigationStyle.DEFAULT) {
+                        "${stringResource(style.titleRes)} (${stringResource(R.string.default_)})"
+                    } else {
+                        stringResource(style.titleRes)
+                    },
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = stringResource(style.descriptionRes),

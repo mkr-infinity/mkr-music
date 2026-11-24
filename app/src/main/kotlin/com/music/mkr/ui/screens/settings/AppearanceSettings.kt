@@ -298,11 +298,11 @@ fun AppearanceSettings(
 
     val (sliderStyle, onSliderStyleChange) = rememberEnumPreference(
         SliderStyleKey,
-        defaultValue = SliderStyle.EXPRESSIVE
+        defaultValue = SliderStyle.WAVY
     )
     val (squigglySlider, onSquigglySliderChange) = rememberPreference(
         SquigglySliderKey,
-        defaultValue = false
+        defaultValue = true
     )
     val (swipeThumbnail, onSwipeThumbnailChange) = rememberPreference(
         SwipeThumbnailKey,
@@ -1367,27 +1367,6 @@ fun AppearanceSettings(
                         )
                     },
                     onClick = { onRotatingThumbnailChange(!rotatingThumbnail) }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.chat_msg),
-                    title = { Text(stringResource(R.string.show_comment_button)) },
-                    description = { Text(stringResource(R.string.show_comment_button_description)) },
-                    trailingContent = {
-                        Switch(
-                            checked = showCommentButton,
-                            onCheckedChange = onShowCommentButtonChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (showCommentButton) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onShowCommentButtonChange(!showCommentButton) }
                 )
             ) + if (swipeThumbnail) listOf(
                 Material3SettingsItem(

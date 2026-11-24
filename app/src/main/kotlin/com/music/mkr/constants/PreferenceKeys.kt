@@ -505,7 +505,7 @@ internal fun resolveFullPlayerBackground(saved: String, style: PlayerStyle): Pla
     }
 
 internal fun resolveMiniPlayerBackground(saved: String): PlayerBackgroundStyle =
-    miniPlayerBackgroundStyles.firstOrNull { it.name == saved } ?: PlayerBackgroundStyle.GLOW_ANIMATED
+    miniPlayerBackgroundStyles.firstOrNull { it.name == saved } ?: PlayerBackgroundStyle.DEFAULT
 
 val TopSize = stringPreferencesKey("topSize")
 val HistoryDuration = floatPreferencesKey("historyDuration")

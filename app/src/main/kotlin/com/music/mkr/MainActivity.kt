@@ -806,7 +806,7 @@ class MainActivity : ComponentActivity() {
                 val interfaceAnimations by rememberPreference(InterfaceAnimationsKey, true)
                 val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
                 val (navigationStyle) = rememberEnumPreference(NavigationStyleKey, defaultValue = NavigationStyle.DEFAULT)
-                val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
+                val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = false)
                 val (useAppleMiniPlayer) = rememberPreference(UseAppleMiniPlayerKey, defaultValue = false)
                 val defaultOpenTab = remember {
                     dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)

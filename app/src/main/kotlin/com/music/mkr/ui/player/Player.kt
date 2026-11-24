@@ -309,8 +309,8 @@ fun BottomSheetPlayer(
         AudioQualityKey,
         defaultValue = AudioQuality.AUTO
     )
-    val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.EXPRESSIVE)
-    val squigglySlider by rememberPreference(SquigglySliderKey, defaultValue = false)
+    val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.WAVY)
+    val squigglySlider by rememberPreference(SquigglySliderKey, defaultValue = true)
     
     // Cast state - safely access castConnectionHandler to prevent crashes during service lifecycle changes
     val castHandler = remember(playerConnection) {

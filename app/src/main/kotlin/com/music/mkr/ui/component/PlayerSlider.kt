@@ -48,8 +48,8 @@ fun PlayerSliderTrack(
     trackHeight: Dp = 10.dp,
     isPlaying: Boolean = true,
 ) {
-    val sliderStyle by rememberEnumPreference(SliderStyleKey, defaultValue = SliderStyle.EXPRESSIVE)
-    val squigglySlider by rememberPreference(SquigglySliderKey, defaultValue = false)
+    val sliderStyle by rememberEnumPreference(SliderStyleKey, defaultValue = SliderStyle.WAVY)
+    val squigglySlider by rememberPreference(SquigglySliderKey, defaultValue = true)
 
     val effectiveRange = if (valueRange.endInclusive <= valueRange.start) {
         valueRange.start..(valueRange.start + 1f)

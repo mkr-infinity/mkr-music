@@ -7,7 +7,7 @@ internal enum class MiniPlayerDesignOption {
 
     companion object {
         const val DefaultUseAppleMiniPlayer = false
-        const val DefaultUseNewMiniPlayerDesign = true
+        const val DefaultUseNewMiniPlayerDesign = false
 
         fun fromPreferences(
             useAppleMiniPlayer: Boolean = DefaultUseAppleMiniPlayer,
