@@ -1015,27 +1015,16 @@ private fun ArtistInfoAndBadges(
             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.check),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(12.dp)
-                )
-                Text(
-                    text = "VERIFIED ARTIST",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.2.sp,
-                        fontSize = 10.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+            Text(
+                text = stringResource(R.string.artist).uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp,
+                    fontSize = 10.sp
+                ),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            )
         }
 
         Text(
@@ -1262,12 +1251,12 @@ private fun ArtistActionButtons(
         }
 
         // Secondary Options Row (Local switch & Share)
-        if (hasLocalOption) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (hasLocalOption) {
                 Surface(
                     modifier = Modifier
                         .height(38.dp)
@@ -1297,6 +1286,36 @@ private fun ArtistActionButtons(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
+                }
+            }
+            Surface(
+                modifier = Modifier
+                    .height(38.dp)
+                    .mkrClickable(onClick = onShareClick),
+                shape = RoundedCornerShape(19.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.share),
+                        contentDescription = stringResource(R.string.share),
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.share),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         }

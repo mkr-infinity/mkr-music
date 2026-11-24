@@ -278,6 +278,7 @@ fun TopPlaylistScreen(
                                 likeLength = likeLength,
                                 downloadState = downloadState,
                                 onShowRemoveDownloadDialog = { showRemoveDownloadDialog = true },
+                                onStartSearch = { isSearching = true },
                                 menuState = menuState,
                                 modifier = Modifier.animateItem()
                             )
@@ -527,6 +528,7 @@ private fun TopPlaylistHeader(
     likeLength: Long?,
     downloadState: Int,
     onShowRemoveDownloadDialog: () -> Unit,
+    onStartSearch: () -> Unit,
     menuState: com.music.mkr.ui.component.MenuState,
     modifier: Modifier = Modifier
 ) {
@@ -720,6 +722,31 @@ private fun TopPlaylistHeader(
                         Icon(
                             painter = painterResource(R.drawable.more_vert),
                             contentDescription = null,
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+
+                // Search Button - circular
+                val searchHeaderPress = remember { MutableInteractionSource() }
+                Surface(
+                    interactionSource = searchHeaderPress,
+                    onClick = onStartSearch,
+                    shape = CircleShape,
+                    color = liquidContainer,
+                    border = liquidBorder,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .mkrPressFeedback(interactionSource = searchHeaderPress)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.search),
+                            contentDescription = stringResource(R.string.search),
                             modifier = Modifier.size(18.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )

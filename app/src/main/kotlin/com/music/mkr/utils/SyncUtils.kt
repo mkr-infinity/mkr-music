@@ -519,26 +519,32 @@ class SyncUtils @Inject constructor(
                                     }
                                     val targetInLibrary = existingSong.inLibrary ?: timestamp
 
-                                    val needsUpdate = !existingSong.liked ||
-                                        existingSong.likedDate != targetLikedDate ||
-                                        existingSong.inLibrary != targetInLibrary ||
-                                        existingSong.isVideo != isVideoSong ||
-                                        (existingSong.title.isBlank() && song.title.isNotBlank())
+                                    val wasUnlikedLocally = !existingSong.liked && existingSong.likedDate == null
+                                    if (wasUnlikedLocally) {
+                                        // User explicitly unliked this track locally; propagate unlike to YouTube and do not resurrect like state
+                                        withRetry { YouTube.likeVideo(existingSong.id, false) }
+                                    } else {
+                                        val needsUpdate = !existingSong.liked ||
+                                            existingSong.likedDate != targetLikedDate ||
+                                            existingSong.inLibrary != targetInLibrary ||
+                                            existingSong.isVideo != isVideoSong ||
+                                            (existingSong.title.isBlank() && song.title.isNotBlank())
 
-                                    if (needsUpdate) {
-                                        update(
-                                            existingSong.copy(
-                                                liked = true,
-                                                likedDate = targetLikedDate,
-                                                inLibrary = targetInLibrary,
-                                                isVideo = if (isVideoSong) true else existingSong.isVideo,
-                                                title = existingSong.title.ifBlank { song.title },
-                                                duration = if (existingSong.duration > 0) existingSong.duration else (song.duration ?: -1),
-                                                thumbnailUrl = existingSong.thumbnailUrl ?: song.thumbnail,
-                                                albumId = existingSong.albumId ?: song.album?.id,
-                                                albumName = existingSong.albumName ?: song.album?.name
+                                        if (needsUpdate) {
+                                            update(
+                                                existingSong.copy(
+                                                    liked = true,
+                                                    likedDate = targetLikedDate,
+                                                    inLibrary = targetInLibrary,
+                                                    isVideo = if (isVideoSong) true else existingSong.isVideo,
+                                                    title = existingSong.title.ifBlank { song.title },
+                                                    duration = if (existingSong.duration > 0) existingSong.duration else (song.duration ?: -1),
+                                                    thumbnailUrl = existingSong.thumbnailUrl ?: song.thumbnail,
+                                                    albumId = existingSong.albumId ?: song.album?.id,
+                                                    albumName = existingSong.albumName ?: song.album?.name
+                                                )
                                             )
-                                        )
+                                        }
                                     }
                                 } else {
                                     // 2. Track metadata match with existing local songs to prevent duplicate entries

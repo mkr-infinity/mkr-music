@@ -280,28 +280,6 @@ fun SelectionSongMenu(
                         )
                         add(
                             Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.shuffle)) },
-                                description = { Text(text = stringResource(R.string.add_to_queue_desc)) },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.shuffle),
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    onDismiss()
-                                    playerConnection.playQueue(
-                                        ListQueue(
-                                            title = "Selection",
-                                            items = songSelection.shuffled().map { it.toMediaItem() },
-                                        ),
-                                    )
-                                    clearAction()
-                                }
-                            )
-                        )
-                        add(
-                            Material3MenuItemData(
                                 title = { Text(text = stringResource(R.string.add_to_queue)) },
                                 description = { Text(text = stringResource(R.string.add_to_queue_desc)) },
                                 icon = {
@@ -318,21 +296,6 @@ fun SelectionSongMenu(
                             )
                         )
                     }
-                    add(
-                        Material3MenuItemData(
-                            title = { Text(text = stringResource(R.string.add_to_playlist)) },
-                            description = { Text(text = stringResource(R.string.add_to_playlist_desc)) },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.playlist_add),
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = {
-                                showChoosePlaylistDialog = true
-                            }
-                        )
-                    )
                     add(
                         Material3MenuItemData(
                             title = {

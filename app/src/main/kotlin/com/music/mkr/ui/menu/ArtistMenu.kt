@@ -174,12 +174,13 @@ fun ArtistMenu(
                                 text = stringResource(R.string.share),
                                 onClick = {
                                     onDismiss()
-                                val intent = Intent().apply {
+                                    val shareUrl = if (artist.id.startsWith("UC")) "https://music.youtube.com/channel/${artist.id}" else artist.artist.name
+                                    val intent = Intent().apply {
                                         action = Intent.ACTION_SEND
                                         type = "text/plain"
                                         putExtra(
                                             Intent.EXTRA_TEXT,
-                                            "https://music.youtube.com/channel/${artist.id}"
+                                            shareUrl
                                         )
                                     }
                                     context.startActivity(Intent.createChooser(intent, null))

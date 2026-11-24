@@ -89,10 +89,10 @@ internal fun CollectionHeader(
 internal inline fun <T> List<T>.collectionDurationSeconds(duration: (T) -> Int?): Long? {
     var total = 0L
     for (song in this) {
-        val seconds = duration(song)?.takeIf { it > 0 } ?: return null
+        val seconds = duration(song)?.takeIf { it > 0 } ?: 0
         total += seconds
     }
-    return total
+    return if (total > 0L) total else null
 }
 
 @Composable

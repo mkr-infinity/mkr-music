@@ -1267,6 +1267,7 @@ class MusicService :
                     .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC)
                     .build()
             )
+            .setAcceptsDelayedFocusGain(true)
             .setOnAudioFocusChangeListener { focusChange ->
                 handleAudioFocusChange(focusChange)
             }
@@ -1291,12 +1292,12 @@ class MusicService :
             }
 
             AudioManager.AUDIOFOCUS_LOSS -> {
-                resumeAfterFocusLoss = false
+                val wasPlaying = player.playWhenReady
                 lastAudioFocusState = focusChange
                 player.pause()
                 fadingPlayer?.pause()
                 releaseCrossfadePlayers()
-                abandonAudioFocus()
+                resumeAfterFocusLoss = wasPlaying
             }
 
             AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> {
@@ -1321,10 +1322,27 @@ class MusicService :
     private fun requestAudioFocus(): Boolean {
         audioFocusRequest?.let { request ->
             val result = audioManager.requestAudioFocus(request)
-            hasAudioFocus = result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED
-            if (hasAudioFocus) lastAudioFocusState = AudioManager.AUDIOFOCUS_GAIN
-            applyPlaybackVolume()
-            return hasAudioFocus
+            return when (result) {
+                AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
+                    hasAudioFocus = true
+                    lastAudioFocusState = AudioManager.AUDIOFOCUS_GAIN
+                    applyPlaybackVolume()
+                    true
+                }
+                AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> {
+                    hasAudioFocus = false
+                    resumeAfterFocusLoss = true
+                    lastAudioFocusState = AudioManager.AUDIOFOCUS_LOSS_TRANSIENT
+                    applyPlaybackVolume()
+                    false
+                }
+                else -> {
+                    hasAudioFocus = false
+                    lastAudioFocusState = AudioManager.AUDIOFOCUS_NONE
+                    applyPlaybackVolume()
+                    false
+                }
+            }
         }
         return false
     }

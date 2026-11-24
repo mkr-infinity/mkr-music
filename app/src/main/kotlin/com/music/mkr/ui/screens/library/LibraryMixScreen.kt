@@ -230,7 +230,7 @@ fun LibraryMixScreen(
         }
     }
 
-    val totalListItems = visibleStaticItems.size + (if (!isGridView) finalFilteredItems.size else 0)
+    val totalListItems = if (!isGridView) finalFilteredItems.size else 0
     val getShapeForIndex: (Int) -> Shape = { index ->
         val size = totalListItems
         when {
@@ -415,7 +415,7 @@ fun LibraryMixScreen(
                         }
                     ) { index, item ->
                         val modifier = Modifier.animateItem().fillMaxWidth()
-                        val dynamicShape = getShapeForIndex(visibleStaticItems.size + index)
+                        val dynamicShape = getShapeForIndex(index)
                         when (item) {
                             is Playlist -> {
                                 if (isGridView) {
@@ -483,7 +483,7 @@ fun LibraryMixScreen(
                         }
                     }
 
-                    if (finalFilteredItems.isEmpty() && visibleStaticItems.isEmpty()) {
+                    if (finalFilteredItems.isEmpty()) {
                         item(
                             key = "empty_library",
                             span = { GridItemSpan(maxLineSpan) },

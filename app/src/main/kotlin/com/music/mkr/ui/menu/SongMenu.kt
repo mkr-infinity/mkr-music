@@ -685,6 +685,7 @@ fun SongMenu(
                                     )
                                 },
                                 onClick = {
+                                    onDismiss()
                                     DownloadService.sendRemoveDownload(
                                         context,
                                         ExoDownloadService::class.java,
@@ -704,6 +705,7 @@ fun SongMenu(
                                     )
                                 },
                                 onClick = {
+                                    onDismiss()
                                     DownloadService.sendRemoveDownload(
                                         context,
                                         ExoDownloadService::class.java,
@@ -724,6 +726,7 @@ fun SongMenu(
                                     )
                                 },
                                 onClick = {
+                                    onDismiss()
                                     val downloadRequest =
                                         DownloadRequest
                                             .Builder(song.id, song.id.toUri())

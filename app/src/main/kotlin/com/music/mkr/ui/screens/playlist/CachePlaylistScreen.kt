@@ -58,6 +58,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
+import com.music.mkr.LocalDownloadUtil
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -168,6 +170,23 @@ fun CachePlaylistScreen(
     val onExitSelectionMode = {
         inSelectMode = false
         selection.clear()
+    }
+
+    val downloadUtil = LocalDownloadUtil.current
+    var downloadState by remember { mutableIntStateOf(Download.STATE_STOPPED) }
+
+    LaunchedEffect(cachedSongs) {
+        if (cachedSongs.isEmpty()) return@LaunchedEffect
+        downloadUtil.downloads.collect { downloads ->
+            downloadState = when {
+                cachedSongs.all { downloads[it.id]?.state == Download.STATE_COMPLETED } -> Download.STATE_COMPLETED
+                cachedSongs.any {
+                    downloads[it.id]?.state == Download.STATE_QUEUED ||
+                        downloads[it.id]?.state == Download.STATE_DOWNLOADING
+                } -> Download.STATE_DOWNLOADING
+                else -> Download.STATE_STOPPED
+            }
+        }
     }
 
     var isSearching by remember { mutableStateOf(false) }
@@ -627,25 +646,36 @@ private fun CachePlaylistHeader(
                 onClick = {
                     menuState.show {
                         CachePlaylistMenu(
-                            downloadState = Download.STATE_STOPPED,
+                            downloadState = downloadState,
                             onQueue = {
                                 playerConnection.addToQueue(
                                     songs.map { it.toMediaItem() }
                                 )
                             },
                             onDownload = {
-                                songs.forEach { song ->
-                                    val downloadRequest = DownloadRequest
-                                        .Builder(song.id, song.id.toUri())
-                                        .setCustomCacheKey(song.id)
-                                        .setData(song.title.toByteArray())
-                                        .build()
-                                    DownloadService.sendAddDownload(
-                                        context,
-                                        ExoDownloadService::class.java,
-                                        downloadRequest,
-                                        false,
-                                    )
+                                if (downloadState == Download.STATE_COMPLETED) {
+                                    songs.forEach { song ->
+                                        DownloadService.sendRemoveDownload(
+                                            context,
+                                            ExoDownloadService::class.java,
+                                            song.id,
+                                            false,
+                                        )
+                                    }
+                                } else {
+                                    songs.forEach { song ->
+                                        val downloadRequest = DownloadRequest
+                                            .Builder(song.id, song.id.toUri())
+                                            .setCustomCacheKey(song.id)
+                                            .setData(song.title.toByteArray())
+                                            .build()
+                                        DownloadService.sendAddDownload(
+                                            context,
+                                            ExoDownloadService::class.java,
+                                            downloadRequest,
+                                            false,
+                                        )
+                                    }
                                 }
                             },
                             onDismiss = { menuState.dismiss() }

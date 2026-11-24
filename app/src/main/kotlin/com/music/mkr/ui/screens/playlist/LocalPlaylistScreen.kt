@@ -449,24 +449,23 @@ fun LocalPlaylistScreen(
     LaunchedEffect(reorderableState.isAnyItemDragging) {
         if (!reorderableState.isAnyItemDragging) {
             dragInfo?.let { (from, to) ->
+                val browseId = viewModel.playlist.value?.playlist?.browseId
+                val movedSetVideoId = if (browseId != null) songs.getOrNull(from)?.map?.setVideoId else null
+                val successorIndex = if (from > to) to else to + 1
+                val successorSetVideoId = if (browseId != null) songs.getOrNull(successorIndex)?.map?.setVideoId else null
+
                 database.transaction {
                     move(viewModel.playlistId, from, to)
                 }
 
                 // Sync order with YT Music
-                if (viewModel.playlist.value?.playlist?.browseId != null) {
+                if (browseId != null && movedSetVideoId != null) {
                     viewModel.viewModelScope.launch(Dispatchers.IO) {
-                        val playlistSongMap = database.playlistSongMaps(viewModel.playlistId, 0)
-                        val successorIndex = if (from > to) to else to + 1
-                        val successorSetVideoId = playlistSongMap.getOrNull(successorIndex)?.setVideoId
-
-                        playlistSongMap.getOrNull(from)?.setVideoId?.let { setVideoId ->
-                            YouTube.moveSongPlaylist(
-                                viewModel.playlist.value?.playlist?.browseId!!,
-                                setVideoId,
-                                successorSetVideoId
-                            )
-                        }
+                        YouTube.moveSongPlaylist(
+                            browseId,
+                            movedSetVideoId,
+                            successorSetVideoId
+                        )
                     }
                 }
 
@@ -613,8 +612,8 @@ fun LocalPlaylistScreen(
                         database.transaction {
                             coroutineScope.launch {
                                 playlist?.playlist?.browseId?.let { browseId ->
-                                    val setVideoId = getSetVideoId(currentItem.map.songId)
-                                    setVideoId?.setVideoId?.let { setVideoIdValue ->
+                                    val setVideoIdValue = currentItem.map.setVideoId ?: getSetVideoId(currentItem.map.songId)?.setVideoId
+                                    if (setVideoIdValue != null) {
                                         YouTube.removeFromPlaylist(
                                             browseId,
                                             currentItem.map.songId,
@@ -717,15 +716,15 @@ fun LocalPlaylistScreen(
                                     }
 
                                     if (sortType == PlaylistSongSortType.CUSTOM && !locked && !isSearching && editable) {
-                                        IconButton(
-                                            onClick = { },
+                                        Box(
                                             modifier = Modifier
                                                 .draggableHandle()
                                                 .size(36.dp),
+                                            contentAlignment = Alignment.Center
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.drag_handle),
-                                                contentDescription = null,
+                                                contentDescription = stringResource(R.string.reorder),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                                                 modifier = Modifier.size(18.dp)
                                             )

@@ -114,14 +114,6 @@ fun LibraryCategoryCardsSection(
                 "history",
             )
         )
-        add(
-            LibraryShortcutItem(
-                stringResource(R.string.library_local_files),
-                stringResource(R.string.library_local_files_desc),
-                R.drawable.snippet_folder,
-                "local_playlist/0",
-            )
-        )
     }
 
     Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {

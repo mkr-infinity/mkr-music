@@ -373,12 +373,17 @@ fun PlaylistMenu(
                         text = stringResource(R.string.share),
                         onClick = {
                             onDismiss()
-                            val intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/playlist?list=${dbPlaylist?.playlist?.browseId}")
+                            val shareUrl = dbPlaylist?.playlist?.shareLink
+                                ?: dbPlaylist?.playlist?.browseId?.let { "https://music.youtube.com/playlist?list=$it" }
+                                ?: (dbPlaylist?.playlist?.name ?: "")
+                            if (shareUrl.isNotBlank()) {
+                                val intent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, shareUrl)
+                                }
+                                context.startActivity(Intent.createChooser(intent, null))
                             }
-                            context.startActivity(Intent.createChooser(intent, null))
                         }
                     )
                 ),
@@ -673,29 +678,6 @@ fun PlaylistMenu(
                                             }
                                         }
                                     }
-                                }
-                            )
-                        )
-                    }
-                    playlist.playlist.shareLink?.let { shareLink ->
-                        add(
-                            Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.share)) },
-                                description = { Text(text = stringResource(R.string.share_desc)) },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.share),
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    val intent = Intent().apply {
-                                        action = Intent.ACTION_SEND
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, shareLink)
-                                    }
-                                    context.startActivity(Intent.createChooser(intent, null))
-                                    onDismiss()
                                 }
                             )
                         )
