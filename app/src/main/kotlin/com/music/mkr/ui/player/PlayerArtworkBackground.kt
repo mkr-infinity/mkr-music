@@ -1,16 +1,25 @@
 package com.music.mkr.ui.player
 
 import android.graphics.Bitmap
+import android.net.Uri
+import androidx.compose.animation.Crossfade
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
@@ -34,6 +43,7 @@ import coil3.size.Scale
 import coil3.size.Size
 import coil3.transform.Transformation
 import com.music.mkr.ui.theme.PlayerColorExtractor
+import com.music.mkr.ui.player.backdrop.rememberArtworkBlurBitmap
 import com.music.mkr.ui.player.styles.ImmersiveArtwork
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -53,11 +63,71 @@ internal fun ImmersiveArtworkBackground(
     thumbnail: String?,
     itemArtwork: String?,
     animate: Boolean,
+    dimForLyrics: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
+    val artworkUrl = playerBackgroundArtworkUrl(thumbnail, itemArtwork)
+    val blurBitmap = rememberArtworkBlurBitmap(artworkUrl?.let { Uri.parse(it) })
+
+    val clearArtworkAlpha by animateFloatAsState(
+        targetValue = if (dimForLyrics) 0f else 1f,
+        animationSpec = tween(400),
+        label = "clearArtworkAlpha"
+    )
+    val lyricsScrimAlpha by animateFloatAsState(
+        targetValue = if (dimForLyrics) 0.52f else 0f,
+        animationSpec = tween(400),
+        label = "lyricsScrimAlpha"
+    )
+
     BoxWithConstraints(modifier) {
         val isLandscape = maxWidth > maxHeight || maxWidth >= 832.dp
         val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+
+        // Layer 1: Full-screen blurred backdrop (ambient warmth matching Apple Music)
+        Crossfade(
+            targetState = blurBitmap,
+            animationSpec = tween(durationMillis = 400, easing = FastOutSlowInEasing),
+            label = "immersiveBlurCrossfade"
+        ) { bitmap ->
+            if (bitmap != null) {
+                Image(
+                    bitmap = bitmap,
+                    contentDescription = null,
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+
+        // Layer 1.5: Artwork Depth Scrim
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        0.00f to Color.Black.copy(alpha = 0.34f),
+                        0.55f to Color.Black.copy(alpha = 0.48f),
+                        1.00f to Color.Black.copy(alpha = 0.64f)
+                    )
+                )
+        )
+
+        // Extra dimming layer when lyrics are visible to ensure high contrast even on white/light album covers
+        if (lyricsScrimAlpha > 0.01f) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = lyricsScrimAlpha))
+            )
+        }
+
+        // Layer 2: Clear Artwork (Dissolves along smootherStep into backdrop, fades out when lyrics open)
+        val clearArtworkHeight = if (isLandscape) {
+            maxHeight
+        } else {
+            minOf(maxWidth * 1.05f, maxHeight * 0.58f)
+        }
 
         Box(
             modifier = Modifier
@@ -70,10 +140,11 @@ internal fun ImmersiveArtworkBackground(
                     } else {
                         Modifier
                             .fillMaxWidth()
-                            .fillMaxHeight(0.68f)
+                            .height(clearArtworkHeight)
                             .align(Alignment.TopCenter)
                     }
                 )
+                .alpha(clearArtworkAlpha)
                 .graphicsLayer(compositingStrategy = CompositingStrategy.Offscreen)
                 .drawWithContent {
                     drawContent()

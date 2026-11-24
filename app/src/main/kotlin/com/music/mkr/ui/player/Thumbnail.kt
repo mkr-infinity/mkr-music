@@ -759,8 +759,13 @@ private fun ThumbnailImage(
                 onError = {
                     val url = currentUrl
                     Timber.e("[Thumbnail] ThumbnailImage load FAILED: url=$url | error=${it.result.throwable}")
-                    if (url != null && url.contains("maxresdefault.jpg")) {
-                        currentUrl = url.replace("maxresdefault.jpg", "hqdefault.jpg")
+                    currentUrl = when {
+                        url == null -> null
+                        url.contains("maxresdefault.jpg") -> url.replace("maxresdefault.jpg", "sddefault.jpg")
+                        url.contains("sddefault.jpg") -> url.replace("sddefault.jpg", "hqdefault.jpg")
+                        url.contains("hqdefault.jpg") -> url.replace("hqdefault.jpg", "mqdefault.jpg")
+                        artworkUri != null && url != artworkUri -> artworkUri
+                        else -> null
                     }
                 },
                 contentDescription = null,

@@ -5,9 +5,23 @@
 
 package com.music.mkr.ui.player.styles
 
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.media.AudioManager
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -31,12 +45,25 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -59,10 +86,12 @@ import com.music.mkr.ui.player.AudioQualityBadge
 import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
 import com.music.mkr.utils.makeTimeString
+import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 /**
  * Immersive Player style:
- * Artwork-led layout with spacious transport controls.
+ * Artwork-led layout with Apple Music aesthetic backdrop and spacious controls.
  */
 @Composable
 fun ImmersivePlayer(
@@ -90,12 +119,31 @@ fun ImmersivePlayer(
     onShowMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val titleActions = rememberPlayerTitleActions(mediaMetadata, navController, state)
 
     val secondaryForeground = foreground.copy(alpha = 0.82f)
     val closeLabel = stringResource(R.string.close)
     val sheetScrollConnection = remember(state) { state.preUpPostDownNestedScrollConnection }
+
+    // System volume tracking & interactive control
+    val audioManager = remember { context.getSystemService(Context.AUDIO_SERVICE) as AudioManager }
+    val maxSystemVolume = remember { audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC).toFloat().coerceAtLeast(1f) }
+    val systemVolume by produceState(initialValue = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat() / maxSystemVolume) {
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context, intent: Intent) {
+                if (intent.action == "android.media.VOLUME_CHANGED_ACTION") {
+                    value = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC).toFloat() / maxSystemVolume
+                }
+            }
+        }
+        val filter = IntentFilter("android.media.VOLUME_CHANGED_ACTION")
+        context.registerReceiver(receiver, filter)
+        awaitDispose {
+            context.unregisterReceiver(receiver)
+        }
+    }
 
     val menuButton: @Composable (Modifier) -> Unit = { buttonModifier ->
         IconButton(
@@ -137,17 +185,24 @@ fun ImmersivePlayer(
         },
         header = {
             BoxWithConstraints(Modifier.fillMaxWidth()) {
-                IconButton(
-                    onClick = { state.collapseSoft() },
+                // Visible Apple Music style grabber handle
+                Box(
+                    contentAlignment = Alignment.Center,
                     modifier = Modifier
                         .align(if (maxWidth < 144.dp) Alignment.CenterStart else Alignment.Center)
-                        .size(48.dp)
+                        .size(width = 64.dp, height = 24.dp)
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            onClick = { state.collapseSoft() }
+                        )
                         .semantics { contentDescription = closeLabel },
                 ) {
                     Box(
-                        Modifier
-                            .size(width = 32.dp, height = 4.dp)
-                            .background(Color.Transparent, CircleShape)
+                        modifier = Modifier
+                            .size(width = 36.dp, height = 5.dp)
+                            .clip(CircleShape)
+                            .background(foreground.copy(alpha = 0.45f))
                     )
                 }
 
@@ -187,6 +242,7 @@ fun ImmersivePlayer(
 
                     Spacer(Modifier.width(8.dp))
 
+                    // Original Heart Like Button
                     IconButton(
                         onClick = {
                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
@@ -244,15 +300,15 @@ fun ImmersivePlayer(
                     color = secondaryForeground
                 )
                 Text(
-                    text = "-" + makeTimeString((duration - (sliderPosition ?: position)).coerceAtLeast(0L)),
+                    text = makeTimeString(duration.coerceAtLeast(0L)),
                     style = MaterialTheme.typography.labelMedium,
                     color = secondaryForeground
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(14.dp))
 
-            // Immersive Playback Controls (Tactile spring zero-bounce feedback)
+            // Immersive Playback Controls (Solid filled play/pause button + double triangle skips)
             PlayerTransportRow(
                 isPlaying = isPlaying,
                 isLoading = isLoading,
@@ -275,6 +331,120 @@ fun ImmersivePlayer(
                 sideIconSize = 40.dp,
                 haptic = haptic,
             )
+
+            Spacer(Modifier.height(14.dp))
+
+            // Interactive Volume Slider Row
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp)
+            ) {
+                var isDraggingVolume by remember { mutableStateOf(false) }
+                var lastAppliedStep by remember { mutableStateOf((systemVolume * maxSystemVolume).roundToInt()) }
+                val animatedVolume = remember { Animatable(systemVolume) }
+                val coroutineScope = rememberCoroutineScope()
+
+                LaunchedEffect(systemVolume) {
+                    if (!isDraggingVolume) {
+                        lastAppliedStep = (systemVolume * maxSystemVolume).roundToInt()
+                        animatedVolume.animateTo(
+                            targetValue = systemVolume,
+                            animationSpec = tween(durationMillis = 220, easing = LinearOutSlowInEasing)
+                        )
+                    }
+                }
+
+                fun applyVolumeFraction(fraction: Float) {
+                    val clamped = fraction.coerceIn(0f, 1f)
+                    coroutineScope.launch { animatedVolume.snapTo(clamped) }
+                    val targetStep = (clamped * maxSystemVolume).roundToInt().coerceIn(0, maxSystemVolume.roundToInt())
+                    if (targetStep != lastAppliedStep) {
+                        lastAppliedStep = targetStep
+                        runCatching {
+                            audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, targetStep, 0)
+                        }
+                    }
+                }
+
+                val currentBarHeight by animateDpAsState(
+                    targetValue = if (isDraggingVolume) 10.dp else 6.dp,
+                    animationSpec = tween(durationMillis = 150),
+                    label = "volumeBarHeight"
+                )
+
+                val iconColor = foreground.copy(alpha = 0.65f)
+
+                Image(
+                    painter = painterResource(R.drawable.apple_volume_down),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(iconColor),
+                    modifier = Modifier.size(20.dp)
+                )
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Canvas(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(28.dp)
+                        .pointerInput(maxSystemVolume) {
+                            detectTapGestures { offset ->
+                                if (size.width <= 0) return@detectTapGestures
+                                applyVolumeFraction(offset.x / size.width.toFloat())
+                            }
+                        }
+                        .pointerInput(maxSystemVolume) {
+                            var dragFraction = animatedVolume.value
+                            detectHorizontalDragGestures(
+                                onDragStart = { offset ->
+                                    if (size.width <= 0) return@detectHorizontalDragGestures
+                                    isDraggingVolume = true
+                                    dragFraction = (offset.x / size.width.toFloat()).coerceIn(0f, 1f)
+                                    applyVolumeFraction(dragFraction)
+                                },
+                                onHorizontalDrag = { _, delta ->
+                                    if (size.width <= 0) return@detectHorizontalDragGestures
+                                    dragFraction = (dragFraction + delta / size.width.toFloat()).coerceIn(0f, 1f)
+                                    applyVolumeFraction(dragFraction)
+                                },
+                                onDragEnd = { isDraggingVolume = false },
+                                onDragCancel = { isDraggingVolume = false }
+                            )
+                        }
+                ) {
+                    val trackHeightPx = currentBarHeight.toPx()
+                    val topY = (size.height - trackHeightPx) / 2f
+                    val cornerRadius = CornerRadius(trackHeightPx / 2f, trackHeightPx / 2f)
+                    val fraction = animatedVolume.value.coerceIn(0f, 1f)
+
+                    drawRoundRect(
+                        color = foreground.copy(alpha = 0.22f),
+                        topLeft = Offset(0f, topY),
+                        size = Size(size.width, trackHeightPx),
+                        cornerRadius = cornerRadius
+                    )
+
+                    if (fraction > 0f) {
+                        drawRoundRect(
+                            color = foreground,
+                            topLeft = Offset(0f, topY),
+                            size = Size((size.width * fraction).coerceIn(0f, size.width), trackHeightPx),
+                            cornerRadius = cornerRadius
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Image(
+                    painter = painterResource(R.drawable.apple_volume_up),
+                    contentDescription = null,
+                    colorFilter = ColorFilter.tint(iconColor),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
 
             Spacer(Modifier.height(16.dp))
         }

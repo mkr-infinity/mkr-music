@@ -111,9 +111,15 @@ internal fun immersiveArtworkSources(
                 url
             }
             add(ImmersiveArtworkSource(preferred))
-            if (!dataSaver && preferred.endsWith("/maxresdefault.jpg")) {
-                val fallback = preferred.resize(LibraryArtworkSize, LibraryArtworkSize, isDataSaverEnabled = false)
-                add(ImmersiveArtworkSource(fallback))
+            if (preferred.contains("maxresdefault.jpg")) {
+                add(ImmersiveArtworkSource(preferred.replace("maxresdefault.jpg", "sddefault.jpg")))
+                add(ImmersiveArtworkSource(preferred.replace("maxresdefault.jpg", "hqdefault.jpg")))
+                add(ImmersiveArtworkSource(preferred.replace("maxresdefault.jpg", "mqdefault.jpg")))
+            } else if (preferred.contains("sddefault.jpg")) {
+                add(ImmersiveArtworkSource(preferred.replace("sddefault.jpg", "hqdefault.jpg")))
+                add(ImmersiveArtworkSource(preferred.replace("sddefault.jpg", "mqdefault.jpg")))
+            } else if (preferred.contains("hqdefault.jpg")) {
+                add(ImmersiveArtworkSource(preferred.replace("hqdefault.jpg", "mqdefault.jpg")))
             }
             add(ImmersiveArtworkSource(url, cacheOnly = dataSaver && url != preferred))
         }

@@ -561,6 +561,7 @@ fun BottomSheetPlayer(
                             thumbnail = mediaMetadata?.thumbnailUrl,
                             itemArtwork = currentItemArtwork,
                             animate = animateBackground,
+                            dimForLyrics = showInlineLyrics,
                             modifier = Modifier.fillMaxSize().alpha(backgroundAlpha),
                         )
                     }
@@ -906,6 +907,7 @@ fun BottomSheetPlayer(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
+                        .background(Color.Black.copy(alpha = 0.40f))
                         .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
                 ) {
                     Column(modifier = Modifier.fillMaxSize()) {
