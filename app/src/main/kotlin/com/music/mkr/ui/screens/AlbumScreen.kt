@@ -940,7 +940,7 @@ private fun AlbumEditorialMetadata(
                 val tagText = when (songsCount) {
                     1 -> "SINGLE"
                     in 2..6 -> "EP"
-                    else -> stringResource(R.string.album).uppercase()
+                    else -> stringResource(R.string.album_text).uppercase()
                 }
                 Text(
                     text = tagText,

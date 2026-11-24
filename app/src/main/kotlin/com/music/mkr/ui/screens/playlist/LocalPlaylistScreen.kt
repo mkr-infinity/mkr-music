@@ -724,7 +724,7 @@ fun LocalPlaylistScreen(
                                         ) {
                                             Icon(
                                                 painter = painterResource(R.drawable.drag_handle),
-                                                contentDescription = stringResource(R.string.reorder),
+                                                contentDescription = "Reorder",
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                                                 modifier = Modifier.size(18.dp)
                                             )

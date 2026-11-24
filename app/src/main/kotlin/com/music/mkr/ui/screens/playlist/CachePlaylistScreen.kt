@@ -266,6 +266,7 @@ fun CachePlaylistScreen(
                             songs = filteredSongs,
                             context = context,
                             menuState = menuState,
+                            downloadState = downloadState,
                             onStartSearch = { isSearching = true },
                             modifier = Modifier.animateItem()
                         )
@@ -487,6 +488,7 @@ private fun CachePlaylistHeader(
     songs: List<Song>,
     context: android.content.Context,
     menuState: com.music.mkr.ui.component.MenuState,
+    downloadState: Int = Download.STATE_STOPPED,
     onStartSearch: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {

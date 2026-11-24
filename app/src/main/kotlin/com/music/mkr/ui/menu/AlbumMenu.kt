@@ -362,8 +362,7 @@ fun AlbumMenu(
                         text = stringResource(R.string.share),
                         onClick = {
                             onDismiss()
-                            val shareUrl = album.album.shareLink
-                                ?: album.album.playlistId?.let { "https://music.youtube.com/playlist?list=$it" }
+                            val shareUrl = album.album.playlistId?.let { "https://music.youtube.com/playlist?list=$it" }
                                 ?: album.album.title
                             val intent = Intent().apply {
                                 action = Intent.ACTION_SEND
