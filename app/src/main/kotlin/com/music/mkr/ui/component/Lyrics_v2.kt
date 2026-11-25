@@ -239,7 +239,7 @@ fun LyricsV2(
                         album = mediaMetadata.album?.title
                     ) { result ->
                         if (result.lyrics.isNotBlank() && result.lyrics != LYRICS_NOT_FOUND) {
-                            withContext(Dispatchers.Main) {
+                            coroutineScope.launch(Dispatchers.Main) {
                                 if (availableProviders.none { it.providerName.equals(result.providerName, ignoreCase = true) }) {
                                     availableProviders.add(result)
                                 }
