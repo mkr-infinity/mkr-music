@@ -234,6 +234,11 @@ import com.music.mkr.ui.theme.mkrMusicTheme
 import com.music.mkr.ui.theme.extractThemeColor
 import com.music.mkr.ui.utils.appBarScrollBehavior
 import com.music.mkr.ui.utils.resetHeightOffset
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
+import com.music.mkr.constants.AppIconKey
+import com.music.mkr.utils.AppIcon
+import com.music.mkr.utils.IconUtils
 import com.music.mkr.utils.SyncUtils
 import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.get
@@ -1146,18 +1151,38 @@ class MainActivity : ComponentActivity() {
                                                         size = 38.dp,
                                                         borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
                                                     ) {
-                                                        Image(
-                                                            painter = painterResource(R.drawable.icon),
-                                                            contentDescription = stringResource(
-                                                                R.string.open_about_app,
-                                                                stringResource(R.string.app_name),
-                                                            ),
-                                                            modifier = Modifier
-                                                                .fillMaxSize()
-                                                                .padding(5.dp)
-                                                                .clip(RoundedCornerShape(8.dp)),
-                                                            contentScale = ContentScale.Crop
+                                                        val (selectedAppIconKey) = rememberPreference(
+                                                            AppIconKey,
+                                                            AppIcon.DEFAULT.key,
                                                         )
+                                                        val launcherIconBitmap = remember(selectedAppIconKey, context) {
+                                                            IconUtils.getActiveLauncherIcon(context)
+                                                                ?.toBitmap()
+                                                                ?.asImageBitmap()
+                                                        }
+                                                        val appLogoDesc = stringResource(
+                                                            R.string.open_about_app,
+                                                            stringResource(R.string.app_name),
+                                                        )
+                                                        val appLogoModifier = Modifier
+                                                            .fillMaxSize()
+                                                            .padding(5.dp)
+                                                            .clip(RoundedCornerShape(8.dp))
+                                                        if (launcherIconBitmap != null) {
+                                                            Image(
+                                                                bitmap = launcherIconBitmap,
+                                                                contentDescription = appLogoDesc,
+                                                                modifier = appLogoModifier,
+                                                                contentScale = ContentScale.Crop
+                                                            )
+                                                        } else {
+                                                            Image(
+                                                                painter = painterResource(R.drawable.icon),
+                                                                contentDescription = appLogoDesc,
+                                                                modifier = appLogoModifier,
+                                                                contentScale = ContentScale.Crop
+                                                            )
+                                                        }
                                                     }
 
                                                     Text(

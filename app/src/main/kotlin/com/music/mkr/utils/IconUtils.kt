@@ -10,7 +10,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.drawable.Drawable
 import android.net.Uri
+import android.os.Build
 import androidx.annotation.DrawableRes
 import androidx.datastore.preferences.core.edit
 import com.music.mkr.MainActivity
@@ -353,5 +355,26 @@ object IconUtils {
         } catch (e: Exception) {
             Timber.e(e, "Failed to open profile: ${attribution.profileUrl}")
         }
+    }
+
+    /**
+     * Fetches the currently enabled launcher icon drawable directly from PackageManager,
+     * so any added/removed activity-alias icons work automatically without hardcoding.
+     */
+    fun getActiveLauncherIcon(context: Context): Drawable? {
+        return runCatching {
+            val pm = context.packageManager
+            val mainIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_LAUNCHER)
+                setPackage(context.packageName)
+            }
+            val resolveInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pm.queryIntentActivities(mainIntent, PackageManager.ResolveInfoFlags.of(0L))
+            } else {
+                @Suppress("DEPRECATION")
+                pm.queryIntentActivities(mainIntent, 0)
+            }
+            resolveInfos.firstOrNull()?.loadIcon(pm)
+        }.getOrNull()
     }
 }

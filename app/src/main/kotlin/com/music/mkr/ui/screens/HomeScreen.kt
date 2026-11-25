@@ -71,6 +71,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.carousel.CarouselDefaults
 import androidx.compose.material3.carousel.HorizontalCenteredHeroCarousel
 import androidx.compose.material3.carousel.HorizontalMultiBrowseCarousel
 import androidx.compose.material3.carousel.HorizontalUncontainedCarousel
@@ -97,6 +98,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -1355,29 +1357,22 @@ fun HomeScreen(
                                 }
 
                                 item(key = "quick_picks_cards") {
-                                    BoxWithConstraints(
+                                    if (distinctQuickPicks.isNotEmpty()) {
+                                    val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+                                    val heroMaxWidth = (screenWidth * 0.72f).coerceIn(210.dp, 360.dp)
+                                    val heroHeight = (heroMaxWidth * 0.88f).coerceIn(220.dp, 310.dp)
+                                    val carouselState = rememberCarouselState { distinctQuickPicks.size }
+
+                                    HorizontalCenteredHeroCarousel(
+                                        state = carouselState,
+                                        maxItemWidth = heroMaxWidth,
+                                        itemSpacing = 10.dp,
+                                        flingBehavior = CarouselDefaults.multiBrowseFlingBehavior(state = carouselState),
+                                        contentPadding = PaddingValues(horizontal = 16.dp),
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .animateItem()
-                                    ) {
-                                        val heroHeight = when {
-                                            maxWidth >= 840.dp -> 380.dp
-                                            maxWidth >= 600.dp -> 356.dp
-                                            else -> 332.dp
-                                        }
-                                        val heroMaxWidth = (maxWidth - 48.dp)
-                                            .coerceAtLeast(232.dp)
-                                            .coerceAtMost(440.dp)
-
-                                        HorizontalCenteredHeroCarousel(
-                                            state = rememberCarouselState { distinctQuickPicks.size },
-                                            maxItemWidth = heroMaxWidth,
-                                            itemSpacing = 10.dp,
-                                            contentPadding = PaddingValues(horizontal = 16.dp),
-                                            modifier = Modifier
-                                                .fillMaxWidth()
-                                                .height(heroHeight)
-                                        ) { index ->
+                                            .height(heroHeight)
+                                    ) { index ->
                                             val originalSong = distinctQuickPicks[index]
                                             val song by database.song(originalSong.id)
                                                 .collectAsState(initial = originalSong)
@@ -1417,19 +1412,27 @@ fun HomeScreen(
                                                     )
                                             ) {
                                                 var currentThumbnailUrl by remember(currentSong.song.thumbnailUrl, dataSaver) {
-                                                    mutableStateOf(currentSong.song.thumbnailUrl?.resize(1200, 1200))
+                                                    mutableStateOf(currentSong.song.thumbnailUrl?.resize(600, 600))
+                                                }
+                                                val cardContext = LocalContext.current
+                                                val imageRequest = remember(currentThumbnailUrl, cardContext) {
+                                                    ImageRequest.Builder(cardContext)
+                                                        .data(currentThumbnailUrl)
+                                                        .crossfade(true)
+                                                        .build()
                                                 }
 
                                                 AsyncImage(
-                                                    model = ImageRequest.Builder(LocalContext.current)
-                                                        .data(currentThumbnailUrl)
-                                                        .crossfade(true)
-                                                        .build(),
+                                                    model = imageRequest,
                                                     onError = {
                                                         val url = currentThumbnailUrl
-                                                        if (url != null && url.contains("maxresdefault")) {
-                                                            currentThumbnailUrl = url.replace("maxresdefault.webp", "hqdefault.webp")
-                                                                .replace("maxresdefault.jpg", "hqdefault.jpg")
+                                                        val rawUrl = currentSong.song.thumbnailUrl
+                                                        currentThumbnailUrl = when {
+                                                            url == null -> null
+                                                            url.contains("maxresdefault") -> url.replace("maxresdefault.webp", "hqdefault.webp").replace("maxresdefault.jpg", "hqdefault.jpg")
+                                                            url.contains("sddefault") -> url.replace("sddefault.webp", "hqdefault.webp").replace("sddefault.jpg", "hqdefault.jpg")
+                                                            rawUrl != null && url != rawUrl -> rawUrl
+                                                            else -> null
                                                         }
                                                     },
                                                     contentDescription = null,
@@ -1495,9 +1498,9 @@ fun HomeScreen(
                                             }
                                         }
                                     }
+                                    }
                                 }
                             }
-                        }
                         HomeSection.CoversAndRemixes -> {
                             coversAndRemixes?.takeIf { it.items.isNotEmpty() }?.let { mixSection ->
                                 val mixSongs = mixSection.items.filterIsInstance<SongItem>()
@@ -1970,29 +1973,22 @@ fun HomeScreen(
                                     // Quick Picks Card Carousel for YouTube Quick picks
                                     item(key = "home_section_cards_${section.index}") {
                                         val distinctSongs = sectionSongs.filterNot { it.id in dismissedQuickPicks }.distinctBy { it.id }
-                                        BoxWithConstraints(
+                                        if (distinctSongs.isNotEmpty()) {
+                                        val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+                                        val heroMaxWidth = (screenWidth * 0.72f).coerceIn(210.dp, 360.dp)
+                                        val heroHeight = (heroMaxWidth * 0.88f).coerceIn(220.dp, 310.dp)
+                                        val carouselState = rememberCarouselState { distinctSongs.size }
+
+                                        HorizontalCenteredHeroCarousel(
+                                            state = carouselState,
+                                            maxItemWidth = heroMaxWidth,
+                                            itemSpacing = 10.dp,
+                                            flingBehavior = CarouselDefaults.multiBrowseFlingBehavior(state = carouselState),
+                                            contentPadding = PaddingValues(horizontal = 16.dp),
                                             modifier = Modifier
                                                 .fillMaxWidth()
-                                                .animateItem()
-                                        ) {
-                                            val heroHeight = when {
-                                                maxWidth >= 840.dp -> 380.dp
-                                                maxWidth >= 600.dp -> 356.dp
-                                                else -> 332.dp
-                                            }
-                                            val heroMaxWidth = (maxWidth - 48.dp)
-                                                .coerceAtLeast(232.dp)
-                                                .coerceAtMost(440.dp)
-
-                                            HorizontalCenteredHeroCarousel(
-                                                state = rememberCarouselState { distinctSongs.size },
-                                                maxItemWidth = heroMaxWidth,
-                                                itemSpacing = 10.dp,
-                                                contentPadding = PaddingValues(horizontal = 16.dp),
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(heroHeight)
-                                            ) { index ->
+                                                .height(heroHeight)
+                                        ) { index ->
                                                 val song = distinctSongs[index]
                                                 val isActive = song.id == mediaMetadata?.id
 
@@ -2025,19 +2021,27 @@ fun HomeScreen(
                                                         )
                                                 ) {
                                                     var currentThumbnailUrl by remember(song.thumbnail, dataSaver) {
-                                                        mutableStateOf(song.thumbnail.resize(1200, 1200))
+                                                        mutableStateOf(song.thumbnail.resize(600, 600))
+                                                    }
+                                                    val cardContext = LocalContext.current
+                                                    val imageRequest = remember(currentThumbnailUrl, cardContext) {
+                                                        ImageRequest.Builder(cardContext)
+                                                            .data(currentThumbnailUrl)
+                                                            .crossfade(true)
+                                                            .build()
                                                     }
 
                                                     AsyncImage(
-                                                        model = ImageRequest.Builder(LocalContext.current)
-                                                            .data(currentThumbnailUrl)
-                                                            .crossfade(true)
-                                                            .build(),
+                                                        model = imageRequest,
                                                         onError = {
                                                             val url = currentThumbnailUrl
-                                                            if (url != null && url.contains("maxresdefault")) {
-                                                                currentThumbnailUrl = url.replace("maxresdefault.webp", "hqdefault.webp")
-                                                                    .replace("maxresdefault.jpg", "hqdefault.jpg")
+                                                            val rawUrl = song.thumbnail
+                                                            currentThumbnailUrl = when {
+                                                                url == null -> null
+                                                                url.contains("maxresdefault") -> url.replace("maxresdefault.webp", "hqdefault.webp").replace("maxresdefault.jpg", "hqdefault.jpg")
+                                                                url.contains("sddefault") -> url.replace("sddefault.webp", "hqdefault.webp").replace("sddefault.jpg", "hqdefault.jpg")
+                                                                url != rawUrl -> rawUrl
+                                                                else -> null
                                                             }
                                                         },
                                                         contentDescription = null,
@@ -2103,8 +2107,8 @@ fun HomeScreen(
                                                 }
                                             }
                                         }
-                                    }
-                                } else if (isSongsOnlySection) {
+                                        }
+                                    } else if (isSongsOnlySection) {
                                     // Render songs as a horizontal scrollable list (like Quick picks in YouTube Music)
                                     item(key = "home_section_list_${section.index}") {
                                         LazyHorizontalGrid(
