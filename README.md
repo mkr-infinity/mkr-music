@@ -90,16 +90,17 @@ Install the Universal APK over your existing compatible installation to keep you
 
 ## ✨ Key Features
 
-- 🎧 **Streaming & Playlist Import** – Stream YouTube Music and match Spotify playlist tracks to YouTube Music.
+- 🎧 **Streaming & Playlist Import** – Stream YouTube Music and import Spotify or CSV playlists into your local library.
 - 🎚️ **MKR Studio Equalizer** – 10-band precision EQ, Dolby Atmos simulation, bass boost, and audio presets.
-- 📜 **Synchronized Lyrics** – Live word-by-word scrolling lyrics with dynamic animated glow and blurred backdrops.
-- 🧠 **Mood Queue & Quick Picks** – Smart track recommendations matching your active mood and listening taste.
-- ⚡ **Instant Playback & Smart Cache** – Zero-buffer audio playback with automated offline caching (5s–90s).
-- 🎨 **Expressive Material 3 UI** – Full-bleed dynamic canvas visuals, fluid transitions, and 5 custom adaptive icons.
+- 📜 **Synchronized Lyrics** – Live word-by-word scrolling lyrics with dynamic animated glow, romanization, and blurred backdrops.
+- 🧠 **Language & Mood Queues** – Smart track recommendations prioritizing your current song's language, mood, and taste.
+- 🔊 **Audio Focus Auto-Resume** – Automatically pauses or ducks for other apps and resumes playback once the speaker is free.
+- ⚡ **Instant Playback & Smart Cache** – Zero-buffer audio playback with automated offline caching (5s–90s) and crossfade.
+- 🎨 **Expressive Material 3 UI** – Immersive Artwork & Squiggly player styles, auto-hide navigation, and 10 custom adaptive icons.
 - 👥 **Listen Together** – Synchronized listening rooms to stream music in real-time with friends.
-- 🎵 **Bitrate & Output Switcher** – Live kbps stream quality badges and instant Bluetooth audio routing.
+- 🎵 **Bitrate & Output Switcher** – Live kbps stream quality badges and instant Bluetooth/speaker audio routing.
 - 🛡️ **Zero Telemetry & 100% Private** – Open-source, no trackers, no ads, and all library data stored locally.
-- 🚀 **More to Explore** – Sleep timer, Discord Rich Presence, backup/restore, and persistent playback.
+- 🚀 **Backup, Restore & In-App Updates** – Safe archive backup/restore, custom playlist drag reordering, and in-app APK updates.
 
 ---
 

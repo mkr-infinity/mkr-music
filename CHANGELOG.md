@@ -1,7 +1,7 @@
 # Changelog
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/releases/mkr-music-v1.1.0-poster.png" alt="MKR Music v1.1.0 Release Poster" width="100%" />
+  <img src="https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/releases/mkr-music-v2.0.0-poster.png" alt="MKR Music v2.0.0 Release Poster" width="100%" />
 </p>
 
 ---
