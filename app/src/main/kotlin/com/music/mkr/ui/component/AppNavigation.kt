@@ -116,8 +116,10 @@ fun AppNavigationRail(
             WideNavigationRailItem(
                 railExpanded = false,
                 selected = isSelected,
-                onClick = { 
-                    onItemClick(screen, isSelected)
+                onClick = {
+                    if (!isSearchItem) {
+                        onItemClick(screen, isSelected)
+                    }
                 },
                 interactionSource = interactionSource,
                 colors = WideNavigationRailItemDefaults.colors(

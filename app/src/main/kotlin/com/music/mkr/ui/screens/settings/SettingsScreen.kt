@@ -14,6 +14,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -87,6 +88,7 @@ import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.ui.component.DefaultDialog
 import com.music.mkr.ui.screens.Screens
+import com.music.mkr.ui.screens.settings.DarkMode
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.safeOpenUri
 import com.music.mkr.ui.component.snackbar.SnackbarManager
@@ -117,7 +119,14 @@ fun SettingsScreen(
     val autoUpdateSetting = remember { getAutoUpdateCheckSetting(context) }
     var isUpdateAvailable by remember { mutableStateOf(getUpdateAvailableState(context)) }
     var searchQuery by remember { mutableStateOf("") }
-    val pureBlack by rememberPreference(PureBlackKey, defaultValue = false)
+    val darkThemeMode by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
+    val isDarkTheme = when (darkThemeMode) {
+        DarkMode.ON -> true
+        DarkMode.OFF -> false
+        DarkMode.AUTO -> isSystemInDarkTheme()
+    }
+    val pureBlackPref by rememberPreference(PureBlackKey, defaultValue = false)
+    val pureBlack = pureBlackPref && isDarkTheme
     val accountName by rememberPreference(AccountNameKey, defaultValue = "")
     val innerTubeCookie by rememberPreference(InnerTubeCookieKey, defaultValue = "")
     val homeAccountName by homeViewModel.accountName.collectAsState()

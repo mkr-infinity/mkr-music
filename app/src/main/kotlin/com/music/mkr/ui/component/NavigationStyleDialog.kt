@@ -200,31 +200,61 @@ private fun NavigationStyleMiniPreview(
         contentAlignment = Alignment.Center
     ) {
         when (style) {
-            NavigationStyle.FLOATING_GLASS, NavigationStyle.EXPRESSIVE_PILL -> {
-                val compact = style == NavigationStyle.EXPRESSIVE_PILL
+            NavigationStyle.FLOATING_GLASS -> {
                 val colors = MaterialTheme.colorScheme
-                val indicator = if (compact) colors.primaryContainer else colors.secondaryContainer
-                val selectedInk = if (compact) colors.onPrimaryContainer else colors.onSecondaryContainer
-                val capsuleSurface = if (compact) Modifier.navigationGlass(CircleShape, pureBlack = false)
-                    else Modifier.frostedNavigationCapsule(pureBlack = false)
                 Row(
                     modifier = Modifier
-                        .size(width = if (compact) 37.dp else 46.dp, height = 19.dp)
+                        .size(width = 46.dp, height = 19.dp)
                         .clip(CircleShape)
-                        .then(capsuleSurface)
+                        .then(Modifier.frostedNavigationCapsule(pureBlack = false))
                         .padding(horizontal = 4.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        Modifier.size(width = if (compact) 14.dp else 11.dp, height = 11.dp)
-                            .background(indicator, navigationFace(0.84f)),
+                        Modifier.size(11.dp)
+                            .background(colors.secondaryContainer, navigationFace(0.84f)),
                         contentAlignment = Alignment.Center,
                     ) {
-                        Box(Modifier.size(4.dp).background(selectedInk, CircleShape))
+                        Box(Modifier.size(4.dp).background(colors.onSecondaryContainer, CircleShape))
                     }
                     repeat(2) {
-                        Box(Modifier.size(4.dp).background(MaterialTheme.colorScheme.onSurfaceVariant, CircleShape))
+                        Box(Modifier.size(4.dp).background(colors.onSurfaceVariant, CircleShape))
+                    }
+                }
+            }
+            NavigationStyle.EXPRESSIVE_PILL -> {
+                val colors = MaterialTheme.colorScheme
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .size(width = 28.dp, height = 16.dp)
+                            .clip(CircleShape)
+                            .then(Modifier.navigationGlass(CircleShape, pureBlack = false))
+                            .padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            Modifier.size(width = 11.dp, height = 9.dp)
+                                .background(colors.primaryContainer.copy(alpha = 0.6f), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Box(Modifier.size(3.5.dp).background(colors.primary, CircleShape))
+                        }
+                        Box(Modifier.size(3.5.dp).background(colors.onSurfaceVariant, CircleShape))
+                    }
+                    Box(
+                        modifier = Modifier
+                            .size(16.dp)
+                            .clip(CircleShape)
+                            .then(Modifier.navigationGlass(CircleShape, pureBlack = false)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(Modifier.size(4.dp).background(colors.onSurfaceVariant, CircleShape))
                     }
                 }
             }

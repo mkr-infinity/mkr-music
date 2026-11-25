@@ -711,9 +711,15 @@ object LyricsUtils {
         return romajiBuilder.toString().lowercase()
     }
 
-    suspend fun romanizeJapanese(text: String): String = withContext(Dispatchers.Default) {
-        if (text.isEmpty()) return@withContext ""
-        katakanaToRomaji(text)
+    suspend fun romanizeJapanese(text: String): String? = withContext(Dispatchers.Default) {
+        if (text.isBlank()) return@withContext null
+        val katakanaText = buildString(text.length) {
+            for (ch in text) {
+                append(if (ch in '\u3041'..'\u3096') (ch.code + 0x60).toChar() else ch)
+            }
+        }
+        val romanized = katakanaToRomaji(katakanaText)
+        romanized.takeIf { it.isNotBlank() && it != text }
     }
 
     fun katakanaToRomaji(katakana: String?, nextKatakana: String? = null): String {
@@ -805,7 +811,7 @@ object LyricsUtils {
         romajaBuilder.toString()
     }
 
-    suspend fun romanizeChinese(text: String): String = text
+    suspend fun romanizeChinese(text: String): String? = null
 
     suspend fun romanizeCyrillic(text: String): String? = withContext(Dispatchers.Default) {
         if (text.isEmpty()) return@withContext null

@@ -218,8 +218,9 @@ fun LyricsV2(
             val trackId = mediaMetadata.id
             val cur = currentLyrics
             if (cur != null && cur.id == trackId && cur.lyrics.isNotBlank() && cur.lyrics != LYRICS_NOT_FOUND) {
-                if (availableProviders.none { it.providerName.equals(cur.provider, ignoreCase = true) }) {
-                    availableProviders.add(LyricsResult(cur.provider, cur.lyrics))
+                val pName = cur.provider.ifBlank { "Current" }
+                if (availableProviders.none { it.providerName.equals(pName, ignoreCase = true) }) {
+                    availableProviders.add(LyricsResult(pName, cur.lyrics))
                 }
             }
             isLoadingProviders = true
@@ -238,8 +239,10 @@ fun LyricsV2(
                         album = mediaMetadata.album?.title
                     ) { result ->
                         if (result.lyrics.isNotBlank() && result.lyrics != LYRICS_NOT_FOUND) {
-                            if (availableProviders.none { it.providerName.equals(result.providerName, ignoreCase = true) }) {
-                                availableProviders.add(result)
+                            withContext(Dispatchers.Main) {
+                                if (availableProviders.none { it.providerName.equals(result.providerName, ignoreCase = true) }) {
+                                    availableProviders.add(result)
+                                }
                             }
                         }
                     }
@@ -274,18 +277,21 @@ fun LyricsV2(
                 val fetchedLyricsWithProvider = withContext(Dispatchers.IO) {
                     lyricsHelper.getLyrics(mediaMetadata)
                 }
-                if (mediaMetadata?.id == currentTrackId &&
-                    fetchedLyricsWithProvider.lyrics.isNotBlank() &&
-                    fetchedLyricsWithProvider.lyrics != LYRICS_NOT_FOUND
-                ) {
-                    database.query {
-                        upsert(
-                            LyricsEntity(
-                                currentTrackId,
-                                fetchedLyricsWithProvider.lyrics,
-                                fetchedLyricsWithProvider.provider
-                            )
+                if (mediaMetadata?.id == currentTrackId) {
+                    val entity = if (
+                        fetchedLyricsWithProvider.lyrics.isNotBlank() &&
+                        fetchedLyricsWithProvider.lyrics != LYRICS_NOT_FOUND
+                    ) {
+                        LyricsEntity(
+                            currentTrackId,
+                            fetchedLyricsWithProvider.lyrics,
+                            fetchedLyricsWithProvider.provider
                         )
+                    } else {
+                        LyricsEntity(currentTrackId, LYRICS_NOT_FOUND)
+                    }
+                    database.query {
+                        upsert(entity)
                     }
                 }
             } catch (e: Exception) {

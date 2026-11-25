@@ -36,7 +36,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.ui.platform.LocalContext
-import com.music.mkr.BuildConfig
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
@@ -55,7 +54,6 @@ import com.music.mkr.constants.CrossfadeManualSkipKey
 import com.music.mkr.constants.AutoLoadMoreKey
 import com.music.mkr.constants.AutoSkipNextOnErrorKey
 import com.music.mkr.constants.DisableLoadMoreWhenRepeatAllKey
-import com.music.mkr.constants.EnableGoogleCastKey
 import com.music.mkr.constants.EnableSponsorBlockKey
 import com.music.mkr.constants.HistoryDuration
 import com.music.mkr.constants.KeepScreenOn

@@ -75,7 +75,6 @@ android {
 //add nightly build label support
         val isNightly = project.hasProperty("nightly") && project.property("nightly") == "true"
         buildConfigField("Boolean", "IS_NIGHTLY", isNightly.toString())
-        buildConfigField("Boolean", "CAST_AVAILABLE", "false")
     }
 
     flavorDimensions += listOf("abi")

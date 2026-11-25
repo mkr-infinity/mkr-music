@@ -187,64 +187,72 @@ fun ExpressivePillNavigationBar(
         navigationItems.firstOrNull { it == Screens.Search }
     }
 
-    Row(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
+            .padding(horizontal = 12.dp)
             .padding(bottom = bottomInset + bottomPadding),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
+        contentAlignment = Alignment.Center
     ) {
-        // Left Pill: Home, Library, (and any other non-Search tabs)
-        if (leftItems.isNotEmpty()) {
-            Row(
-                modifier = Modifier
-                    .height(pillHeight)
-                    .shadow(elevation = 6.dp, shape = CircleShape)
-                    .background(containerColor, shape = CircleShape)
-                    .border(width = 1.dp, color = outlineColor, shape = CircleShape)
-                    .padding(horizontal = 12.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                leftItems.forEach { screen ->
-                    val isSelected = remember(currentRoute, screen.route, navigationItems) {
-                        isNavRouteSelected(currentRoute, screen.route, navigationItems)
+        val pillSpacing = if (maxWidth < 340.dp) 10.dp else 16.dp
+        Row(
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Left Pill: Home, Library, (and any other non-Search tabs)
+            if (leftItems.isNotEmpty()) {
+                Row(
+                    modifier = Modifier
+                        .weight(1f, fill = false)
+                        .height(pillHeight)
+                        .shadow(elevation = 6.dp, shape = CircleShape)
+                        .background(containerColor, shape = CircleShape)
+                        .border(width = 1.dp, color = outlineColor, shape = CircleShape)
+                        .padding(horizontal = 12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    leftItems.forEach { screen ->
+                        val isSelected = remember(currentRoute, screen.route, navigationItems) {
+                            isNavRouteSelected(currentRoute, screen.route, navigationItems)
+                        }
+                        ExpressiveSplitNavItem(
+                            screen = screen,
+                            isSelected = isSelected,
+                            slimNav = slimNav,
+                            animate = animate,
+                            onClick = { onItemClick(screen, isSelected) }
+                        )
                     }
-                    ExpressiveSplitNavItem(
-                        screen = screen,
-                        isSelected = isSelected,
-                        slimNav = slimNav,
-                        animate = animate,
-                        onClick = { onItemClick(screen, isSelected) }
-                    )
                 }
             }
-        }
 
-        if (searchItem != null) {
-            if (leftItems.isNotEmpty()) {
-                Spacer(modifier = Modifier.width(16.dp))
-            }
-            val isSearchSelected = remember(currentRoute, searchItem.route, navigationItems) {
-                isNavRouteSelected(currentRoute, searchItem.route, navigationItems)
-            }
-            Box(
-                modifier = Modifier
-                    .size(pillHeight)
-                    .shadow(elevation = 6.dp, shape = CircleShape)
-                    .background(containerColor, shape = CircleShape)
-                    .border(width = 1.dp, color = outlineColor, shape = CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                ExpressiveSplitNavItem(
-                    screen = searchItem,
-                    isSelected = isSearchSelected,
-                    slimNav = slimNav,
-                    animate = animate,
-                    onClick = { onItemClick(searchItem, isSearchSelected) },
-                    onLongClick = onSearchLongClick,
-                    modifier = Modifier.fillMaxSize()
-                )
+            if (searchItem != null) {
+                if (leftItems.isNotEmpty()) {
+                    Spacer(modifier = Modifier.width(pillSpacing))
+                }
+                val isSearchSelected = remember(currentRoute, searchItem.route, navigationItems) {
+                    isNavRouteSelected(currentRoute, searchItem.route, navigationItems)
+                }
+                Box(
+                    modifier = Modifier
+                        .size(pillHeight)
+                        .shadow(elevation = 6.dp, shape = CircleShape)
+                        .clip(CircleShape)
+                        .background(containerColor, shape = CircleShape)
+                        .border(width = 1.dp, color = outlineColor, shape = CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    ExpressiveSplitNavItem(
+                        screen = searchItem,
+                        isSelected = isSearchSelected,
+                        slimNav = slimNav,
+                        animate = animate,
+                        onClick = { onItemClick(searchItem, isSearchSelected) },
+                        onLongClick = onSearchLongClick,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }
@@ -343,7 +351,8 @@ private fun ExpressiveSplitNavItem(
                     color = contentColor,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.Bold,
-                    maxLines = 1
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
                 )
             }
         }

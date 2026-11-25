@@ -87,7 +87,6 @@ fun SuggestionsTabContent(
     val personalTracks = if (hasListeningHistory) quickPicks.orEmpty().take(8) else emptyList()
     val trendingAlbums by viewModel.suggestionAlbums.collectAsStateWithLifecycle()
     var showAlbumCharts by rememberSaveable { mutableStateOf(false) }
-    val youtubeNewReleases by viewModel.youtubeNewReleases.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isManualLoading by viewModel.isManualLoading.collectAsState()
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current

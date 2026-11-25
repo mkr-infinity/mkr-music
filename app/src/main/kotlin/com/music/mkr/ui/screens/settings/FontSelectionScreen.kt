@@ -162,7 +162,8 @@ fun FontSelectionScreen(
                 )
 
                 Text(
-                    text = "Expressive typeface is applied to display, headlines, and titles. Body copy and labels remain in the system font for maximum readability.",
+                    text = "Applied across headings, titles, and body text for a cohesive reading experience.",
+                    fontFamily = activeFontFamily,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
                 )
@@ -171,6 +172,8 @@ fun FontSelectionScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        val currentFont = AppFont.fromValue(selectedFont)
+
         // Options settings group
         ExpressiveSettingGroup(
             title = stringResource(R.string.font_selection),
@@ -178,7 +181,7 @@ fun FontSelectionScreen(
                 Material3SettingsItem(
                     leadingContent = {
                         AnimatedRadioButton(
-                            selected = selectedFont == AppFont.POPPINS.value,
+                            selected = currentFont == AppFont.POPPINS,
                             onClick = null
                         )
                     },
@@ -199,7 +202,7 @@ fun FontSelectionScreen(
                 Material3SettingsItem(
                     leadingContent = {
                         AnimatedRadioButton(
-                            selected = selectedFont == AppFont.SYSTEM.value,
+                            selected = currentFont == AppFont.SYSTEM,
                             onClick = null
                         )
                     },
@@ -220,7 +223,7 @@ fun FontSelectionScreen(
                 Material3SettingsItem(
                     leadingContent = {
                         AnimatedRadioButton(
-                            selected = selectedFont == AppFont.GOOGLE_SANS.value,
+                            selected = currentFont == AppFont.GOOGLE_SANS,
                             onClick = null
                         )
                     },
@@ -241,7 +244,7 @@ fun FontSelectionScreen(
                 Material3SettingsItem(
                     leadingContent = {
                         AnimatedRadioButton(
-                            selected = selectedFont == AppFont.SANS_FLEX.value,
+                            selected = currentFont == AppFont.SANS_FLEX,
                             onClick = null
                         )
                     },
@@ -262,7 +265,7 @@ fun FontSelectionScreen(
                 Material3SettingsItem(
                     leadingContent = {
                         AnimatedRadioButton(
-                            selected = selectedFont == AppFont.OUTFIT.value,
+                            selected = currentFont == AppFont.OUTFIT,
                             onClick = null
                         )
                     },
@@ -283,7 +286,7 @@ fun FontSelectionScreen(
                 Material3SettingsItem(
                     leadingContent = {
                         AnimatedRadioButton(
-                            selected = selectedFont == AppFont.PLUS_JAKARTA_SANS.value,
+                            selected = currentFont == AppFont.PLUS_JAKARTA_SANS,
                             onClick = null
                         )
                     },
@@ -304,7 +307,7 @@ fun FontSelectionScreen(
                 Material3SettingsItem(
                     leadingContent = {
                         AnimatedRadioButton(
-                            selected = selectedFont == AppFont.CUSTOM.value,
+                            selected = currentFont == AppFont.CUSTOM,
                             onClick = null
                         )
                     },
