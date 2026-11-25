@@ -29,7 +29,7 @@ class NewReleaseViewModel
 @Inject
 constructor(
     @ApplicationContext val context: Context,
-    database: MusicDatabase,
+    private val database: MusicDatabase,
 ) : ViewModel() {
     private val _newReleaseAlbums = MutableStateFlow<List<AlbumItem>>(emptyList())
     val newReleaseAlbums = _newReleaseAlbums.asStateFlow()
