@@ -1934,59 +1934,75 @@ class MusicService :
         }
     }
 
+    private fun filterAutomixCandidates(
+        songs: List<com.music.innertube.models.SongItem>,
+        currentSongId: String?,
+        hideExplicit: Boolean,
+        hideVideoSongs: Boolean,
+    ): List<MediaItem> =
+        songs
+            .asSequence()
+            .filter { it.id != currentSongId }
+            .distinctBy { it.id }
+            .map { it.toMediaItem() }
+            .toList()
+            .filterExplicit(hideExplicit)
+            .filterVideoSongs(hideVideoSongs)
+
     fun getAutomix(playlistId: String) {
         if (dataStore.get(SimilarContent, true) &&
             !(dataStore.get(DisableLoadMoreWhenRepeatAllKey, false) && player.repeatMode == REPEAT_MODE_ALL)) {
             scope.launch(SilentHandler) {
                 try {
-                    // Try primary method
-                    YouTube.next(WatchEndpoint(playlistId = playlistId))
-                        .onSuccess { firstResult ->
-                            YouTube.next(WatchEndpoint(playlistId = firstResult.endpoint.playlistId))
-                                .onSuccess { secondResult ->
-                                    automixItems.value = secondResult.items.map { song ->
-                                        song.toMediaItem()
-                                    }
-                                }
-                                .onFailure {
-                                    // Fallback: use first result items
-                                    if (firstResult.items.isNotEmpty()) {
-                                        automixItems.value = firstResult.items.map { song ->
-                                            song.toMediaItem()
-                                        }
-                                    }
-                                }
-                        }
-                        .onFailure {
-                            // Fallback: try with radio format
-                            val currentSong = player.currentMetadata
-                            if (currentSong != null) {
-                                // Use simple videoId for better personalized recommendations
-                                YouTube.next(WatchEndpoint(
-                                    videoId = currentSong.id
-                                )).onSuccess { radioResult ->
-                                    val filteredItems = radioResult.items
-                                        .filter { it.id != currentSong.id }
-                                        .map { it.toMediaItem() }
-                                    if (filteredItems.isNotEmpty()) {
-                                        automixItems.value = filteredItems
-                                    }
-                                }.onFailure {
-                                    // Final fallback: try related endpoint
-                                    YouTube.next(WatchEndpoint(videoId = currentSong.id)).getOrNull()?.relatedEndpoint?.let { relatedEndpoint ->
-                                        YouTube.related(relatedEndpoint).onSuccess { relatedPage ->
-                                            val relatedItems = relatedPage.songs
-                                                .filter { it.id != currentSong.id }
-                                                .map { it.toMediaItem() }
-                                            if (relatedItems.isNotEmpty()) {
-                                                automixItems.value = relatedItems
+                    val hideExplicit = dataStore.get(HideExplicitKey, false)
+                    val hideVideoSongs = dataStore.get(HideVideoSongsKey, false)
+                    val currentSong = player.currentMetadata
+                    val currentSongId = currentSong?.id
 
-                                            }
-                                        }
-                                    }
+                    val firstResult = YouTube.next(WatchEndpoint(playlistId = playlistId)).getOrNull()
+                    val secondItems = firstResult?.endpoint?.playlistId?.let { nextPlaylistId ->
+                        YouTube.next(WatchEndpoint(playlistId = nextPlaylistId)).getOrNull()
+                            ?.items
+                            ?.let { filterAutomixCandidates(it, currentSongId, hideExplicit, hideVideoSongs) }
+                    }.orEmpty()
+
+                    if (secondItems.isNotEmpty()) {
+                        automixItems.value = secondItems
+                        return@launch
+                    }
+
+                    val firstItems = firstResult?.items
+                        ?.let { filterAutomixCandidates(it, currentSongId, hideExplicit, hideVideoSongs) }
+                        .orEmpty()
+                    if (firstItems.isNotEmpty()) {
+                        automixItems.value = firstItems
+                        return@launch
+                    }
+
+                    if (currentSong != null) {
+                        val radioResult = YouTube.next(WatchEndpoint(videoId = currentSong.id)).getOrNull()
+                        val radioItems = radioResult?.items
+                            ?.let { filterAutomixCandidates(it, currentSongId, hideExplicit, hideVideoSongs) }
+                            .orEmpty()
+                        if (radioItems.isNotEmpty()) {
+                            automixItems.value = radioItems
+                            return@launch
+                        }
+
+                        radioResult?.relatedEndpoint?.let { relatedEndpoint ->
+                            YouTube.related(relatedEndpoint).onSuccess { relatedPage ->
+                                val relatedItems = filterAutomixCandidates(
+                                    relatedPage.songs,
+                                    currentSongId,
+                                    hideExplicit,
+                                    hideVideoSongs,
+                                )
+                                if (relatedItems.isNotEmpty()) {
+                                    automixItems.value = relatedItems
                                 }
                             }
                         }
+                    }
                 } catch (_: Exception) {
                     // Silent fail
                 }

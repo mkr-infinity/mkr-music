@@ -8,27 +8,21 @@ package com.music.mkr.ui.menu
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.content.res.Configuration
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.ListItem
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -40,9 +34,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -56,7 +49,6 @@ import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
 import com.music.innertube.YouTube
 import com.music.innertube.models.SongItem
 import com.music.mkr.LocalDatabase
@@ -66,8 +58,6 @@ import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.LocalSyncUtils
 import com.music.mkr.R
 import com.music.mkr.constants.ListItemHeight
-import com.music.mkr.constants.ListThumbnailSize
-import com.music.mkr.constants.ThumbnailCornerRadius
 import com.music.mkr.db.entities.SpeedDialItem
 import com.music.mkr.db.entities.SongEntity
 import com.music.mkr.extensions.toMediaItem
@@ -81,10 +71,10 @@ import com.music.mkr.ui.component.Material3MenuGroup
 import com.music.mkr.ui.component.Material3MenuItemData
 import com.music.mkr.ui.component.NewAction
 import com.music.mkr.ui.component.NewActionGrid
+import com.music.mkr.ui.component.YouTubeListItem
 import com.music.mkr.ui.utils.ShowMediaInfo
 import com.music.mkr.ui.utils.resize
-import com.music.mkr.utils.joinByBullet
-import com.music.mkr.utils.makeTimeString
+import com.music.mkr.utils.listItemShape
 import androidx.datastore.preferences.core.edit
 import com.music.mkr.constants.DismissedQuickPicksKey
 import com.music.mkr.utils.dataStore
@@ -179,42 +169,15 @@ fun YouTubeSongMenu(
         }  
     }  
 
-    ListItem(  
-        headlineContent = {
-            Text(
-                text = song.title,
-                modifier = Modifier.basicMarquee(),
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-            )
-        },  
-        supportingContent = {  
-            Text(  
-                text = joinByBullet(
-                    song.artists.joinToString { it.name },
-                    song.duration?.let { makeTimeString(it * 1000L) },
-                )
-            )  
-        },  
-        leadingContent = {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .size(ListThumbnailSize)
-                    .clip(RoundedCornerShape(ThumbnailCornerRadius))
-            ) {
-                AsyncImage(
-                    model = song.thumbnail,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(ThumbnailCornerRadius))
-                )
-            }
-        },
-        trailingContent = {  
-            IconButton(  
-                onClick = {  
+    YouTubeListItem(
+        item = song,
+        badges = {},
+        isSwipeable = false,
+        shape = listItemShape(0, 2),
+        backgroundColor = Color.Transparent,
+        trailingContent = {
+            IconButton(
+                onClick = {
                     database.transaction {
                         val songToUpdate = getSongByIdBlocking(song.id)
                         val s: SongEntity
@@ -227,15 +190,15 @@ fun YouTubeSongMenu(
                         }
                         syncUtils.likeSong(s)
                     }
-                },  
-            ) {  
-                Icon(  
-                    painter = painterResource(if (librarySong?.song?.liked == true) R.drawable.favorite else R.drawable.favorite_border),  
-                    tint = if (librarySong?.song?.liked == true) MaterialTheme.colorScheme.error else LocalContentColor.current,  
-                    contentDescription = null,  
-                )  
-            }  
-        },  
+                },
+            ) {
+                Icon(
+                    painter = painterResource(if (librarySong?.song?.liked == true) R.drawable.favorite else R.drawable.favorite_border),
+                    tint = if (librarySong?.song?.liked == true) MaterialTheme.colorScheme.error else LocalContentColor.current,
+                    contentDescription = null,
+                )
+            }
+        },
     )  
 
     HorizontalDivider()
