@@ -7,8 +7,11 @@ package com.music.mkr.ui.component
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -25,6 +28,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -139,7 +143,7 @@ private fun materialNavigationHeight(slim: Boolean) = if (slim) 56.dp else 72.dp
 
 internal fun bottomNavigationHeight(style: NavigationStyle, slim: Boolean): Dp = when (style) {
     NavigationStyle.FLOATING_GLASS -> floatingGlassCapsuleHeight(slim) + floatingGlassBottomPadding(slim)
-    NavigationStyle.EXPRESSIVE_PILL -> 56.dp + if (slim) 8.dp else 14.dp
+    NavigationStyle.EXPRESSIVE_PILL -> (if (slim) 56.dp else 64.dp) + if (slim) 8.dp else 12.dp
     NavigationStyle.CLEAN_MATERIAL -> materialNavigationHeight(slim)
 }
 
@@ -158,6 +162,7 @@ fun FloatingGlassNavigationBar(
     onSearchLongClick, bottomInset, compact = false,
 )
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ExpressivePillNavigationBar(
     navigationItems: List<Screens>,
@@ -168,10 +173,182 @@ fun ExpressivePillNavigationBar(
     slimNav: Boolean = false,
     onSearchLongClick: (() -> Unit)? = null,
     bottomInset: Dp = 0.dp,
-) = CapsuleNavigationBar(
-    navigationItems, currentRoute, onItemClick, modifier, pureBlack, slimNav,
-    onSearchLongClick, bottomInset, compact = true,
-)
+) {
+    val containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
+    val outlineColor = if (pureBlack) Color(0xFF222222) else MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
+    val animate by rememberPreference(InterfaceAnimationsKey, true)
+    val pillHeight = if (slimNav) 56.dp else 64.dp
+    val bottomPadding = if (slimNav) 8.dp else 12.dp
+
+    val leftItems = remember(navigationItems) {
+        navigationItems.filter { it != Screens.Search }
+    }
+    val searchItem = remember(navigationItems) {
+        navigationItems.firstOrNull { it == Screens.Search }
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = bottomInset + bottomPadding),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Left Pill: Home, Library, (and any other non-Search tabs)
+        if (leftItems.isNotEmpty()) {
+            Row(
+                modifier = Modifier
+                    .height(pillHeight)
+                    .shadow(elevation = 6.dp, shape = CircleShape)
+                    .background(containerColor, shape = CircleShape)
+                    .border(width = 1.dp, color = outlineColor, shape = CircleShape)
+                    .padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                leftItems.forEach { screen ->
+                    val isSelected = remember(currentRoute, screen.route, navigationItems) {
+                        isNavRouteSelected(currentRoute, screen.route, navigationItems)
+                    }
+                    ExpressiveSplitNavItem(
+                        screen = screen,
+                        isSelected = isSelected,
+                        slimNav = slimNav,
+                        animate = animate,
+                        onClick = { onItemClick(screen, isSelected) }
+                    )
+                }
+            }
+        }
+
+        if (searchItem != null) {
+            if (leftItems.isNotEmpty()) {
+                Spacer(modifier = Modifier.width(16.dp))
+            }
+            val isSearchSelected = remember(currentRoute, searchItem.route, navigationItems) {
+                isNavRouteSelected(currentRoute, searchItem.route, navigationItems)
+            }
+            Box(
+                modifier = Modifier
+                    .size(pillHeight)
+                    .shadow(elevation = 6.dp, shape = CircleShape)
+                    .background(containerColor, shape = CircleShape)
+                    .border(width = 1.dp, color = outlineColor, shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                ExpressiveSplitNavItem(
+                    screen = searchItem,
+                    isSelected = isSearchSelected,
+                    slimNav = slimNav,
+                    animate = animate,
+                    onClick = { onItemClick(searchItem, isSearchSelected) },
+                    onLongClick = onSearchLongClick,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun ExpressiveSplitNavItem(
+    screen: Screens,
+    isSelected: Boolean,
+    slimNav: Boolean,
+    animate: Boolean,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    val iconId = when {
+        screen == Screens.Search -> R.drawable.nav_search
+        screen == Screens.Library -> R.drawable.nav_library
+        screen == Screens.Home -> R.drawable.nav_home
+        isSelected -> screen.iconIdActive
+        else -> screen.iconIdInactive
+    }
+    val contentColor = if (isSelected) {
+        MaterialTheme.colorScheme.primary
+    } else {
+        MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val targetBg = if (isSelected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f) else Color.Transparent
+    val backgroundColor by animateColorAsState(
+        targetValue = targetBg,
+        animationSpec = if (animate) tween(durationMillis = 200) else snap(),
+        label = "ExpressiveSplitNavBg"
+    )
+    val scale by animateFloatAsState(
+        targetValue = if (isSelected) 1.05f else 1f,
+        animationSpec = if (animate) {
+            spring(
+                dampingRatio = Spring.DampingRatioMediumBouncy,
+                stiffness = Spring.StiffnessMediumLow
+            )
+        } else {
+            snap()
+        },
+        label = "ExpressiveSplitNavScale"
+    )
+
+    Box(
+        modifier = modifier
+            .graphicsLayer {
+                scaleX = scale
+                scaleY = scale
+            }
+            .clip(CircleShape)
+            .background(backgroundColor)
+            .combinedClickable(
+                interactionSource = interactionSource,
+                indication = ripple(bounded = true),
+                role = Role.Tab,
+                onClick = onClick,
+                onLongClick = if (screen == Screens.Search) onLongClick else null
+            )
+            .let {
+                if (screen == Screens.Search) it else it.padding(horizontal = 14.dp, vertical = 10.dp)
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.animateContentSize(
+                animationSpec = if (animate) {
+                    spring(
+                        dampingRatio = Spring.DampingRatioNoBouncy,
+                        stiffness = Spring.StiffnessMediumLow
+                    )
+                } else {
+                    snap()
+                }
+            )
+        ) {
+            Icon(
+                painter = painterResource(id = iconId),
+                contentDescription = stringResource(screen.titleId),
+                tint = contentColor,
+                modifier = Modifier.size(24.dp)
+            )
+            AnimatedVisibility(
+                visible = !slimNav && isSelected && screen != Screens.Search,
+                enter = fadeIn() + expandHorizontally(),
+                exit = fadeOut() + shrinkHorizontally()
+            ) {
+                Text(
+                    text = stringResource(screen.titleId),
+                    color = contentColor,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    maxLines = 1
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun CapsuleNavigationBar(

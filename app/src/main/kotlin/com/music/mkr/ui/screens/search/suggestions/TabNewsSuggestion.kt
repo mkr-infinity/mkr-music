@@ -191,21 +191,7 @@ fun SuggestionsTabContent(
                     }
                 }
             }
-            val releases = youtubeNewReleases.orEmpty()
-            if (releases.isNotEmpty()) {
-                item(key = "new_releases") {
-                    BoxWithConstraints(Modifier.fillMaxWidth()) {
-                        val albumCardWidth = searchAlbumCardWidth((maxWidth - 32.dp).coerceAtLeast(0.dp))
-                        YouTubeLatestAlbumsSection(
-                            albums = releases,
-                            cardWidth = albumCardWidth,
-                            onAlbumClick = { navController.navigate("album/${it.id}") },
-                            onMoreClick = { navController.navigate("new_release") },
-                        )
-                    }
-                }
-            }
-            val hasDiscoveries = personalTracks.isNotEmpty() || !trendingAlbums.isNullOrEmpty() || releases.isNotEmpty()
+            val hasDiscoveries = personalTracks.isNotEmpty() || !trendingAlbums.isNullOrEmpty()
             if (!hasDiscoveries && isLoading && !isManualLoading) {
                 item(key = "loading_discovery") { SkeletonSuggestions() }
             } else if (!hasDiscoveries && !isLoading) {

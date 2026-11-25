@@ -158,28 +158,17 @@ private fun NavigationStyleCard(
         ) {
             NavigationStyleMiniPreview(style = style, isSelected = isSelected)
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = if (style == NavigationStyle.DEFAULT) {
-                        "${stringResource(style.titleRes)} (${stringResource(R.string.default_)})"
-                    } else {
-                        stringResource(style.titleRes)
-                    },
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                    color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = stringResource(style.descriptionRes),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 16.sp
-                )
-            }
+            Text(
+                text = if (style == NavigationStyle.DEFAULT) {
+                    "${stringResource(style.titleRes)} (${stringResource(R.string.default_)})"
+                } else {
+                    stringResource(style.titleRes)
+                },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
 
             RadioButton(
                 selected = isSelected,
