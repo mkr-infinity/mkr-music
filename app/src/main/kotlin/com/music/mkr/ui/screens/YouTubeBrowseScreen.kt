@@ -65,6 +65,7 @@ fun YouTubeBrowseScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val browseResult by viewModel.result.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
     val gridItemSize by rememberEnumPreference(GridItemsSizeKey, GridItemSize.BIG)
@@ -75,7 +76,14 @@ fun YouTubeBrowseScreen(
         columns = GridCells.Adaptive(minSize = GridThumbnailHeight + if (gridItemSize == GridItemSize.BIG) 24.dp else (-24).dp),
         contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
     ) {
-        if (browseResult == null) {
+        if (error != null && browseResult == null) {
+            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                com.music.mkr.ui.component.LibraryLoadError(
+                    message = error.orEmpty(),
+                    onRetry = viewModel::load,
+                )
+            }
+        } else if (browseResult == null) {
             items(8) {
                 ShimmerHost {
                     GridItemPlaceHolder(fillMaxWidth = true)

@@ -224,18 +224,14 @@ fun StorageSettings(
     var downloadCacheSize by remember {
         mutableLongStateOf(tryOrNull { downloadCache.cacheSpace } ?: 0)
     }
+    val maxImageBytes = maxImageCacheSize * 1024L * 1024L
     val imageCacheProgress by animateFloatAsState(
-        targetValue = (imageCacheSize.toFloat() / (maxImageCacheSize * 1024 * 1024L)).coerceIn(
-            0f,
-            1f
-        ),
+        targetValue = if (maxImageBytes > 0L) (imageCacheSize.toFloat() / maxImageBytes).coerceIn(0f, 1f) else 0f,
         label = "imageCacheProgress",
     )
+    val maxSongBytes = maxSongCacheSize * 1024L * 1024L
     val playerCacheProgress by animateFloatAsState(
-        targetValue = (playerCacheSize.toFloat() / (maxSongCacheSize * 1024 * 1024L)).coerceIn(
-            0f,
-            1f
-        ),
+        targetValue = if (maxSongBytes > 0L) (playerCacheSize.toFloat() / maxSongBytes).coerceIn(0f, 1f) else 0f,
         label = "playerCacheProgress",
     )
 
@@ -243,8 +239,8 @@ fun StorageSettings(
         if (disableSongCache) {
             coroutineScope.launch(Dispatchers.IO) {
                 try {
-                    playerCache.keys.forEach { key ->
-                        playerCache.removeResource(key)
+                    playerCache.keys.toList().forEach { key ->
+                        runCatching { playerCache.removeResource(key) }
                     }
                     database.clearCachedSongsDateDownload()
                 } catch (_: Exception) {}
@@ -263,8 +259,8 @@ fun StorageSettings(
     LaunchedEffect(maxSongCacheSize) {
         if (maxSongCacheSize == 0) {
             coroutineScope.launch(Dispatchers.IO) {
-                playerCache.keys.forEach { key ->
-                    playerCache.removeResource(key)
+                playerCache.keys.toList().forEach { key ->
+                    runCatching { playerCache.removeResource(key) }
                 }
             }
         }
@@ -357,8 +353,8 @@ fun StorageSettings(
             onDismiss = { clearCacheDialog = false },
             onConfirm = {
                 coroutineScope.launch(Dispatchers.IO) {
-                    playerCache.keys.forEach { key ->
-                        playerCache.removeResource(key)
+                    playerCache.keys.toList().forEach { key ->
+                        runCatching { playerCache.removeResource(key) }
                     }
                     database.clearCachedSongsDateDownload()
                     playerCacheSize = tryOrNull { playerCache.cacheSpace } ?: 0
@@ -593,8 +589,8 @@ fun StorageSettings(
                                 onDisableSongCacheChange(checked)
                                 if (checked) {
                                     coroutineScope.launch(Dispatchers.IO) {
-                                        playerCache.keys.forEach { key ->
-                                            playerCache.removeResource(key)
+                                        playerCache.keys.toList().forEach { key ->
+                                            runCatching { playerCache.removeResource(key) }
                                         }
                                         try {
                                             database.clearCachedSongsDateDownload()
@@ -618,8 +614,8 @@ fun StorageSettings(
                         onDisableSongCacheChange(newState)
                         if (newState) {
                             coroutineScope.launch(Dispatchers.IO) {
-                                playerCache.keys.forEach { key ->
-                                    playerCache.removeResource(key)
+                                playerCache.keys.toList().forEach { key ->
+                                    runCatching { playerCache.removeResource(key) }
                                 }
                                 try {
                                     database.clearCachedSongsDateDownload()

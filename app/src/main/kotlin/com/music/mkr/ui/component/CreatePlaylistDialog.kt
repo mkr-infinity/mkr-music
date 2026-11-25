@@ -61,9 +61,16 @@ fun CreatePlaylistDialog(
         initialTextFieldValue = TextFieldValue(initialTextFieldValue ?: ""),
         onDismiss = onDismiss,
         onDone = { playlistName ->
-            coroutineScope.launch(Dispatchers.IO) {
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.IO).launch {
                 val browseId = if (syncedPlaylist && isSignedIn) {
-                    YouTube.createPlaylist(playlistName)
+                    runCatching { YouTube.createPlaylist(playlistName) }
+                        .onFailure {
+                            Logger.getLogger("CreatePlaylistDialog").warning("Failed to create remote playlist: ${it.message}")
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, it.localizedMessage ?: "Failed to create playlist", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                        .getOrNull() ?: return@launch
                 } else if (syncedPlaylist) {
                     Logger.getLogger("CreatePlaylistDialog").warning("Not signed in")
                     return@launch

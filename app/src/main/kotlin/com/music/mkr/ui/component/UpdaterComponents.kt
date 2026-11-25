@@ -41,6 +41,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import com.music.mkr.ui.utils.safeStartActivity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.Painter
@@ -271,7 +272,7 @@ fun ChangelogItem(
                 text = annotatedText,
                 onClick = { offset ->
                     annotatedText.getStringAnnotations("URL", offset, offset).firstOrNull()?.let {
-                        ContextCompat.startActivity(context, Intent(Intent.ACTION_VIEW, Uri.parse(it.item)), null)
+                        context.safeStartActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it.item)))
                     }
                 },
                 style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface)

@@ -283,9 +283,10 @@ fun Queue(
         if (sleepTimerEnabled) {
             while (isActive) {
                 sleepTimerTimeLeft = if (playerConnection.service.sleepTimer.pauseWhenSongEnd) {
-                    playerConnection.player.duration - playerConnection.player.currentPosition
+                    val dur = playerConnection.player.duration
+                    if (dur > 0L) (dur - playerConnection.player.currentPosition).coerceAtLeast(0L) else 0L
                 } else {
-                    playerConnection.service.sleepTimer.triggerTime - System.currentTimeMillis()
+                    (playerConnection.service.sleepTimer.triggerTime - System.currentTimeMillis()).coerceAtLeast(0L)
                 }
                 delay(1000L)
             }

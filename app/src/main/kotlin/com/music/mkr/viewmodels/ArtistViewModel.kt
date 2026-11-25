@@ -47,6 +47,7 @@ class ArtistViewModel @Inject constructor(
 ) : ViewModel() {
     val artistId = savedStateHandle.get<String>("artistId")!!
     var artistPage by mutableStateOf<ArtistPage?>(null)
+    var error by mutableStateOf<String?>(null)
     
     val libraryArtist = database.artist(artistId)
         .stateIn(viewModelScope, SharingStarted.Lazily, null)
@@ -84,6 +85,7 @@ class ArtistViewModel @Inject constructor(
     }
 
     fun fetchArtistsFromYTM() {
+        error = null
         viewModelScope.launch {
             val hideExplicit = context.dataStore.get(HideExplicitKey, false)
             val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
@@ -98,6 +100,7 @@ class ArtistViewModel @Inject constructor(
 
                     artistPage = page.copy(sections = filteredSections)
                 }.onFailure {
+                    error = it.localizedMessage ?: "Failed to load"
                     reportException(it)
                 }
         }

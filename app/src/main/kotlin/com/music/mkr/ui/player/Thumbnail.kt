@@ -428,11 +428,13 @@ fun Thumbnail(
                         }
                     ) {
                         items(
-                            items = mediaItems,
-                            key = { item -> 
-                                item.mediaId.ifEmpty { "unknown_${item.hashCode()}" }
+                            count = mediaItems.size,
+                            key = { index ->
+                                val item = mediaItems[index]
+                                "${index}_${item.mediaId.ifEmpty { item.hashCode() }}"
                             }
-                        ) { item ->
+                        ) { index ->
+                            val item = mediaItems[index]
                             ThumbnailItem(
                                 item = item,
                                 dimensions = dimensions,
@@ -617,7 +619,12 @@ private fun ThumbnailItem(
                             playerConnection.player.seekTo((currentPosition - skipAmount).coerceAtLeast(0))
                             onSeek(context.getString(R.string.seek_backward_dynamic, skipAmount / 1000), true)
                         } else {
-                            playerConnection.player.seekTo((currentPosition + skipAmount).coerceAtMost(duration))
+                            val targetPos = if (duration > 0L) {
+                                (currentPosition + skipAmount).coerceAtMost(duration)
+                            } else {
+                                currentPosition + skipAmount
+                            }.coerceAtLeast(0L)
+                            playerConnection.player.seekTo(targetPos)
                             onSeek(context.getString(R.string.seek_forward_dynamic, skipAmount / 1000), true)
                         }
                     }

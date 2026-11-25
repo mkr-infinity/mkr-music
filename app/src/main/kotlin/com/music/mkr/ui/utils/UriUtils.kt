@@ -6,6 +6,7 @@
 package com.music.mkr.ui.utils
 
 import android.content.Context
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.ui.platform.UriHandler
 import com.music.mkr.R
@@ -28,3 +29,19 @@ fun UriHandler.safeOpenUri(context: Context, uri: String) {
         ).show()
     }
 }
+
+/**
+ * Safely launches an [Intent], showing a short toast instead of crashing if no handler exists.
+ */
+fun Context.safeStartActivity(intent: Intent): Boolean =
+    runCatching {
+        startActivity(intent)
+        true
+    }.getOrElse {
+        Toast.makeText(
+            this,
+            getString(R.string.error_no_stream).replace("stream", "app"),
+            Toast.LENGTH_SHORT
+        ).show()
+        false
+    }

@@ -169,10 +169,10 @@ class BackupRestoreViewModel @Inject constructor(
                     val parts = parseCsvLine(line)
 
                     if (parts.isNotEmpty()) {
-                        if (columnMapping.artistColumnIndex < parts.size && columnMapping.titleColumnIndex < parts.size) {
+                        if (columnMapping.artistColumnIndex in parts.indices && columnMapping.titleColumnIndex in parts.indices) {
                             val title = parts[columnMapping.titleColumnIndex].trim()
                             val artistStr = parts[columnMapping.artistColumnIndex].trim()
-                            val url = if (columnMapping.urlColumnIndex >= 0 && columnMapping.urlColumnIndex < parts.size) {
+                            val url = if (columnMapping.urlColumnIndex in parts.indices) {
                                 parts[columnMapping.urlColumnIndex].trim()
                             } else {
                                 ""
@@ -207,27 +207,17 @@ class BackupRestoreViewModel @Inject constructor(
                     }
 
                     // Update progress
-                    val progress = ((index + 1) * 100) / totalLines
-                    onProgress(progress.coerceIn(0, 99))
+                    if (totalLines > 0) {
+                        val progress = ((index + 1) * 100) / totalLines
+                        onProgress(progress.coerceIn(0, 99))
+                    }
                 }
             }
         }.onFailure {
             reportException(it)
             Timber.tag("CSV_IMPORT").e(it, "CSV import failed")
-            Toast.makeText(
-                context,
-                "Failed to import CSV file",
-                Toast.LENGTH_SHORT
-            ).show()
         }
 
-        if (songs.isEmpty()) {
-            Toast.makeText(
-                context,
-                "No songs found. Invalid file, or perhaps no song matches were found.",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
         return songs
     }
 

@@ -432,7 +432,7 @@ fun OnlinePlaylistScreen(
 
                     itemsIndexed(
                         items = filteredSongs,
-                        key = { _, (_, songItem) -> songItem.id }
+                        key = { _, (origIndex, songItem) -> "${songItem.id}_$origIndex" }
                     ) { index, (_, songItem) ->
                         val onCheckedChange: (Boolean) -> Unit = {
                             if (it) selection.add(songItem.id) else selection.remove(songItem.id)
@@ -591,7 +591,7 @@ fun OnlinePlaylistScreen(
                     // Songs list
                     itemsIndexed(
                         items = filteredSongs,
-                        key = { _, (_, songItem) -> songItem.id }
+                        key = { _, (origIndex, songItem) -> "${songItem.id}_$origIndex" }
                     ) { index, (_, songItem) ->
                         val onCheckedChange: (Boolean) -> Unit = {
                             if (it) selection.add(songItem.id) else selection.remove(songItem.id)

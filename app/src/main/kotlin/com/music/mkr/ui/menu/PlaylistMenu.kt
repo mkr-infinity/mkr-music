@@ -628,11 +628,12 @@ fun PlaylistMenu(
                                             var attempt = 0
                                             val maxAttempts = 3
                                             while (attempt < maxAttempts) {
+                                                attempt++
                                                 try {
                                                     browseId = YouTube.createPlaylist(playlist.playlist.name)
                                                     if (browseId != null) break
+                                                    if (attempt < maxAttempts) kotlinx.coroutines.delay(1000)
                                                 } catch (e: Exception) {
-                                                    attempt++
                                                     if (attempt >= maxAttempts) throw e
                                                     kotlinx.coroutines.delay(1000)
                                                 }
@@ -669,6 +670,11 @@ fun PlaylistMenu(
                                                         ).show()
                                                     }
                                                     isSyncComplete = true
+                                                }
+                                            } else {
+                                                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                                    Toast.makeText(context, "Failed to create playlist on YouTube", Toast.LENGTH_SHORT).show()
+                                                    isSyncing = false
                                                 }
                                             }
                                         } catch (e: Exception) {

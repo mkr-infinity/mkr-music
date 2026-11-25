@@ -86,6 +86,7 @@ fun ArtistItemsScreen(
 
     val title by viewModel.title.collectAsState()
     val itemsPage by viewModel.itemsPage.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     LaunchedEffect(lazyListState) {
         snapshotFlow {
@@ -105,7 +106,16 @@ fun ArtistItemsScreen(
         }
     }
 
-    if (itemsPage == null) {
+    if (error != null && itemsPage == null) {
+        androidx.compose.foundation.layout.Box(
+            modifier = Modifier.windowInsetsPadding(LocalPlayerAwareWindowInsets.current),
+        ) {
+            com.music.mkr.ui.component.LibraryLoadError(
+                message = error.orEmpty(),
+                onRetry = viewModel::load,
+            )
+        }
+    } else if (itemsPage == null) {
         ShimmerHost(
             modifier = Modifier.windowInsetsPadding(LocalPlayerAwareWindowInsets.current),
         ) {

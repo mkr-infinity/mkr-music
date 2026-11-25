@@ -95,7 +95,9 @@ fun ExploreScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val explorePage by exploreViewModel.explorePage.collectAsState()
+    val exploreError by exploreViewModel.error.collectAsState()
     val chartsPage by chartsViewModel.chartsPage.collectAsState()
+    val chartsError by chartsViewModel.error.collectAsState()
     val isChartsLoading by chartsViewModel.isLoading.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
@@ -130,7 +132,16 @@ fun ExploreScreen(
                 ),
             )
 
-            if (isChartsLoading || chartsPage == null || explorePage == null) {
+            val loadError = exploreError ?: chartsError
+            if (loadError != null && (explorePage == null || chartsPage == null)) {
+                com.music.mkr.ui.component.LibraryLoadError(
+                    message = loadError,
+                    onRetry = {
+                        if (explorePage == null) exploreViewModel.retry()
+                        if (chartsPage == null) chartsViewModel.loadCharts()
+                    },
+                )
+            } else if (isChartsLoading || chartsPage == null || explorePage == null) {
                 ShimmerHost {
                     TextPlaceholder(
                         height = 36.dp,
@@ -432,7 +443,9 @@ fun ExploreScreen(
                             MoodAndGenresButton(
                                 title = it.title,
                                 onClick = {
-                                    navController.navigate("youtube_browse/${it.endpoint.browseId}?params=${it.endpoint.params}")
+                                    val encodedId = android.net.Uri.encode(it.endpoint.browseId)
+                                    val encodedParams = it.endpoint.params?.let { p -> "?params=${android.net.Uri.encode(p)}" }.orEmpty()
+                                    navController.navigate("youtube_browse/$encodedId$encodedParams")
                                 },
                                 modifier = Modifier
                                     .padding(6.dp)

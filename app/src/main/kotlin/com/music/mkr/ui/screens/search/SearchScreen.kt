@@ -115,6 +115,8 @@ fun SearchScreen(
                         database.query { insert(SearchHistory(query = searchQuery)) }
                     }
                 }
+            } else {
+                searchActive = true
             }
         }
     }

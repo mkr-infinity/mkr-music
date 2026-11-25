@@ -461,12 +461,10 @@ fun SelectionSongMenu(
                                 },
                                 onClick = {
                                     onDismiss()
-                                    var i = 0
-                                    database.query {
-                                        songPosition.forEach { cur ->
-                                            move(cur.playlistId, cur.position - i, Int.MAX_VALUE)
+                                    database.transaction {
+                                        songPosition.sortedByDescending { it.position }.forEach { cur ->
+                                            move(cur.playlistId, cur.position, Int.MAX_VALUE)
                                             delete(cur.copy(position = Int.MAX_VALUE))
-                                            i++
                                         }
                                     }
                                     clearAction()

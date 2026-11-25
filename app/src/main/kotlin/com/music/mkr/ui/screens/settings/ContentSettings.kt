@@ -41,6 +41,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
+import com.music.mkr.ui.utils.safeStartActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -828,7 +829,7 @@ fun ContentSettings(
                         icon = painterResource(R.drawable.language),
                         title = { Text(stringResource(R.string.app_language)) },
                         onClick = {
-                            context.startActivity(
+                            context.safeStartActivity(
                                 Intent(
                                     Settings.ACTION_APP_LOCALE_SETTINGS,
                                     "package:${context.packageName}".toUri()

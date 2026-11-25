@@ -33,18 +33,28 @@ constructor(
     @ApplicationContext val context: Context,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val browseId = savedStateHandle.get<String>("browseId")!!
-    private val params = savedStateHandle.get<String>("params")
+    private val browseId = savedStateHandle.get<String>("browseId")?.takeIf { it.isNotBlank() && it != "null" }
+    private val params = savedStateHandle.get<String>("params")?.takeIf { it.isNotBlank() && it != "null" }
 
     val title = MutableStateFlow("")
     val itemsPage = MutableStateFlow<ItemsPage?>(null)
+    val error = MutableStateFlow<String?>(null)
 
     init {
+        load()
+    }
+
+    fun load() {
+        val targetBrowseId = browseId ?: run {
+            error.value = "Invalid browse ID"
+            return
+        }
+        error.value = null
         viewModelScope.launch {
             YouTube
                 .artistItems(
                     BrowseEndpoint(
-                        browseId = browseId,
+                        browseId = targetBrowseId,
                         params = params,
                     ),
                 ).onSuccess { artistItemsPage ->
@@ -60,6 +70,7 @@ constructor(
                             continuation = artistItemsPage.continuation,
                         )
                 }.onFailure {
+                    error.value = it.localizedMessage ?: "Failed to load"
                     reportException(it)
                 }
         }

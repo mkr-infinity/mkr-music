@@ -437,34 +437,36 @@ fun YouTubeSongMenu(
             )
         }
 
-        item { Spacer(modifier = Modifier.height(12.dp)) }
+        if (onNotInterested != null) {
+            item { Spacer(modifier = Modifier.height(12.dp)) }
 
-        item {
-            Material3MenuGroup(
-                expressive = true,
-                items = listOf(
-                    Material3MenuItemData(
-                        title = { Text(text = stringResource(R.string.not_interested)) },
-                        description = { Text(text = stringResource(R.string.not_interested_desc)) },
-                        icon = {
-                            Icon(
-                                painter = painterResource(R.drawable.remove),
-                                contentDescription = null,
-                            )
-                        },
-                        onClick = {
-                            onDismiss()
-                            onNotInterested?.invoke()
-                            coroutineScope.launch(Dispatchers.IO) {
-                                context.dataStore.edit { preferences ->
-                                    val current = preferences[DismissedQuickPicksKey] ?: emptySet()
-                                    preferences[DismissedQuickPicksKey] = current + song.id
+            item {
+                Material3MenuGroup(
+                    expressive = true,
+                    items = listOf(
+                        Material3MenuItemData(
+                            title = { Text(text = stringResource(R.string.not_interested)) },
+                            description = { Text(text = stringResource(R.string.not_interested_desc)) },
+                            icon = {
+                                Icon(
+                                    painter = painterResource(R.drawable.remove),
+                                    contentDescription = null,
+                                )
+                            },
+                            onClick = {
+                                onDismiss()
+                                onNotInterested.invoke()
+                                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + Dispatchers.IO).launch {
+                                    context.dataStore.edit { preferences ->
+                                        val current = preferences[DismissedQuickPicksKey] ?: emptySet()
+                                        preferences[DismissedQuickPicksKey] = current + song.id
+                                    }
                                 }
                             }
-                        }
+                        )
                     )
                 )
-            )
+            }
         }
 
         item { Spacer(modifier = Modifier.height(12.dp)) }

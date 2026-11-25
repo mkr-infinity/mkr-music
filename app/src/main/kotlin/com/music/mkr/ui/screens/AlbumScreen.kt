@@ -295,11 +295,17 @@ fun AlbumScreen(
                         globalDownloadState = globalDownloadState,
                         isPlaying = isAlbumActivelyPlaying,
                         onPlay = {
-                            val visibleSongs = wrappedSongs.map { it.item }
-                            if (visibleSongs.isNotEmpty()) {
-                                playerConnection.playQueue(
-                                    LocalAlbumRadio(currentAlbumWithSongs.copy(songs = visibleSongs))
-                                )
+                            if (isAlbumActivelyPlaying) {
+                                playerConnection.player.pause()
+                            } else if (mediaMetadata?.album?.id == currentAlbumWithSongs.album.id) {
+                                playerConnection.player.play()
+                            } else {
+                                val visibleSongs = wrappedSongs.map { it.item }
+                                if (visibleSongs.isNotEmpty()) {
+                                    playerConnection.playQueue(
+                                        LocalAlbumRadio(currentAlbumWithSongs.copy(songs = visibleSongs))
+                                    )
+                                }
                             }
                         },
                         onShuffle = {

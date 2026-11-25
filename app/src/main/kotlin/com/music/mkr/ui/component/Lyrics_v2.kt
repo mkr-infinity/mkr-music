@@ -687,8 +687,7 @@ fun LyricsV2(
                             )
                         }
                     }
-                    return
-                }
+                } else {
 
                 // Scroll anchor: single line index used to keep the list auto-scrolling
                 val currentLineIndex by remember(lines, lyricsOffset) {
@@ -1084,6 +1083,7 @@ fun LyricsV2(
                             }
                         }
                     }
+                }
                 }
             }
         }

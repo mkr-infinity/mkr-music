@@ -30,24 +30,35 @@ constructor(
     @ApplicationContext val context: Context,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
-    private val browseId = savedStateHandle.get<String>("browseId")!!
-    private val params = savedStateHandle.get<String>("params")
+    private val browseId = savedStateHandle.get<String>("browseId")?.takeIf { it.isNotBlank() && it != "null" }
+    private val params = savedStateHandle.get<String>("params")?.takeIf { it.isNotBlank() && it != "null" }
 
     val result = MutableStateFlow<BrowseResult?>(null)
+    val error = MutableStateFlow<String?>(null)
 
     init {
+        load()
+    }
+
+    fun load() {
+        val targetBrowseId = browseId ?: run {
+            error.value = "Invalid browse ID"
+            return
+        }
+        error.value = null
         viewModelScope.launch {
             val hideExplicit = context.dataStore.get(HideExplicitKey, false)
             val hideVideoSongs = context.dataStore.get(HideVideoSongsKey, false)
             val hideYoutubeShorts = context.dataStore.get(HideYoutubeShortsKey, false)
             YouTube
-                .browse(browseId, params)
+                .browse(targetBrowseId, params)
                 .onSuccess {
                     result.value = it
                         .filterExplicit(hideExplicit)
                         .filterVideoSongs(hideVideoSongs)
                         .filterYoutubeShorts(hideYoutubeShorts)
                 }.onFailure {
+                    error.value = it.localizedMessage ?: "Failed to load"
                     reportException(it)
                 }
         }

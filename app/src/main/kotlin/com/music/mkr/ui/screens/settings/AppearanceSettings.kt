@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
+import com.music.mkr.ui.utils.safeStartActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -705,8 +706,9 @@ fun AppearanceSettings(
                         val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                         }
-                        context.startActivity(intent)
-                        Runtime.getRuntime().exit(0)
+                        if (intent != null && context.safeStartActivity(intent)) {
+                            Runtime.getRuntime().exit(0)
+                        }
                     }
                 ) {
                     Text(text = stringResource(R.string.restart))

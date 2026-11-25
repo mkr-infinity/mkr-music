@@ -346,7 +346,7 @@ fun LocalPlaylistScreen(
                 Text(
                     text = stringResource(
                         R.string.remove_download_playlist_confirm,
-                        playlist?.playlist!!.name
+                        playlist?.playlist?.name.orEmpty()
                     ),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(horizontal = 18.dp),
@@ -393,7 +393,7 @@ fun LocalPlaylistScreen(
                 Text(
                     text = stringResource(
                         R.string.delete_playlist_confirm,
-                        playlist?.playlist!!.name
+                        playlist?.playlist?.name.orEmpty()
                     ),
                     style = MaterialTheme.typography.bodyLarge,
                     modifier = Modifier.padding(horizontal = 18.dp)
@@ -985,10 +985,10 @@ fun LocalPlaylistHeader(
                 }
 
                 else -> {
-                    val bytes = uriToByteArray(context, uri)
+                    val bytes = uriToByteArray(context, uri) ?: return@withContext
                     YouTube.uploadCustomThumbnailLink(
                         playlist.playlist.browseId,
-                        bytes!!
+                        bytes
                     ).onSuccess { newThumbnailUrl ->
                         overrideThumbnail.value = newThumbnailUrl
                         isCustomThumbnail = true

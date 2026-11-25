@@ -258,8 +258,18 @@ fun ArtistScreen(
             ),
         ) {
             if (artistPage == null && !showLocal) {
-                item(key = "artist_shimmer") {
-                    ArtistShimmerSkeleton(systemBarsTopPadding = systemBarsTopPadding)
+                if (viewModel.error != null) {
+                    item(key = "artist_error") {
+                        Spacer(Modifier.height(systemBarsTopPadding + 56.dp))
+                        com.music.mkr.ui.component.LibraryLoadError(
+                            message = viewModel.error.orEmpty(),
+                            onRetry = viewModel::fetchArtistsFromYTM,
+                        )
+                    }
+                } else {
+                    item(key = "artist_shimmer") {
+                        ArtistShimmerSkeleton(systemBarsTopPadding = systemBarsTopPadding)
+                    }
                 }
             } else {
                 item(key = "artist_hero_header") {
@@ -272,7 +282,7 @@ fun ArtistScreen(
                         descriptionRuns = if (!showLocal && showArtistDescription) artistPage?.descriptionRuns else null,
                         isSubscribed = isSubscribed,
                         hasRadio = !showLocal && !isGuest && artistPage?.artist?.radioEndpoint != null,
-                        hasShuffle = !showLocal && !isGuest && artistPage?.artist?.shuffleEndpoint != null || (librarySongs.isNotEmpty() && !isGuest),
+                        hasShuffle = !isGuest && (if (showLocal) librarySongs.isNotEmpty() else artistPage?.artist?.shuffleEndpoint != null),
                         hasLocalOption = librarySongs.isNotEmpty() && libraryArtist?.artist?.isLocal != true,
                         showLocal = showLocal,
                         onSubscribeToggle = {
@@ -487,16 +497,18 @@ fun ArtistScreen(
                     }
                 } else {
                     // Online Artist Sections
-                    artistPage?.sections?.fastForEach { section ->
+                    artistPage?.sections?.forEachIndexed { sectionIndex, section ->
                         if (section.items.isNotEmpty()) {
-                            item(key = "section_${section.title}") {
+                            item(key = "section_${sectionIndex}_${section.title}") {
                                 NavigationTitle(
                                     title = section.title,
                                     modifier = Modifier.padding(top = 12.dp),
                                     onClick = section.moreEndpoint?.let {
                                         {
+                                            val encodedBrowseId = android.net.Uri.encode(it.browseId)
+                                            val paramsQuery = it.params?.takeIf { p -> p.isNotBlank() }?.let { p -> "&params=${android.net.Uri.encode(p)}" }.orEmpty()
                                             navController.navigate(
-                                                "artist/${viewModel.artistId}/items?browseId=${it.browseId}&params=${it.params}",
+                                                "artist/${viewModel.artistId}/items?browseId=$encodedBrowseId$paramsQuery",
                                             )
                                         }
                                     },
@@ -510,7 +522,7 @@ fun ArtistScreen(
 
                             itemsIndexed(
                                 items = distinctSongs,
-                                key = { _, it -> "youtube_song_${it.id}" },
+                                key = { _, it -> "youtube_song_${sectionIndex}_${it.id}" },
                             ) { index, songItem ->
                                 val song = songItem as SongItem
                                 val durationStr = song.duration?.let { dur ->
@@ -592,7 +604,7 @@ fun ArtistScreen(
                             }
                         } else {
                             // Horizontal grid for albums/singles/playlists
-                            item(key = "section_grid_${section.title}") {
+                            item(key = "section_grid_${sectionIndex}_${section.title}") {
                                 LazyRow(
                                     contentPadding = PaddingValues(horizontal = 16.dp),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),

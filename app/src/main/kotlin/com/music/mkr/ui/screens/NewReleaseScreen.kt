@@ -58,6 +58,7 @@ fun NewReleaseScreen(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
 
     val newReleaseAlbums by viewModel.newReleaseAlbums.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     val coroutineScope = rememberCoroutineScope()
     val gridItemSize by rememberEnumPreference(GridItemsSizeKey, GridItemSize.BIG)
@@ -96,7 +97,14 @@ fun NewReleaseScreen(
             )
         }
 
-        if (newReleaseAlbums.isEmpty()) {
+        if (error != null && newReleaseAlbums.isEmpty()) {
+            item(span = { androidx.compose.foundation.lazy.grid.GridItemSpan(maxLineSpan) }) {
+                com.music.mkr.ui.component.LibraryLoadError(
+                    message = error.orEmpty(),
+                    onRetry = viewModel::load,
+                )
+            }
+        } else if (newReleaseAlbums.isEmpty()) {
             items(8) {
                 ShimmerHost {
                     GridItemPlaceHolder(fillMaxWidth = true)

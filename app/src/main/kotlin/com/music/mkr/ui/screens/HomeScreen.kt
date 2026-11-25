@@ -406,9 +406,10 @@ fun CommunityPlaylistCard(
                                         .forEach(::insert)
                                 }
                             } else {
-                                database.transaction {
-                                    val currentPlaylist = dbPlaylist!!.playlist
-                                    update(currentPlaylist.toggleLike())
+                                dbPlaylist?.playlist?.let { currentPlaylist ->
+                                    database.transaction {
+                                        update(currentPlaylist.toggleLike())
+                                    }
                                 }
                             }
                         }
@@ -1373,7 +1374,7 @@ fun HomeScreen(
                                             .fillMaxWidth()
                                             .height(heroHeight)
                                     ) { index ->
-                                            val originalSong = distinctQuickPicks[index]
+                                            val originalSong = distinctQuickPicks.getOrNull(index) ?: return@HorizontalCenteredHeroCarousel
                                             val song by database.song(originalSong.id)
                                                 .collectAsState(initial = originalSong)
                                             val currentSong = song ?: originalSong
@@ -1668,7 +1669,7 @@ fun HomeScreen(
                                                 .fillMaxWidth()
                                                 .height(210.dp)
                                         ) { i ->
-                                            val item = discoverList[i]
+                                            val item = discoverList.getOrNull(i) ?: return@HorizontalUncontainedCarousel
                                             DailyDiscoverCard(
                                                 dailyDiscover = item,
                                                 onClick = {
@@ -1958,9 +1959,11 @@ fun HomeScreen(
                                                     endpoint.browseId == "FEmusic_moods_and_genres" ->
                                                         navController.navigate("mood_and_genres")
                                                     endpoint.params != null ->
-                                                        navController.navigate("youtube_browse/${endpoint.browseId}?params=${endpoint.params}")
+                                                        navController.navigate(
+                                                            "youtube_browse/${android.net.Uri.encode(endpoint.browseId)}?params=${android.net.Uri.encode(endpoint.params)}"
+                                                        )
                                                     else ->
-                                                        navController.navigate("browse/${endpoint.browseId}")
+                                                        navController.navigate("browse/${android.net.Uri.encode(endpoint.browseId)}")
                                                 }
                                             }
                                         },
@@ -1998,7 +2001,7 @@ fun HomeScreen(
                                                 .fillMaxWidth()
                                                 .height(heroHeight)
                                         ) { index ->
-                                                val song = distinctSongs[index]
+                                                val song = distinctSongs.getOrNull(index) ?: return@HorizontalCenteredHeroCarousel
                                                 val isActive = song.id == mediaMetadata?.id
 
                                                 Box(
@@ -2230,7 +2233,9 @@ fun HomeScreen(
                                             MoodAndGenresButton(
                                                 title = it.title,
                                                 onClick = {
-                                                    navController.navigate("youtube_browse/${it.endpoint.browseId}?params=${it.endpoint.params}")
+                                                    val encodedId = android.net.Uri.encode(it.endpoint.browseId)
+                                                    val encodedParams = it.endpoint.params?.let { p -> "?params=${android.net.Uri.encode(p)}" }.orEmpty()
+                                                    navController.navigate("youtube_browse/$encodedId$encodedParams")
                                                 },
                                                 modifier = Modifier.width(moodTileWidth)
                                             )

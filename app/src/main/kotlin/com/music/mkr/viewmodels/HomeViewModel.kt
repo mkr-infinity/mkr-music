@@ -127,7 +127,7 @@ class HomeViewModel @Inject constructor(
         homePage.value = homePage.value?.let { page ->
             page.copy(
                 sections = page.sections.map { section ->
-                    if (section.title.equals("Quick picks", ignoreCase = true)) {
+                    if (section.title.contains("Quick picks", ignoreCase = true)) {
                         section.copy(items = section.items.filterNot { it.id == songId })
                     } else {
                         section
