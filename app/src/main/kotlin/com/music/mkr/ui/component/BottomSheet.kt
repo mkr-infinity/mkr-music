@@ -98,7 +98,7 @@ fun BottomSheet(
                     },
                     onDragCancel = {
                         velocityTracker.resetTracking()
-                        state.snapTo(state.collapsedBound)
+                        state.performFling(0f, onDismiss)
                     },
                     onDragEnd = {
                         val velocity = -velocityTracker.calculateVelocity().y
@@ -117,8 +117,8 @@ fun BottomSheet(
             BackHandler(onBack = state::collapseSoft)
         }
 
-        // main content
-        if (!state.isCollapsed) {
+        // main content (skip composing full player when dragging MiniPlayer down toward dismiss)
+        if (state.value > state.collapsedBound) {
             BoxWithConstraints(
                 modifier = Modifier
                     .fillMaxSize()
@@ -212,10 +212,14 @@ class BottomSheetState(
         expand(BottomSheetSoftAnimationSpec)
     }
 
-    fun dismiss() {
+    fun dismiss(onComplete: (() -> Unit)? = null) {
         onAnchorChanged(dismissedAnchor)
         coroutineScope.launch {
-            animatable.animateTo(animatable.lowerBound!!, BottomSheetAnimationSpec)
+            animatable.animateTo(
+                animatable.lowerBound!!,
+                spring(stiffness = Spring.StiffnessMediumLow),
+            )
+            onComplete?.invoke()
         }
     }
     
@@ -235,8 +239,7 @@ class BottomSheetState(
             expand()
         } else if (velocity < -250) {
             if (value < collapsedBound && onDismiss != null) {
-                dismiss()
-                onDismiss.invoke()
+                dismiss(onDismiss)
             } else {
                 collapse()
             }
@@ -245,8 +248,7 @@ class BottomSheetState(
             val expandThreshold = collapsedBound + (expandedBound - collapsedBound) / 2
             when {
                 value < dismissThreshold && onDismiss != null -> {
-                    dismiss()
-                    onDismiss()
+                    dismiss(onDismiss)
                 }
                 value > expandThreshold || isExpanded -> expand()
                 else -> collapse()
