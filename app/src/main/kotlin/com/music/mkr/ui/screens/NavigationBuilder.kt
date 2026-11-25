@@ -358,7 +358,7 @@ fun NavGraphBuilder.navigationBuilder(
     }
 
     composable("settings") {
-        SettingsScreen(navController, scrollBehavior)
+        SettingsScreen(navController, scrollBehavior, homeViewModel)
     }
 
     composable("settings/update") {

@@ -55,6 +55,7 @@ import com.music.mkr.ui.screens.settings.LyricsPosition
 import com.music.mkr.utils.rememberEnumPreference
 import androidx.compose.ui.text.style.TextOverflow
 import dagger.hilt.android.EntryPointAccessors
+import kotlinx.coroutines.flow.firstOrNull
 import androidx.compose.foundation.interaction.collectIsDraggedAsState
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
@@ -254,6 +255,13 @@ fun LyricsV2(
             val existing = currentLyrics
             if (existing != null && existing.id == currentTrackId && existing.lyrics.isNotBlank() && existing.lyrics != LYRICS_NOT_FOUND) {
                 // Room database already loaded valid lyrics, avoid duplicate fetching
+                return@LaunchedEffect
+            }
+            val dbExisting = withContext(Dispatchers.IO) {
+                database.lyrics(currentTrackId).firstOrNull()
+            }
+            if (dbExisting != null && dbExisting.lyrics.isNotBlank() && dbExisting.lyrics != LYRICS_NOT_FOUND) {
+                // Preserve user-selected or already cached lyrics in Room across reopens
                 return@LaunchedEffect
             }
             delay(300)

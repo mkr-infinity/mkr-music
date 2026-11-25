@@ -1412,7 +1412,7 @@ fun HomeScreen(
                                                     )
                                             ) {
                                                 var currentThumbnailUrl by remember(currentSong.song.thumbnailUrl, dataSaver) {
-                                                    mutableStateOf(currentSong.song.thumbnailUrl?.resize(700, 700))
+                                                    mutableStateOf(currentSong.song.thumbnailUrl?.resize(700, 800))
                                                 }
                                                 val cardContext = LocalContext.current
                                                 val imageRequest = remember(currentThumbnailUrl, cardContext) {

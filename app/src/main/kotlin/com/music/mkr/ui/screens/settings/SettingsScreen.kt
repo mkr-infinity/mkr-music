@@ -9,7 +9,6 @@ import android.os.Build
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -38,6 +37,7 @@ import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -49,6 +49,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import coil3.compose.AsyncImage
+import com.music.innertube.utils.parseCookieString
+import com.music.mkr.LocalPlayerConnection
+import com.music.mkr.ui.component.rememberPlaybackCookieAngle
+import com.music.mkr.viewmodels.HomeViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.painterResource
@@ -94,6 +102,7 @@ import java.nio.charset.StandardCharsets
 fun SettingsScreen(
     navController: NavController,
     scrollBehavior: TopAppBarScrollBehavior,
+    homeViewModel: HomeViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
@@ -105,6 +114,18 @@ fun SettingsScreen(
     var searchQuery by remember { mutableStateOf("") }
     val pureBlack by rememberPreference(PureBlackKey, defaultValue = false)
     val accountName by rememberPreference(AccountNameKey, defaultValue = "")
+    val innerTubeCookie by rememberPreference(InnerTubeCookieKey, defaultValue = "")
+    val homeAccountName by homeViewModel.accountName.collectAsState()
+    val accountImageUrl by homeViewModel.accountImageUrl.collectAsState()
+    val isLoggedIn = remember(innerTubeCookie) {
+        "SAPISID" in parseCookieString(innerTubeCookie)
+    }
+    val resolvedAccountName = remember(homeAccountName, accountName) {
+        listOf(homeAccountName.takeIf { it != "Guest" }, accountName)
+            .firstOrNull { !it.isNullOrBlank() }
+            .orEmpty()
+    }
+    val cookieAngle by rememberPlaybackCookieAngle(LocalPlayerConnection.current, visible = true)
 
     val searchCatalog = remember(context) { buildSettingsSearchCatalog(context) }
 
@@ -165,9 +186,12 @@ fun SettingsScreen(
 
                 if (searchQuery.isBlank()) {
                     SettingsHeroBanner(
-                        accountName = accountName,
+                        accountName = resolvedAccountName,
+                        accountImageUrl = accountImageUrl,
+                        isLoggedIn = isLoggedIn,
                         isUpdateAvailable = isUpdateAvailable,
                         pureBlack = pureBlack,
+                        cookieAngle = cookieAngle,
                         onBannerClick = {
                             navController.navigate(if (isUpdateAvailable) "settings/update" else "settings/account")
                         },
@@ -322,39 +346,6 @@ fun SettingsScreen(
                         }
                     }
                 } else {
-                    // 1-Tap Quick-Jump Chips
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        SettingsQuickJumpChip(
-                            icon = R.drawable.equalizer,
-                            label = "EQ",
-                            pureBlack = pureBlack,
-                            onClick = { navController.navigate("settings/player") }
-                        )
-                        SettingsQuickJumpChip(
-                            icon = R.drawable.palette,
-                            label = "Theme",
-                            pureBlack = pureBlack,
-                            onClick = { navController.navigate("settings/appearance") }
-                        )
-                        SettingsQuickJumpChip(
-                            icon = R.drawable.lyrics,
-                            label = "Lyrics",
-                            pureBlack = pureBlack,
-                            onClick = { navController.navigate("settings/content") }
-                        )
-                        SettingsQuickJumpChip(
-                            icon = R.drawable.restore,
-                            label = "Backup",
-                            pureBlack = pureBlack,
-                            onClick = { navController.navigate("settings/backup_restore") }
-                        )
-                    }
-
                     // Section 1 — Four Primary Categories in Adaptive Expressive Bento Grid
                     val primaryCards = remember {
                         listOf(
@@ -394,6 +385,7 @@ fun SettingsScreen(
                         isWide = isWide,
                         pureBlack = pureBlack,
                         baseSurface = cardContainerBase,
+                        cookieAngle = cookieAngle,
                         onCategoryClick = { category ->
                             navController.navigate(category.route)
                         }
@@ -412,7 +404,8 @@ fun SettingsScreen(
                                             icon = R.drawable.language,
                                             containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.secondary,
-                                            shape = MaterialShapes.Cookie6Sided.toShape()
+                                            shape = MaterialShapes.Cookie6Sided.toShape(),
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text(stringResource(R.string.content)) },
@@ -426,7 +419,8 @@ fun SettingsScreen(
                                             icon = R.drawable.translate,
                                             containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.secondary,
-                                            shape = MaterialShapes.Clover8Leaf.toShape()
+                                            shape = MaterialShapes.Clover8Leaf.toShape(),
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text(stringResource(R.string.ai_lyrics_translation)) },
@@ -450,7 +444,8 @@ fun SettingsScreen(
                                             icon = R.drawable.group,
                                             containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.tertiary,
-                                            shape = MaterialShapes.Cookie4Sided.toShape()
+                                            shape = MaterialShapes.Cookie4Sided.toShape(),
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text("Listen Together") },
@@ -468,6 +463,7 @@ fun SettingsScreen(
                                         )
                                     },
                                     title = { Text(stringResource(R.string.stats)) },
+                                    description = { Text("Listening insights") },
                                     onClick = { navController.navigate("stats") }
                                 ),
                                 Material3SettingsItem(
@@ -477,7 +473,8 @@ fun SettingsScreen(
                                             icon = R.drawable.history,
                                             containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.tertiary,
-                                            shape = MaterialShapes.Cookie6Sided.toShape()
+                                            shape = MaterialShapes.Cookie6Sided.toShape(),
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text("Listening Recap") },
@@ -491,7 +488,8 @@ fun SettingsScreen(
                                             icon = R.drawable.integration,
                                             containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.tertiary,
-                                            shape = MaterialShapes.Clover8Leaf.toShape()
+                                            shape = MaterialShapes.Clover8Leaf.toShape(),
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text(stringResource(R.string.integrations)) },
@@ -515,10 +513,12 @@ fun SettingsScreen(
                                             icon = R.drawable.security,
                                             containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.primary,
-                                            shape = MaterialShapes.Cookie4Sided.toShape()
+                                            shape = MaterialShapes.Cookie4Sided.toShape(),
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text(stringResource(R.string.privacy)) },
+                                    description = { Text("History & permissions") },
                                     onClick = { navController.navigate("settings/privacy") }
                                 ),
                                 Material3SettingsItem(
@@ -560,7 +560,8 @@ fun SettingsScreen(
                                             } else {
                                                 MaterialTheme.colorScheme.onSurfaceVariant
                                             },
-                                            shape = MaterialShapes.Cookie12Sided.toShape()
+                                            shape = MaterialShapes.Cookie12Sided.toShape(),
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text(if (isUpdateAvailable) "Update Available" else "System Updates") },
@@ -580,6 +581,7 @@ fun SettingsScreen(
                                         )
                                     },
                                     title = { Text("Request a Feature") },
+                                    description = { Text("Share new ideas") },
                                     onClick = {
                                         val featureTitle = "Feature Request: "
                                         val featureBody = """
@@ -607,6 +609,7 @@ fun SettingsScreen(
                                         )
                                     },
                                     title = { Text("Report a Problem") },
+                                    description = { Text("Submit bug report") },
                                     onClick = {
                                         val bugTitle = "Bug Report: "
                                         val bugBody = """
@@ -632,7 +635,8 @@ fun SettingsScreen(
                                             icon = R.drawable.info,
                                             containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                                             contentColor = MaterialTheme.colorScheme.primary,
-                                            shape = MaterialShapes.Cookie6Sided.toShape()
+                                            shape = MaterialShapes.Cookie6Sided.toShape(),
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text("About MKR Music") },
@@ -820,11 +824,15 @@ private data class CardColorScheme(
 @Composable
 private fun SettingsHeroBanner(
     accountName: String,
+    accountImageUrl: String?,
+    isLoggedIn: Boolean,
     isUpdateAvailable: Boolean,
     pureBlack: Boolean,
+    cookieAngle: Float,
     onBannerClick: () -> Unit,
     onVersionClick: () -> Unit,
 ) {
+    val hasSession = isLoggedIn || accountName.isNotBlank()
     val containerColor = if (isUpdateAvailable) {
         MaterialTheme.colorScheme.primaryContainer
     } else if (pureBlack) {
@@ -854,24 +862,40 @@ private fun SettingsHeroBanner(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .size(46.dp)
-                    .clip(MaterialShapes.Cookie12Sided.toShape())
-                    .background(
-                        if (isUpdateAvailable) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                    ),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    painter = painterResource(
-                        if (isUpdateAvailable) R.drawable.update_alert else R.drawable.account
-                    ),
-                    contentDescription = null,
-                    tint = if (isUpdateAvailable) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(22.dp)
+            val badgeShape = MaterialShapes.Cookie12Sided.toShape()
+            if (!isUpdateAvailable && hasSession && !accountImageUrl.isNullOrBlank()) {
+                AsyncImage(
+                    model = accountImageUrl,
+                    contentDescription = accountName.ifBlank { "YouTube account" },
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(46.dp)
+                        .clip(badgeShape)
                 )
+            } else {
+                Box(
+                    modifier = Modifier.size(46.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .graphicsLayer { rotationZ = cookieAngle }
+                            .clip(badgeShape)
+                            .background(
+                                if (isUpdateAvailable) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                            )
+                    )
+                    Icon(
+                        painter = painterResource(
+                            if (isUpdateAvailable) R.drawable.update_alert else R.drawable.account
+                        ),
+                        contentDescription = null,
+                        tint = if (isUpdateAvailable) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(22.dp)
+                    )
+                }
             }
 
             Column(modifier = Modifier.weight(1f)) {
@@ -880,6 +904,8 @@ private fun SettingsHeroBanner(
                         "Update Ready"
                     } else if (accountName.isNotBlank()) {
                         accountName
+                    } else if (isLoggedIn) {
+                        "YouTube Music"
                     } else {
                         "MKR Music"
                     },
@@ -891,6 +917,8 @@ private fun SettingsHeroBanner(
                 Text(
                     text = if (isUpdateAvailable) {
                         "Tap to install"
+                    } else if (isLoggedIn) {
+                        "YouTube Music"
                     } else if (accountName.isNotBlank()) {
                         "Signed in"
                     } else {
@@ -930,53 +958,28 @@ private fun SettingsHeroBanner(
 }
 
 @Composable
-private fun SettingsQuickJumpChip(
-    icon: Int,
-    label: String,
-    pureBlack: Boolean,
-    onClick: () -> Unit,
-) {
-    Surface(
-        onClick = onClick,
-        shape = CircleShape,
-        color = if (pureBlack) Color(0xFF141518) else MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
-    ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            Icon(
-                painter = painterResource(icon),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(16.dp)
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-                maxLines = 1
-            )
-        }
-    }
-}
-
-@Composable
 private fun ExpressiveRowBadge(
     icon: Int,
     containerColor: Color,
     contentColor: Color,
     shape: Shape,
+    rotationAngle: Float = 0f,
 ) {
     Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(shape)
-            .background(containerColor),
+        modifier = Modifier.size(40.dp),
         contentAlignment = Alignment.Center
     ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .graphicsLayer {
+                    if (rotationAngle != 0f) {
+                        rotationZ = rotationAngle
+                    }
+                }
+                .clip(shape)
+                .background(containerColor)
+        )
         Icon(
             painter = painterResource(icon),
             contentDescription = null,
@@ -993,6 +996,7 @@ private fun SettingsBentoGrid(
     isWide: Boolean,
     pureBlack: Boolean,
     baseSurface: Color,
+    cookieAngle: Float,
     onCategoryClick: (SettingsHubCategory) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -1029,11 +1033,11 @@ private fun SettingsBentoGrid(
     }
 
     @Composable
-    fun iconShapeFor(key: String): Shape = when (key) {
-        "appearance_theme_palette" -> MaterialShapes.Cookie6Sided.toShape()
-        "player_audio_quality" -> MaterialShapes.Clover8Leaf.toShape()
-        "account_login" -> MaterialShapes.Cookie4Sided.toShape()
-        else -> RoundedCornerShape(14.dp)
+    fun iconShapeFor(key: String): Pair<Shape, Boolean> = when (key) {
+        "appearance_theme_palette" -> MaterialShapes.Cookie6Sided.toShape() to true
+        "player_audio_quality" -> MaterialShapes.Clover8Leaf.toShape() to true
+        "account_login" -> MaterialShapes.Cookie4Sided.toShape() to true
+        else -> RoundedCornerShape(14.dp) to false
     }
 
     if (isWide) {
@@ -1044,10 +1048,12 @@ private fun SettingsBentoGrid(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             categories.forEach { category ->
+                val (shape, rotate) = iconShapeFor(category.key)
                 SettingsBentoCard(
                     category = category,
                     colors = bentoColorsFor(category.key),
-                    iconShape = iconShapeFor(category.key),
+                    iconShape = shape,
+                    rotationAngle = if (rotate) cookieAngle else 0f,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
@@ -1069,10 +1075,12 @@ private fun SettingsBentoGrid(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     rowItems.forEach { category ->
+                        val (shape, rotate) = iconShapeFor(category.key)
                         SettingsBentoCard(
                             category = category,
                             colors = bentoColorsFor(category.key),
-                            iconShape = iconShapeFor(category.key),
+                            iconShape = shape,
+                            rotationAngle = if (rotate) cookieAngle else 0f,
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()
@@ -1094,6 +1102,7 @@ private fun SettingsBentoCard(
     category: SettingsHubCategory,
     colors: CardColorScheme,
     iconShape: Shape,
+    rotationAngle: Float = 0f,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
@@ -1118,12 +1127,20 @@ private fun SettingsBentoCard(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(iconShape)
-                    .background(colors.iconBg),
+                modifier = Modifier.size(42.dp),
                 contentAlignment = Alignment.Center
             ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer {
+                            if (rotationAngle != 0f) {
+                                rotationZ = rotationAngle
+                            }
+                        }
+                        .clip(iconShape)
+                        .background(colors.iconBg)
+                )
                 Icon(
                     painter = painterResource(category.icon),
                     contentDescription = null,
