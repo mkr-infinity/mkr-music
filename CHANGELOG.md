@@ -10,6 +10,8 @@
 
 ### Added
 
+- **Lyrics Provider Menu Pill** — Switch lyrics providers from the 3-dot menu, sorted Word-synced → Line-synced → Plain with a Retry button. · *Lyrics → More options*
+- **Poppins Default Font** — Clean geometric typeface set as the default app font. · *Settings → Appearance → App font*
 - **Language & Mood Queue Recommendations** — Auto-queue suggestions now prioritize tracks matching the active song's language and acoustic mood. · *Full player → Queue*
 - **Audio Focus Auto-Resume** — Supports delayed audio focus gain and transient interruptions so playback resumes automatically when other apps release the speaker. · *Playback service*
 - **Update Install Permission Onboarding** — Added Unknown Apps install permission card on onboarding Page 2 for seamless in-app updates. · *Onboarding → Required Permissions*
@@ -20,6 +22,10 @@
 
 ### Changed
 
+- **~45% Smaller Universal APK** — Reduced release APK size to `16.04 MB` (down from `29.31 MB`, under `20 MB`). · *Universal APK*
+- **Expressive Settings Hub** — Adaptive Bento layout, YouTube profile banner, animated update alert, matching section cookies, and shorter descriptions. · *Settings*
+- **Split Expressive Navigation** — Left Home/Library pill with a separate circular Search button and a clean preview-only style picker. · *Bottom navigation*
+- **Search Discovery** — Simplified to Personalized Suggestions only. · *Search*
 - **Expressive Onboarding Redesign** — Animated wavy hero, spinning cookie-styled dynamic version badge, structured typography, and wavy cookie-bordered feature cards. · *Onboarding*
 - **Onboarding Update Trigger** — Opens on first install and once per APK update (using package update timestamp) without modifying or deleting user data. · *App launch*
 - **Player Defaults** — Squiggly slider and Classic mini-player (following theme) set as defaults. · *Settings → Appearance*
@@ -48,6 +54,9 @@
 
 ### Fixed
 
+- **Custom Lyrics Provider Persistence** — Reopening lyrics preserves the provider chosen for that track. · *Lyrics*
+- **Lyrics Provider Stability** — Fixed concurrent popup crashes, stuck loading spinners, and duplicate Chinese lines. · *Lyrics*
+- **Settings Pure Black Contrast** — Pure Black no longer applies dark backgrounds in Light Mode. · *Settings*
 - **Backup & Restore Stability** — Cleanly stops playback service before staging/restoring archives to prevent mid-restore playback restarts, crash loops, and unintended onboarding resets. · *Settings → Backup and restore*
 - **Custom Playlist Reordering** — Drag handles on custom-sorted local playlists now sync order changes reliably. · *Library → Local playlist*
 - **Settings entry** — Uses the current destination’s app bar from the first frame. · *Home or Library → Settings*
@@ -72,6 +81,8 @@
 
 ### Removed
 
+- **Google Cast & Offline CJK Dictionaries** — Removed Cast support, Kuromoji, and TinyPinyin for a lightweight APK while keeping Bluetooth and local audio untouched. · *Playback & Lyrics*
+- **Search New Releases** — Removed from Search discovery. · *Search*
 - **Expressive Wavy Slider & Thumbnail Play/Pause** — Removed from Full Player slider styles and Appearance settings. · *Settings → Appearance*
 - **Show Comments Setting** — Removed from Appearance settings. · *Settings → Appearance*
 - **Cached Songs scrollbar** — Scroll and fling directly on the song list. · *Library → Cached Songs*
