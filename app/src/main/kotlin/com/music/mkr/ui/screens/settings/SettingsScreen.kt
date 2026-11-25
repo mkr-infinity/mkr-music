@@ -6,6 +6,11 @@
 package com.music.mkr.ui.screens.settings
 
 import android.os.Build
+import androidx.compose.animation.animateColor
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -392,6 +397,7 @@ fun SettingsScreen(
                     )
 
                     val contentAiGroup: @Composable () -> Unit = {
+                        val contentCookieShape = MaterialShapes.Clover8Leaf.toShape()
                         ExpressiveSettingGroup(
                             title = "Content & AI",
                             itemMinHeight = 56.dp,
@@ -404,7 +410,7 @@ fun SettingsScreen(
                                             icon = R.drawable.language,
                                             containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.secondary,
-                                            shape = MaterialShapes.Cookie6Sided.toShape(),
+                                            shape = contentCookieShape,
                                             rotationAngle = cookieAngle
                                         )
                                     },
@@ -419,7 +425,7 @@ fun SettingsScreen(
                                             icon = R.drawable.translate,
                                             containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.secondary,
-                                            shape = MaterialShapes.Clover8Leaf.toShape(),
+                                            shape = contentCookieShape,
                                             rotationAngle = cookieAngle
                                         )
                                     },
@@ -432,6 +438,7 @@ fun SettingsScreen(
                     }
 
                     val communityGroup: @Composable () -> Unit = {
+                        val communityCookieShape = MaterialShapes.Cookie4Sided.toShape()
                         ExpressiveSettingGroup(
                             title = "Features & Community",
                             itemMinHeight = 56.dp,
@@ -444,7 +451,7 @@ fun SettingsScreen(
                                             icon = R.drawable.group,
                                             containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.tertiary,
-                                            shape = MaterialShapes.Cookie4Sided.toShape(),
+                                            shape = communityCookieShape,
                                             rotationAngle = cookieAngle
                                         )
                                     },
@@ -459,7 +466,8 @@ fun SettingsScreen(
                                             icon = R.drawable.stats,
                                             containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.tertiary,
-                                            shape = RoundedCornerShape(14.dp)
+                                            shape = communityCookieShape,
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text(stringResource(R.string.stats)) },
@@ -473,7 +481,7 @@ fun SettingsScreen(
                                             icon = R.drawable.history,
                                             containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.tertiary,
-                                            shape = MaterialShapes.Cookie6Sided.toShape(),
+                                            shape = communityCookieShape,
                                             rotationAngle = cookieAngle
                                         )
                                     },
@@ -488,7 +496,7 @@ fun SettingsScreen(
                                             icon = R.drawable.integration,
                                             containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.tertiary,
-                                            shape = MaterialShapes.Clover8Leaf.toShape(),
+                                            shape = communityCookieShape,
                                             rotationAngle = cookieAngle
                                         )
                                     },
@@ -501,6 +509,7 @@ fun SettingsScreen(
                     }
 
                     val securityGroup: @Composable () -> Unit = {
+                        val securityCookieShape = MaterialShapes.Pill.toShape()
                         ExpressiveSettingGroup(
                             title = "Security & Data",
                             itemMinHeight = 56.dp,
@@ -513,7 +522,7 @@ fun SettingsScreen(
                                             icon = R.drawable.security,
                                             containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.primary,
-                                            shape = MaterialShapes.Cookie4Sided.toShape(),
+                                            shape = securityCookieShape,
                                             rotationAngle = cookieAngle
                                         )
                                     },
@@ -528,7 +537,8 @@ fun SettingsScreen(
                                             icon = R.drawable.restore,
                                             containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
                                             contentColor = MaterialTheme.colorScheme.primary,
-                                            shape = RoundedCornerShape(14.dp)
+                                            shape = securityCookieShape,
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text(stringResource(R.string.backup_restore)) },
@@ -540,6 +550,7 @@ fun SettingsScreen(
                     }
 
                     val updatesAboutGroup: @Composable () -> Unit = {
+                        val updatesCookieShape = MaterialShapes.Cookie12Sided.toShape()
                         ExpressiveSettingGroup(
                             title = "Updates & Feedback",
                             itemMinHeight = 56.dp,
@@ -560,7 +571,7 @@ fun SettingsScreen(
                                             } else {
                                                 MaterialTheme.colorScheme.onSurfaceVariant
                                             },
-                                            shape = MaterialShapes.Cookie12Sided.toShape(),
+                                            shape = updatesCookieShape,
                                             rotationAngle = cookieAngle
                                         )
                                     },
@@ -577,7 +588,8 @@ fun SettingsScreen(
                                             icon = R.drawable.support_mkr,
                                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            shape = RoundedCornerShape(14.dp)
+                                            shape = updatesCookieShape,
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text("Request a Feature") },
@@ -605,7 +617,8 @@ fun SettingsScreen(
                                             icon = R.drawable.bug_report,
                                             containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
                                             contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            shape = RoundedCornerShape(14.dp)
+                                            shape = updatesCookieShape,
+                                            rotationAngle = cookieAngle
                                         )
                                     },
                                     title = { Text("Report a Problem") },
@@ -635,7 +648,7 @@ fun SettingsScreen(
                                             icon = R.drawable.info,
                                             containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
                                             contentColor = MaterialTheme.colorScheme.primary,
-                                            shape = MaterialShapes.Cookie6Sided.toShape(),
+                                            shape = updatesCookieShape,
                                             rotationAngle = cookieAngle
                                         )
                                     },
@@ -834,7 +847,17 @@ private fun SettingsHeroBanner(
 ) {
     val hasSession = isLoggedIn || accountName.isNotBlank()
     val containerColor = if (isUpdateAvailable) {
-        MaterialTheme.colorScheme.primaryContainer
+        val transition = rememberInfiniteTransition(label = "UpdateBannerColor")
+        val animatedColor by transition.animateColor(
+            initialValue = MaterialTheme.colorScheme.primaryContainer,
+            targetValue = MaterialTheme.colorScheme.tertiaryContainer,
+            animationSpec = infiniteRepeatable(
+                animation = tween(durationMillis = 2200),
+                repeatMode = RepeatMode.Reverse
+            ),
+            label = "UpdateBannerContainerColor"
+        )
+        animatedColor
     } else if (pureBlack) {
         Color(0xFF141518)
     } else {
@@ -1033,12 +1056,7 @@ private fun SettingsBentoGrid(
     }
 
     @Composable
-    fun iconShapeFor(key: String): Pair<Shape, Boolean> = when (key) {
-        "appearance_theme_palette" -> MaterialShapes.Cookie6Sided.toShape() to true
-        "player_audio_quality" -> MaterialShapes.Clover8Leaf.toShape() to true
-        "account_login" -> MaterialShapes.Cookie4Sided.toShape() to true
-        else -> RoundedCornerShape(14.dp) to false
-    }
+    fun bentoShape(): Shape = MaterialShapes.Cookie6Sided.toShape()
 
     if (isWide) {
         Row(
@@ -1048,12 +1066,11 @@ private fun SettingsBentoGrid(
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             categories.forEach { category ->
-                val (shape, rotate) = iconShapeFor(category.key)
                 SettingsBentoCard(
                     category = category,
                     colors = bentoColorsFor(category.key),
-                    iconShape = shape,
-                    rotationAngle = if (rotate) cookieAngle else 0f,
+                    iconShape = bentoShape(),
+                    rotationAngle = cookieAngle,
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxHeight()
@@ -1075,12 +1092,11 @@ private fun SettingsBentoGrid(
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     rowItems.forEach { category ->
-                        val (shape, rotate) = iconShapeFor(category.key)
                         SettingsBentoCard(
                             category = category,
                             colors = bentoColorsFor(category.key),
-                            iconShape = shape,
-                            rotationAngle = if (rotate) cookieAngle else 0f,
+                            iconShape = bentoShape(),
+                            rotationAngle = cookieAngle,
                             modifier = Modifier
                                 .weight(1f)
                                 .fillMaxHeight()

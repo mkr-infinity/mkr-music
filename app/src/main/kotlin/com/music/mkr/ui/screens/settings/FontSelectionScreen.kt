@@ -54,6 +54,7 @@ import com.music.mkr.ui.theme.GoogleSansFontFamily
 import com.music.mkr.ui.theme.SansFlexFontFamily
 import com.music.mkr.ui.theme.OutfitFontFamily
 import com.music.mkr.ui.theme.PlusJakartaSansFontFamily
+import com.music.mkr.ui.theme.PoppinsFontFamily
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.utils.rememberPreference
 
@@ -65,7 +66,7 @@ fun FontSelectionScreen(
 ) {
     val (selectedFont, onSelectedFontChange) = rememberPreference(
         SelectedFontKey,
-        defaultValue = AppFont.SYSTEM.value
+        defaultValue = AppFont.POPPINS.value
     )
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -100,6 +101,7 @@ fun FontSelectionScreen(
 
     val activeFontFamily = remember(selectedFont, customFontPath) {
         when (AppFont.fromValue(selectedFont)) {
+            AppFont.POPPINS -> PoppinsFontFamily
             AppFont.SYSTEM -> FontFamily.Default
             AppFont.GOOGLE_SANS -> GoogleSansFontFamily
             AppFont.SANS_FLEX -> SansFlexFontFamily
@@ -173,6 +175,27 @@ fun FontSelectionScreen(
         ExpressiveSettingGroup(
             title = stringResource(R.string.font_selection),
             items = listOf(
+                Material3SettingsItem(
+                    leadingContent = {
+                        AnimatedRadioButton(
+                            selected = selectedFont == AppFont.POPPINS.value,
+                            onClick = null
+                        )
+                    },
+                    title = {
+                        Text(
+                            text = "Poppins",
+                            fontFamily = PoppinsFontFamily
+                        )
+                    },
+                    description = {
+                        Text(
+                            text = "Clean geometric rounded typeface",
+                            fontFamily = PoppinsFontFamily
+                        )
+                    },
+                    onClick = { onSelectedFontChange(AppFont.POPPINS.value) }
+                ),
                 Material3SettingsItem(
                     leadingContent = {
                         AnimatedRadioButton(

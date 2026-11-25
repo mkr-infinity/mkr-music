@@ -127,6 +127,14 @@ val PlusJakartaSansFontFamily = FontFamily(
     )
 )
 
+val PoppinsFontFamily = FontFamily(
+    Font(resId = com.music.mkr.R.font.poppins_w300, weight = FontWeight.Light),
+    Font(resId = com.music.mkr.R.font.poppins_w400, weight = FontWeight.Normal),
+    Font(resId = com.music.mkr.R.font.poppins_w500, weight = FontWeight.Medium),
+    Font(resId = com.music.mkr.R.font.poppins_w600, weight = FontWeight.SemiBold),
+    Font(resId = com.music.mkr.R.font.poppins_w700, weight = FontWeight.Bold)
+)
+
 // Define M3 Expressive Typography based on Material Design guidelines
 // https://m3.material.io/styles/typography/type-scale-tokens
 @OptIn(ExperimentalTextApi::class)

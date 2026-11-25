@@ -1383,6 +1383,15 @@ fun HomeScreen(
                                                 modifier = Modifier
                                                     .fillMaxSize()
                                                     .maskClip(MaterialTheme.shapes.extraLarge)
+                                                    .border(
+                                                        width = if (isActive) 1.5.dp else 1.dp,
+                                                        color = if (isActive) {
+                                                            MaterialTheme.colorScheme.primary.copy(alpha = 0.65f)
+                                                        } else {
+                                                            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+                                                        },
+                                                        shape = MaterialTheme.shapes.extraLarge
+                                                    )
                                                     .background(MaterialTheme.colorScheme.surfaceContainerHigh)
                                                     .combinedClickable(
                                                         onClick = {
