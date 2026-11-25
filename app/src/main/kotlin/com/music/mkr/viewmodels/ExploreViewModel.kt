@@ -32,8 +32,16 @@ constructor(
     val database: MusicDatabase,
 ) : ViewModel() {
     val explorePage = MutableStateFlow<ExplorePage?>(null)
+    val error = MutableStateFlow<String?>(null)
+
+    fun retry() {
+        viewModelScope.launch(Dispatchers.IO) {
+            load()
+        }
+    }
 
     private suspend fun load() {
+        error.value = null
         YouTube
             .explore()
             .onSuccess { page ->
@@ -67,6 +75,7 @@ constructor(
                             }.filterExplicit(context.dataStore.get(HideExplicitKey, false)),
                     )
             }.onFailure {
+                error.value = it.localizedMessage ?: "Failed to load"
                 reportException(it)
             }
     }

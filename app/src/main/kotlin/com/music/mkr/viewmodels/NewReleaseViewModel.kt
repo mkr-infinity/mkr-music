@@ -29,12 +29,19 @@ class NewReleaseViewModel
 @Inject
 constructor(
     @ApplicationContext val context: Context,
-    database: MusicDatabase,
+    private val database: MusicDatabase,
 ) : ViewModel() {
     private val _newReleaseAlbums = MutableStateFlow<List<AlbumItem>>(emptyList())
     val newReleaseAlbums = _newReleaseAlbums.asStateFlow()
+    private val _error = MutableStateFlow<String?>(null)
+    val error = _error.asStateFlow()
 
     init {
+        load()
+    }
+
+    fun load() {
+        _error.value = null
         viewModelScope.launch {
             YouTube
                 .newReleaseAlbums()
@@ -66,6 +73,7 @@ constructor(
                                 firstArtistKey
                             }.filterExplicit(context.dataStore.get(HideExplicitKey, false))
                 }.onFailure {
+                    _error.value = it.localizedMessage ?: "Failed to load"
                     reportException(it)
                 }
         }

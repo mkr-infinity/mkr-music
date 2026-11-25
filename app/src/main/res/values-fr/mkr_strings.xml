@@ -104,7 +104,6 @@
 	<string name="player_thumbnail_shadow_depth">Profondeur de l\'ombre</string>
     <string name="player_thumbnail_shadow_depth_desc">Régler l\'intensité et la distance de l\'ombre de la miniature du lecteur</string>
     <string name="thumbnail_corner_radius">Rayon des coins de la miniature</string>
-    <string name="thumbnail_corner_radius_desc">Régler le rayon des coins des miniatures</string>
     <string name="crop_album_art">Recadrer la pochette d\'album</string>
     <string name="crop_album_art_desc">Forcer un format carré en recadrant les miniatures vidéo</string>
     <string name="rotating_thumbnail">Vignette tournante</string>
@@ -150,7 +149,6 @@
     <string name="show_song_thumbnail_in_list_desc">Afficher les pochettes d\'album à la place des numéros de piste dans les listes expressives</string>
     <string name="album_settings">Paramètres de l\'album</string>
     <string name="new_mini_player_design">Nouveau design du mini-lecteur</string>
-    <string name="player_background_blur">Flou</string>
     <string name="player_buttons_style">Couleurs des boutons du lecteur</string>
     <string name="default_style">Par défaut</string>
     <string name="primary_color_style">Couleur primaire</string>

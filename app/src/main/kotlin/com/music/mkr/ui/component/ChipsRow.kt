@@ -55,6 +55,7 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.music.mkr.R
 import com.music.mkr.ui.screens.OptionStats
@@ -66,6 +67,7 @@ fun <E> ChipsRow(
     onValueUpdate: (E) -> Unit,
     modifier: Modifier = Modifier,
     containerColor: Color = MaterialTheme.colorScheme.surfaceVariant,
+    chipSpacing: Dp = 8.dp,
 ) {
     Row(
         modifier = modifier
@@ -126,7 +128,7 @@ fun <E> ChipsRow(
                     )
             )
 
-            Spacer(Modifier.width(8.dp))
+            Spacer(Modifier.width(chipSpacing))
         }
 
         Spacer(Modifier.width(8.dp))

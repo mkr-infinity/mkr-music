@@ -7,15 +7,12 @@ package com.music.mkr.ui.component
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
-import androidx.compose.material3.NavigationRail
-import androidx.compose.material3.NavigationRailItem
 import androidx.compose.material3.WideNavigationRail
+import androidx.compose.material3.WideNavigationRailDefaults
+import androidx.compose.material3.WideNavigationRailItemDefaults
 import androidx.compose.material3.WideNavigationRailItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,8 +20,10 @@ import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalViewConfiguration
@@ -33,7 +32,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.constants.NavigationStyle
+import com.music.mkr.utils.rememberPreference
 import com.music.mkr.ui.screens.Screens
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -65,15 +66,15 @@ fun AppNavigationRail(
     pureBlack: Boolean = false,
     onSearchLongClick: (() -> Unit)? = null
 ) {
-    val containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surfaceContainer
+    val colors = MaterialTheme.colorScheme
+    val animate by rememberPreference(InterfaceAnimationsKey, true)
     val haptics = LocalHapticFeedback.current
     val viewConfiguration = LocalViewConfiguration.current
     
-    androidx.compose.material3.Surface(
-        modifier = modifier,
-        color = containerColor
+    WideNavigationRail(
+        modifier = modifier.navigationGlass(RectangleShape, pureBlack),
+        colors = WideNavigationRailDefaults.colors(containerColor = Color.Transparent),
     ) {
-        WideNavigationRail {
         
         navigationItems.forEach { screen ->
             val isSelected = remember(currentRoute, screen.route) {
@@ -115,14 +116,21 @@ fun AppNavigationRail(
             WideNavigationRailItem(
                 railExpanded = false,
                 selected = isSelected,
-                onClick = { 
-                    onItemClick(screen, isSelected)
+                onClick = {
+                    if (!isSearchItem) {
+                        onItemClick(screen, isSelected)
+                    }
                 },
                 interactionSource = interactionSource,
+                colors = WideNavigationRailItemDefaults.colors(
+                    selectedIconColor = colors.onPrimaryContainer,
+                    selectedIndicatorColor = colors.primaryContainer,
+                ),
                 icon = {
                     Icon(
                         painter = painterResource(id = iconRes),
-                        contentDescription = stringResource(screen.titleId)
+                        contentDescription = null,
+                        modifier = Modifier.mkrPressFeedback(0.94f, interactionSource, animate),
                     )
                 },
                 label = {
@@ -133,8 +141,6 @@ fun AppNavigationRail(
                     )
                 }
             )
-        }
-        
         }
     }
 }
@@ -149,26 +155,9 @@ fun AppNavigationBar(
     slimNav: Boolean = false,
     onSearchLongClick: (() -> Unit)? = null,
     navigationStyle: NavigationStyle = NavigationStyle.DEFAULT,
-    floatingNav: Boolean = true,
     bottomInset: Dp = 0.dp
 ) {
-    val effectiveStyle = if (!floatingNav && navigationStyle == NavigationStyle.DEFAULT) {
-        NavigationStyle.CLEAN_MATERIAL
-    } else {
-        navigationStyle
-    }
-
-    when (effectiveStyle) {
-        NavigationStyle.AMBER_DOCK -> AmberDockNavigationBar(
-            navigationItems = navigationItems,
-            currentRoute = currentRoute,
-            onItemClick = onItemClick,
-            modifier = modifier,
-            pureBlack = pureBlack,
-            slimNav = slimNav,
-            onSearchLongClick = onSearchLongClick,
-            bottomInset = bottomInset
-        )
+    when (navigationStyle) {
         NavigationStyle.FLOATING_GLASS -> FloatingGlassNavigationBar(
             navigationItems = navigationItems,
             currentRoute = currentRoute,

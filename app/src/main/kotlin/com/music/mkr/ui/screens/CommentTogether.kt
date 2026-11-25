@@ -38,11 +38,11 @@ import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.R
 import com.music.mkr.listentogether.ChatMessagePayload
 import com.music.mkr.listentogether.RepliedMessage
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import androidx.compose.ui.text.*
 import androidx.compose.ui.text.style.TextDecoration
 import android.net.Uri
 import android.content.Intent
-import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import java.text.SimpleDateFormat
 import java.util.*
@@ -446,7 +446,7 @@ private fun formatMessageWithLinks(text: String): AnnotatedString {
                             `package` = context.packageName
                         }
                         context.startActivity(intent)
-                        Toast.makeText(context, "Playing now", Toast.LENGTH_SHORT).show()
+                        SnackbarManager.show("Playing now")
                     } catch (e: Exception) {
                         context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                     }

@@ -52,7 +52,7 @@ constructor(
     private val syncUtils: SyncUtils,
     downloadUtil: DownloadUtil,
 ) : ViewModel() {
-    val playlist = savedStateHandle.get<String>("playlist")!!
+    val playlist = savedStateHandle.get<String>("playlist")!!.substringBefore("?")
 
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing = _isRefreshing.asStateFlow()

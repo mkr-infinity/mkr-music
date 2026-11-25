@@ -92,7 +92,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastForEachReversed
-import androidx.compose.ui.util.fastSumBy
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.exoplayer.offline.Download
@@ -178,7 +177,7 @@ fun AutoPlaylistScreen(
 
     val likeLength =
         remember(songs) {
-            songs?.fastSumBy { it.song.duration } ?: 0
+            songs?.collectionDurationSeconds { it.song.duration }
         }
 
     val playlistId = viewModel.playlist
@@ -233,17 +232,18 @@ fun AutoPlaylistScreen(
         }
     }
 
-    LaunchedEffect(songs) {
+    LaunchedEffect(songs, hideExplicit) {
+        val visibleSongs = if (hideExplicit) songs?.filter { !it.song.explicit } else songs
         mutableSongs.apply {
             clear()
-            songs?.let { addAll(it) }
+            visibleSongs?.let { addAll(it) }
         }
-        if (songs?.isEmpty() == true) return@LaunchedEffect
+        if (visibleSongs?.isEmpty() == true) return@LaunchedEffect
         downloadUtil.downloads.collect { downloads ->
             downloadState =
-                if (songs?.all { downloads[it.song.id]?.state == Download.STATE_COMPLETED } == true) {
+                if (visibleSongs?.all { downloads[it.song.id]?.state == Download.STATE_COMPLETED } == true) {
                     Download.STATE_COMPLETED
-                } else if (songs?.all {
+                } else if (visibleSongs?.all {
                         downloads[it.song.id]?.state == Download.STATE_QUEUED ||
                                 downloads[it.song.id]?.state == Download.STATE_DOWNLOADING ||
                                 downloads[it.song.id]?.state == Download.STATE_COMPLETED
@@ -608,7 +608,7 @@ fun AutoPlaylistScreen(
 private fun AutoPlaylistHeader(
     name: String,
     songs: List<Song>,
-    likeLength: Int,
+    likeLength: Long?,
     downloadState: Int,
     onShowRemoveDownloadDialog: () -> Unit,
     menuState: com.music.mkr.ui.component.MenuState,
@@ -624,180 +624,9 @@ private fun AutoPlaylistHeader(
             .fillMaxWidth()
             .padding(bottom = 12.dp)
     ) {
-        // Expressive Hero Card
-        Card(
-            shape = RoundedCornerShape(26.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
-            ),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Artwork Squircle with corner category pill badge
-                Box(
-                    modifier = Modifier
-                        .size(112.dp)
-                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(20.dp))
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    val distinctThumbnails = remember(songs) {
-                        songs.mapNotNull { it.song.thumbnailUrl }.distinct().take(4)
-                    }
-                    if (distinctThumbnails.size >= 4) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            listOf(
-                                Alignment.TopStart,
-                                Alignment.TopEnd,
-                                Alignment.BottomStart,
-                                Alignment.BottomEnd
-                            ).fastForEachIndexed { index, alignment ->
-                                AsyncImage(
-                                    model = distinctThumbnails[index],
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .align(alignment)
-                                        .fillMaxSize(0.5f)
-                                )
-                            }
-                        }
-                    } else if (distinctThumbnails.isNotEmpty()) {
-                        AsyncImage(
-                            model = distinctThumbnails[0],
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.downloadedstore),
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-
-                    // Pinned Category Badge
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        tonalElevation = 3.dp,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(6.dp)
-                            .size(28.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(if (isLiked) R.drawable.favorite else R.drawable.downloadedstore),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.width(16.dp))
-
-                // Metadata Column
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = if (isLiked) "LIKED COLLECTION" else "OFFLINE STORAGE",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.1.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Spacer(Modifier.height(4.dp))
-
-                    Text(
-                        text = name,
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            modifier = Modifier.height(24.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.music_note),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Text(
-                                    text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        if (likeLength > 0) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                modifier = Modifier.height(24.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.timer),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Text(
-                                        text = makeTimeString(likeLength * 1000L),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        val cover = remember(songs) { songs.mapNotNull { it.song.thumbnailUrl }.distinct().take(4) }
+        CollectionHeader(title = name, songCount = songs.size, durationSeconds = likeLength) {
+            CollectionCover(cover, if (isLiked) R.drawable.favorite else R.drawable.downloadedstore)
         }
 
         val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f

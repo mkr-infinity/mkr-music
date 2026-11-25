@@ -16,16 +16,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.union
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -61,6 +58,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableIntStateOf
+import com.music.mkr.LocalDownloadUtil
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,7 +87,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEachIndexed
 import androidx.compose.ui.util.fastForEachReversed
-import androidx.compose.ui.util.fastSumBy
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.exoplayer.offline.Download
@@ -107,7 +105,6 @@ import com.music.mkr.db.entities.Song
 import com.music.mkr.extensions.toMediaItem
 import com.music.mkr.playback.ExoDownloadService
 import com.music.mkr.playback.queues.ListQueue
-import com.music.mkr.ui.component.DraggableScrollbar
 import com.music.mkr.ui.component.EmptyPlaceholder
 import com.music.mkr.ui.component.LibraryLoadError
 import com.music.mkr.ui.component.ExpandableText
@@ -151,14 +148,15 @@ fun CachePlaylistScreen(
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
 
-    val sortedSongs = remember(cachedSongs, sortType, sortDescending) {
+    val sortedSongs = remember(cachedSongs, sortType, sortDescending, hideExplicit) {
+        val visible = if (hideExplicit) cachedSongs.filter { !it.song.explicit } else cachedSongs
         val sorted = when (sortType) {
-            SongSortType.CREATE_DATE -> cachedSongs.asReversed()
-            SongSortType.NAME -> cachedSongs.sortedBy { it.song.title }
-            SongSortType.ARTIST -> cachedSongs.sortedBy { song ->
+            SongSortType.CREATE_DATE -> visible.asReversed()
+            SongSortType.NAME -> visible.sortedBy { it.song.title }
+            SongSortType.ARTIST -> visible.sortedBy { song ->
                 song.artists.joinToString(separator = "") { it.name }
             }
-            SongSortType.PLAY_TIME -> cachedSongs.sortedBy { it.song.totalPlayTime }
+            SongSortType.PLAY_TIME -> visible.sortedBy { it.song.totalPlayTime }
         }
         if (sortDescending) sorted.reversed() else sorted
     }
@@ -173,6 +171,23 @@ fun CachePlaylistScreen(
     val onExitSelectionMode = {
         inSelectMode = false
         selection.clear()
+    }
+
+    val downloadUtil = LocalDownloadUtil.current
+    var downloadState by remember { mutableIntStateOf(Download.STATE_STOPPED) }
+
+    LaunchedEffect(cachedSongs) {
+        if (cachedSongs.isEmpty()) return@LaunchedEffect
+        downloadUtil.downloads.collect { downloads ->
+            downloadState = when {
+                cachedSongs.all { downloads[it.id]?.state == Download.STATE_COMPLETED } -> Download.STATE_COMPLETED
+                cachedSongs.any {
+                    downloads[it.id]?.state == Download.STATE_QUEUED ||
+                        downloads[it.id]?.state == Download.STATE_DOWNLOADING
+                } -> Download.STATE_DOWNLOADING
+                else -> Download.STATE_STOPPED
+            }
+        }
     }
 
     var isSearching by remember { mutableStateOf(false) }
@@ -252,6 +267,7 @@ fun CachePlaylistScreen(
                             songs = filteredSongs,
                             context = context,
                             menuState = menuState,
+                            downloadState = downloadState,
                             onStartSearch = { isSearching = true },
                             modifier = Modifier.animateItem()
                         )
@@ -299,6 +315,7 @@ fun CachePlaylistScreen(
                         song = song,
                         isActive = song.id == mediaMetadata?.id,
                         isPlaying = isPlaying,
+                        showPlayingIndicator = false,
                         isSelected = song.id in selection,
                         inSelectMode = inSelectMode,
                         onCheckedChange = onCheckedChange,
@@ -360,17 +377,6 @@ fun CachePlaylistScreen(
                 }
             }
         }
-
-        DraggableScrollbar(
-            modifier = Modifier
-                .padding(
-                    LocalPlayerAwareWindowInsets.current.union(WindowInsets.ime)
-                        .asPaddingValues()
-                )
-                .align(Alignment.CenterEnd),
-            scrollState = lazyListState,
-            headerItems = 2
-        )
 
         TopAppBar(
             title = {
@@ -483,191 +489,21 @@ private fun CachePlaylistHeader(
     songs: List<Song>,
     context: android.content.Context,
     menuState: com.music.mkr.ui.component.MenuState,
+    downloadState: Int = Download.STATE_STOPPED,
     onStartSearch: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     val playerConnection = LocalPlayerConnection.current ?: return
-    val cacheLength = remember(songs) { songs.fastSumBy { it.song.duration ?: 0 } }
+    val cacheLength = remember(songs) { songs.collectionDurationSeconds { it.song.duration } }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = 12.dp)
     ) {
-        // Expressive Hero Card
-        Card(
-            shape = RoundedCornerShape(26.dp),
-            colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.65f)
-            ),
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 6.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(14.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Artwork Squircle with corner category pill badge
-                Box(
-                    modifier = Modifier
-                        .size(112.dp)
-                        .shadow(elevation = 6.dp, shape = RoundedCornerShape(20.dp))
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(MaterialTheme.colorScheme.surfaceVariant)
-                ) {
-                    val distinctThumbnails = remember(songs) {
-                        songs.mapNotNull { it.thumbnailUrl }.distinct().take(4)
-                    }
-                    if (distinctThumbnails.size >= 4) {
-                        Box(modifier = Modifier.fillMaxSize()) {
-                            listOf(
-                                Alignment.TopStart,
-                                Alignment.TopEnd,
-                                Alignment.BottomStart,
-                                Alignment.BottomEnd
-                            ).fastForEachIndexed { index, alignment ->
-                                AsyncImage(
-                                    model = distinctThumbnails[index],
-                                    contentDescription = null,
-                                    contentScale = ContentScale.Crop,
-                                    modifier = Modifier
-                                        .align(alignment)
-                                        .fillMaxSize(0.5f)
-                                )
-                            }
-                        }
-                    } else if (distinctThumbnails.isNotEmpty()) {
-                        AsyncImage(
-                            model = distinctThumbnails[0],
-                            contentDescription = null,
-                            modifier = Modifier.fillMaxSize(),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Box(
-                            modifier = Modifier.fillMaxSize(),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(R.drawable.cached),
-                                contentDescription = null,
-                                modifier = Modifier.size(48.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    }
-
-                    // Pinned Category Badge
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primaryContainer,
-                        tonalElevation = 3.dp,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(6.dp)
-                            .size(28.dp)
-                    ) {
-                        Box(contentAlignment = Alignment.Center) {
-                            Icon(
-                                painter = painterResource(R.drawable.cached),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                                modifier = Modifier.size(16.dp)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(Modifier.width(16.dp))
-
-                // Metadata Column
-                Column(
-                    modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "CACHED MUSIC",
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.1.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-
-                    Spacer(Modifier.height(4.dp))
-
-                    Text(
-                        text = stringResource(R.string.cached_playlist),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.ExtraBold,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis,
-                        color = MaterialTheme.colorScheme.onSurface
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Surface(
-                            shape = CircleShape,
-                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                            modifier = Modifier.height(24.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(4.dp)
-                            ) {
-                                Icon(
-                                    painter = painterResource(R.drawable.music_note),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(12.dp)
-                                )
-                                Text(
-                                    text = pluralStringResource(R.plurals.n_song, songs.size, songs.size),
-                                    style = MaterialTheme.typography.labelSmall,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                        }
-
-                        if (cacheLength > 0) {
-                            Surface(
-                                shape = CircleShape,
-                                color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                modifier = Modifier.height(24.dp)
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                ) {
-                                    Icon(
-                                        painter = painterResource(R.drawable.timer),
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                        modifier = Modifier.size(12.dp)
-                                    )
-                                    Text(
-                                        text = makeTimeString(cacheLength * 1000L),
-                                        style = MaterialTheme.typography.labelSmall,
-                                        fontWeight = FontWeight.Medium,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        val cover = remember(songs) { songs.mapNotNull { it.thumbnailUrl }.distinct().take(4) }
+        CollectionHeader(title = stringResource(R.string.cached_playlist), songCount = songs.size, durationSeconds = cacheLength) {
+            CollectionCover(cover, R.drawable.cached)
         }
 
         val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
@@ -813,25 +649,36 @@ private fun CachePlaylistHeader(
                 onClick = {
                     menuState.show {
                         CachePlaylistMenu(
-                            downloadState = Download.STATE_STOPPED,
+                            downloadState = downloadState,
                             onQueue = {
                                 playerConnection.addToQueue(
                                     songs.map { it.toMediaItem() }
                                 )
                             },
                             onDownload = {
-                                songs.forEach { song ->
-                                    val downloadRequest = DownloadRequest
-                                        .Builder(song.id, song.id.toUri())
-                                        .setCustomCacheKey(song.id)
-                                        .setData(song.title.toByteArray())
-                                        .build()
-                                    DownloadService.sendAddDownload(
-                                        context,
-                                        ExoDownloadService::class.java,
-                                        downloadRequest,
-                                        false,
-                                    )
+                                if (downloadState == Download.STATE_COMPLETED) {
+                                    songs.forEach { song ->
+                                        DownloadService.sendRemoveDownload(
+                                            context,
+                                            ExoDownloadService::class.java,
+                                            song.id,
+                                            false,
+                                        )
+                                    }
+                                } else {
+                                    songs.forEach { song ->
+                                        val downloadRequest = DownloadRequest
+                                            .Builder(song.id, song.id.toUri())
+                                            .setCustomCacheKey(song.id)
+                                            .setData(song.title.toByteArray())
+                                            .build()
+                                        DownloadService.sendAddDownload(
+                                            context,
+                                            ExoDownloadService::class.java,
+                                            downloadRequest,
+                                            false,
+                                        )
+                                    }
                                 }
                             },
                             onDismiss = { menuState.dismiss() }

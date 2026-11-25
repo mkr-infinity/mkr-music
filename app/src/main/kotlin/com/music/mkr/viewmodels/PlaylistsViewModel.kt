@@ -21,7 +21,6 @@ import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.PlaylistEntity
 import com.music.mkr.di.ApplicationScope
 import com.music.mkr.extensions.toEnum
-import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.SyncUtils
 import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.reportException
@@ -73,9 +72,7 @@ constructor(
     ) = appScope.async(Dispatchers.IO) {
         var playlistName = destination.name
         var savedLocally = false
-        fun show(message: Int, icon: Int) {
-            SnackbarManager.show(message, messageArgs = playlistName, iconRes = icon)
-        }
+        fun feedback(message: Int, icon: Int) = PlaylistAddResult.Feedback(message, icon, playlistName)
 
         try {
             checkNotNull(database.getPlaylistEntity(destination.id))
@@ -88,7 +85,7 @@ constructor(
                     allowDuplicates = duplicateChoice?.let { it == DuplicateChoice.AddAnyway },
                 )
                 playlistName = playlist.name
-                if (duplicateCount > 0) return@withPlaylistEdit DuplicateSongs(songIds, duplicateCount)
+                if (duplicateCount > 0) return@withPlaylistEdit PlaylistAddResult.Duplicates(DuplicateSongs(songIds, duplicateCount))
                 val browseId = playlist.browseId
                 val canSync = syncRemote && browseId != null && playlist.isEditable
                 savedLocally = idsToAdd.isNotEmpty()
@@ -107,15 +104,13 @@ constructor(
                 } else emptyList()
                 val remoteIds = idsToAdd + retryIds
                 if (remoteIds.isEmpty()) {
-                    show(R.string.playlist_add_already_present, R.drawable.info)
-                    return@withPlaylistEdit null
+                    return@withPlaylistEdit feedback(R.string.playlist_add_already_present, R.drawable.info)
                 }
 
                 if (canSync && browseId != null) {
                     for (batch in remoteIds.chunked(50)) {
                         if (database.getPlaylistEntity(playlist.id) == null) {
-                            show(R.string.playlist_add_failed, R.drawable.error)
-                            return@withPlaylistEdit null
+                            return@withPlaylistEdit feedback(R.string.playlist_add_failed, R.drawable.error)
                         }
                         val response = YouTube.addVideosToPlaylist(browseId, batch).body<AddItemYouTubePlaylistResponse>()
                         val addedIds = response.playlistEditResults.map { it.playlistEditVideoAddedResultData.videoId }
@@ -125,17 +120,15 @@ constructor(
                     }
                 }
                 if (database.getPlaylistEntity(playlist.id) == null) {
-                    show(R.string.playlist_add_failed, R.drawable.error)
-                    return@withPlaylistEdit null
+                    return@withPlaylistEdit feedback(R.string.playlist_add_failed, R.drawable.error)
                 }
-                show(
+                feedback(
                     when {
                         browseId != null && (!syncRemote || !playlist.isEditable) -> R.string.playlist_add_local_only
                         else -> R.string.playlist_add_success
                     },
                     R.drawable.check,
                 )
-                null
             }
         } catch (e: CancellationException) {
             throw e
@@ -143,15 +136,21 @@ constructor(
             reportException(e)
             val localCopyExists = savedLocally &&
                 runCatching { database.getPlaylistEntity(destination.id) }.getOrNull() != null
-            show(
+            feedback(
                 if (localCopyExists) R.string.playlist_add_sync_failed else R.string.playlist_add_failed,
                 R.drawable.error,
             )
         }
-        null
     }
 }
 
 internal enum class DuplicateChoice { Skip, AddAnyway }
 
 internal data class DuplicateSongs(val songIds: List<String>, val count: Int)
+
+internal sealed interface PlaylistAddResult {
+    data class Duplicates(val songs: DuplicateSongs) : PlaylistAddResult
+    data class Feedback(val message: Int, val icon: Int, val playlistName: String) : PlaylistAddResult {
+        val added: Boolean get() = icon == R.drawable.check
+    }
+}

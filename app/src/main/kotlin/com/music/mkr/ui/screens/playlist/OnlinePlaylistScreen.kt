@@ -9,7 +9,7 @@ import com.music.mkr.ui.component.mkrClickable
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
+import android.content.Intent
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
@@ -151,6 +151,7 @@ import com.music.mkr.ui.menu.YouTubeSongMenu
 import com.music.mkr.ui.theme.LocalPlayerArtworkPalette
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.resize
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.viewmodels.OnlinePlaylistViewModel
@@ -346,10 +347,11 @@ fun OnlinePlaylistScreen(
 
     val onShareAction: () -> Unit = {
         playlist?.shareLink?.let { link ->
-            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Playlist Link", link)
-            clipboard.setPrimaryClip(clip)
-            Toast.makeText(context, R.string.link_copied, Toast.LENGTH_SHORT).show()
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, link)
+            }
+            context.startActivity(Intent.createChooser(intent, null))
         }
     }
 
@@ -430,7 +432,7 @@ fun OnlinePlaylistScreen(
 
                     itemsIndexed(
                         items = filteredSongs,
-                        key = { _, (_, songItem) -> songItem.id }
+                        key = { _, (origIndex, songItem) -> "${songItem.id}_$origIndex" }
                     ) { index, (_, songItem) ->
                         val onCheckedChange: (Boolean) -> Unit = {
                             if (it) selection.add(songItem.id) else selection.remove(songItem.id)
@@ -589,7 +591,7 @@ fun OnlinePlaylistScreen(
                     // Songs list
                     itemsIndexed(
                         items = filteredSongs,
-                        key = { _, (_, songItem) -> songItem.id }
+                        key = { _, (origIndex, songItem) -> "${songItem.id}_$origIndex" }
                     ) { index, (_, songItem) ->
                         val onCheckedChange: (Boolean) -> Unit = {
                             if (it) selection.add(songItem.id) else selection.remove(songItem.id)

@@ -89,7 +89,6 @@
     <string name="hide_player_thumbnail">Oynatıcı Küçük Resmini Gizle</string>
     <string name="hide_player_thumbnail_desc">Oynatıcıdaki albüm resmini uygulama logosuyla değiştirin</string>
     <string name="thumbnail_corner_radius">Küçük Resim Köşe Yarıçapı</string>
-    <string name="thumbnail_corner_radius_desc">Albüm kapağı küçük resminin köşe yarıçapını değiştirin</string>
     <string name="crop_album_art">Albüm Resmini Kırp</string>
     <string name="crop_album_art_desc">Video küçük resimlerini kırparak kare en boy oranını zorlayın</string>
     <string name="already_in_playlist">Zaten çalma listesinde:</string>
@@ -125,7 +124,6 @@
     <string name="gradient">Gradyan</string>
     <string name="glow_animated">Animasyonlu parlama</string>
     <string name="new_mini_player_design">Yeni mini oynatıcı tasarımı</string>
-    <string name="player_background_blur">Bulanıklık</string>
     <string name="player_buttons_style">Oynatıcı düğme renkleri</string>
     <string name="default_style">Varsayılan</string>
     <string name="primary_color_style">Ana renk</string>

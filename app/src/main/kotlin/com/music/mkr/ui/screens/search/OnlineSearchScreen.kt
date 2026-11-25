@@ -6,6 +6,8 @@
 package com.music.mkr.ui.screens.search
 
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import com.music.mkr.constants.CropAlbumArtKey
+import com.music.mkr.utils.rememberPreference
 import com.music.mkr.ui.component.mkrClickable
 import androidx.compose.runtime.remember
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -22,6 +24,7 @@ import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -77,7 +80,6 @@ import com.music.mkr.LocalDatabase
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
-import com.music.mkr.constants.SuggestionItemHeight
 import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.playback.queues.YouTubeQueue
 import com.music.mkr.ui.component.LocalMenuState
@@ -91,7 +93,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import com.music.innertube.models.WatchEndpoint
-import com.music.innertube.utils.YouTubeUrlParser
 import com.music.mkr.ui.menu.YouTubeAlbumMenu
 import com.music.mkr.ui.menu.YouTubeArtistMenu
 import com.music.mkr.ui.menu.YouTubePlaylistMenu
@@ -99,7 +100,6 @@ import com.music.mkr.ui.menu.YouTubeSongMenu
 import com.music.mkr.viewmodels.OnlineSearchSuggestionViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
@@ -134,9 +134,21 @@ fun OnlineSearchScreen(
     val mediaMetadata by (playerConnection?.mediaMetadata ?: kotlinx.coroutines.flow.flowOf(null)).collectAsState(initial = null)
 
     val coroutineScope = rememberCoroutineScope()
-    val viewState by viewModel.viewState.collectAsState()
+    val loadedState by viewModel.viewState.collectAsState()
+    val lookupQuery = query.trim()
+    val viewState = loadedState.forQuery(lookupQuery)
 
     val lazyListState = rememberLazyListState()
+
+    val backStackEntry = navController.currentBackStackEntry
+    val scrollToTop = backStackEntry?.savedStateHandle?.getStateFlow("scrollToTop", false)?.collectAsState()
+
+    LaunchedEffect(scrollToTop?.value) {
+        if (scrollToTop?.value == true) {
+            lazyListState.animateScrollToItem(0)
+            backStackEntry?.savedStateHandle?.set("scrollToTop", false)
+        }
+    }
 
     LaunchedEffect(Unit) {
         snapshotFlow { lazyListState.firstVisibleItemScrollOffset }
@@ -146,15 +158,8 @@ fun OnlineSearchScreen(
             }
     }
 
-    LaunchedEffect(query) {
-        snapshotFlow { query }.collectLatest {
-            if (YouTubeUrlParser.isYouTubeUrl(it)) {
-                viewModel.query.value = it
-            } else {
-                kotlinx.coroutines.delay(300L)
-                viewModel.query.value = it
-            }
-        }
+    LaunchedEffect(lookupQuery) {
+        viewModel.query.value = lookupQuery
     }
 
     LazyColumn(
@@ -315,7 +320,7 @@ fun OnlineSearchScreen(
         if (viewState.items.isNotEmpty()) {
             item(key = "search_divider") {
                 Text(
-                    text = stringResource(if (viewState.isFromLink) R.string.parsed_from_link else R.string.top_result),
+                    text = stringResource(if (viewState.isFromLink) R.string.parsed_from_link else R.string.search_suggested_results),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.primary,
@@ -464,7 +469,7 @@ fun SearchSpotlightCard(
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
             .mkrClickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         color = if (pureBlack) Color(0xFF16171B) else MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -475,7 +480,7 @@ fun SearchSpotlightCard(
         ),
         tonalElevation = 2.dp
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Column(modifier = Modifier.padding(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -500,7 +505,7 @@ fun SearchSpotlightCard(
                 IconButton(
                     interactionSource = menuPressInteraction,
                     onClick = onMenuClick,
-                    modifier = Modifier.size(32.dp).mkrPressFeedback(interactionSource = menuPressInteraction)
+                    modifier = Modifier.mkrPressFeedback(interactionSource = menuPressInteraction)
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.more_vert),
@@ -511,7 +516,7 @@ fun SearchSpotlightCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(4.dp))
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -526,20 +531,21 @@ fun SearchSpotlightCard(
                 }
                 val isCircle = item is ArtistItem
 
+                val (cropAlbumArt) = rememberPreference(CropAlbumArtKey, defaultValue = true)
                 Box(
                     modifier = Modifier
-                        .size(64.dp)
+                        .size(52.dp)
                         .clip(if (isCircle) CircleShape else RoundedCornerShape(14.dp))
                 ) {
                     AsyncImage(
                         model = thumbnailUrl,
                         contentDescription = null,
-                        contentScale = androidx.compose.ui.layout.ContentScale.Crop,
+                        contentScale = if (isCircle || cropAlbumArt) androidx.compose.ui.layout.ContentScale.Crop else androidx.compose.ui.layout.ContentScale.Fit,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
 
-                Spacer(modifier = Modifier.width(14.dp))
+                Spacer(modifier = Modifier.width(10.dp))
 
                 Column(modifier = Modifier.weight(1f)) {
                     val title = when (item) {
@@ -579,14 +585,11 @@ fun SearchSpotlightCard(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                val playPressInteraction = remember { MutableInteractionSource() }
                 Surface(
-                    interactionSource = playPressInteraction,
-                    onClick = onClick,
                     shape = CircleShape,
                     color = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.size(42.dp).mkrPressFeedback(interactionSource = playPressInteraction)
+                    modifier = Modifier.size(48.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
                         Icon(
@@ -619,7 +622,7 @@ fun SuggestionItem(
         modifier = modifier
             .padding(horizontal = 16.dp, vertical = 1.dp)
             .fillMaxWidth()
-            .height(SuggestionItemHeight)
+            .heightIn(min = 48.dp)
             .clip(shape)
             .background(if (pureBlack) Color(0xFF16171B) else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f))
             .mkrClickable(onClick = onClick)
@@ -629,7 +632,7 @@ fun SuggestionItem(
             painterResource(if (online) R.drawable.search else R.drawable.history),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
-            modifier = Modifier.padding(horizontal = 16.dp).size(20.dp)
+            modifier = Modifier.padding(horizontal = 12.dp).size(20.dp)
         )
 
         Text(

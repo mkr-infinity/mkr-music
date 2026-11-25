@@ -100,10 +100,10 @@ constructor(
         }
 
         viewModelScope.launch {
-            val sortedSongs =
-                playlistSongs.first().sortedWith(compareBy({ it.map.position }, { it.map.id }))
+            val rawSongs =
+                database.playlistSongs(playlistId).first().sortedWith(compareBy({ it.map.position }, { it.map.id }))
             database.transaction {
-                sortedSongs.forEachIndexed { index, playlistSong ->
+                rawSongs.forEachIndexed { index, playlistSong ->
                     if (playlistSong.map.position != index) {
                         update(playlistSong.map.copy(position = index))
                     }

@@ -59,25 +59,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.navigation.NavHostController
-import androidx.work.ExistingWorkPolicy
-import androidx.work.OneTimeWorkRequestBuilder
-import androidx.work.WorkInfo
-import androidx.work.WorkManager
-import androidx.work.workDataOf
 import com.music.mkr.BuildConfig
 import com.music.mkr.R
 import com.music.mkr.constants.InterfaceAnimationsKey
-import com.music.mkr.mkrmusic.updater.downloadmanager.UpdateDownloadWorker
-import com.music.mkr.mkrmusic.updater.downloadmanager.DownloadNotificationManager
+import com.music.mkr.github.network.GitHubAssetDto
+import com.music.mkr.mkrmusic.updater.downloadmanager.enqueueUpdateWithNotification
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.File
 import java.net.URL
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -87,7 +81,6 @@ import com.music.mkr.ui.component.ActionButtonEmphasis
 import com.music.mkr.ui.component.AnimatedActionButton
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.utils.rememberPreference
-import com.music.mkr.ui.component.ErrorSnackbar
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.withStyle
 import androidx.compose.foundation.lazy.LazyColumn
@@ -100,9 +93,9 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.aspectRatio
@@ -150,7 +143,7 @@ fun UpdateScreen(navController: NavHostController) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var status by remember { mutableStateOf<MkrUpdateStatus>(MkrUpdateStatus.NoUpdate(BuildConfig.VERSION_NAME)) }
-    val snackbarHostState = remember { SnackbarHostState() }
+    var checkingDownload by remember { mutableStateOf(false) }
 
     val currentVersion = BuildConfig.VERSION_NAME
     val autoUpdateCheckEnabled = getAutoUpdateCheckSetting(context)
@@ -203,12 +196,7 @@ fun UpdateScreen(navController: NavHostController) {
         topBar = {
             CenterAlignedTopAppBar(
                 title = {
-                    Icon(
-                        painter = painterResource(R.drawable.mobile_update),
-                        contentDescription = null,
-                        modifier = Modifier.size(26.dp),
-                        tint = colors.onSurfaceVariant
-                    )
+                    Text(stringResource(R.string.app_updates_title), style = MaterialTheme.typography.titleMedium)
                 },
                 navigationIcon = {
                     IconButton(
@@ -230,7 +218,8 @@ fun UpdateScreen(navController: NavHostController) {
         },
         bottomBar = {
             Surface(
-                color = colors.surfaceContainerLow,
+                color = colors.surfaceContainer,
+                shape = MaterialTheme.shapes.extraLarge,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(
@@ -275,25 +264,18 @@ fun UpdateScreen(navController: NavHostController) {
                                 // Button 1: Download APK
                                 AnimatedActionButton(
                                     onClick = {
-                                        currentStatus.apkUrl?.let { apkUrl ->
-                                            try {
-                                                val uri = Uri.parse(apkUrl)
-                                                val request = android.app.DownloadManager.Request(uri)
-                                                    .setTitle("MKR Music ${currentStatus.version}")
-                                                    .setDescription("Downloading update")
-                                                    .setNotificationVisibility(android.app.DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                                                    .setDestinationInExternalPublicDir(android.os.Environment.DIRECTORY_DOWNLOADS, "mkr-music-universal.apk")
-                                                    .setMimeType("application/vnd.android.package-archive")
-
-                                                val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as android.app.DownloadManager
-                                                manager.enqueue(request)
-                                            } catch (_: Exception) {
-                                                val intent = Intent(Intent.ACTION_VIEW, Uri.parse(apkUrl))
-                                                context.startActivity(intent)
+                                        if (!checkingDownload) {
+                                            checkingDownload = true
+                                            scope.launch {
+                                                try {
+                                                    downloadLatestUniversalUpdate(context)
+                                                } finally {
+                                                    checkingDownload = false
+                                                }
                                             }
                                         }
                                     },
-                                    enabled = hasDirectApk,
+                                    enabled = hasDirectApk && !checkingDownload,
                                     animate = animate,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
@@ -304,7 +286,11 @@ fun UpdateScreen(navController: NavHostController) {
                                     )
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
-                                        text = if (hasDirectApk) stringResource(R.string.download_apk) else stringResource(R.string.no_direct_apk),
+                                        text = when {
+                                            checkingDownload -> stringResource(R.string.checking_for_updates)
+                                            hasDirectApk -> stringResource(R.string.download_apk)
+                                            else -> stringResource(R.string.no_direct_apk)
+                                        },
                                         style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold)
                                     )
                                 }
@@ -353,9 +339,10 @@ fun UpdateScreen(navController: NavHostController) {
                 }
             }
         },
-        snackbarHost = { ErrorSnackbar(hostState = snackbarHostState) },
         containerColor = colors.surface,
         modifier = Modifier
+            .fillMaxSize()
+            .wrapContentWidth()
             .widthIn(max = 700.dp)
             .fillMaxSize()
             .nestedScroll(scrollBehavior.nestedScrollConnection)
@@ -371,40 +358,61 @@ fun UpdateScreen(navController: NavHostController) {
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 item {
-                    val titleText = when (status) {
-                        is MkrUpdateStatus.Checking -> "Checking for update..."
-                        is MkrUpdateStatus.Available -> "System update\navailable"
-                        is MkrUpdateStatus.NoUpdate -> "Your app is up to date"
-                        is MkrUpdateStatus.Error -> "Update error"
-                        else -> "System update"
+                    val lastChecked = getLastCheckedTime(context)
+                    val headingStatus = if (status is MkrUpdateStatus.NoUpdate && lastChecked.isBlank()) {
+                        MkrUpdateStatus.Idle
+                    } else {
+                        status
                     }
-                    UpdateStatusHeading(status, titleText, Modifier.padding(bottom = 20.dp))
-                    
-                    val currentStatus = status
-                    if (currentStatus is MkrUpdateStatus.Available) {
-                        val rawVersion = currentStatus.version
-                        val displayVer = when {
-                            rawVersion.startsWith("b", ignoreCase = true) -> rawVersion.uppercase()
-                            rawVersion.startsWith("v", ignoreCase = true) -> rawVersion.uppercase()
-                            else -> "V${rawVersion.uppercase()}"
+                    val title = stringResource(
+                        when (headingStatus) {
+                            MkrUpdateStatus.Idle -> R.string.system_update
+                            MkrUpdateStatus.Checking -> R.string.checking_for_updates
+                            is MkrUpdateStatus.Available -> R.string.update_available
+                            is MkrUpdateStatus.NoUpdate -> R.string.app_up_to_date
+                            is MkrUpdateStatus.Error -> R.string.update_check_error_title
                         }
-                        Text(
-                            text = "MKR MUSIC $displayVer",
-                            style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.SemiBold,
-                            color = colors.onSurface,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 4.dp)
-                        )
-                        Text(
-                            text = "Size: ${currentStatus.size} MB",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 16.dp)
-                        )
+                    )
+                    UpdateStatusHeading(headingStatus, title, Modifier.padding(bottom = 12.dp))
+                    Surface(
+                        modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                        shape = MaterialTheme.shapes.large,
+                        color = colors.surfaceContainerLow,
+                    ) {
+                        Column(
+                            Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                stringResource(R.string.current_version_v, currentVersion),
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                            Text(
+                                stringResource(R.string.update_build_version, BuildConfig.VERSION_CODE),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colors.onSurfaceVariant,
+                            )
+                            Text(
+                                if (lastChecked.isBlank()) stringResource(R.string.update_not_checked_yet)
+                                else stringResource(R.string.last_checked, lastChecked),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = colors.onSurfaceVariant,
+                            )
+                            val available = status as? MkrUpdateStatus.Available
+                            if (available != null) {
+                                Spacer(Modifier.height(8.dp))
+                                Text(
+                                    stringResource(R.string.update_to_v, available.version),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    color = colors.primary,
+                                )
+                                Text(
+                                    stringResource(R.string.update_size, available.size.toString()),
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = colors.onSurfaceVariant,
+                                )
+                            }
+                        }
                     }
                 }
 
@@ -463,60 +471,19 @@ fun UpdateScreen(navController: NavHostController) {
                         ) { currentStatus ->
                             when (currentStatus) {
                                 is MkrUpdateStatus.Checking -> {
-                                    Column(horizontalAlignment = Alignment.Start) {
-                                        Text(
-                                            text = "Please wait while we check for the latest features.",
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
+                                    Text(
+                                        text = stringResource(R.string.update_checking_details),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colors.onSurfaceVariant,
+                                    )
                                 }
 
                                 is MkrUpdateStatus.NoUpdate -> {
-                                    val checkTime = remember { LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm")) }
-                                    Column(
-                                        horizontalAlignment = Alignment.Start,
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        val rawVersion = currentStatus.version
-                                        val displayVer = when {
-                                            rawVersion.startsWith("b", ignoreCase = true) -> rawVersion.uppercase()
-                                            rawVersion.startsWith("v", ignoreCase = true) -> rawVersion.uppercase()
-                                            else -> "V${rawVersion.uppercase()}"
-                                        }
-                                        Text(
-                                            text = "MKR MUSIC VERSION $displayVer",
-                                            style = MaterialTheme.typography.titleLarge,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = colors.onSurface
-                                        )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Text(
-                                            text = "Build version: ${BuildConfig.VERSION_CODE}",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Spacer(modifier = Modifier.height(20.dp))
-                                        Text(
-                                            text = "Last successful check for update:",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                        Spacer(modifier = Modifier.height(2.dp))
-                                        Text(
-                                            text = checkTime,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = colors.onSurface
-                                        )
-                                        Spacer(modifier = Modifier.height(20.dp))
-                                        Text(
-                                            text = "\"Donations help make project development & updates faster!\"",
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            fontStyle = FontStyle.Italic
-                                        )
-                                    }
+                                    Text(
+                                        text = stringResource(R.string.update_support_note),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = colors.onSurfaceVariant,
+                                    )
                                 }
 
                                 is MkrUpdateStatus.Error -> {
@@ -526,13 +493,20 @@ fun UpdateScreen(navController: NavHostController) {
                                         contentColor = colors.onErrorContainer,
                                         modifier = Modifier.fillMaxWidth(),
                                     ) {
-                                        Text(
-                                            text = currentStatus.message,
-                                            style = MaterialTheme.typography.bodyLarge,
-                                            modifier = Modifier.padding(16.dp).semantics {
-                                                liveRegion = LiveRegionMode.Polite
-                                            },
-                                        )
+                                        Column(
+                                            Modifier.padding(16.dp),
+                                            verticalArrangement = Arrangement.spacedBy(8.dp),
+                                        ) {
+                                            Text(
+                                                text = currentStatus.message,
+                                                style = MaterialTheme.typography.bodyLarge,
+                                                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                                            )
+                                            Text(
+                                                stringResource(R.string.check_internet_connection),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                            )
+                                        }
                                     }
                                 }
 
@@ -594,7 +568,14 @@ fun UpdateScreen(navController: NavHostController) {
                                                 }
                                             }
                                         }
-                                        val desc = currentStatus.description ?: ""
+                                        val desc = currentStatus.description.orEmpty()
+                                        if (desc.isNotBlank() || currentStatus.changelog.isNotEmpty()) {
+                                            Text(
+                                                stringResource(R.string.whats_new),
+                                                style = MaterialTheme.typography.titleLarge,
+                                                modifier = Modifier.padding(top = 8.dp, bottom = 12.dp).semantics { heading() },
+                                            )
+                                        }
                                         if (desc.isNotBlank()) {
                                             val primaryColor = MaterialTheme.colorScheme.primary
                                             val annotatedText = desc.trim().parseMarkdownAndUrls(primaryColor)
@@ -877,6 +858,40 @@ fun isNewerVersion(latestVersion: String, currentVersion: String): Boolean {
     return false
 }
 
+internal suspend fun downloadLatestUniversalUpdate(context: Context) {
+    var version: String? = null
+    var error = R.string.update_check_error_title
+    checkForUpdate(
+        context = context,
+        onSuccess = { tag, available, _, _, _, _, _, apkUrl ->
+            when {
+                !available -> error = R.string.app_up_to_date
+                apkUrl.isNullOrBlank() -> error = R.string.no_direct_apk
+                else -> version = tag
+            }
+        },
+        onError = { },
+    )
+    val latestVersion = version
+    if (latestVersion == null) {
+        android.widget.Toast.makeText(context, error, android.widget.Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    try {
+        enqueueUpdateWithNotification(context, latestVersion)
+    } catch (cancelled: CancellationException) {
+        throw cancelled
+    } catch (_: Exception) {
+        val opened = runCatching {
+            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(LATEST_UNIVERSAL_APK_URL)))
+        }.isSuccess
+        if (!opened) {
+            android.widget.Toast.makeText(context, R.string.download_failed, android.widget.Toast.LENGTH_SHORT).show()
+        }
+    }
+}
+
 // Fetches latest published release from GitHub and compares deterministic version codes
 suspend fun checkForUpdate(
     context: Context,
@@ -892,12 +907,18 @@ suspend fun checkForUpdate(
             connection.setRequestProperty("Accept", "application/vnd.github+json")
             connection.setRequestProperty("User-Agent", "MKR-Music-Android")
 
-            if (connection.responseCode != 200) {
+            val json = try {
+                connection.useCaches = false
+                if (connection.responseCode == 200) connection.inputStream.bufferedReader().use { it.readText() }
+                else null
+            } finally {
+                connection.disconnect()
+            }
+            if (json == null) {
                 withContext(Dispatchers.Main) { onError() }
                 return@withContext
             }
 
-            val json = connection.inputStream.bufferedReader().use { it.readText() }
             val targetRelease = JSONObject(json)
 
             val (currentVersion, currentVersionCode) = try {
@@ -963,20 +984,23 @@ suspend fun checkForUpdate(
             // An update is available ONLY when the remote release's version code is strictly greater
             val isAvailable = remoteVersionCode != null && remoteVersionCode > currentVersionCode
 
-            // Select compatible APK asset
-            var apkSizeInMB = ""
-            var apkDownloadUrl = ""
-            val expectedApkName = "mkr-music-universal.apk"
-            for (j in 0 until assets.length()) {
-                val asset = assets.getJSONObject(j)
-                val assetName = asset.getString("name")
-                if (assetName.equals(expectedApkName, ignoreCase = true) || assetName.endsWith("-universal.apk", ignoreCase = true) || assetName.endsWith(".apk", ignoreCase = true)) {
-                    val apkSizeInBytes = asset.optLong("size", 0L)
-                    apkSizeInMB = String.format(java.util.Locale.US, "%.1f", apkSizeInBytes / (1024.0 * 1024.0))
-                    apkDownloadUrl = asset.getString("browser_download_url")
-                    break
+            val apkAsset = selectUniversalUpdateAsset(
+                buildList {
+                    for (index in 0 until assets.length()) {
+                        val asset = assets.optJSONObject(index) ?: continue
+                        add(
+                            GitHubAssetDto(
+                                name = asset.optString("name"),
+                                size = asset.optLong("size", 0L),
+                                browserDownloadUrl = asset.optString("browser_download_url"),
+                            )
+                        )
+                    }
                 }
-            }
+            )
+            val apkSizeInMB = apkAsset?.size?.takeIf { it > 0 }?.let {
+                String.format(java.util.Locale.US, "%.1f", it / (1024.0 * 1024.0))
+            }.orEmpty()
 
             // Parse release notes directly from GitHub release body
             val changelogList = mutableListOf<ChangelogSection>()
@@ -1030,9 +1054,11 @@ suspend fun checkForUpdate(
                     formattedReleaseDate,
                     description,
                     imageUrl,
-                    if (isAvailable && apkDownloadUrl.isNotEmpty()) apkDownloadUrl else null
+                    if (isAvailable) apkAsset?.browserDownloadUrl else null
                 )
             }
+        } catch (cancelled: CancellationException) {
+            throw cancelled
         } catch (e: Exception) {
             Log.e("UpdateCheck", "Error checking for updates: ${e.message}", e)
             withContext(Dispatchers.Main) { onError() }

@@ -8,6 +8,8 @@ package com.music.mkr.ui.component
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,7 +39,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -94,26 +95,18 @@ fun NavigationStyleDialog(
             }
         },
         text = {
-            Box(
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .heightIn(max = 480.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(vertical = 4.dp)
-                ) {
-                    items(
-                        items = NavigationStyle.entries.toTypedArray(),
-                        key = { it.name }
-                    ) { style ->
-                        NavigationStyleCard(
-                            style = style,
-                            isSelected = style == current,
-                            onClick = { onSelect(style) }
-                        )
-                    }
+                NavigationStyle.entries.forEach { style ->
+                    NavigationStyleCard(
+                        style = style,
+                        isSelected = style == current,
+                        onClick = { onSelect(style) }
+                    )
                 }
             }
         },
@@ -165,43 +158,17 @@ private fun NavigationStyleCard(
         ) {
             NavigationStyleMiniPreview(style = style, isSelected = isSelected)
 
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Text(
-                        text = stringResource(style.titleRes),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
-                        color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
-                    if (style == NavigationStyle.DEFAULT) {
-                        Surface(
-                            shape = RoundedCornerShape(6.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                        ) {
-                            Text(
-                                text = "Default",
-                                style = MaterialTheme.typography.labelSmall,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = stringResource(style.descriptionRes),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    lineHeight = 16.sp
-                )
-            }
+            Text(
+                text = if (style == NavigationStyle.DEFAULT) {
+                    "${stringResource(style.titleRes)} (${stringResource(R.string.default_)})"
+                } else {
+                    stringResource(style.titleRes)
+                },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.SemiBold,
+                color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
 
             RadioButton(
                 selected = isSelected,
@@ -233,81 +200,83 @@ private fun NavigationStyleMiniPreview(
         contentAlignment = Alignment.Center
     ) {
         when (style) {
-            NavigationStyle.AMBER_DOCK -> {
-                // Dock with glowing indicator under active tab (3 destinations)
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                        Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
-                        Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)))
-                        Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)))
-                    }
-                    Spacer(Modifier.height(3.dp))
-                    Box(Modifier.width(12.dp).height(2.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
-                }
-            }
             NavigationStyle.FLOATING_GLASS -> {
-                // Frosted glass capsule with glow (3 destinations balanced spacing)
-                Box(
+                val colors = MaterialTheme.colorScheme
+                Row(
                     modifier = Modifier
-                        .size(width = 46.dp, height = 22.dp)
-                        .clip(RoundedCornerShape(11.dp))
-                        .background(Color.White.copy(alpha = 0.15f))
-                        .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(11.dp)),
-                    contentAlignment = Alignment.Center
+                        .size(width = 46.dp, height = 19.dp)
+                        .clip(CircleShape)
+                        .then(Modifier.frostedNavigationCapsule(pureBlack = false))
+                        .padding(horizontal = 4.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 7.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                    Box(
+                        Modifier.size(11.dp)
+                            .background(colors.secondaryContainer, navigationFace(0.84f)),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Box(Modifier.size(5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
-                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
-                        Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)))
+                        Box(Modifier.size(4.dp).background(colors.onSecondaryContainer, CircleShape))
+                    }
+                    repeat(2) {
+                        Box(Modifier.size(4.dp).background(colors.onSurfaceVariant, CircleShape))
                     }
                 }
             }
             NavigationStyle.EXPRESSIVE_PILL -> {
-                // Pill with expanded active tab (3 destinations)
+                val colors = MaterialTheme.colorScheme
                 Row(
-                    modifier = Modifier.padding(horizontal = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
+                    Row(
+                        modifier = Modifier
+                            .size(width = 28.dp, height = 16.dp)
+                            .clip(CircleShape)
+                            .then(Modifier.navigationGlass(CircleShape, pureBlack = false))
+                            .padding(horizontal = 4.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Box(
+                            Modifier.size(width = 11.dp, height = 9.dp)
+                                .background(colors.primaryContainer.copy(alpha = 0.6f), CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Box(Modifier.size(3.5.dp).background(colors.primary, CircleShape))
+                        }
+                        Box(Modifier.size(3.5.dp).background(colors.onSurfaceVariant, CircleShape))
+                    }
                     Box(
                         modifier = Modifier
-                            .width(14.dp)
-                            .height(14.dp)
+                            .size(16.dp)
                             .clip(CircleShape)
-                            .background(MaterialTheme.colorScheme.primary)
-                    )
-                    Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)))
-                    Box(Modifier.size(4.dp).clip(CircleShape).background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)))
+                            .then(Modifier.navigationGlass(CircleShape, pureBlack = false)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(Modifier.size(4.dp).background(colors.onSurfaceVariant, CircleShape))
+                    }
                 }
             }
             NavigationStyle.CLEAN_MATERIAL -> {
-                // Full-width bar with pill indicator (3 destinations)
-                Column(
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 3.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                Row(
+                    Modifier.fillMaxWidth()
+                        .align(Alignment.BottomCenter)
+                        .height(18.dp)
+                        .background(MaterialTheme.colorScheme.surfaceContainer),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
                     Box(
-                        modifier = Modifier
-                            .width(14.dp)
-                            .height(8.dp)
-                            .clip(RoundedCornerShape(4.dp))
-                            .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                        contentAlignment = Alignment.Center
+                        Modifier.size(12.dp)
+                            .background(MaterialTheme.colorScheme.primaryContainer, navigationFace(0f)),
+                        contentAlignment = Alignment.Center,
                     ) {
-                        Box(Modifier.size(3.5.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary))
+                        Box(Modifier.size(4.dp).background(MaterialTheme.colorScheme.onPrimaryContainer, CircleShape))
                     }
-                    Spacer(Modifier.height(3.dp))
-                    Box(Modifier.fillMaxWidth().height(1.dp).background(MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)))
+                    repeat(2) {
+                        Box(Modifier.size(4.dp).background(MaterialTheme.colorScheme.onSurfaceVariant, CircleShape))
+                    }
                 }
             }
         }

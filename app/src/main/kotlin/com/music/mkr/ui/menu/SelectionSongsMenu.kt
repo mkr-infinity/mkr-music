@@ -61,6 +61,7 @@ import com.music.mkr.ui.component.Material3MenuGroup
 import com.music.mkr.ui.component.Material3MenuItemData
 import com.music.mkr.ui.component.NewAction
 import com.music.mkr.ui.component.NewActionGrid
+import com.music.mkr.ui.player.queueWindowIndices
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.time.LocalDateTime
@@ -279,28 +280,6 @@ fun SelectionSongMenu(
                         )
                         add(
                             Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.shuffle)) },
-                                description = { Text(text = stringResource(R.string.add_to_queue_desc)) },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.shuffle),
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    onDismiss()
-                                    playerConnection.playQueue(
-                                        ListQueue(
-                                            title = "Selection",
-                                            items = songSelection.shuffled().map { it.toMediaItem() },
-                                        ),
-                                    )
-                                    clearAction()
-                                }
-                            )
-                        )
-                        add(
-                            Material3MenuItemData(
                                 title = { Text(text = stringResource(R.string.add_to_queue)) },
                                 description = { Text(text = stringResource(R.string.add_to_queue_desc)) },
                                 icon = {
@@ -317,21 +296,6 @@ fun SelectionSongMenu(
                             )
                         )
                     }
-                    add(
-                        Material3MenuItemData(
-                            title = { Text(text = stringResource(R.string.add_to_playlist)) },
-                            description = { Text(text = stringResource(R.string.add_to_playlist_desc)) },
-                            icon = {
-                                Icon(
-                                    painter = painterResource(R.drawable.playlist_add),
-                                    contentDescription = null,
-                                )
-                            },
-                            onClick = {
-                                showChoosePlaylistDialog = true
-                            }
-                        )
-                    )
                     add(
                         Material3MenuItemData(
                             title = {
@@ -497,12 +461,10 @@ fun SelectionSongMenu(
                                 },
                                 onClick = {
                                     onDismiss()
-                                    var i = 0
-                                    database.query {
-                                        songPosition.forEach { cur ->
-                                            move(cur.playlistId, cur.position - i, Int.MAX_VALUE)
+                                    database.transaction {
+                                        songPosition.sortedByDescending { it.position }.forEach { cur ->
+                                            move(cur.playlistId, cur.position, Int.MAX_VALUE)
                                             delete(cur.copy(position = Int.MAX_VALUE))
-                                            i++
                                         }
                                     }
                                     clearAction()
@@ -526,12 +488,14 @@ fun SelectionMediaMetadataMenu(
 ) {
     val context = LocalContext.current
     val database = LocalDatabase.current
+    val syncUtils = LocalSyncUtils.current
     val downloadUtil = LocalDownloadUtil.current
     val coroutineScope = rememberCoroutineScope()
     val playerConnection = LocalPlayerConnection.current ?: return
     val listenTogetherManager = com.music.mkr.LocalListenTogetherManager.current
     val isGuest = listenTogetherManager?.isInRoom == true && listenTogetherManager.isHost == false
 
+    val hasSongMetadata = songSelection.isNotEmpty()
     val allLiked by remember(songSelection) {
         mutableStateOf(songSelection.isNotEmpty() && songSelection.all { it.liked })
     }
@@ -545,7 +509,7 @@ fun SelectionMediaMetadataMenu(
     }
 
     AddToPlaylistDialog(
-        isVisible = showChoosePlaylistDialog,
+        isVisible = hasSongMetadata && showChoosePlaylistDialog,
         onGetSong = {
             database.withTransaction { songSelection.forEach { insert(it) } }
             songSelection.map { it.id }
@@ -580,7 +544,7 @@ fun SelectionMediaMetadataMenu(
         mutableStateOf(false)
     }
 
-    if (showRemoveDownloadDialog) {
+    if (hasSongMetadata && showRemoveDownloadDialog) {
         DefaultDialog(
             onDismiss = { showRemoveDownloadDialog = false },
             content = {
@@ -642,21 +606,17 @@ fun SelectionMediaMetadataMenu(
                                 },
                                 onClick = {
                                     onDismiss()
-                                    var i = 0
-                                    currentItems.forEach { cur ->
-                                        if (playerConnection.player.availableCommands.contains(
-                                                Player.COMMAND_CHANGE_MEDIA_ITEMS
-                                            )
-                                        ) {
-                                            playerConnection.player.removeMediaItem(cur.firstPeriodIndex - i++)
-                                        }
+                                    val player = playerConnection.player
+                                    if (player.isCommandAvailable(Player.COMMAND_CHANGE_MEDIA_ITEMS)) {
+                                        val windowUids = currentItems.mapTo(hashSetOf()) { it.uid }
+                                        player.queueWindowIndices(windowUids).forEach(player::removeMediaItem)
                                     }
                                     clearAction()
                                 }
                             )
                         )
                     }
-                    if (!isGuest) {
+                    if (hasSongMetadata && !isGuest) {
                         add(
                             Material3MenuItemData(
                                 title = { Text(text = stringResource(R.string.play)) },
@@ -718,7 +678,7 @@ fun SelectionMediaMetadataMenu(
                             )
                         }
                     }
-                    add(
+                    if (hasSongMetadata) add(
                         Material3MenuItemData(
                             title = { Text(text = stringResource(R.string.add_to_playlist)) },
                             icon = {
@@ -736,9 +696,9 @@ fun SelectionMediaMetadataMenu(
             )
         }
 
-        item { Spacer(modifier = Modifier.height(12.dp)) }
+        if (hasSongMetadata) item { Spacer(modifier = Modifier.height(12.dp)) }
 
-        item {
+        if (hasSongMetadata) item {
             Material3MenuGroup(
                 expressive = true,
                 items = buildList {
@@ -746,7 +706,9 @@ fun SelectionMediaMetadataMenu(
                         Material3MenuItemData(
                             title = {
                                 Text(
-                                    text = stringResource(R.string.like_all)
+                                    text = stringResource(
+                                        if (allLiked) R.string.dislike_all else R.string.like_all
+                                    )
                                 )
                             },
                             icon = {
@@ -765,7 +727,9 @@ fun SelectionMediaMetadataMenu(
                                         }
                                     } else {
                                         songSelection.filter { !it.liked }.forEach { song ->
-                                            update(song.toSongEntity().toggleLike())
+                                            val likedSong = song.toSongEntity().toggleLike()
+                                            update(likedSong)
+                                            syncUtils.autoDownloadLikedSong(likedSong)
                                         }
                                     }
                                 }

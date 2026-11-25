@@ -90,16 +90,17 @@ Install the Universal APK over your existing compatible installation to keep you
 
 ## ✨ Key Features
 
-- 🎧 **Streaming & Playlist Import** – Stream YouTube Music and match Spotify playlist tracks to YouTube Music.
+- 🎧 **Streaming & Playlist Import** – Stream YouTube Music and import Spotify or CSV playlists into your local library.
 - 🎚️ **MKR Studio Equalizer** – 10-band precision EQ, Dolby Atmos simulation, bass boost, and audio presets.
-- 📜 **Synchronized Lyrics** – Live word-by-word scrolling lyrics with dynamic animated glow and blurred backdrops.
-- 🧠 **Mood Queue & Quick Picks** – Smart track recommendations matching your active mood and listening taste.
-- ⚡ **Instant Playback & Smart Cache** – Zero-buffer audio playback with automated offline caching (5s–90s).
-- 🎨 **Expressive Material 3 UI** – Full-bleed dynamic canvas visuals, fluid transitions, and 5 custom adaptive icons.
+- 📜 **Synchronized Lyrics** – Live word-by-word scrolling lyrics with dynamic animated glow, romanization, and blurred backdrops.
+- 🧠 **Language & Mood Queues** – Smart track recommendations prioritizing your current song's language, mood, and taste.
+- 🔊 **Audio Focus Auto-Resume** – Automatically pauses or ducks for other apps and resumes playback once the speaker is free.
+- ⚡ **Instant Playback & Smart Cache** – Zero-buffer audio playback with automated offline caching (5s–90s) and crossfade.
+- 🎨 **Expressive Material 3 UI** – Immersive Artwork & Squiggly player styles, auto-hide navigation, and 10 custom adaptive icons.
 - 👥 **Listen Together** – Synchronized listening rooms to stream music in real-time with friends.
-- 🎵 **Bitrate & Output Switcher** – Live kbps stream quality badges and instant Bluetooth audio routing.
+- 🎵 **Bitrate & Output Switcher** – Live kbps stream quality badges and instant Bluetooth/speaker audio routing.
 - 🛡️ **Zero Telemetry & 100% Private** – Open-source, no trackers, no ads, and all library data stored locally.
-- 🚀 **More to Explore** – Sleep timer, Discord Rich Presence, backup/restore, and persistent playback.
+- 🚀 **Backup, Restore & In-App Updates** – Safe archive backup/restore, custom playlist drag reordering, and in-app APK updates.
 
 ---
 
@@ -172,14 +173,10 @@ Crafted with dedication by **Mohammad Kaif Raja**:
 
 **MKR Music** is built upon the foundation of amazing open-source projects, visionary developers, and the broader FLOSS community:
 
-
-- **[ViMusic](https://github.com/vfsfitvnm/ViMusic)** by vfsfitvnm – For pioneering the original Android client and playback concepts.
-- **[ViVi Music](https://github.com/vivizzz007/vivi-music)** by vivizzz007 – For inspiring features, UI refinements, and dedicated contributions.
 - **[InnerTune](https://github.com/z-huang/InnerTune)** by Zion Huang – For the groundbreaking YouTube Music client architecture and Innertube integration foundation.
 - **[AM-Lyrics](https://github.com/Binimum)** – For the powerful synced TTML lyrics integration from Binimum.
 - **[Better Lyrics](https://github.com/Better-Lyrics)** – For beautiful synchronized lyrics and YouTube Music integration.
 - **[YouLyPlus](https://github.com/YouLyPlus)** – For smooth, expressive in-app lyrics styling.
-- **[Unison](https://github.com)** – For the premium Apple Music-style visualizer canvas.
 - **[SponsorBlock](https://sponsor.ajay.app/)** – For automatic skipping of sponsored and non-music segments.
 - **Spotify Integration** – For Spotify playlist discovery, search queries, and audio library synchronization.
 - **Innertube & NewPipe Extractor** – For YouTube Music streaming APIs, stream extraction, and search pipelines.
@@ -195,7 +192,5 @@ Crafted with dedication by **Mohammad Kaif Raja**:
 ## ⚖️ License
 
 MKR Music is open-source software licensed under the [GNU General Public License v3.0 (GPL-3.0)](LICENSE).
-
-*Copyright © 2026 Mohammad Kaif Raja ([@mkr-infinity](https://github.com/mkr-infinity))*
 
 </div>

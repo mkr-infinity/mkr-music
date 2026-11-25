@@ -373,12 +373,17 @@ fun PlaylistMenu(
                         text = stringResource(R.string.share),
                         onClick = {
                             onDismiss()
-                            val intent = Intent().apply {
-                                action = Intent.ACTION_SEND
-                                type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/playlist?list=${dbPlaylist?.playlist?.browseId}")
+                            val shareUrl = dbPlaylist?.playlist?.shareLink
+                                ?: dbPlaylist?.playlist?.browseId?.let { "https://music.youtube.com/playlist?list=$it" }
+                                ?: (dbPlaylist?.playlist?.name ?: "")
+                            if (shareUrl.isNotBlank()) {
+                                val intent = Intent().apply {
+                                    action = Intent.ACTION_SEND
+                                    type = "text/plain"
+                                    putExtra(Intent.EXTRA_TEXT, shareUrl)
+                                }
+                                context.startActivity(Intent.createChooser(intent, null))
                             }
-                            context.startActivity(Intent.createChooser(intent, null))
                         }
                     )
                 ),
@@ -623,11 +628,12 @@ fun PlaylistMenu(
                                             var attempt = 0
                                             val maxAttempts = 3
                                             while (attempt < maxAttempts) {
+                                                attempt++
                                                 try {
                                                     browseId = YouTube.createPlaylist(playlist.playlist.name)
                                                     if (browseId != null) break
+                                                    if (attempt < maxAttempts) kotlinx.coroutines.delay(1000)
                                                 } catch (e: Exception) {
-                                                    attempt++
                                                     if (attempt >= maxAttempts) throw e
                                                     kotlinx.coroutines.delay(1000)
                                                 }
@@ -665,6 +671,11 @@ fun PlaylistMenu(
                                                     }
                                                     isSyncComplete = true
                                                 }
+                                            } else {
+                                                kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                                    Toast.makeText(context, "Failed to create playlist on YouTube", Toast.LENGTH_SHORT).show()
+                                                    isSyncing = false
+                                                }
                                             }
                                         } catch (e: Exception) {
                                             kotlinx.coroutines.withContext(Dispatchers.Main) {
@@ -673,29 +684,6 @@ fun PlaylistMenu(
                                             }
                                         }
                                     }
-                                }
-                            )
-                        )
-                    }
-                    playlist.playlist.shareLink?.let { shareLink ->
-                        add(
-                            Material3MenuItemData(
-                                title = { Text(text = stringResource(R.string.share)) },
-                                description = { Text(text = stringResource(R.string.share_desc)) },
-                                icon = {
-                                    Icon(
-                                        painter = painterResource(R.drawable.share),
-                                        contentDescription = null,
-                                    )
-                                },
-                                onClick = {
-                                    val intent = Intent().apply {
-                                        action = Intent.ACTION_SEND
-                                        type = "text/plain"
-                                        putExtra(Intent.EXTRA_TEXT, shareLink)
-                                    }
-                                    context.startActivity(Intent.createChooser(intent, null))
-                                    onDismiss()
                                 }
                             )
                         )

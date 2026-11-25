@@ -58,6 +58,9 @@ fun SquigglySlider(
 
     var isDragging by remember { mutableStateOf(false) }
     var dragPosition by remember { mutableFloatStateOf(value) }
+    if (!isDragging) {
+        dragPosition = value
+    }
     
     val currentValue = if (isDragging) dragPosition else value
     val duration = valueRange.endInclusive - valueRange.start
@@ -124,14 +127,6 @@ fun SquigglySlider(
                 if (enabled) {
                     Modifier
                         .pointerInput(valueRange) {
-                            detectTapGestures { offset ->
-                                val newPosition = (offset.x / size.width) * duration
-                                val mappedValue = valueRange.start + newPosition.coerceIn(0f, duration)
-                                onValueChange(mappedValue)
-                                onValueChangeFinished?.invoke()
-                            }
-                        }
-                        .pointerInput(valueRange) {
                             detectDragGestures(
                                 onDragStart = { offset ->
                                     isDragging = true
@@ -153,6 +148,14 @@ fun SquigglySlider(
                                     onValueChange(dragPosition)
                                 }
                             )
+                        }
+                        .pointerInput(valueRange) {
+                            detectTapGestures { offset ->
+                                val newPosition = (offset.x / size.width) * duration
+                                val mappedValue = valueRange.start + newPosition.coerceIn(0f, duration)
+                                onValueChange(mappedValue)
+                                onValueChangeFinished?.invoke()
+                            }
                         }
                 } else {
                     Modifier

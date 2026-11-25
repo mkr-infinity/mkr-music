@@ -11,7 +11,6 @@ import com.music.mkr.ui.component.mkrCombinedClickable
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
@@ -142,6 +141,7 @@ import com.music.mkr.ui.theme.LocalPlayerArtworkPalette
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.ui.utils.isScrollingUp
 import com.music.mkr.ui.utils.resize
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.listItemShape
 import com.music.mkr.utils.makeTimeString
 import com.music.mkr.utils.rememberPreference
@@ -258,8 +258,18 @@ fun ArtistScreen(
             ),
         ) {
             if (artistPage == null && !showLocal) {
-                item(key = "artist_shimmer") {
-                    ArtistShimmerSkeleton(systemBarsTopPadding = systemBarsTopPadding)
+                if (viewModel.error != null) {
+                    item(key = "artist_error") {
+                        Spacer(Modifier.height(systemBarsTopPadding + 56.dp))
+                        com.music.mkr.ui.component.LibraryLoadError(
+                            message = viewModel.error.orEmpty(),
+                            onRetry = viewModel::fetchArtistsFromYTM,
+                        )
+                    }
+                } else {
+                    item(key = "artist_shimmer") {
+                        ArtistShimmerSkeleton(systemBarsTopPadding = systemBarsTopPadding)
+                    }
                 }
             } else {
                 item(key = "artist_hero_header") {
@@ -272,7 +282,7 @@ fun ArtistScreen(
                         descriptionRuns = if (!showLocal && showArtistDescription) artistPage?.descriptionRuns else null,
                         isSubscribed = isSubscribed,
                         hasRadio = !showLocal && !isGuest && artistPage?.artist?.radioEndpoint != null,
-                        hasShuffle = !showLocal && !isGuest && artistPage?.artist?.shuffleEndpoint != null || (librarySongs.isNotEmpty() && !isGuest),
+                        hasShuffle = !isGuest && (if (showLocal) librarySongs.isNotEmpty() else artistPage?.artist?.shuffleEndpoint != null),
                         hasLocalOption = librarySongs.isNotEmpty() && libraryArtist?.artist?.isLocal != true,
                         showLocal = showLocal,
                         onSubscribeToggle = {
@@ -327,7 +337,7 @@ fun ArtistScreen(
                                 val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                                 val clip = ClipData.newPlainText("Artist Link", link)
                                 clipboard.setPrimaryClip(clip)
-                                Toast.makeText(context, R.string.link_copied, Toast.LENGTH_SHORT).show()
+                                SnackbarManager.show(R.string.link_copied)
                             }
                         },
                         modifier = Modifier
@@ -411,7 +421,7 @@ fun ArtistScreen(
                                                 playerConnection.playQueue(
                                                     ListQueue(
                                                         title = artistName.ifEmpty { "Artist" },
-                                                        items = librarySongs.map { it.toMediaItem() },
+                                                        items = filteredLibrarySongs.map { it.toMediaItem() },
                                                         startIndex = index
                                                     )
                                                 )
@@ -487,16 +497,18 @@ fun ArtistScreen(
                     }
                 } else {
                     // Online Artist Sections
-                    artistPage?.sections?.fastForEach { section ->
+                    artistPage?.sections?.forEachIndexed { sectionIndex, section ->
                         if (section.items.isNotEmpty()) {
-                            item(key = "section_${section.title}") {
+                            item(key = "section_${sectionIndex}_${section.title}") {
                                 NavigationTitle(
                                     title = section.title,
                                     modifier = Modifier.padding(top = 12.dp),
                                     onClick = section.moreEndpoint?.let {
                                         {
+                                            val encodedBrowseId = android.net.Uri.encode(it.browseId)
+                                            val paramsQuery = it.params?.takeIf { p -> p.isNotBlank() }?.let { p -> "&params=${android.net.Uri.encode(p)}" }.orEmpty()
                                             navController.navigate(
-                                                "artist/${viewModel.artistId}/items?browseId=${it.browseId}?params=${it.params}",
+                                                "artist/${viewModel.artistId}/items?browseId=$encodedBrowseId$paramsQuery",
                                             )
                                         }
                                     },
@@ -510,7 +522,7 @@ fun ArtistScreen(
 
                             itemsIndexed(
                                 items = distinctSongs,
-                                key = { _, it -> "youtube_song_${it.id}" },
+                                key = { _, it -> "youtube_song_${sectionIndex}_${it.id}" },
                             ) { index, songItem ->
                                 val song = songItem as SongItem
                                 val durationStr = song.duration?.let { dur ->
@@ -592,7 +604,7 @@ fun ArtistScreen(
                             }
                         } else {
                             // Horizontal grid for albums/singles/playlists
-                            item(key = "section_grid_${section.title}") {
+                            item(key = "section_grid_${sectionIndex}_${section.title}") {
                                 LazyRow(
                                     contentPadding = PaddingValues(horizontal = 16.dp),
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -807,7 +819,7 @@ fun ArtistScreen(
                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
                             val clip = ClipData.newPlainText("Artist Link", link)
                             clipboard.setPrimaryClip(clip)
-                            Toast.makeText(context, R.string.link_copied, Toast.LENGTH_SHORT).show()
+                            SnackbarManager.show(R.string.link_copied)
                         }
                     },
                 ) {
@@ -1015,27 +1027,16 @@ private fun ArtistInfoAndBadges(
             color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
             border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
         ) {
-            Row(
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.check),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(12.dp)
-                )
-                Text(
-                    text = "VERIFIED ARTIST",
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 1.2.sp,
-                        fontSize = 10.sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
+            Text(
+                text = stringResource(R.string.artist).uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.2.sp,
+                    fontSize = 10.sp
+                ),
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+            )
         }
 
         Text(
@@ -1262,12 +1263,12 @@ private fun ArtistActionButtons(
         }
 
         // Secondary Options Row (Local switch & Share)
-        if (hasLocalOption) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (hasLocalOption) {
                 Surface(
                     modifier = Modifier
                         .height(38.dp)
@@ -1297,6 +1298,36 @@ private fun ArtistActionButtons(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                     }
+                }
+            }
+            Surface(
+                modifier = Modifier
+                    .height(38.dp)
+                    .mkrClickable(onClick = onShareClick),
+                shape = RoundedCornerShape(19.dp),
+                color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.share),
+                        contentDescription = stringResource(R.string.share),
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Text(
+                        text = stringResource(R.string.share),
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.SemiBold,
+                            fontSize = 12.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
                 }
             }
         }

@@ -60,6 +60,56 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             keywords = listOf("theme", "color", "accent", "amber", "dynamic theme", "monet", "palette", "dark mode", "light mode", "contrast", "custom color")
         ),
         SearchableSettingItem(
+            id = "player_style_architecture",
+            title = context.getString(R.string.player_style),
+            description = "Choose a full-player design",
+            category = "${context.getString(R.string.appearance)} · ${context.getString(R.string.appearance_full_player)}",
+            iconRes = R.drawable.palette,
+            route = "settings/appearance",
+            targetKey = "appearance_player_style",
+            keywords = listOf("player style", "layout", "minimal", "cinematic", "immersive"),
+        ),
+        SearchableSettingItem(
+            id = "appearance_player_background",
+            title = context.getString(R.string.player_background_style),
+            description = "Choose the full-player background",
+            category = "${context.getString(R.string.appearance)} · ${context.getString(R.string.appearance_full_player)}",
+            iconRes = R.drawable.gradient,
+            route = "settings/appearance",
+            targetKey = "appearance_player_background",
+            keywords = listOf("background", "artwork", "color", "blur", "gradient", "mesh"),
+        ),
+        SearchableSettingItem(
+            id = "player_apple_mini_player",
+            title = context.getString(R.string.mini_player),
+            description = "Choose the Classic, Expressive, or Apple mini-player style",
+            category = "${context.getString(R.string.appearance)} · ${context.getString(R.string.mini_player)}",
+            iconRes = R.drawable.nav_bar,
+            route = "settings/appearance",
+            targetKey = "appearance_apple_player",
+            keywords = listOf("mini player", "style", "apple", "classic", "expressive", "capsule"),
+        ),
+        SearchableSettingItem(
+            id = "player_pure_black_mini_player",
+            title = context.getString(R.string.pure_black_mini_player),
+            description = "Use a pure-black mini-player surface",
+            category = "${context.getString(R.string.appearance)} · ${context.getString(R.string.mini_player)}",
+            iconRes = R.drawable.contrast,
+            route = "settings/appearance",
+            targetKey = "appearance_pure_black_mini_player",
+            keywords = listOf("pure black mini", "oled", "dark mini player"),
+        ),
+        SearchableSettingItem(
+            id = "appearance_mini_player_background",
+            title = context.getString(R.string.miniplayer_background_style),
+            description = "Choose the mini-player background",
+            category = "${context.getString(R.string.appearance)} · ${context.getString(R.string.mini_player)}",
+            iconRes = R.drawable.palette,
+            route = "settings/appearance",
+            targetKey = "appearance_mini_player_background",
+            keywords = listOf("background", "artwork", "color", "blur", "gradient", "mesh"),
+        ),
+        SearchableSettingItem(
             id = "appearance_pure_black",
             title = "Pure Black OLED Mode",
             description = "Deep AMOLED true black background across player, library, navigation, and all surfaces to save battery",
@@ -75,7 +125,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             description = "Extract primary and secondary accent colors dynamically from current song's album art",
             category = "Appearance & Themes",
             iconRes = R.drawable.palette,
-            route = "settings/appearance/theme",
+            route = "settings/appearance",
             targetKey = "appearance_dynamic_theme",
             keywords = listOf("dynamic", "monet", "artwork theme", "album art color", "palette extraction", "adaptive theme")
         ),
@@ -98,6 +148,16 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             route = "settings/appearance",
             targetKey = "appearance_navigation_style",
             keywords = listOf("navbar", "navigation", "style", "glass", "capsule", "dock", "bottom bar", "floating", "telegram")
+        ),
+        SearchableSettingItem(
+            id = "appearance_auto_hide_nav",
+            title = "Auto-hide bottom navigation",
+            description = "Hide the bottom bar when scrolling down and reveal it when scrolling up",
+            category = "Appearance & Themes",
+            iconRes = R.drawable.nav_bar,
+            route = "settings/appearance",
+            targetKey = "appearance_auto_hide_nav",
+            keywords = listOf("auto hide", "navbar", "scroll", "bottom bar")
         ),
         SearchableSettingItem(
             id = "appearance_floating_nav",
@@ -206,7 +266,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Appearance & Themes",
             iconRes = R.drawable.album,
             route = "settings/appearance",
-            targetKey = "appearance_thumbnail_radius",
+            targetKey = "appearance_thumbnail_shadow",
             keywords = listOf("shadow", "elevation", "depth", "glow", "artwork shadow", "thumbnail elevation")
         ),
         SearchableSettingItem(
@@ -287,7 +347,7 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             id = "player_audio_offload",
             title = "Audio Offload to Hardware DSP",
             description = "Offload audio decoding directly to device DSP processor to dramatically save battery during playback",
-            category = "Player and Audio",
+            category = "Player and Audio · Advanced",
             iconRes = R.drawable.earbud_case,
             route = "settings/player",
             targetKey = "player_audio_offload",
@@ -390,18 +450,8 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             category = "Player and Audio",
             iconRes = R.drawable.skip_next,
             route = "settings/player",
-            targetKey = "player_persistent_queue",
+            targetKey = "player_auto_skip_error",
             keywords = listOf("skip on error", "playback error", "failed stream", "broken track", "skip unplayable")
-        ),
-        SearchableSettingItem(
-            id = "player_google_cast",
-            title = "Google Cast & Chromecast",
-            description = "Stream and cast music to Google Nest speakers, Smart TVs, and Chromecast devices",
-            category = "Player and Audio",
-            iconRes = R.drawable.earbud_case,
-            route = "settings/player",
-            targetKey = "player_google_cast",
-            keywords = listOf("cast", "chromecast", "google cast", "speakers", "nest", "tv", "stream to speaker", "wifi stream")
         ),
         SearchableSettingItem(
             id = "player_equalizer",
@@ -423,47 +473,6 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             targetKey = "player_equalizer",
             keywords = listOf("pitch", "speed", "tempo", "rate", "slow down", "speed up", "nightcore", "slowed", "playback speed")
         ),
-        SearchableSettingItem(
-            id = "player_style_architecture",
-            title = "Player Architectural Style",
-            description = "Classic, Modern Pill, Immersive Extended, Material Extended, Apple Music, Minimal, or Cinematic",
-            category = "Player and Audio",
-            iconRes = R.drawable.palette,
-            route = "settings/player",
-            targetKey = "appearance_player_style",
-            keywords = listOf("player style", "layout", "classic", "modern", "apple", "cinematic", "immersive", "material", "controls layout")
-        ),
-        SearchableSettingItem(
-            id = "player_apple_mini_player",
-            title = "Apple Mini Player",
-            description = "Floating translucent iOS-inspired mini player bar with high-fidelity blur",
-            category = "Player and Audio",
-            iconRes = R.drawable.nav_bar,
-            route = "settings/player",
-            targetKey = "appearance_apple_player",
-            keywords = listOf("mini player", "apple mini player", "ios", "floating mini", "capsule mini")
-        ),
-        SearchableSettingItem(
-            id = "player_liquid_mini_player",
-            title = "Liquid Wave Mini Player",
-            description = "Fluid animated liquid wave progress canvas along the bottom edge of mini player",
-            category = "Player and Audio",
-            iconRes = R.drawable.linear_scale,
-            route = "settings/player",
-            targetKey = "appearance_liquid_mini_player",
-            keywords = listOf("liquid", "wave", "liquid mini player", "fluid progress", "animated mini player")
-        ),
-        SearchableSettingItem(
-            id = "player_pure_black_mini_player",
-            title = "Pure Black Mini Player",
-            description = "Pitch-black background styling for the mini-player dock bar",
-            category = "Player and Audio",
-            iconRes = R.drawable.palette,
-            route = "settings/player",
-            targetKey = "appearance_pure_black",
-            keywords = listOf("pure black mini", "oled mini player", "dark mini player")
-        ),
-
         // ====================================================================
         // 3. SPONSORBLOCK
         // ====================================================================

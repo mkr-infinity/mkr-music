@@ -105,7 +105,6 @@
     <string name="player_thumbnail_shadow_depth">Skuggdjup</string>
     <string name="player_thumbnail_shadow_depth_desc">Justera intensitet och avstånd för skuggan</string>
     <string name="thumbnail_corner_radius">Hörnradie</string>
-    <string name="thumbnail_corner_radius_desc">Justera hörnradie</string>
     <string name="crop_album_art">Beskär albumomslag</string>
     <string name="crop_album_art_desc">Tvinga kvadratisk form genom beskärning</string>
     <string name="rotating_thumbnail">Roterande miniatyr</string>
@@ -151,7 +150,6 @@
     <string name="show_song_thumbnail_in_list_desc">Visa låtens omslag istället för spårnummer</string>
     <string name="album_settings">Albuminställningar</string>
     <string name="new_mini_player_design">Ny minispelare</string>
-    <string name="player_background_blur">Bakgrundsblur</string>
     <string name="player_buttons_style">Spelarknapparnas färger</string>
     <string name="default_style">Standard</string>
     <string name="primary_color_style">Primär färg</string>

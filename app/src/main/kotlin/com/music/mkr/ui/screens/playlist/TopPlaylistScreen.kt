@@ -84,7 +84,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.util.fastForEachReversed
-import androidx.compose.ui.util.fastSumBy
 import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.media3.exoplayer.offline.Download
@@ -136,7 +135,7 @@ fun TopPlaylistScreen(
     val mutableSongs = remember { mutableStateListOf<Song>() }
 
     val likeLength = remember(songs) {
-        songs?.fastSumBy { it.song.duration } ?: 0
+        songs?.collectionDurationSeconds { it.song.duration }
     }
 
     var isSearching by remember { mutableStateOf(false) }
@@ -279,6 +278,7 @@ fun TopPlaylistScreen(
                                 likeLength = likeLength,
                                 downloadState = downloadState,
                                 onShowRemoveDownloadDialog = { showRemoveDownloadDialog = true },
+                                onStartSearch = { isSearching = true },
                                 menuState = menuState,
                                 modifier = Modifier.animateItem()
                             )
@@ -506,15 +506,6 @@ fun TopPlaylistScreen(
                             contentDescription = null
                         )
                     }
-                } else if (!isSearching) {
-                    IconButton(
-                        onClick = { isSearching = true }
-                    ) {
-                        Icon(
-                            painter = painterResource(R.drawable.search),
-                            contentDescription = stringResource(R.string.search)
-                        )
-                    }
                 }
             }
         )
@@ -525,9 +516,10 @@ fun TopPlaylistScreen(
 private fun TopPlaylistHeader(
     name: String,
     songs: List<Song>,
-    likeLength: Int,
+    likeLength: Long?,
     downloadState: Int,
     onShowRemoveDownloadDialog: () -> Unit,
+    onStartSearch: () -> Unit,
     menuState: com.music.mkr.ui.component.MenuState,
     modifier: Modifier = Modifier
 ) {
@@ -540,55 +532,14 @@ private fun TopPlaylistHeader(
             .background(MaterialTheme.colorScheme.surface),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Spacer(Modifier.height(50.dp))
-
-        // Playlist Artwork - Large and centered
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 48.dp)
-        ) {
-            AsyncImage(
-                model = songs[0].thumbnailUrl,
-                contentDescription = null,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .aspectRatio(1f)
-                    .clip(RoundedCornerShape(8.dp)),
-                contentScale = ContentScale.Crop
-            )
+        CollectionHeader(title = name, songCount = songs.size, durationSeconds = likeLength) {
+            CollectionCover(listOfNotNull(songs.firstOrNull()?.thumbnailUrl), R.drawable.queue_music)
         }
 
-        Spacer(Modifier.height(32.dp))
-
         Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp)
-                .padding(bottom = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            // Title row with icon
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    painter = painterResource(R.drawable.queue_music),
-                    contentDescription = null,
-                    modifier = Modifier.size(30.dp),
-                    tint = MaterialTheme.colorScheme.onSurface
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    text = name,
-                    style = MaterialTheme.typography.headlineMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Spacer(Modifier.height(24.dp))
-
             val isDark = MaterialTheme.colorScheme.surface.luminance() < 0.5f
             val liquidBorder = BorderStroke(
                 1.dp,
@@ -767,22 +718,34 @@ private fun TopPlaylistHeader(
                         )
                     }
                 }
+
+                // Search Button - circular
+                val searchHeaderPress = remember { MutableInteractionSource() }
+                Surface(
+                    interactionSource = searchHeaderPress,
+                    onClick = onStartSearch,
+                    shape = CircleShape,
+                    color = liquidContainer,
+                    border = liquidBorder,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .mkrPressFeedback(interactionSource = searchHeaderPress)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize()
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.search),
+                            contentDescription = stringResource(R.string.search),
+                            modifier = Modifier.size(18.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
 
             Spacer(Modifier.height(16.dp))
-
-            // Song count & duration
-            Text(
-                text = buildString {
-                    append(pluralStringResource(R.plurals.n_song, songs.size, songs.size))
-                    if (likeLength > 0) {
-                        append(" • ")
-                        append(makeTimeString(likeLength * 1000L))
-                    }
-                },
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
 
             Spacer(Modifier.height(16.dp))
 

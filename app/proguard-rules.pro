@@ -97,11 +97,6 @@
 -dontwarn java.beans.PropertyDescriptor
 
 ##──────────────────────────────────────────────────────────────────────────────
-## 9. Kuromoji (Japanese tokenizer)
-##──────────────────────────────────────────────────────────────────────────────
--keep class com.atilika.kuromoji.** { *; }
-
-##──────────────────────────────────────────────────────────────────────────────
 ## 10. Queue / Playback Persistence
 ##──────────────────────────────────────────────────────────────────────────────
 -keep class com.music.mkr.models.PersistQueue { *; }
@@ -122,11 +117,8 @@
 -keep interface com.yalantis.ucrop** { *; }
 
 ##──────────────────────────────────────────────────────────────────────────────
-## 12. Google Cast
+## 12. Jsoup (optional re2j regex engine)
 ##──────────────────────────────────────────────────────────────────────────────
--keep class com.music.mkr.cast.** { *; }
--keep class com.google.android.gms.cast.** { *; }
--keep class androidx.mediarouter.** { *; }
 -dontwarn com.google.re2j.**
 
 ##──────────────────────────────────────────────────────────────────────────────

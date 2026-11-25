@@ -21,27 +21,29 @@ import android.os.IBinder
 import android.view.View
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.snap
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.add
 import androidx.compose.foundation.layout.asPaddingValues
@@ -49,6 +51,7 @@ import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -57,13 +60,10 @@ import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialogDefaults
-import androidx.compose.material3.Badge
-import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -74,7 +74,6 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
-import com.music.mkr.mkrmusic.updater.ReleasePreviewState
 import com.music.mkr.constants.LastSeenStarPromptVersionKey
 import com.music.mkr.constants.HasStarredRepoKey
 import com.music.mkr.constants.HasShownSupportPromptKey
@@ -119,6 +118,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
@@ -151,7 +153,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import coil3.compose.AsyncImage
+import coil3.compose.SubcomposeAsyncImage
 import coil3.imageLoader
 import coil3.request.CachePolicy
 import coil3.request.ImageRequest
@@ -168,6 +170,7 @@ import com.music.mkr.constants.DefaultOpenTabKey
 import com.music.mkr.constants.DisableScreenshotKey
 import com.music.mkr.constants.DynamicThemeKey
 import com.music.mkr.constants.EnableHighRefreshRateKey
+import com.music.mkr.constants.InterfaceAnimationsKey
 import com.music.mkr.constants.ListenTogetherInTopBarKey
 import com.music.mkr.constants.ListenTogetherUsernameKey
 import com.music.mkr.constants.MiniPlayerBottomSpacing
@@ -191,13 +194,12 @@ import com.music.mkr.constants.PauseSearchHistoryKey
 import com.music.mkr.constants.PureBlackKey
 import com.music.mkr.constants.SYSTEM_DEFAULT
 import com.music.mkr.constants.SelectedThemeColorKey
-import com.music.mkr.constants.SlimNavBarHeight
+import com.music.mkr.constants.AutoHideNavBarKey
 import com.music.mkr.constants.SlimNavBarKey
-import com.music.mkr.constants.FloatingNavBarKey
 import com.music.mkr.constants.NavigationStyle
 import com.music.mkr.constants.NavigationStyleKey
-import com.music.mkr.constants.UseNewMiniPlayerDesignKey
 import com.music.mkr.constants.UseAppleMiniPlayerKey
+import com.music.mkr.constants.UseNewMiniPlayerDesignKey
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.SearchHistory
 import com.music.mkr.extensions.toEnum
@@ -209,9 +211,12 @@ import com.music.mkr.playback.MusicService.MusicBinder
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.playback.queues.YouTubeQueue
 import com.music.mkr.ui.component.AppNavigationBar
+import com.music.mkr.ui.component.bottomNavigationHeight
 import com.music.mkr.ui.component.AppNavigationRail
 import com.music.mkr.ui.component.BottomSheetMenu
 import com.music.mkr.ui.component.BottomSheetPage
+import com.music.mkr.ui.component.PlaybackCookieButton
+import com.music.mkr.ui.component.rememberPlaybackCookieAngle
 import com.music.mkr.ui.component.ExpressiveIconButton
 import com.music.mkr.ui.component.LocalBottomSheetPageState
 import com.music.mkr.ui.component.LocalMenuState
@@ -229,6 +234,11 @@ import com.music.mkr.ui.theme.mkrMusicTheme
 import com.music.mkr.ui.theme.extractThemeColor
 import com.music.mkr.ui.utils.appBarScrollBehavior
 import com.music.mkr.ui.utils.resetHeightOffset
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.core.graphics.drawable.toBitmap
+import com.music.mkr.constants.AppIconKey
+import com.music.mkr.utils.AppIcon
+import com.music.mkr.utils.IconUtils
 import com.music.mkr.utils.SyncUtils
 import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.get
@@ -249,8 +259,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
-import java.net.URLDecoder
-import java.net.URLEncoder
 import java.util.Locale
 import com.music.mkr.github.GitHubViewModel
 import javax.inject.Inject
@@ -288,6 +296,7 @@ class MainActivity : ComponentActivity() {
     private val serviceConnection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             if (service is MusicBinder) {
+                playerConnection?.dispose()
                 try {
                     playerConnection = PlayerConnection(this@MainActivity, service, database, lifecycleScope)
                     Timber.tag("MainActivity").d("PlayerConnection created successfully")
@@ -326,13 +335,8 @@ class MainActivity : ComponentActivity() {
             }
         }
 
-        // Start and bind service so it remains active in background when task is detached
+        // Media3 starts the foreground service when the bound session begins playback.
         val serviceIntent = Intent(this, MusicService::class.java)
-        try {
-            startService(serviceIntent)
-        } catch (e: Exception) {
-            Timber.e(e, "Could not startService directly from Activity")
-        }
         isServiceBound = bindService(
             serviceIntent,
             serviceConnection,
@@ -341,6 +345,9 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onStop() {
+        listenTogetherManager.setPlayerConnection(null)
+        playerConnection?.dispose()
+        playerConnection = null
         if (isServiceBound) {
             try {
                 unbindService(serviceConnection)
@@ -353,6 +360,13 @@ class MainActivity : ComponentActivity() {
             com.music.mkr.utils.IconUtils.applyPendingIconIfAny(this@MainActivity)
         }
         super.onStop()
+    }
+
+    override fun onDestroy() {
+        listenTogetherManager.setPlayerConnection(null)
+        playerConnection?.dispose()
+        playerConnection = null
+        super.onDestroy()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -373,12 +387,14 @@ class MainActivity : ComponentActivity() {
             Timber.e(e, "SplashScreen install failed in MainActivity")
         }
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
+        lifecycleScope.launch(Dispatchers.IO) {
+            IconUtils.applyPendingIconIfAny(this@MainActivity)
+        }
         window.decorView.layoutDirection = View.LAYOUT_DIRECTION_LTR
         WindowCompat.setDecorFitsSystemWindows(window, false)
 
-        val sp = getSharedPreferences("app_state", Context.MODE_PRIVATE)
-        val hasCompletedOnboarding = sp.getBoolean("has_completed_onboarding", false) || !dataStore.get(com.music.mkr.constants.IsFirstRunKey, true)
-        if (!hasCompletedOnboarding) {
+        if (!hasCompletedOnboardingForCurrentVersion()) {
             val welcomeIntent = Intent(this, WelcomeActivity::class.java).apply {
                 this@MainActivity.intent?.extras?.let { putExtras(it) }
                 action = this@MainActivity.intent?.action
@@ -388,10 +404,6 @@ class MainActivity : ComponentActivity() {
             finish()
             return
         }
-
-        sp.edit()
-            .putBoolean("has_completed_onboarding", true)
-            .apply()
 
         // Initialize Listen Together manager
         listenTogetherManager.initialize()
@@ -447,8 +459,7 @@ class MainActivity : ComponentActivity() {
         LaunchedEffect(Unit) {
             SnackbarManager.events.collectLatest { event ->
                 snackbarHostState.currentSnackbarData?.dismiss()
-                val messageStr = event.messageArgs?.let { context.getString(event.messageResource, it) }
-                    ?: context.getString(event.messageResource)
+                val messageStr = event.resolveMessage(context)
                 val actionLabelStr = event.actionLabel?.let { context.getString(it) }
                 val result = if (event.iconRes != null) {
                     snackbarHostState.showSnackbar(SnackbarManager.PlaylistVisuals(messageStr, event.duration, event.iconRes))
@@ -480,7 +491,7 @@ class MainActivity : ComponentActivity() {
                 delay(2000L)
                 checkForUpdate(
                     context = context,
-                    onSuccess = { latestVersion, isAvailable, _, _, _, _, _, _ ->
+                    onSuccess = { latestVersion, isAvailable, _, _, _, _, _, apkUrl ->
                         if (!getAutoUpdateCheckSetting(context)) {
                             Log.d("UpdateCheck", "Auto update check disabled while in-flight; skipping startup update notification")
                             return@checkForUpdate
@@ -489,7 +500,7 @@ class MainActivity : ComponentActivity() {
                         Log.d("UpdateCheck", "Startup check success. Latest: $latestVersion, Current: $currentVersion, isAvailable: $isAvailable")
                         saveUpdateAvailableState(context, isAvailable)
 
-                        if (isAvailable && getUpdateNotificationsSetting(context)) {
+                        if (isAvailable && apkUrl != null && getUpdateNotificationsSetting(context)) {
                             Log.d("UpdateCheck", "Posting update notification for $latestVersion")
                             UpdateNotificationHelper.showUpdateNotification(context, latestVersion)
                         }
@@ -780,6 +791,7 @@ class MainActivity : ComponentActivity() {
                 val windowsInsets = WindowInsets.systemBars
                 val bottomInset = with(density) { windowsInsets.getBottom(density).toDp() }
                 val bottomInsetDp = WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
+                val isImeVisible = WindowInsets.ime.getBottom(density) > 0
 
                 val navController = rememberNavController()
                 val homeViewModel: HomeViewModel = hiltViewModel()
@@ -790,6 +802,7 @@ class MainActivity : ComponentActivity() {
                 // in background immediately — zero lag when user opens the Search screen
                 hiltViewModel<SuggestionsViewModel>()
                 val accountImageUrl by homeViewModel.accountImageUrl.collectAsState()
+                val accountName by homeViewModel.accountName.collectAsState()
                 val isLoggedIn by homeViewModel.isLoggedIn.collectAsState()
                 val updateState by homeViewModel.updateState.collectAsState()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
@@ -797,10 +810,11 @@ class MainActivity : ComponentActivity() {
 
                 val (listenTogetherInTopBar) = rememberPreference(ListenTogetherInTopBarKey, defaultValue = true)
                 val navigationItems = remember { Screens.MainScreens }
+                val (autoHideNav) = rememberPreference(AutoHideNavBarKey, true)
+                val interfaceAnimations by rememberPreference(InterfaceAnimationsKey, true)
                 val (slimNav) = rememberPreference(SlimNavBarKey, defaultValue = false)
-                val (floatingNav) = rememberPreference(FloatingNavBarKey, defaultValue = true)
                 val (navigationStyle) = rememberEnumPreference(NavigationStyleKey, defaultValue = NavigationStyle.DEFAULT)
-                val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = true)
+                val (useNewMiniPlayerDesign) = rememberPreference(UseNewMiniPlayerDesignKey, defaultValue = false)
                 val (useAppleMiniPlayer) = rememberPreference(UseAppleMiniPlayerKey, defaultValue = false)
                 val defaultOpenTab = remember {
                     dataStore[DefaultOpenTabKey].toEnum(defaultValue = NavigationTab.HOME)
@@ -832,7 +846,7 @@ class MainActivity : ComponentActivity() {
                 val onSearch: (String) -> Unit = remember {
                     { searchQuery ->
                         if (searchQuery.isNotEmpty()) {
-                            navController.navigate("search/${URLEncoder.encode(searchQuery, "UTF-8")}")
+                            navController.navigate("search/${Uri.encode(searchQuery)}")
 
                             if (dataStore[PauseSearchHistoryKey] != true) {
                                 lifecycleScope.launch(Dispatchers.IO) {
@@ -872,60 +886,68 @@ class MainActivity : ComponentActivity() {
 
                 val showRail = isLandscape && !inSearchResultScreen
 
-                val navPadding = if (shouldShowNavigationBar && !showRail) {
-                    if (slimNav) SlimNavBarHeight else NavigationBarHeight
-                } else {
-                    0.dp
+                val canAutoHideNav = autoHideNav && shouldShowNavigationBar && !showRail
+                var navHiddenByScroll by remember(currentRoute, canAutoHideNav) { mutableStateOf(false) }
+                val scrollThreshold = with(LocalDensity.current) { 24.dp.toPx() }
+                val navScrollConnection = remember(currentRoute, canAutoHideNav, scrollThreshold) {
+                    object : NestedScrollConnection {
+                        private var travel = 0f
+
+                        override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                            if (!canAutoHideNav || source != NestedScrollSource.UserInput) return Offset.Zero
+
+                            val delta = if (navHiddenByScroll) consumed.y + available.y else consumed.y
+                            if (delta == 0f) return Offset.Zero
+                            if ((delta > 0f) != (travel > 0f)) travel = 0f
+                            travel += delta
+                            if (travel <= -scrollThreshold && !navHiddenByScroll) {
+                                navHiddenByScroll = true
+                                travel = 0f
+                            } else if (travel >= scrollThreshold && navHiddenByScroll) {
+                                navHiddenByScroll = false
+                                travel = 0f
+                            }
+                            return Offset.Zero
+                        }
+                    }
                 }
+                val bottomNavVisible = shouldShowNavigationBar && !showRail && !navHiddenByScroll
+                val fullNavHeight = bottomNavigationHeight(navigationStyle, slimNav)
+                val miniPlayerGap = if (useNewMiniPlayerDesign || useAppleMiniPlayer || navigationStyle.isFloating) MiniPlayerBottomSpacing else 0.dp
+                val navPadding = if (bottomNavVisible) fullNavHeight else 0.dp
 
                 val navigationBarHeight by animateDpAsState(
-                    targetValue = if (shouldShowNavigationBar && !showRail) NavigationBarHeight else 0.dp,
-                    animationSpec = NavigationBarAnimationSpec,
+                    targetValue = navPadding,
+                    animationSpec = if (interfaceAnimations) NavigationBarAnimationSpec else snap(),
                     label = "navBarHeight",
                 )
+                val hasAnimatedNavHeight by remember { derivedStateOf { navigationBarHeight > 0.dp } }
 
-                val isSnackbarShowing = snackbarHostState.currentSnackbarData != null
-                val extraSnackbarHeight by animateDpAsState(
-                    targetValue = if (isSnackbarShowing) 64.dp else 0.dp,
-                    label = "snackbarHeight"
-                )
-
+                val stableNavHeight = if (shouldShowNavigationBar && !showRail) fullNavHeight else 0.dp
                 val playerBottomSheetState = rememberBottomSheetState(
                     dismissedBound = 0.dp,
                     collapsedBound = bottomInset +
-                        (if (!showRail && shouldShowNavigationBar) navPadding else 0.dp) +
-                        extraSnackbarHeight +
-                        (if (useNewMiniPlayerDesign || useAppleMiniPlayer) {
-                            if (navigationStyle == NavigationStyle.CLEAN_MATERIAL) 0.dp else MiniPlayerBottomSpacing
-                        } else 0.dp) +
+                        stableNavHeight +
+                        miniPlayerGap +
                         MiniPlayerHeight,
                     expandedBound = maxHeight,
                 )
 
                 val playerAwareWindowInsets = remember(
                     bottomInset,
-                    shouldShowNavigationBar,
+                    navigationBarHeight,
+                    miniPlayerGap,
                     playerBottomSheetState.isDismissed,
-                    showRail,
-                    extraSnackbarHeight
+                    windowsInsets,
+                    inSearchScreen,
                 ) {
-                    var bottom = bottomInset
-                    if (shouldShowNavigationBar && !showRail) {
-                        bottom += NavigationBarHeight
-                    }
-                    bottom += extraSnackbarHeight
-                    if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight
+                    var bottom = bottomInset + navigationBarHeight
+                    if (!playerBottomSheetState.isDismissed) bottom += MiniPlayerHeight + miniPlayerGap
+                    val top = if (inSearchScreen) 0.dp else AppBarHeight
                     windowsInsets
                         .only(WindowInsetsSides.Horizontal + WindowInsetsSides.Top)
-                        .add(WindowInsets(top = AppBarHeight, bottom = bottom))
+                        .add(WindowInsets(top = top, bottom = bottom))
                 }
-                appBarScrollBehavior(
-                    canScroll = {
-                        !inSearchScreen &&
-                            (playerBottomSheetState.isCollapsed || playerBottomSheetState.isDismissed)
-                    }
-                )
-
                 val topAppBarScrollBehavior = appBarScrollBehavior(
                     canScroll = {
                         !inSearchScreen &&
@@ -936,14 +958,7 @@ class MainActivity : ComponentActivity() {
                 // Navigation tracking
                 LaunchedEffect(navBackStackEntry) {
                     if (inSearchResultScreen) {
-                        val searchQuery = withContext(Dispatchers.IO) {
-                            val rawQuery = navBackStackEntry?.arguments?.getString("query").orEmpty()
-                            try {
-                                URLDecoder.decode(rawQuery, "UTF-8")
-                            } catch (e: Exception) {
-                                rawQuery
-                            }
-                        }
+                        val searchQuery = navBackStackEntry?.arguments?.getString("query").orEmpty()
                         onQueryChange(
                             TextFieldValue(
                                 searchQuery,
@@ -952,13 +967,6 @@ class MainActivity : ComponentActivity() {
                         )
                     } else if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route } || navBackStackEntry?.destination?.route == "search") {
                         onQueryChange(TextFieldValue())
-                    }
-
-                    // Reset scroll behavior for main navigation items
-                    if (navigationItems.fastAny { it.route == navBackStackEntry?.destination?.route }) {
-                        if (navigationItems.fastAny { it.route == previousTab }) {
-                            topAppBarScrollBehavior.state.resetHeightOffset()
-                        }
                     }
 
                     topAppBarScrollBehavior.state.resetHeightOffset()
@@ -1003,18 +1011,13 @@ class MainActivity : ComponentActivity() {
                     }
                 }
 
-                var shouldShowTopBar by rememberSaveable { mutableStateOf(false) }
-
-                LaunchedEffect(navBackStackEntry, listenTogetherInTopBar) {
-                    val currentRoute = navBackStackEntry?.destination?.route
-                    val isListenTogetherScreen = currentRoute == Screens.ListenTogether.route || 
-                        currentRoute == "listen_together_from_topbar"
-                    shouldShowTopBar = currentRoute in topLevelScreens &&
-                        currentRoute != "settings" &&
-                        currentRoute != Screens.Search.route &&
-                        currentRoute != "search" &&
-                        !(isListenTogetherScreen && listenTogetherInTopBar)
-                }
+                val isListenTogetherScreen = currentRoute == Screens.ListenTogether.route ||
+                    currentRoute == "listen_together_from_topbar"
+                val shouldShowTopBar = currentRoute in topLevelScreens &&
+                    currentRoute != "settings" &&
+                    currentRoute != Screens.Search.route &&
+                    currentRoute != "search" &&
+                    !(isListenTogetherScreen && listenTogetherInTopBar)
 
                 val sharedPrefs = context.getSharedPreferences("settings", android.content.Context.MODE_PRIVATE)
                 val isUpdateAvailable = remember {
@@ -1090,8 +1093,9 @@ class MainActivity : ComponentActivity() {
                 ) {
                     Scaffold(
                         containerColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface,
+                        contentWindowInsets = WindowInsets(0, 0, 0, 0),
                         topBar = {
-                            AnimatedVisibility(
+                            if (currentRoute != "settings") AnimatedVisibility(
                                 visible = shouldShowTopBar,
                                 enter = fadeIn(animationSpec = tween(durationMillis = 300)),
                                 exit = fadeOut(animationSpec = tween(durationMillis = 200))
@@ -1136,18 +1140,38 @@ class MainActivity : ComponentActivity() {
                                                         size = 38.dp,
                                                         borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
                                                     ) {
-                                                        Image(
-                                                            painter = painterResource(R.drawable.icon),
-                                                            contentDescription = stringResource(
-                                                                R.string.open_about_app,
-                                                                stringResource(R.string.app_name),
-                                                            ),
-                                                            modifier = Modifier
-                                                                .fillMaxSize()
-                                                                .padding(5.dp)
-                                                                .clip(RoundedCornerShape(8.dp)),
-                                                            contentScale = ContentScale.Crop
+                                                        val (selectedAppIconKey) = rememberPreference(
+                                                            AppIconKey,
+                                                            AppIcon.DEFAULT.key,
                                                         )
+                                                        val launcherIconBitmap = remember(selectedAppIconKey, context) {
+                                                            IconUtils.getActiveLauncherIcon(context)
+                                                                ?.toBitmap()
+                                                                ?.asImageBitmap()
+                                                        }
+                                                        val appLogoDesc = stringResource(
+                                                            R.string.open_about_app,
+                                                            stringResource(R.string.app_name),
+                                                        )
+                                                        val appLogoModifier = Modifier
+                                                            .fillMaxSize()
+                                                            .padding(5.dp)
+                                                            .clip(RoundedCornerShape(8.dp))
+                                                        if (launcherIconBitmap != null) {
+                                                            Image(
+                                                                bitmap = launcherIconBitmap,
+                                                                contentDescription = appLogoDesc,
+                                                                modifier = appLogoModifier,
+                                                                contentScale = ContentScale.Crop
+                                                            )
+                                                        } else {
+                                                            Image(
+                                                                painter = painterResource(R.drawable.icon),
+                                                                contentDescription = appLogoDesc,
+                                                                modifier = appLogoModifier,
+                                                                contentScale = ContentScale.Crop
+                                                            )
+                                                        }
                                                     }
 
                                                     Text(
@@ -1167,18 +1191,12 @@ class MainActivity : ComponentActivity() {
                                                     verticalAlignment = Alignment.CenterVertically,
                                                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                                                 ) {
-                                                    ExpressiveIconButton(
-                                                        onClick = { },
-                                                        size = 38.dp,
-                                                        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f)
-                                                    ) {
-                                                        Icon(
-                                                            painter = painterResource(R.drawable.library_music),
-                                                            contentDescription = stringResource(R.string.filter_library),
-                                                            tint = MaterialTheme.colorScheme.primary,
-                                                            modifier = Modifier.size(20.dp)
-                                                        )
-                                                    }
+                                                    Icon(
+                                                        painter = painterResource(R.drawable.library_music),
+                                                        contentDescription = null,
+                                                        tint = MaterialTheme.colorScheme.primary,
+                                                        modifier = Modifier.size(22.dp),
+                                                    )
 
                                                     Text(
                                                         text = stringResource(R.string.filter_library),
@@ -1212,20 +1230,22 @@ class MainActivity : ComponentActivity() {
                                         actions = {
                                             Row(
                                                 verticalAlignment = Alignment.CenterVertically,
-                                                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                                modifier = Modifier.padding(end = 12.dp)
+                                                horizontalArrangement = Arrangement.spacedBy(if (isHome) 2.dp else 8.dp),
+                                                modifier = Modifier.padding(end = if (isHome) 4.dp else 12.dp)
                                             ) {
-                                                // Listening History navigation action (expressive squircle capsule)
+                                                val actionFace = MaterialTheme.colorScheme.primaryContainer
+                                                val actionInk = MaterialTheme.colorScheme.onPrimaryContainer
                                                 if (showHistoryButton) {
-                                                    val historyDesc = stringResource(R.string.listening_history)
-                                                    ExpressiveIconButton(
-                                                        onClick = { navController.navigate("history") }
+                                                    PlaybackCookieButton(
+                                                        onClick = { navController.navigate("history") },
+                                                        color = actionFace,
+                                                        angle = null,
                                                     ) {
                                                         Icon(
                                                             painter = painterResource(R.drawable.history),
-                                                            contentDescription = historyDesc,
-                                                            tint = MaterialTheme.colorScheme.onSurface,
-                                                            modifier = Modifier.size(20.dp)
+                                                            contentDescription = stringResource(R.string.listening_history),
+                                                            tint = actionInk,
+                                                            modifier = Modifier.size(20.dp),
                                                         )
                                                     }
                                                 }
@@ -1233,43 +1253,53 @@ class MainActivity : ComponentActivity() {
                                                 // Account-aware button reactive to auth state (hidden when not authenticated)
                                                 if (isLoggedIn) {
                                                     val accountDesc = stringResource(R.string.account)
-                                                    ExpressiveIconButton(
-                                                        onClick = { navController.navigate("settings/account") }
+                                                    val initials = remember(accountName, accountDesc) {
+                                                        val name = accountName.takeUnless { it.isBlank() || it == "Guest" } ?: accountDesc
+                                                        name.trim().split(Regex("\\s+")).take(2)
+                                                            .joinToString("") { it.take(1).uppercase() }
+                                                    }
+                                                    PlaybackCookieButton(
+                                                        onClick = { navController.navigate("settings/account") },
+                                                        color = actionFace,
+                                                        modifier = Modifier.semantics { contentDescription = accountDesc },
+                                                        angle = null,
                                                     ) {
-                                                        if (accountImageUrl != null) {
-                                                            AsyncImage(
-                                                                model = accountImageUrl,
-                                                                contentDescription = accountDesc,
-                                                                contentScale = ContentScale.Crop,
-                                                                modifier = Modifier
-                                                                    .size(26.dp)
-                                                                    .clip(RoundedCornerShape(8.dp))
-                                                                    .border(
-                                                                        width = 1.dp,
-                                                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                                                                        shape = RoundedCornerShape(8.dp)
-                                                                    )
+                                                        val initialsContent: @Composable () -> Unit = {
+                                                            Text(
+                                                                initials,
+                                                                color = actionInk,
+                                                                style = MaterialTheme.typography.labelSmall,
+                                                                maxLines = 1,
                                                             )
+                                                        }
+                                                        if (accountImageUrl.isNullOrBlank()) {
+                                                            initialsContent()
                                                         } else {
-                                                            Icon(
-                                                                painter = painterResource(R.drawable.account),
-                                                                contentDescription = accountDesc,
-                                                                tint = MaterialTheme.colorScheme.onSurface,
-                                                                modifier = Modifier.size(20.dp)
+                                                            SubcomposeAsyncImage(
+                                                                model = accountImageUrl,
+                                                                contentDescription = null,
+                                                                contentScale = ContentScale.Crop,
+                                                                modifier = Modifier.size(26.dp).clip(CircleShape),
+                                                                loading = { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { initialsContent() } },
+                                                                error = { Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { initialsContent() } },
                                                             )
                                                         }
                                                     }
                                                 }
 
-                                                // Settings navigation action (expressive squircle capsule)
-                                                val settingsDesc = stringResource(R.string.settings)
-                                                ExpressiveIconButton(
-                                                    onClick = { navController.navigate("settings") }
+                                                val settingsAngle = rememberPlaybackCookieAngle(
+                                                    playerConnection,
+                                                    visible = shouldShowTopBar && !playerBottomSheetState.isExpanded,
+                                                )
+                                                PlaybackCookieButton(
+                                                    onClick = { navController.navigate("settings") },
+                                                    color = actionFace,
+                                                    angle = settingsAngle,
                                                 ) {
                                                     Icon(
                                                         painter = painterResource(R.drawable.settings),
-                                                        contentDescription = settingsDesc,
-                                                        tint = MaterialTheme.colorScheme.onSurface,
+                                                        contentDescription = stringResource(R.string.settings),
+                                                        tint = actionInk,
                                                         modifier = Modifier.size(20.dp)
                                                     )
                                                 }
@@ -1322,33 +1352,27 @@ class MainActivity : ComponentActivity() {
                             val onSearchLongClick: (() -> Unit)? = null
 
                             // Pre-calculate values for graphicsLayer to avoid reading state during composition
-                            val navBarTotalHeight = bottomInset + NavigationBarHeight
+                            val navBarTotalHeight = bottomInset + fullNavHeight
+                            val playerTranslationModifier = Modifier.graphicsLayer {
+                                val progress = playerBottomSheetState.progress.coerceIn(0f, 1f)
+                                if (progress < 1f && shouldShowNavigationBar && !showRail) {
+                                    val navBarHeightPx = navigationBarHeight.toPx()
+                                    val fullNavHeightPx = fullNavHeight.toPx()
+                                    val hideOffset = (fullNavHeightPx - navBarHeightPx).coerceAtLeast(0f)
+                                    translationY = hideOffset * (1f - progress)
+                                }
+                            }
 
                             if (!showRail && currentRoute != "wrapped" && currentRoute != "update" && currentRoute != "listen_together/chat") {
                                 Box {
                                     BottomSheetPlayer(
                                         state = playerBottomSheetState,
                                         navController = navController,
-                                        pureBlack = pureBlack
+                                        pureBlack = pureBlack,
+                                        modifier = playerTranslationModifier
                                     )
 
-                                    val snackbarBottomPadding = remember(bottomInset, shouldShowNavigationBar, slimNav) {
-                                        var bottom = bottomInset
-                                        if (shouldShowNavigationBar) {
-                                            bottom += if (slimNav) SlimNavBarHeight else NavigationBarHeight
-                                        }
-                                        bottom
-                                    }
-
-                                    MkrSnackbarHost(
-                                        state = snackbarHostState,
-                                        modifier = Modifier
-                                            .align(Alignment.BottomCenter)
-                                            .padding(bottom = snackbarBottomPadding),
-                                        standardAlpha = { (1f - playerBottomSheetState.progress).coerceIn(0f, 1f) },
-                                    )
-
-                                    AppNavigationBar(
+                                    if (bottomNavVisible || hasAnimatedNavHeight) AppNavigationBar(
                                         navigationItems = navigationItems,
                                         currentRoute = currentRoute,
                                         onItemClick = onNavItemClick,
@@ -1356,11 +1380,10 @@ class MainActivity : ComponentActivity() {
                                         slimNav = slimNav,
                                         onSearchLongClick = onSearchLongClick,
                                         navigationStyle = navigationStyle,
-                                        floatingNav = floatingNav,
                                         bottomInset = bottomInset,
                                         modifier = Modifier
                                             .align(Alignment.BottomCenter)
-                                            .height(bottomInset + navPadding)
+                                            .height(navBarTotalHeight)
                                             // Use graphicsLayer instead of offset to avoid recomposition
                                             // graphicsLayer runs during draw phase, not composition phase
                                             .graphicsLayer {
@@ -1373,7 +1396,7 @@ class MainActivity : ComponentActivity() {
                                                     // Read progress only during draw phase
                                                     val progress = playerBottomSheetState.progress.coerceIn(0f, 1f)
                                                     val slideOffset = totalHeightPx * progress
-                                                    val hideOffset = totalHeightPx * (1 - navBarHeightPx / NavigationBarHeight.toPx())
+                                                    val hideOffset = totalHeightPx * (1 - navBarHeightPx / fullNavHeight.toPx())
                                                     slideOffset + hideOffset
                                                 }
                                             }
@@ -1387,24 +1410,19 @@ class MainActivity : ComponentActivity() {
                                             // Use graphicsLayer for background color changes
                                             .graphicsLayer {
                                                 val progress = playerBottomSheetState.progress
-                                                alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar) || navigationStyle.isFloating) 0f else 1f
+                                                alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar) || navigationStyle.isFloating || navHiddenByScroll || isImeVisible) 0f else 1f
                                             }
                                             .background(baseBg)
                                     )
                                 }
                             } else {
                                 if (currentRoute != "wrapped" && currentRoute != "update" && currentRoute != "listen_together/chat") {
-                                    Box(modifier = Modifier.fillMaxWidth()) {
+                                    Box(modifier = Modifier.fillMaxWidth().padding(start = if (showRail) 96.dp else 0.dp)) {
                                         BottomSheetPlayer(
                                             state = playerBottomSheetState,
                                             navController = navController,
-                                            pureBlack = pureBlack
-                                        )
-
-                                        MkrSnackbarHost(
-                                            state = snackbarHostState,
-                                            modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = bottomInset),
-                                            playlistOnly = true,
+                                            pureBlack = pureBlack,
+                                            modifier = playerTranslationModifier
                                         )
 
                                         Box(
@@ -1415,7 +1433,7 @@ class MainActivity : ComponentActivity() {
                                                 // Use graphicsLayer for background color changes
                                                 .graphicsLayer {
                                                     val progress = playerBottomSheetState.progress
-                                                    alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar)) 0f else 1f
+                                                    alpha = if (progress > 0f || (useNewMiniPlayerDesign && !shouldShowNavigationBar) || isImeVisible) 0f else 1f
                                                 }
                                                 .background(baseBg)
                                         )
@@ -1462,7 +1480,7 @@ class MainActivity : ComponentActivity() {
                                     onSearchLongClick = onRailSearchLongClick
                                 )
                             }
-                            Box(Modifier.weight(1f)) {
+                            Box(Modifier.weight(1f).nestedScroll(navScrollConnection)) {
                                 // NavHost with animations (Material 3 Expressive style)
                                 NavHost(
                                     navController = navController,
@@ -1574,6 +1592,15 @@ class MainActivity : ComponentActivity() {
 
 
 
+                    MkrSnackbarHost(
+                        state = snackbarHostState,
+                        modifier = Modifier.align(Alignment.TopCenter)
+                            .windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal))
+                            .padding(horizontal = 12.dp)
+                            .padding(top = if (shouldShowTopBar && !playerBottomSheetState.isExpanded) AppBarHeight + 8.dp else 8.dp)
+                            .widthIn(max = 560.dp),
+                    )
+
                     sharedSong?.let { song ->
                         playerConnection?.let {
                             Dialog(
@@ -1657,7 +1684,7 @@ class MainActivity : ComponentActivity() {
             "search" -> {
                 val q = uri.getQueryParameter("q")
                 if (!q.isNullOrEmpty()) {
-                    navController.navigate("search/${URLEncoder.encode(q, "UTF-8")}")
+                    navController.navigate("search/${Uri.encode(q)}")
                 } else {
                     navController.navigate(Screens.Search.route)
                 }
@@ -1712,12 +1739,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             } else {
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(this@MainActivity, R.string.error_playback_failed, Toast.LENGTH_SHORT).show()
+                                    SnackbarManager.show(R.string.error_playback_failed)
                                 }
                             }
                         }.onFailure { ex ->
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(this@MainActivity, R.string.error_no_stream, Toast.LENGTH_SHORT).show()
+                                SnackbarManager.show(R.string.error_no_stream)
                             }
                             reportException(ex)
                         }
@@ -1743,12 +1770,12 @@ class MainActivity : ComponentActivity() {
                                 }
                             } else {
                                 withContext(Dispatchers.Main) {
-                                    Toast.makeText(this@MainActivity, R.string.error_playback_failed, Toast.LENGTH_SHORT).show()
+                                    SnackbarManager.show(R.string.error_playback_failed)
                                 }
                             }
                         }.onFailure { ex ->
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(this@MainActivity, R.string.error_no_stream, Toast.LENGTH_SHORT).show()
+                                SnackbarManager.show(R.string.error_no_stream)
                             }
                             reportException(ex)
                         }

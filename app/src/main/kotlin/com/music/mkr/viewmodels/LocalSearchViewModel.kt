@@ -8,7 +8,9 @@ package com.music.mkr.viewmodels
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.music.innertube.models.SongItem
 import com.music.mkr.constants.HideVideoSongsKey
+import com.music.mkr.models.toMediaMetadata
 import com.music.mkr.db.MusicDatabase
 import com.music.mkr.db.entities.Album
 import com.music.mkr.db.entities.Artist
@@ -18,7 +20,9 @@ import com.music.mkr.db.entities.Song
 import com.music.mkr.utils.dataStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -70,19 +74,34 @@ constructor(
                     LocalFilter.ARTIST -> database.searchArtists(query)
                     LocalFilter.PLAYLIST -> database.searchPlaylists(query)
                 }.map { list ->
-                    LocalSearchResult(
-                        query = query,
-                        filter = filter,
-                        map =
-                        list.groupBy {
-                            when (it) {
-                                is Song -> LocalFilter.SONG
-                                is Album -> LocalFilter.ALBUM
-                                is Artist -> LocalFilter.ARTIST
-                                is Playlist -> LocalFilter.PLAYLIST
-                            }
-                        },
-                    )
+                    val groups = list.groupBy {
+                        when (it) {
+                            is Song -> LocalFilter.SONG
+                            is Album -> LocalFilter.ALBUM
+                            is Artist -> LocalFilter.ARTIST
+                            is Playlist -> LocalFilter.PLAYLIST
+                        }
+                    }
+                    val featured = if (filter == LocalFilter.ALL || filter == LocalFilter.SONG) {
+                        withContext(Dispatchers.Default) {
+                            val candidates = groups[LocalFilter.SONG].orEmpty().filterIsInstance<Song>()
+                                .filterNot { it.song.isVideo }
+                                .map { song ->
+                                    val metadata = song.toMediaMetadata()
+                                    SongItem(
+                                        metadata.id, metadata.title,
+                                        metadata.artists.map { com.music.innertube.models.Artist(it.name, it.id) },
+                                        album = metadata.album?.let { com.music.innertube.models.Album(it.title, it.id) },
+                                        thumbnail = metadata.thumbnailUrl.orEmpty(),
+                                        explicit = metadata.explicit,
+                                    )
+                                }
+                            val catalogNames = groups[LocalFilter.ARTIST].orEmpty().filterIsInstance<Artist>().map { it.artist.name } +
+                                groups[LocalFilter.ALBUM].orEmpty().filterIsInstance<Album>().map { it.album.title }
+                            topSongMatch(query, candidates, songsOnly = true, catalogNames = catalogNames)
+                        }
+                    } else null
+                    LocalSearchResult(query, filter, groups, featured)
                 }
             }
         }.stateIn(
@@ -108,4 +127,5 @@ data class LocalSearchResult(
     val query: String,
     val filter: LocalFilter,
     val map: Map<LocalFilter, List<LocalItem>>,
+    val featured: SongItem? = null,
 )

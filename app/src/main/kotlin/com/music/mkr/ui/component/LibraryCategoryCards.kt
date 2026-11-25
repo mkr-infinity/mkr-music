@@ -8,17 +8,21 @@ package com.music.mkr.ui.component
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialShapes
@@ -36,12 +40,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.music.mkr.LocalDatabase
 import com.music.mkr.R
@@ -70,7 +77,9 @@ fun LibraryCategoryCardsSection(
     val showDownloads by rememberPreference(ShowDownloadedPlaylistKey, true)
     val showCached by rememberPreference(ShowCachedPlaylistKey, true)
     val animationsEnabled by rememberPreference(InterfaceAnimationsKey, true)
-    val cookieShape = MaterialShapes.Cookie6Sided.toShape()
+    val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
+    val animate = animationsEnabled && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
+    val cookieShape = MaterialShapes.Cookie12Sided.toShape()
 
     val items = buildList {
         if (showLiked) add(
@@ -105,41 +114,40 @@ fun LibraryCategoryCardsSection(
                 "history",
             )
         )
-        add(
-            LibraryShortcutItem(
-                stringResource(R.string.library_local_files),
-                stringResource(R.string.library_local_files_desc),
-                R.drawable.snippet_folder,
-                "local_playlist/0",
-            )
-        )
     }
 
-    val columns = if (LocalDensity.current.fontScale >= 1.4f) 1 else 2
-    Column(
-        modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        items.chunked(columns).forEach { rowItems ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                rowItems.forEach { item ->
-                    ShortcutCard(
-                        item = item,
-                        badgeShape = cookieShape,
-                        animationsEnabled = animationsEnabled,
-                        modifier = Modifier.weight(1f),
-                        onClick = { navController.navigate(item.route) { launchSingleTop = true } },
-                    )
+    Box(modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Column(
+            modifier = Modifier.widthIn(max = 720.dp).fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            libraryCategoryRows(items).forEach { rowItems ->
+                Row(
+                    Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    rowItems.forEach { item ->
+                        ShortcutCard(
+                            item = item,
+                            fullWidth = rowItems.size == 1,
+                            badgeShape = cookieShape,
+                            animationsEnabled = animate,
+                            modifier = Modifier.weight(1f).fillMaxHeight(),
+                            onClick = { navController.navigate(item.route) { launchSingleTop = true } },
+                        )
+                    }
                 }
-                if (rowItems.size < columns) Spacer(Modifier.weight(1f))
             }
         }
     }
 }
 
+internal fun <T> libraryCategoryRows(items: List<T>): List<List<T>> = items.chunked(2)
+
 @Composable
 private fun ShortcutCard(
     item: LibraryShortcutItem,
+    fullWidth: Boolean,
     badgeShape: Shape,
     animationsEnabled: Boolean,
     modifier: Modifier = Modifier,
@@ -147,43 +155,64 @@ private fun ShortcutCard(
 ) {
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
-    val scale = animateFloatAsState(
-        targetValue = if (animationsEnabled && isPressed) 0.98f else 1f,
+    val badgeTilt = animateFloatAsState(
+        targetValue = if (animationsEnabled && isPressed) -5f else 0f,
         animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
-        label = "LibraryShortcutPress",
+        label = "LibraryShortcutBadgeTilt",
     )
     val colors = MaterialTheme.colorScheme
+    val (badgeColor, badgeInk) = when (item.iconRes) {
+        R.drawable.favorite, R.drawable.history -> colors.tertiaryContainer to colors.onTertiaryContainer
+        R.drawable.cached, R.drawable.snippet_folder -> colors.secondaryContainer to colors.onSecondaryContainer
+        else -> colors.primaryContainer to colors.onPrimaryContainer
+    }
     val shape = MaterialTheme.shapes.extraLarge
     Surface(
-        modifier = modifier.clip(shape).clickable(
+        modifier = modifier.mkrPressFeedback(
+            scaleDown = 0.98f,
+            interactionSource = interactionSource,
+            animationsEnabled = animationsEnabled,
+        ).clip(shape).clickable(
             interactionSource = interactionSource,
             indication = ripple(),
             role = Role.Button,
             onClick = onClick,
-        ).graphicsLayer {
-            scaleX = if (animationsEnabled) scale.value else 1f
-            scaleY = scaleX
-        },
+        ),
         shape = shape,
-        color = colors.surfaceContainer,
+        color = if (isPressed) colors.surfaceContainerHigh else colors.surfaceContainerLow,
+        shadowElevation = if (isPressed) 0.dp else 1.dp,
+        border = BorderStroke(1.dp, colors.outlineVariant.copy(alpha = 0.55f)),
     ) {
-        Column(
-            Modifier.fillMaxWidth().padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
+        val badge: @Composable () -> Unit = {
             Surface(
-                modifier = Modifier.size(38.dp),
+                modifier = Modifier.size(40.dp).graphicsLayer {
+                    rotationZ = if (animationsEnabled) badgeTilt.value else 0f
+                },
                 shape = badgeShape,
-                color = colors.primaryContainer,
-                contentColor = colors.onPrimaryContainer,
+                color = badgeColor,
+                contentColor = badgeInk,
             ) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(painterResource(item.iconRes), contentDescription = null, modifier = Modifier.size(20.dp))
+                    Icon(painterResource(item.iconRes), contentDescription = null, modifier = Modifier.size(22.dp))
                 }
             }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                Text(item.title, style = MaterialTheme.typography.titleMedium)
+        }
+        val labels: @Composable () -> Unit = {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
+                Text(item.title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                 Text(item.subtitle, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+            }
+        }
+        val contentPadding = Modifier.fillMaxWidth().padding(14.dp)
+        if (fullWidth) {
+            Row(contentPadding, horizontalArrangement = Arrangement.spacedBy(14.dp), verticalAlignment = Alignment.CenterVertically) {
+                badge()
+                Box(Modifier.weight(1f)) { labels() }
+            }
+        } else {
+            Column(contentPadding, verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                badge()
+                labels()
             }
         }
     }

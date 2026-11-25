@@ -8,22 +8,20 @@ package com.music.mkr.ui.screens.search
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import com.music.mkr.ui.component.mkrClickable
 import androidx.annotation.DrawableRes
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,14 +36,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.music.mkr.R
 import com.music.mkr.db.entities.EventWithSong
 import com.music.mkr.db.entities.SearchHistory
@@ -54,27 +51,25 @@ import com.music.mkr.ui.component.mkrPressFeedback
 
 /**
  * Curated discovery genres and mood categories for the Explore Grid.
- * Vibrant visual palette without emojis.
  */
 data class GenreCategory(
     val id: String,
     val title: String,
     val query: String,
-    val gradient: List<Color>,
     @DrawableRes val iconRes: Int
 )
 
 val DiscoveryGenreCategories = listOf(
-    GenreCategory("pop", "Pop", "Pop", listOf(Color(0xFFEC4899), Color(0xFF9D174D)), R.drawable.sparks),
-    GenreCategory("hiphop", "Hip-Hop", "Hip-Hop", listOf(Color(0xFFF59E0B), Color(0xFFB45309)), R.drawable.music_note),
-    GenreCategory("rock", "Rock", "Rock", listOf(Color(0xFFEF4444), Color(0xFF991B1B)), R.drawable.equalizer),
-    GenreCategory("electronic", "Electronic", "Electronic Dance", listOf(Color(0xFF8B5CF6), Color(0xFF5B21B6)), R.drawable.radio),
-    GenreCategory("lofi", "Chill & Lo-Fi", "Chill Lo-Fi", listOf(Color(0xFF06B6D4), Color(0xFF0E7490)), R.drawable.headset_applemusic),
-    GenreCategory("rnb", "R&B & Soul", "R&B Soul", listOf(Color(0xFFA855F7), Color(0xFF6B21A8)), R.drawable.favorite),
-    GenreCategory("indie", "Indie & Alt", "Indie Alternative", listOf(Color(0xFF10B981), Color(0xFF047857)), R.drawable.album),
-    GenreCategory("workout", "Workout", "Workout Energy", listOf(Color(0xFFF97316), Color(0xFFC2410C)), R.drawable.trending_up),
-    GenreCategory("focus", "Focus & Study", "Focus Study", listOf(Color(0xFF3B82F6), Color(0xFF1E40AF)), R.drawable.bookmark_star_library),
-    GenreCategory("acoustic", "Acoustic", "Acoustic Folk", listOf(Color(0xFF84CC16), Color(0xFF3F6212)), R.drawable.artist)
+    GenreCategory("pop", "Pop", "Pop", R.drawable.sparks),
+    GenreCategory("hiphop", "Hip-Hop", "Hip-Hop", R.drawable.music_note),
+    GenreCategory("rock", "Rock", "Rock", R.drawable.equalizer),
+    GenreCategory("electronic", "Electronic", "Electronic Dance", R.drawable.radio),
+    GenreCategory("lofi", "Chill & Lo-Fi", "Chill Lo-Fi", R.drawable.headset_applemusic),
+    GenreCategory("rnb", "R&B & Soul", "R&B Soul", R.drawable.favorite),
+    GenreCategory("indie", "Indie & Alt", "Indie Alternative", R.drawable.album),
+    GenreCategory("workout", "Workout", "Workout Energy", R.drawable.trending_up),
+    GenreCategory("focus", "Focus & Study", "Focus Study", R.drawable.bookmark_star_library),
+    GenreCategory("acoustic", "Acoustic", "Acoustic Folk", R.drawable.artist)
 )
 
 /**
@@ -86,31 +81,14 @@ fun ExploreGenresGrid(
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp, top = 6.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Icon(
-                painter = painterResource(R.drawable.discover_tune),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(20.dp)
-            )
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = "Explore Genres & Vibes",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.onSurface
-            )
-        }
-
+        Text(
+            stringResource(R.string.search_explore_genres),
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(top = 6.dp, bottom = 12.dp).semantics { heading() },
+        )
         BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val columns = when {
-                maxWidth > 800.dp -> 4
-                maxWidth > 540.dp -> 3
-                else -> 2
-            }
+            val minimum = 145.dp * LocalDensity.current.fontScale.coerceAtLeast(1f)
+            val columns = ((maxWidth + 10.dp) / (minimum + 10.dp)).toInt().coerceIn(1, 4)
             val rows = DiscoveryGenreCategories.chunked(columns)
 
             Column(
@@ -129,12 +107,7 @@ fun ExploreGenresGrid(
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                        // Fill extra spacer if last row has fewer columns
-                        if (rowItems.size < columns) {
-                            repeat(columns - rowItems.size) {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
-                        }
+
                     }
                 }
             }
@@ -149,41 +122,22 @@ private fun GenreTileCard(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier
-            .height(68.dp)
-            .mkrClickable(onClick = onClick),
-        shape = RoundedCornerShape(16.dp),
-        shadowElevation = 2.dp,
-        tonalElevation = 1.dp
+        modifier = modifier.mkrClickable(onClick),
+        shape = MaterialTheme.shapes.large,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
     ) {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Brush.linearGradient(genre.gradient))
-                .padding(horizontal = 12.dp, vertical = 8.dp)
+        Row(
+            Modifier.heightIn(min = 58.dp).padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
-            // Large semi-transparent watermark icon in background
             Icon(
-                painter = painterResource(genre.iconRes),
+                painterResource(genre.iconRes),
                 contentDescription = null,
-                tint = Color.White.copy(alpha = 0.22f),
-                modifier = Modifier
-                    .size(44.dp)
-                    .align(Alignment.BottomEnd)
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(20.dp),
             )
-
-            // Category title
-            Text(
-                text = genre.title,
-                style = MaterialTheme.typography.titleSmall.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp
-                ),
-                color = Color.White,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.align(Alignment.TopStart).padding(end = 24.dp)
-            )
+            Text(genre.title, style = MaterialTheme.typography.titleSmall)
         }
     }
 }
@@ -329,7 +283,7 @@ fun RecentListensSection(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
-            items(recentEvents, key = { it.song.song.id }) { event ->
+            itemsIndexed(recentEvents, key = { index, it -> "${it.event.id}_$index" }) { _, event ->
                 val isActive = event.song.song.id == currentMediaId
                 RecentSearchGridItem(
                     event = event,

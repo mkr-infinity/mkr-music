@@ -8,26 +8,10 @@ package com.music.mkr.constants
 import androidx.annotation.StringRes
 import com.music.mkr.R
 
-/**
- * Supported playback architectures in MKR Music:
- * Eight native expressive visual architectures.
- */
 enum class PlayerStyle(
     @StringRes val titleRes: Int,
     @StringRes val descriptionRes: Int
 ) {
-    APPLE(
-        titleRes = R.string.apple_player,
-        descriptionRes = R.string.apple_player_desc
-    ),
-    CLASSIC(
-        titleRes = R.string.player_style_classic,
-        descriptionRes = R.string.player_style_classic_desc
-    ),
-    MODERN(
-        titleRes = R.string.player_style_modern,
-        descriptionRes = R.string.player_style_modern_desc
-    ),
     MINIMAL(
         titleRes = R.string.player_style_minimal,
         descriptionRes = R.string.player_style_minimal_desc
@@ -39,23 +23,15 @@ enum class PlayerStyle(
     IMMERSIVE(
         titleRes = R.string.player_style_immersive,
         descriptionRes = R.string.player_style_immersive_desc
-    ),
-    IMMERSIVE_EXTENDED(
-        titleRes = R.string.player_style_immersive_extended,
-        descriptionRes = R.string.player_style_immersive_extended_desc
-    ),
-    MATERIAL_EXTENDED(
-        titleRes = R.string.player_style_material_extended,
-        descriptionRes = R.string.player_style_material_extended_desc
     );
 
     companion object {
         val DEFAULT = CINEMATIC
-        val selectableStyles: List<PlayerStyle> = entries.filter { it != APPLE }
+        val selectableStyles: List<PlayerStyle> = entries
 
         fun fromString(name: String?): PlayerStyle {
-            val style = entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: CINEMATIC
-            return if (style == APPLE) CINEMATIC else style
+            if (name.equals("IMMERSIVE_EXTENDED", ignoreCase = true)) return CINEMATIC
+            return entries.firstOrNull { it.name.equals(name, ignoreCase = true) } ?: DEFAULT
         }
     }
 }

@@ -56,16 +56,14 @@ fun mkrMusicTheme(
     content: @Composable () -> Unit,
 ) {
     val context = LocalContext.current
-    val selectedFontValue by rememberPreference(SelectedFontKey, AppFont.SYSTEM.value)
+    val selectedFontValue by rememberPreference(SelectedFontKey, AppFont.POPPINS.value)
     val customFontPath by rememberPreference(CustomFontPathKey, "")
 
     val brandFont = remember(selectedFontValue, customFontPath) {
         when (AppFont.fromValue(selectedFontValue)) {
+            AppFont.POPPINS -> PoppinsFontFamily
             AppFont.SYSTEM -> FontFamily.Default
             AppFont.GOOGLE_SANS -> GoogleSansFontFamily
-            AppFont.SANS_FLEX -> SansFlexFontFamily
-            AppFont.OUTFIT -> OutfitFontFamily
-            AppFont.PLUS_JAKARTA_SANS -> PlusJakartaSansFontFamily
             AppFont.CUSTOM -> {
                 try {
                     if (customFontPath.isNotEmpty() && java.io.File(customFontPath).exists()) {
@@ -198,8 +196,8 @@ fun Bitmap.extractThemeColor(): Color {
         .generate()
         .swatches
         .associate { it.rgb to it.population }
-    val rankedColors = Score.score(colorsToPopulation)
-    return Color(rankedColors.first())
+    val rankedColors = Score.score(colorsToPopulation, 1, 0xff4285f4.toInt(), true)
+    return rankedColors.firstOrNull()?.let { Color(it) } ?: Color(0xff4285f4.toInt())
 }
 
 fun Bitmap.extractGradientColors(): List<Color> {

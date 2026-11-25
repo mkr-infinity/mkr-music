@@ -170,10 +170,7 @@ class GitHubUpdateManager @Inject constructor(
             }
         }
 
-        // Step 3: Select compatible APK asset (prefer universal)
-        val apkAsset = dto.assets.firstOrNull { it.name.equals("mkr-music-universal.apk", ignoreCase = true) }
-            ?: dto.assets.firstOrNull { it.name.endsWith("-universal.apk", ignoreCase = true) }
-            ?: dto.assets.firstOrNull { it.name.endsWith(".apk", ignoreCase = true) }
+        val apkAsset = selectUniversalUpdateAsset(dto.assets)
 
         return ReleaseMetadata(
             name = name,

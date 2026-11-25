@@ -78,8 +78,11 @@ constructor(
         controller.packageName == context.packageName || controller.isTrusted ||
             session.isAutomotiveController(controller) || session.isAutoCompanionController(controller)
 
-    private fun canEditFromController(controller: MediaSession.ControllerInfo): Boolean =
-        controller.packageName == context.packageName
+    private fun canEditFromController(session: MediaSession, controller: MediaSession.ControllerInfo): Boolean =
+        controller.packageName == context.packageName ||
+            session.isMediaNotificationController(controller) ||
+            controller.packageName == "com.android.systemui" ||
+            controller.packageName == "com.google.android.projection.gearhead"
 
     override fun onConnect(
         session: MediaSession,
@@ -87,7 +90,7 @@ constructor(
     ): MediaSession.ConnectionResult {
         if (!canUseLibrary(session, controller)) return MediaSession.ConnectionResult.reject()
         val connectionResult = super.onConnect(session, controller)
-        if (!canEditFromController(controller)) return connectionResult
+        if (!canEditFromController(session, controller)) return connectionResult
         return MediaSession.ConnectionResult.accept(
             connectionResult.availableSessionCommands
                 .buildUpon()
@@ -107,7 +110,7 @@ constructor(
         customCommand: SessionCommand,
         args: Bundle,
     ): ListenableFuture<SessionResult> {
-        if (!canEditFromController(controller)) {
+        if (!canEditFromController(session, controller)) {
             return Futures.immediateFuture(SessionResult(SessionError.ERROR_PERMISSION_DENIED))
         }
         when (customCommand.customAction) {

@@ -30,6 +30,8 @@ import com.music.mkr.utils.reportException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
@@ -48,8 +50,11 @@ class PlayerConnection(
 ) : Player.Listener {
     private companion object {
         private const val TAG = "PlayerConnection"
-        private const val PLAYER_INIT_TIMEOUT_MS = 5000L // 5 second timeout for player initialization
     }
+
+    private val connectionJob = SupervisorJob(scope.coroutineContext[Job])
+    private val connectionScope = CoroutineScope(scope.coroutineContext + connectionJob)
+    private var metadataJob: Job? = null
 
     val service = binder.service
     private val playerReadinessFlow = service.isPlayerReady
@@ -111,7 +116,7 @@ class PlayerConnection(
         )
         
         // Track service readiness changes in background.
-        scope.launch {
+        connectionScope.launch {
             playerReadinessFlow.collect { ready ->
                 isPlayerInitialized.value = ready
                 if (ready) {
@@ -123,18 +128,7 @@ class PlayerConnection(
         Timber.tag(TAG).d("PlayerConnection state flows initialized successfully")
     }
     
-    // Effective playing state, considers Cast when active
-    val isEffectivelyPlaying = combine(
-        isPlaying,
-        service.castConnectionHandler?.isCasting ?: MutableStateFlow(false),
-        service.castConnectionHandler?.castIsPlaying ?: MutableStateFlow(false)
-    ) { localPlaying, isCasting, castPlaying ->
-        if (isCasting) castPlaying else localPlaying
-    }.stateIn(
-        scope,
-        SharingStarted.Lazily,
-        try { player.playbackState != STATE_ENDED && player.playWhenReady } catch (e: Exception) { false }
-    )
+    val isEffectivelyPlaying = isPlaying
     
     val mediaMetadata = MutableStateFlow(try { player.currentMetadata } catch (e: Exception) { null })
     val currentSong =
@@ -181,7 +175,7 @@ class PlayerConnection(
     init {
         try {
             // Observe player changes (e.g. crossfade swap)
-            scope.launch {
+            connectionScope.launch {
                 service.playerFlow.collect { newPlayer ->
                     if (newPlayer != null && newPlayer != attachedPlayer) {
                         updateAttachedPlayer(newPlayer)
@@ -195,7 +189,7 @@ class PlayerConnection(
             }
 
             // Keep local mediaMetadata updated when service updates currentMediaMetadata
-            scope.launch {
+            connectionScope.launch {
                 service.currentMediaMetadata.collect { meta ->
                     if (meta != null) {
                         mediaMetadata.value = meta
@@ -284,6 +278,24 @@ class PlayerConnection(
         }
     }
 
+    internal fun playSearchMatch(queue: Queue, songId: String): Boolean {
+        if (!allowInternalSync && shouldBlockPlaybackChanges?.invoke() == true) return false
+        if (player.currentMediaItem?.mediaId == songId) {
+            if (player.playbackState == STATE_ENDED) {
+                player.seekToDefaultPosition()
+            }
+            play()
+        } else {
+            playQueue(queue)
+        }
+        return true
+    }
+
+    internal fun playNextSearchMatch(item: MediaItem): SearchPlayNextResult {
+        if (!allowInternalSync && shouldBlockPlaybackChanges?.invoke() == true) return SearchPlayNextResult.Blocked
+        return service.playNextSearchMatch(item)
+    }
+
     fun addToQueue(item: MediaItem) = addToQueue(listOf(item))
 
     fun addToQueue(items: List<MediaItem>) {
@@ -349,20 +361,16 @@ class PlayerConnection(
     /**
      * Toggle play/pause - handles Cast when active
      */
-    fun togglePlayPause() {
+    fun togglePlayPause(restartIfEnded: Boolean = false) {
         // Block if Listen Together guest (unless internal sync)
         if (!allowInternalSync && shouldBlockPlaybackChanges?.invoke() == true) {
             Timber.tag(TAG).d("togglePlayPause blocked - Listen Together guest")
             return
         }
         try {
-            val castHandler = service.castConnectionHandler
-            if (castHandler?.isCasting?.value == true) {
-                if (castHandler.castIsPlaying.value) {
-                    castHandler.pause()
-                } else {
-                    castHandler.play()
-                }
+            if (restartIfEnded && player.playbackState == STATE_ENDED) {
+                player.seekTo(0, 0)
+                player.playWhenReady = true
             } else {
                 player.togglePlayPause()
             }
@@ -372,7 +380,7 @@ class PlayerConnection(
     }
     
     /**
-     * Start playback - handles Cast when active
+     * Start playback
      */
     fun play() {
         // Block if Listen Together guest (unless internal sync)
@@ -381,22 +389,17 @@ class PlayerConnection(
             return
         }
         try {
-            val castHandler = service.castConnectionHandler
-            if (castHandler?.isCasting?.value == true) {
-                castHandler.play()
-            } else {
-                if (player.playbackState == Player.STATE_IDLE) {
-                    player.prepare()
-                }
-                player.playWhenReady = true
+            if (player.playbackState == Player.STATE_IDLE) {
+                player.prepare()
             }
+            player.playWhenReady = true
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in play")
         }
     }
     
     /**
-     * Pause playback - handles Cast when active
+     * Pause playback
      */
     fun pause() {
         // Block if Listen Together guest (unless internal sync)
@@ -405,19 +408,14 @@ class PlayerConnection(
             return
         }
         try {
-            val castHandler = service.castConnectionHandler
-            if (castHandler?.isCasting?.value == true) {
-                castHandler.pause()
-            } else {
-                player.playWhenReady = false
-            }
+            player.playWhenReady = false
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in pause")
         }
     }
 
     /**
-     * Seek to position - handles Cast when active
+     * Seek to position
      */
     fun seekTo(position: Long) {
         // Block if Listen Together guest (unless internal sync)
@@ -426,12 +424,7 @@ class PlayerConnection(
             return
         }
         try {
-            val castHandler = service.castConnectionHandler
-            if (castHandler?.isCasting?.value == true) {
-                castHandler.seekTo(position)
-            } else {
-                player.seekTo(position)
-            }
+            player.seekTo(position)
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Error in seekTo")
         }
@@ -444,12 +437,6 @@ class PlayerConnection(
             return
         }
         try {
-            // When casting, use Cast skip instead of local player
-            val castHandler = service.castConnectionHandler
-            if (castHandler?.isCasting?.value == true) {
-                castHandler.skipToNext()
-                return
-            }
             // Try a crossfaded manual skip first (only engages if the user
             // enabled "Crossfade on manual skip"); fall back to an instant
             // seek otherwise.
@@ -475,13 +462,6 @@ class PlayerConnection(
             return
         }
         try {
-            // When casting, use Cast skip instead of local player
-            val castHandler = service.castConnectionHandler
-            if (castHandler?.isCasting?.value == true) {
-                castHandler.skipToPrevious()
-                return
-            }
-
             // Logic to mimic standard seekToPrevious behavior but with explicit callbacks
             // If we are more than 3 seconds in, just restart the song
             if (player.currentPosition > 3000 || !player.hasPreviousMediaItem()) {
@@ -527,7 +507,8 @@ class PlayerConnection(
         val rawMeta = mediaItem?.metadata ?: (try { player.currentMetadata } catch (e: Exception) { null })
         mediaMetadata.value = rawMeta
         if (rawMeta != null) {
-            scope.launch(Dispatchers.IO) {
+            metadataJob?.cancel()
+            metadataJob = connectionScope.launch(Dispatchers.IO) {
                 try {
                     val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
                     if (dbSong != null && mediaMetadata.value?.id == rawMeta.id) {
@@ -560,7 +541,8 @@ class PlayerConnection(
         val rawMeta = try { player.currentMetadata } catch (e: Exception) { null }
         mediaMetadata.value = rawMeta
         if (rawMeta != null) {
-            scope.launch(Dispatchers.IO) {
+            metadataJob?.cancel()
+            metadataJob = connectionScope.launch(Dispatchers.IO) {
                 try {
                     val dbSong = synchronized(database) { database.getSongByIdBlocking(rawMeta.id) }
                     if (dbSong != null && mediaMetadata.value?.id == rawMeta.id) {
@@ -630,6 +612,7 @@ class PlayerConnection(
 
     fun dispose() {
         try {
+            connectionJob.cancel()
             attachedPlayer?.removeListener(this)
             attachedPlayer = null
             Timber.tag(TAG).d("PlayerConnection disposed successfully")

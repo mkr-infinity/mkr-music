@@ -1,6 +1,7 @@
 package com.music.mkr.playback
 
 import com.music.mkr.constants.CrossfadeCurve
+import com.music.mkr.constants.DefaultCrossfadeEnabled
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineScope
@@ -16,6 +17,27 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class PlaybackTransitionPolicyTest {
+    @Test
+    fun playNextPreservesTheShuffleTrailOnEitherSideOfTheCurrentSong() {
+        assertArrayEquals(
+            intArrayOf(5, 1, 2, 3, 0, 4),
+            shuffleOrderWithPlayNext(intArrayOf(3, 1, 0, 2), insertionIndex = 2, count = 2),
+        )
+        assertArrayEquals(
+            intArrayOf(0, 1),
+            shuffleOrderWithPlayNext(intArrayOf(0), insertionIndex = 1, count = 1),
+        )
+    }
+
+    @Test
+    fun removingTheTaskStopsIdlePlaybackButKeepsRetainedSessions() {
+        assertTrue(shouldStopPlaybackOnTaskRemoval(false, false, false, false))
+        assertFalse(shouldStopPlaybackOnTaskRemoval(false, true, false, false))
+        assertFalse(shouldStopPlaybackOnTaskRemoval(false, false, true, false))
+        assertFalse(shouldStopPlaybackOnTaskRemoval(false, false, false, true))
+        assertTrue(shouldStopPlaybackOnTaskRemoval(true, true, true, true))
+    }
+
     @Test
     fun playbackResumptionCompletesWithSavedPositionOrFailure() {
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Unconfined)
@@ -56,6 +78,15 @@ class PlaybackTransitionPolicyTest {
             val (out, incoming) = crossfadeGains(curve, 0.5f)
             assertTrue(out > 0f && incoming > 0f && out + incoming <= 1.00001f)
         }
+    }
+
+    @Test
+    fun crossfadePreparesEarlyAndLeavesTimeForTheHandoff() {
+        assertFalse(DefaultCrossfadeEnabled)
+        assertEquals(7_000L, crossfadePreparationDelayMs(20_000, 5_000))
+        assertEquals(0L, crossfadePreparationDelayMs(10_000, 5_000))
+        assertEquals(4_840L, crossfadeStartupBudgetMs(5_000))
+        assertEquals(0L, crossfadeStartupBudgetMs(100))
     }
 
     @Test

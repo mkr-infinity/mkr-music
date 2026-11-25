@@ -8,6 +8,8 @@
     <string name="update_failed">Update Failed</string>
     <string name="failed_to_download_version">Failed to download version %1$s</string>
     <string name="failed_to_download_version_error">Error parsing version %1$s : %2$s</string>
+    <string name="update_download_notification_title">MKR Music %1$s</string>
+    <string name="update_download_waiting">Waiting to download update</string>
     <string name="downloading_update">Downloading…</string>
     <string name="version_file_size">Version %1$s ~ %2$s MB</string>
     <string name="starting">Starting...</string>
@@ -36,6 +38,11 @@
     <string name="update_size">Update size: %1$s MB</string>
     <string name="check_internet_connection">Check your internet connection and try again.</string>
     <string name="mkr_music_version">MKR Music version %1$s</string>
+    <string name="update_check_error_title">Update check failed</string>
+    <string name="update_build_version">Build version: %1$d</string>
+    <string name="update_not_checked_yet">No successful check yet</string>
+    <string name="update_checking_details">Looking for the latest MKR Music release.</string>
+    <string name="update_support_note">Donations support development and future updates.</string>
     <string name="last_checked">Last checked: %1$s</string>
     <string name="install">Install</string>
     <string name="check_for_update">Check for update</string>

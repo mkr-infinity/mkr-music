@@ -362,10 +362,12 @@ fun AlbumMenu(
                         text = stringResource(R.string.share),
                         onClick = {
                             onDismiss()
+                            val shareUrl = album.album.playlistId?.let { "https://music.youtube.com/playlist?list=$it" }
+                                ?: album.album.title
                             val intent = Intent().apply {
                                 action = Intent.ACTION_SEND
                                 type = "text/plain"
-                                putExtra(Intent.EXTRA_TEXT, "https://music.youtube.com/playlist?list=${album.album.playlistId}")
+                                putExtra(Intent.EXTRA_TEXT, shareUrl)
                             }
                             context.startActivity(Intent.createChooser(intent, null))
                         }

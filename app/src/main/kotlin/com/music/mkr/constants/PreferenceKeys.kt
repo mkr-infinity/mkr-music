@@ -34,15 +34,13 @@ val SelectedFontKey = stringPreferencesKey("selected_font")
 val CustomFontPathKey = stringPreferencesKey("custom_font_path")
 
 enum class AppFont(val value: String) {
+    POPPINS("poppins"),
     SYSTEM("system"),
     GOOGLE_SANS("google_sans"),
-    SANS_FLEX("sans_flex"),
-    OUTFIT("outfit"),
-    PLUS_JAKARTA_SANS("plus_jakarta_sans"),
     CUSTOM("custom");
 
     companion object {
-        fun fromValue(value: String): AppFont = entries.find { it.value == value } ?: SYSTEM
+        fun fromValue(value: String): AppFont = entries.find { it.value == value } ?: POPPINS
     }
 }
 
@@ -65,6 +63,7 @@ val DefaultOpenTabKey = stringPreferencesKey("defaultOpenTab")
 val NavigationStyleKey = stringPreferencesKey("navigationStyle")
 val SlimNavBarKey = booleanPreferencesKey("slimNavBar")
 val FloatingNavBarKey = booleanPreferencesKey("floatingNavBar")
+val AutoHideNavBarKey = booleanPreferencesKey("autoHideNavBar")
 val GridItemsSizeKey = stringPreferencesKey("gridItemSize")
 val SliderStyleKey = stringPreferencesKey("sliderStyle")
 val SquigglySliderKey = booleanPreferencesKey("squigglySlider")
@@ -75,7 +74,6 @@ val UseExpressiveAlbumDesignKey = booleanPreferencesKey("useExpressiveAlbumDesig
 val ExpressiveSongAlbumImageKey = booleanPreferencesKey("expressiveSongAlbumImage")
 val UseNewMiniPlayerDesignKey = booleanPreferencesKey("useNewMiniPlayerDesign")
 val UseAppleMiniPlayerKey = booleanPreferencesKey("useAppleMiniPlayer")
-val LiquidMiniPlayerKey = booleanPreferencesKey("liquidMiniPlayer")
 val InterfaceAnimationsKey = booleanPreferencesKey("interfaceAnimations")
 val HidePlayerThumbnailKey = booleanPreferencesKey("hidePlayerThumbnail")
 val ShowPlayerThumbnailShadowKey = booleanPreferencesKey("showPlayerThumbnailShadow")
@@ -95,8 +93,7 @@ val HasShownSupportPromptKey = booleanPreferencesKey("has_shown_support_prompt")
 enum class SliderStyle {
     DEFAULT,
     WAVY,
-    SLIM,
-    EXPRESSIVE
+    SLIM
 }
 
 const val SYSTEM_DEFAULT = "SYSTEM_DEFAULT"
@@ -179,6 +176,7 @@ val AutoSkipNextOnErrorKey = booleanPreferencesKey("autoSkipNextOnError")
 val StopMusicOnTaskClearKey = booleanPreferencesKey("stopMusicOnTaskClear")
 val ShufflePlaylistFirstKey = booleanPreferencesKey("shufflePlaylistFirst")
 val PreventDuplicateTracksInQueueKey = booleanPreferencesKey("preventDuplicateTracksInQueue")
+internal const val DefaultCrossfadeEnabled = false
 val CrossfadeEnabledKey = booleanPreferencesKey("crossfadeEnabled")
 val CrossfadeDurationKey = floatPreferencesKey("crossfadeDuration")
 val CrossfadeGaplessKey = booleanPreferencesKey("crossfadeGapless")
@@ -243,9 +241,6 @@ val DiscordActivityTypeKey = stringPreferencesKey("discordActivityType")
 val DiscordActivityNameKey = stringPreferencesKey("discordActivityName")
 val DiscordAdvancedModeKey = booleanPreferencesKey("discordAdvancedMode")
 
-// Google Cast
-val EnableGoogleCastKey = booleanPreferencesKey("enableGoogleCast")
-
 // Listen Together
 val ListenTogetherServerUrlKey = stringPreferencesKey("listenTogetherServerUrl")
 val ListenTogetherUsernameKey = stringPreferencesKey("listenTogetherUsername")
@@ -256,6 +251,7 @@ val ListenTogetherSyncVolumeKey = booleanPreferencesKey("listenTogetherSyncVolum
 val ListenTogetherSmartResyncKey = booleanPreferencesKey("listenTogetherSmartResync")
 val ListenTogetherBlockedUsersKey = stringPreferencesKey("listenTogetherBlockedUsers")
 val ListenTogetherInTopBarKey = booleanPreferencesKey("listenTogetherInTopBar")
+internal const val DefaultListenTogetherHomeShortcut = false
 val ShowListenTogetherHomeShortcutKey = booleanPreferencesKey("showListenTogetherHomeShortcut")
 // Session persistence for reconnection
 val ListenTogetherSessionTokenKey = stringPreferencesKey("listenTogetherSessionToken")
@@ -487,11 +483,23 @@ enum class PlayerButtonsStyle {
 enum class PlayerBackgroundStyle {
     DEFAULT,
     GRADIENT,
-    BLUR,
     GLOW_ANIMATED,
-    APPLE_MUSIC,
     LIVE_MESH,
+    IMMERSIVE_ARTWORK,
 }
+
+internal val miniPlayerBackgroundStyles = PlayerBackgroundStyle.entries.filter { it != PlayerBackgroundStyle.IMMERSIVE_ARTWORK }
+
+internal fun resolveFullPlayerBackground(saved: String, style: PlayerStyle): PlayerBackgroundStyle =
+    when (saved) {
+        "BLUR" -> PlayerBackgroundStyle.IMMERSIVE_ARTWORK
+        else -> PlayerBackgroundStyle.entries.firstOrNull { it.name == saved }
+            ?: if (style == PlayerStyle.IMMERSIVE) PlayerBackgroundStyle.IMMERSIVE_ARTWORK
+            else PlayerBackgroundStyle.DEFAULT
+    }
+
+internal fun resolveMiniPlayerBackground(saved: String): PlayerBackgroundStyle =
+    miniPlayerBackgroundStyles.firstOrNull { it.name == saved } ?: PlayerBackgroundStyle.DEFAULT
 
 val TopSize = stringPreferencesKey("topSize")
 val HistoryDuration = floatPreferencesKey("historyDuration")

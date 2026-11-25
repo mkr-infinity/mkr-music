@@ -23,6 +23,13 @@ inline fun <reified T : Enum<T>> String?.toEnum(defaultValue: T): T =
 fun String.toSQLiteQuery(): SimpleSQLiteQuery = SimpleSQLiteQuery(this)
 
 fun String.toInetSocketAddress(): InetSocketAddress {
-    val (host, port) = split(":")
-    return createUnresolved(host, port.toInt())
+    val clean = removePrefix("http://").removePrefix("https://").trim()
+    val lastColon = clean.lastIndexOf(':')
+    if (lastColon <= 0 || lastColon == clean.length - 1) {
+        throw IllegalArgumentException("Invalid proxy address format: $this")
+    }
+    val host = clean.substring(0, lastColon).removePrefix("[").removeSuffix("]")
+    val port = clean.substring(lastColon + 1).toIntOrNull()
+        ?: throw IllegalArgumentException("Invalid proxy port in: $this")
+    return createUnresolved(host, port)
 }

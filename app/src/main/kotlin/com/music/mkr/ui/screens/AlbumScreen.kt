@@ -295,16 +295,30 @@ fun AlbumScreen(
                         globalDownloadState = globalDownloadState,
                         isPlaying = isAlbumActivelyPlaying,
                         onPlay = {
-                            playerConnection.playQueue(LocalAlbumRadio(currentAlbumWithSongs))
+                            if (isAlbumActivelyPlaying) {
+                                playerConnection.player.pause()
+                            } else if (mediaMetadata?.album?.id == currentAlbumWithSongs.album.id) {
+                                playerConnection.player.play()
+                            } else {
+                                val visibleSongs = wrappedSongs.map { it.item }
+                                if (visibleSongs.isNotEmpty()) {
+                                    playerConnection.playQueue(
+                                        LocalAlbumRadio(currentAlbumWithSongs.copy(songs = visibleSongs))
+                                    )
+                                }
+                            }
                         },
                         onShuffle = {
-                            playerConnection.playQueue(
-                                LocalAlbumRadio(
-                                    currentAlbumWithSongs.copy(
-                                        songs = currentAlbumWithSongs.songs.shuffled()
+                            val visibleSongs = wrappedSongs.map { it.item }
+                            if (visibleSongs.isNotEmpty()) {
+                                playerConnection.playQueue(
+                                    LocalAlbumRadio(
+                                        currentAlbumWithSongs.copy(
+                                            songs = visibleSongs.shuffled()
+                                        )
                                     )
                                 )
-                            )
+                            }
                         },
                         onToggleBookmark = {
                             database.query {
@@ -335,13 +349,13 @@ fun AlbumScreen(
                                             },
                                             downloads = downloads,
                                         )
-                                        navController.navigate("auto_playlist/downloaded?tab=progress")
+                                        navController.navigate("auto_playlist/downloaded")
                                     }
                                 }
                             }
                         },
                         onDownloadProgressClick = {
-                            navController.navigate("auto_playlist/downloaded?tab=progress")
+                            navController.navigate("auto_playlist/downloaded")
                         },
                         onMoreClick = {
                             menuState.show {
@@ -436,8 +450,11 @@ fun AlbumScreen(
                                 if (isSongActive) {
                                     playerConnection.player.togglePlayPause()
                                 } else {
+                                    val originalIndex = currentAlbumWithSongs.songs
+                                        .indexOfFirst { it.id == songWrapper.item.id }
+                                        .takeIf { it >= 0 } ?: index
                                     playerConnection.playQueue(
-                                        LocalAlbumRadio(currentAlbumWithSongs, startIndex = index),
+                                        LocalAlbumRadio(currentAlbumWithSongs, startIndex = originalIndex),
                                     )
                                 }
                             } else {
@@ -937,8 +954,13 @@ private fun AlbumEditorialMetadata(
                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
                 border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f))
             ) {
+                val tagText = when (songsCount) {
+                    1 -> "SINGLE"
+                    in 2..6 -> "EP"
+                    else -> stringResource(R.string.album_text).uppercase()
+                }
                 Text(
-                    text = "STUDIO ALBUM",
+                    text = tagText,
                     style = MaterialTheme.typography.labelSmall.copy(
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.1.sp
@@ -1230,29 +1252,31 @@ private fun AlbumCommandDeck(
                 }
             }
 
-            // Download Queue Status
-            val downloadProgressPressInteraction = remember { MutableInteractionSource() }
-            Surface(
-                interactionSource = downloadProgressPressInteraction,
-                onClick = onDownloadProgressClick,
-                modifier = Modifier
-                    .size(44.dp)
-                    .mkrPressFeedback(interactionSource = downloadProgressPressInteraction),
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
+            // Download Queue Status (visible only when download queue is actively running)
+            if (globalDownloadState is HeaderDownloadState.Partial) {
+                val downloadProgressPressInteraction = remember { MutableInteractionSource() }
+                Surface(
+                    interactionSource = downloadProgressPressInteraction,
+                    onClick = onDownloadProgressClick,
+                    modifier = Modifier
+                        .size(44.dp)
+                        .mkrPressFeedback(interactionSource = downloadProgressPressInteraction),
+                    shape = CircleShape,
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.18f))
                 ) {
-                    val globalProgress = (globalDownloadState as? HeaderDownloadState.Partial)?.progress ?: 0f
-                    val globalPaused = (globalDownloadState as? HeaderDownloadState.Partial)?.paused ?: false
-                    HeaderDownloadProgressIndicator(
-                        progress = globalProgress,
-                        paused = globalPaused,
-                        icon = R.drawable.list,
-                    )
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val globalProgress = (globalDownloadState as? HeaderDownloadState.Partial)?.progress ?: 0f
+                        val globalPaused = (globalDownloadState as? HeaderDownloadState.Partial)?.paused ?: false
+                        HeaderDownloadProgressIndicator(
+                            progress = globalProgress,
+                            paused = globalPaused,
+                            icon = R.drawable.list,
+                        )
+                    }
                 }
             }
 

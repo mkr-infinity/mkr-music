@@ -63,6 +63,9 @@ fun WavySlider(
     
     var isDragging by remember { mutableStateOf(false) }
     var dragValue by remember { mutableFloatStateOf(normalizedValue) }
+    if (!isDragging) {
+        dragValue = normalizedValue
+    }
     
     val displayValue = if (isDragging) dragValue else normalizedValue
     
@@ -86,19 +89,12 @@ fun WavySlider(
     val interactiveModifier = if (enabled) {
         baseModifier
             .pointerInput(valueRange) {
-                detectTapGestures { offset ->
-                    val newValue = (offset.x / size.width).coerceIn(0f, 1f)
-                    val mappedValue = valueRange.start + newValue * (valueRange.endInclusive - valueRange.start)
-                    onValueChange(mappedValue)
-                    onValueChangeFinished?.invoke()
-                }
-            }
-            .pointerInput(valueRange) {
                 detectHorizontalDragGestures(
                     onDragStart = { offset ->
                         isDragging = true
-                        dragValue = (offset.x / size.width).coerceIn(0f, 1f)
-                        val mappedValue = valueRange.start + dragValue * (valueRange.endInclusive - valueRange.start)
+                        val norm = (offset.x / size.width).coerceIn(0f, 1f)
+                        dragValue = norm
+                        val mappedValue = valueRange.start + norm * (valueRange.endInclusive - valueRange.start)
                         onValueChange(mappedValue)
                     },
                     onDragEnd = {
@@ -108,12 +104,22 @@ fun WavySlider(
                     onDragCancel = {
                         isDragging = false
                     },
-                    onHorizontalDrag = { _, dragAmount ->
-                        dragValue = (dragValue + dragAmount / size.width).coerceIn(0f, 1f)
-                        val mappedValue = valueRange.start + dragValue * (valueRange.endInclusive - valueRange.start)
+                    onHorizontalDrag = { change, _ ->
+                        change.consume()
+                        val norm = (change.position.x / size.width).coerceIn(0f, 1f)
+                        dragValue = norm
+                        val mappedValue = valueRange.start + norm * (valueRange.endInclusive - valueRange.start)
                         onValueChange(mappedValue)
                     }
                 )
+            }
+            .pointerInput(valueRange) {
+                detectTapGestures { offset ->
+                    val newValue = (offset.x / size.width).coerceIn(0f, 1f)
+                    val mappedValue = valueRange.start + newValue * (valueRange.endInclusive - valueRange.start)
+                    onValueChange(mappedValue)
+                    onValueChangeFinished?.invoke()
+                }
             }
     } else {
         baseModifier

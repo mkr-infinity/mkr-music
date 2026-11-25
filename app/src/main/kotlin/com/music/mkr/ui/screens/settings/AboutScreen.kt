@@ -36,6 +36,12 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.toShape
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -181,34 +187,51 @@ fun AboutScreen(
     )
 }
 
-@OptIn(ExperimentalLayoutApi::class)
+@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 private fun DeveloperHeroCard(
     onSupportClick: () -> Unit
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
+    val cardShape = RoundedCornerShape(32.dp)
 
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(28.dp),
+        shape = cardShape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
         tonalElevation = 2.dp,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.22f))
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(20.dp),
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.28f),
+                            MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.10f),
+                            MaterialTheme.colorScheme.surfaceContainerHigh
+                        )
+                    )
+                )
+                .padding(horizontal = 20.dp, vertical = 22.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // 1. Top Avatar with app logo badge
+            // 1. Expressive Avatar with Cookie Halo & App Badge
             Box(
-                modifier = Modifier.size(86.dp)
+                modifier = Modifier.size(94.dp),
+                contentAlignment = Alignment.Center
             ) {
                 Box(
                     modifier = Modifier
-                        .size(82.dp)
+                        .size(92.dp)
+                        .clip(MaterialShapes.Cookie12Sided.toShape())
+                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f))
+                )
+                Box(
+                    modifier = Modifier
+                        .size(80.dp)
                         .border(2.5.dp, MaterialTheme.colorScheme.primary, CircleShape)
                         .padding(4.dp)
                         .align(Alignment.Center)
@@ -229,7 +252,6 @@ private fun DeveloperHeroCard(
                     )
                 }
 
-                // Official MKR Music badge
                 Box(
                     modifier = Modifier
                         .size(26.dp)
@@ -251,7 +273,7 @@ private fun DeveloperHeroCard(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 2. Developer Name (Centered, Bold, Never truncated)
+            // 2. Developer Name
             Text(
                 text = GitHubConfig.DEV_NAME,
                 style = MaterialTheme.typography.headlineSmall,
@@ -260,64 +282,65 @@ private fun DeveloperHeroCard(
                 textAlign = TextAlign.Center
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
 
-            // 3. Role pill: Tech Enthusiast & Android Developer
+            // 3. Role Pill
             Surface(
-                shape = RoundedCornerShape(50.dp),
-                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.45f),
-                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.3f)),
-                tonalElevation = 1.dp
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.30f)),
             ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 5.dp)
-                ) {
-                    Text(
-                        text = GitHubConfig.DEV_ROLE,
-                        style = MaterialTheme.typography.labelMedium,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        letterSpacing = 0.2.sp
-                    )
-                }
+                Text(
+                    text = GitHubConfig.DEV_ROLE,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.primary,
+                    letterSpacing = 0.2.sp,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(18.dp))
 
-            BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                val fontScale = LocalDensity.current.fontScale.coerceAtLeast(1f)
-                val showTiles = maxWidth >= 276.dp * fontScale + 12.dp
-                FlowRow(
-                    modifier = Modifier.fillMaxWidth(),
+            // 4. Expressive 3-Button Social Dock
+            Surface(
+                shape = RoundedCornerShape(24.dp),
+                color = MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.85f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(6.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    verticalArrangement = Arrangement.spacedBy(6.dp),
-                    maxItemsInEachRow = if (showTiles) 3 else 1,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val linkModifier = Modifier.weight(1f).fillMaxRowHeight()
                     SocialLinkTile(
-                        modifier = linkModifier,
+                        modifier = Modifier.weight(1f),
                         icon = R.drawable.github,
                         title = "GitHub",
-                        subtitle = GitHubConfig.DEV_HANDLE,
-                        stackedContent = showTiles,
+                        badgeShape = MaterialShapes.Cookie6Sided.toShape(),
+                        containerTint = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f),
+                        iconTint = MaterialTheme.colorScheme.primary,
                         onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_GITHUB_URL) }
                     )
                     SocialLinkTile(
-                        modifier = linkModifier,
+                        modifier = Modifier.weight(1f),
                         icon = R.drawable.instagram,
                         title = "Instagram",
-                        subtitle = "@mkr_infinity",
-                        stackedContent = showTiles,
+                        badgeShape = MaterialShapes.Cookie4Sided.toShape(),
+                        containerTint = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.65f),
+                        iconTint = MaterialTheme.colorScheme.tertiary,
                         onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_INSTAGRAM_URL) }
                     )
                     SocialLinkTile(
-                        modifier = linkModifier,
+                        modifier = Modifier.weight(1f),
                         icon = R.drawable.telegram,
                         title = "Telegram",
-                        subtitle = "@mkr_infinity",
-                        stackedContent = showTiles,
+                        badgeShape = MaterialShapes.Clover8Leaf.toShape(),
+                        containerTint = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f),
+                        iconTint = MaterialTheme.colorScheme.secondary,
                         onClick = { uriHandler.safeOpenUri(context, GitHubConfig.DEV_TELEGRAM_URL) }
                     )
                 }
@@ -498,59 +521,48 @@ private fun SocialLinkTile(
     modifier: Modifier = Modifier,
     icon: Int,
     title: String,
-    subtitle: String,
-    stackedContent: Boolean,
+    badgeShape: Shape,
+    containerTint: Color,
+    iconTint: Color,
     onClick: () -> Unit
 ) {
     Surface(
         onClick = onClick,
         modifier = modifier
-            .heightIn(min = 48.dp)
+            .heightIn(min = 68.dp)
             .semantics { role = Role.Button },
-        shape = MaterialTheme.shapes.large,
-        color = MaterialTheme.colorScheme.surfaceContainer,
+        shape = RoundedCornerShape(18.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f),
         contentColor = MaterialTheme.colorScheme.onSurface,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        val content: @Composable () -> Unit = {
-            Surface(
-                modifier = Modifier.size(32.dp),
-                shape = MaterialTheme.shapes.small,
-                color = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(34.dp)
+                    .clip(badgeShape)
+                    .background(containerTint),
+                contentAlignment = Alignment.Center
             ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(painterResource(icon), contentDescription = null, modifier = Modifier.size(18.dp))
-                }
-            }
-            Column(horizontalAlignment = if (stackedContent) Alignment.CenterHorizontally else Alignment.Start) {
-                val textAlign = if (stackedContent) TextAlign.Center else TextAlign.Start
-                Text(
-                    text = title,
-                    style = MaterialTheme.typography.labelLarge,
-                    textAlign = textAlign,
-                )
-                Text(
-                    text = subtitle,
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = textAlign,
+                Icon(
+                    painter = painterResource(icon),
+                    contentDescription = null,
+                    tint = iconTint,
+                    modifier = Modifier.size(18.dp)
                 )
             }
-        }
-        if (stackedContent) {
-            Column(
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterVertically),
-                content = { content() },
-            )
-        } else {
-            Row(
-                modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                content = { content() },
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.SemiBold,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         }
     }

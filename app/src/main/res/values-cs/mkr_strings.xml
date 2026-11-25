@@ -51,7 +51,6 @@
     <string name="general_settings">Obecná nastavení</string>
     <string name="follow_theme">Podle motivu</string>
     <string name="gradient">Barevný přechod</string>
-    <string name="player_background_blur">Rozostřený obal</string>
     <string name="player_buttons_style">Barvy tlačítek přehrávače</string>
     <string name="default_style">Výchozí</string>
     <string name="secondary_color_style">Sekundární</string>

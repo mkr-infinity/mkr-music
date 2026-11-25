@@ -284,10 +284,10 @@ fun YouTubeSelectionSongMenu(
                                         inLibrary(song.id, null)
                                     }
                                 }
-                                coroutineScope.launch {
+                                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO).launch {
                                     // Use the new reliable method that fetches fresh tokens
                                     songSelection.forEach { song ->
-                                        YouTube.toggleSongLibrary(song.id, false)
+                                        runCatching { YouTube.toggleSongLibrary(song.id, false) }
                                     }
                                 }
                             } else {
@@ -297,12 +297,12 @@ fun YouTubeSelectionSongMenu(
                                         inLibrary(song.id, LocalDateTime.now())
                                     }
                                 }
-                                coroutineScope.launch {
+                                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.SupervisorJob() + kotlinx.coroutines.Dispatchers.IO).launch {
                                     // Use the new reliable method that fetches fresh tokens
                                     songSelection.filter { song ->
                                         song.toMediaMetadata().inLibrary == null
                                     }.forEach { song ->
-                                        YouTube.toggleSongLibrary(song.id, true)
+                                        runCatching { YouTube.toggleSongLibrary(song.id, true) }
                                     }
                                 }
                             }
@@ -396,23 +396,24 @@ fun YouTubeSelectionSongMenu(
                                     if ((!allLiked && !metadata.liked) || allLiked) {
                                         // Insert the song first if it doesn't exist
                                         insert(metadata)
-                                        // Create SongEntity with toggled like status
-                                        val songEntity = com.music.mkr.db.entities.SongEntity(
-                                            id = metadata.id,
-                                            title = metadata.title,
-                                            duration = metadata.duration,
-                                            thumbnailUrl = metadata.thumbnailUrl,
-                                            albumId = metadata.album?.id,
-                                            albumName = metadata.album?.title,
-                                            liked = !metadata.liked,
-                                            totalPlayTime = 0,
-                                            inLibrary = metadata.inLibrary,
-                                            isLocal = false,
-                                            libraryAddToken = metadata.libraryAddToken,
-                                            libraryRemoveToken = metadata.libraryRemoveToken
-                                        )
-                                        update(songEntity)
-                                        syncUtils.likeSong(songEntity)
+                                        val existing = getSongByIdBlocking(metadata.id)?.song
+                                        val updated = existing?.copy(liked = !allLiked)
+                                            ?: com.music.mkr.db.entities.SongEntity(
+                                                id = metadata.id,
+                                                title = metadata.title,
+                                                duration = metadata.duration,
+                                                thumbnailUrl = metadata.thumbnailUrl,
+                                                albumId = metadata.album?.id,
+                                                albumName = metadata.album?.title,
+                                                liked = !allLiked,
+                                                totalPlayTime = 0,
+                                                inLibrary = metadata.inLibrary,
+                                                isLocal = false,
+                                                libraryAddToken = metadata.libraryAddToken,
+                                                libraryRemoveToken = metadata.libraryRemoveToken
+                                            )
+                                        update(updated)
+                                        syncUtils.likeSong(updated)
                                     }
                                 }
                             }

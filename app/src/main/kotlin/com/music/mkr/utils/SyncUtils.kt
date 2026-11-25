@@ -16,6 +16,7 @@ import com.music.innertube.models.SongItem
 import com.music.innertube.utils.completed
 import com.music.innertube.utils.parseCookieString
 import com.music.lastfm.LastFM
+import com.music.mkr.constants.AutoDownloadOnLikeKey
 import com.music.mkr.constants.InnerTubeCookieKey
 import com.music.mkr.constants.LastFMUseSendLikes
 import com.music.mkr.constants.LastFullSyncKey
@@ -30,6 +31,8 @@ import com.music.mkr.extensions.collectLatest
 import com.music.mkr.extensions.isInternetConnected
 import com.music.mkr.extensions.isSyncEnabled
 import com.music.mkr.models.toMediaMetadata
+import com.music.mkr.playback.DownloadUtil
+import dagger.Lazy
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineExceptionHandler
@@ -93,6 +96,7 @@ data class SyncState(
 class SyncUtils @Inject constructor(
     @ApplicationContext private val context: Context,
     private val database: MusicDatabase,
+    private val downloadUtil: Lazy<DownloadUtil>,
 ) {
     private val exceptionHandler = CoroutineExceptionHandler { _, throwable ->
         if (throwable !is CancellationException) {
@@ -298,8 +302,24 @@ class SyncUtils @Inject constructor(
     }
 
     fun likeSong(s: SongEntity) {
+        autoDownloadLikedSong(s)
         syncScope.launch {
             syncChannel.send(SyncOperation.LikeSong(s))
+        }
+    }
+
+    internal fun autoDownloadLikedSong(song: SongEntity) {
+        if (!song.liked || song.isLocal || !context.dataStore.get(AutoDownloadOnLikeKey, false)) return
+
+        // Like actions often call this inside a Room transaction. Check the saved row after it commits.
+        database.transaction {
+            val saved = getSongByIdBlocking(song.id)?.song
+            if (saved?.liked != true || saved.isLocal) return@transaction
+            syncScope.launch {
+                if (context.dataStore.get(AutoDownloadOnLikeKey, false)) {
+                    downloadUtil.get().enqueueLikedSong(saved)
+                }
+            }
         }
     }
 

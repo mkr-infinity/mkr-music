@@ -459,9 +459,10 @@ fun StatsScreen(
                             items = mostPlayedAlbums,
                             key = { _, album -> album.id },
                         ) { index, album ->
+                            val listenedCount = album.songCountListened ?: 0
                             LocalAlbumsGrid(
                                 title = "${index + 1}. ${album.album.title}",
-                                subtitle = "${pluralStringResource(R.plurals.n_time, album.songCountListened!!, album.songCountListened)}   ${makeTimeString(album.timeListened)}",
+                                subtitle = "${pluralStringResource(R.plurals.n_time, listenedCount, listenedCount)}   ${makeTimeString(album.timeListened)}",
                                 thumbnailUrl = album.album.thumbnailUrl,
                                 isActive = album.id == mediaMetadata?.album?.id,
                                 isPlaying = isPlaying,

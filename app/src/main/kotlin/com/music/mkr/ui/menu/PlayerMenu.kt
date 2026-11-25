@@ -70,6 +70,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.net.toUri
 import androidx.media3.common.PlaybackParameters
+import androidx.media3.common.Player
 import androidx.media3.exoplayer.offline.Download
 import androidx.media3.exoplayer.offline.DownloadRequest
 import androidx.media3.exoplayer.offline.DownloadService
@@ -83,6 +84,7 @@ import com.music.mkr.utils.oem.SystemMediaControlResolver
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
 import com.music.mkr.constants.ListItemHeight
+import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.listentogether.ConnectionState
 import com.music.mkr.listentogether.ListenTogetherEvent
 import com.music.mkr.models.MediaMetadata
@@ -94,6 +96,7 @@ import com.music.mkr.ui.component.Material3MenuItemData
 import com.music.mkr.ui.component.NewAction
 import com.music.mkr.ui.component.NewActionGrid
 import com.music.mkr.ui.component.VolumeSlider
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.listentogether.ListenTogetherServers
 import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.Dispatchers
@@ -116,18 +119,6 @@ fun PlayerMenu(
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val playerVolume = playerConnection.service.playerVolume.collectAsState()
-    
-    // Cast state for volume control - safely access castConnectionHandler to prevent crashes
-    val castHandler = remember(playerConnection) {
-        try {
-            playerConnection.service.castConnectionHandler
-        } catch (e: Exception) {
-            null
-        }
-    }
-    val isCasting by castHandler?.isCasting?.collectAsState() ?: remember { mutableStateOf(false) }
-    val castVolume by castHandler?.castVolume?.collectAsState() ?: remember { mutableFloatStateOf(1f) }
-    val castDeviceName by castHandler?.castDeviceName?.collectAsState() ?: remember { mutableStateOf<String?>(null) }
     val audioDevice by playerConnection.activeAudioDevice.collectAsState()
     
     val librarySong by database.song(mediaMetadata.id).collectAsState(initial = null)
@@ -249,38 +240,10 @@ fun PlayerMenu(
                 .padding(horizontal = 24.dp)
                 .padding(top = 24.dp, bottom = 6.dp),
         ) {
-            // Show Cast indicator when casting
-            if (isCasting && castDeviceName != null) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.cast),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = stringResource(R.string.casting_to, castDeviceName ?: ""),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            
             VolumeSlider(
-                value = if (isCasting) castVolume else playerVolume.value,
+                value = playerVolume.value,
                 onValueChange = { volume ->
-                    if (isCasting) {
-                        castHandler?.setVolume(volume)
-                    } else {
-                        playerConnection.service.playerVolume.value = volume
-                    }
+                    playerConnection.service.playerVolume.value = volume
                 },
                 modifier = Modifier.fillMaxWidth(),
                 accentColor = MaterialTheme.colorScheme.primary
@@ -315,13 +278,13 @@ fun PlayerMenu(
                                 Icon(
                                     painter = painterResource(R.drawable.radio),
                                     contentDescription = null,
-                                    modifier = Modifier.size(32.dp),
+                                    modifier = Modifier.size(24.dp),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             },
                             text = stringResource(R.string.start_an_radio),
                             onClick = {
-                                Toast.makeText(context, startingRadioText, Toast.LENGTH_SHORT).show()
+                                SnackbarManager.show(startingRadioText)
                                 playerConnection.startRadioSeamlessly()
                                 onDismiss()
                             }
@@ -332,7 +295,7 @@ fun PlayerMenu(
                             Icon(
                                 painter = painterResource(R.drawable.playlist_add),
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
@@ -344,7 +307,7 @@ fun PlayerMenu(
                             Icon(
                                 painter = painterResource(R.drawable.share),
                                 contentDescription = null,
-                                modifier = Modifier.size(32.dp),
+                                modifier = Modifier.size(24.dp),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
@@ -363,8 +326,8 @@ fun PlayerMenu(
                         }
                     )
                 ),
-                columns = if (isListenTogetherGuest) 2 else 3,
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 16.dp)
+                columns = 2,
+                modifier = Modifier.padding(horizontal = 8.dp, vertical = 12.dp)
             )
         }
 
@@ -372,6 +335,37 @@ fun PlayerMenu(
             Material3MenuGroup(
                 expressive = true,
                 items = buildList {
+                    if (isQueueTrigger != true && !isListenTogetherGuest) {
+                        add(
+                            Material3MenuItemData(
+                                title = { Text(stringResource(R.string.shuffle)) },
+                                description = {
+                                    val enabled by playerConnection.shuffleModeEnabled.collectAsState()
+                                    Text(stringResource(if (enabled) R.string.enabled else R.string.disabled))
+                                },
+                                icon = { Icon(painterResource(R.drawable.shuffle), contentDescription = null) },
+                                onClick = {
+                                    val player = playerConnection.player
+                                    player.shuffleModeEnabled = !player.shuffleModeEnabled
+                                },
+                            )
+                        )
+                        add(
+                            Material3MenuItemData(
+                                title = { Text(stringResource(R.string.repeat)) },
+                                description = {
+                                    val mode by playerConnection.repeatMode.collectAsState()
+                                    Text(stringResource(when (mode) {
+                                        Player.REPEAT_MODE_ONE -> R.string.repeat_mode_one
+                                        Player.REPEAT_MODE_ALL -> R.string.repeat_mode_all
+                                        else -> R.string.repeat_mode_off
+                                    }))
+                                },
+                                icon = { Icon(painterResource(R.drawable.repeat), contentDescription = null) },
+                                onClick = { playerConnection.player.toggleRepeatMode() },
+                            )
+                        )
+                    }
                     // ── Single smart Retry button ────────────────────────────
                     // Always visible. Re-triggers the full resolution chain.
                     add(
@@ -1337,7 +1331,7 @@ fun ListenTogetherDialog(
                                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                             val clip = android.content.ClipData.newPlainText("Listen Together Link", inviteLink)
                                             clipboard.setPrimaryClip(clip)
-                                            Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+                                            SnackbarManager.show(R.string.copied_to_clipboard)
                                         }
                                     ) {
                                         Icon(
@@ -1356,7 +1350,7 @@ fun ListenTogetherDialog(
                                             val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                             val clip = android.content.ClipData.newPlainText("Room Code", room.roomCode)
                                             clipboard.setPrimaryClip(clip)
-                                            Toast.makeText(context, R.string.copied_to_clipboard, Toast.LENGTH_SHORT).show()
+                                            SnackbarManager.show(R.string.copied_to_clipboard)
                                         }
                                     ) {
                                         Icon(

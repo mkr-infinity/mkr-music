@@ -477,17 +477,15 @@ fun AiSettings(
                             onClick = { showApiKeyDialog = true }
                         )
                     )
-                    if (aiProvider != "Custom") {
-                        add(
-                            Material3SettingsItem(
-                                key = "ai_model",
-                                icon = painterResource(R.drawable.discover_tune),
-                                title = { Text(stringResource(R.string.ai_model)) },
-                                trailingContent = { Text(openRouterModel.ifBlank { stringResource(R.string.not_set) }) },
-                                onClick = { showModelDialog = true }
-                            )
+                    add(
+                        Material3SettingsItem(
+                            key = "ai_model",
+                            icon = painterResource(R.drawable.discover_tune),
+                            title = { Text(stringResource(R.string.ai_model)) },
+                            trailingContent = { Text(openRouterModel.ifBlank { stringResource(R.string.not_set) }) },
+                            onClick = { showModelDialog = true }
                         )
-                    }
+                    )
                 }
             }
         )

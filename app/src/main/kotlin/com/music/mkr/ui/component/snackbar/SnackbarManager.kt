@@ -1,5 +1,6 @@
 package com.music.mkr.ui.component.snackbar
 
+import android.content.Context
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarVisuals
 import kotlinx.coroutines.channels.BufferOverflow
@@ -9,8 +10,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 object SnackbarManager {
 
     data class SnackbarEvent(
-        val messageResource: Int,
-        val messageArgs: Any? = null,
+        val resolveMessage: (Context) -> String,
         val actionLabel: Int? = null,
         val onAction: (() -> Unit)? = null,
         val duration: SnackbarDuration = SnackbarDuration.Short,
@@ -32,6 +32,10 @@ object SnackbarManager {
     )
     val events = _events.asSharedFlow()
 
+    fun show(message: String) {
+        _events.tryEmit(SnackbarEvent(resolveMessage = { message }))
+    }
+
     fun show(
         messageResource: Int,
         actionLabel: Int? = null,
@@ -42,9 +46,14 @@ object SnackbarManager {
     ) {
         _events.tryEmit(
             SnackbarEvent(
-                messageResource = messageResource,
+                resolveMessage = { context ->
+                    if (messageArgs == null) {
+                        context.getString(messageResource)
+                    } else {
+                        context.getString(messageResource, messageArgs)
+                    }
+                },
                 actionLabel = actionLabel,
-                messageArgs = messageArgs,
                 onAction = onAction,
                 duration = duration,
                 iconRes = iconRes,

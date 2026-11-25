@@ -56,7 +56,6 @@
     <string name="player_background_style">Stil pozadine plejera</string>
     <string name="follow_theme">Prati temu</string>
     <string name="gradient">Gradijent</string>
-    <string name="player_background_blur">Zamućenje</string>
     <plurals name="n_element">
         <item quantity="one">%d element</item>
         <item quantity="few">%d elementa</item>

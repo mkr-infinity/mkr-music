@@ -12,10 +12,8 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -52,17 +50,15 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.media3.common.Player
-import coil3.compose.AsyncImage
 import com.music.mkr.LocalListenTogetherManager
 import com.music.mkr.LocalPlayerConnection
+import com.music.mkr.ui.component.PlaybackCookieFace
 import com.music.mkr.R
 import com.music.mkr.constants.*
 import com.music.mkr.listentogether.ListenTogetherManager
 import com.music.mkr.models.MediaMetadata
-import com.music.mkr.playback.CastConnectionHandler
 import com.music.mkr.playback.PlayerConnection
-import com.music.mkr.ui.screens.settings.DarkMode
-import com.music.mkr.utils.rememberEnumPreference
+import com.music.mkr.ui.theme.PlayerColorExtractor
 import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.launch
 import kotlin.math.absoluteValue
@@ -71,7 +67,8 @@ import com.music.mkr.ui.component.Icon as MIcon
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-fun AppleMiniPlayer(
+internal fun AppleMiniPlayer(
+
     progressState: ProgressState,
     modifier: Modifier = Modifier
 ) {
@@ -79,34 +76,19 @@ fun AppleMiniPlayer(
     
     // Theme settings
     val pureBlack by rememberPreference(PureBlackMiniPlayerKey, defaultValue = false)
-    val isSystemInDarkTheme = isSystemInDarkTheme()
-    val darkTheme by rememberEnumPreference(DarkModeKey, defaultValue = DarkMode.AUTO)
-    val useDarkTheme = remember(darkTheme, isSystemInDarkTheme) {
-        if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
-    }
     
-    val miniPlayerBackground by rememberEnumPreference(MiniPlayerBackgroundStyleKey, defaultValue = PlayerBackgroundStyle.DEFAULT)
+    val savedMiniPlayerBackground by rememberPreference(MiniPlayerBackgroundStyleKey, "")
+    val miniPlayerBackground = resolveMiniPlayerBackground(savedMiniPlayerBackground)
     
     // Player states
     val playbackState by playerConnection.playbackState.collectAsState()
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
-    
-    // Cast state
-    val castHandler = remember(playerConnection) {
-        try {
-            playerConnection.service.castConnectionHandler
-        } catch (e: Exception) {
-            null
-        }
-    }
-    val isCasting by castHandler?.isCasting?.collectAsState() ?: remember { mutableStateOf(false) }
 
     // Swipe settings
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnailPref by rememberPreference(SwipeThumbnailKey, true)
-    val (liquidMiniPlayer) = rememberPreference(LiquidMiniPlayerKey, defaultValue = true)
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
     val haptic = LocalHapticFeedback.current
     var hasTriggeredHapticThreshold by remember { mutableStateOf(false) }
@@ -150,12 +132,13 @@ fun AppleMiniPlayer(
     )
     
     // Dynamic cohesive colors
-    val isDynamicBackground = miniPlayerBackground != PlayerBackgroundStyle.DEFAULT
-    val backgroundColor = if (pureBlack && useDarkTheme) Color.Black else if (isDynamicBackground) Color.Transparent else artworkPalette.surfaceElevated
+    val effectiveBackgroundStyle = if (pureBlack) PlayerBackgroundStyle.DEFAULT else miniPlayerBackground
+    val isDynamicBackground = effectiveBackgroundStyle != PlayerBackgroundStyle.DEFAULT
+    val backgroundColor = if (pureBlack) Color.Black else if (isDynamicBackground) Color.Transparent else artworkPalette.surfaceElevated
     
     val primaryColor = artworkPalette.primaryAccent
     val outlineColor = if (isDynamicBackground) Color.White.copy(alpha = 0.5f) else MaterialTheme.colorScheme.outline
-    val onSurfaceColor = artworkPalette.textPrimary
+    val onSurfaceColor = if (pureBlack) Color.White else if (isDynamicBackground) PlayerColorExtractor.TextPrimary else artworkPalette.textPrimary
     val errorColor = MaterialTheme.colorScheme.error
 
     val previousTrackLabel = stringResource(R.string.previous_track)
@@ -254,7 +237,7 @@ fun AppleMiniPlayer(
                                     (kotlin.math.abs(currentOffset) > autoSwipeThreshold)
 
                                 if (shouldChangeSong) {
-                                    val now = System.currentTimeMillis()
+                                    val now = android.os.SystemClock.uptimeMillis()
                                     if (currentOffset > 0 && canSkipPreviousLocal) {
                                         if (now - lastPreviousTime >= 400L) {
                                             lastPreviousTime = now
@@ -297,24 +280,20 @@ fun AppleMiniPlayer(
                 .then(if (isTabletLandscape) Modifier.width(500.dp).align(Alignment.Center) else Modifier.fillMaxWidth())
                 .height(64.dp)
                 .offset { IntOffset(offsetXAnimatable.value.roundToInt(), 0) }
-                .clip(RoundedCornerShape(16.dp))
-                .background(color = backgroundColor)
-                .border(1.dp, outlineColor.copy(alpha = 0.15f), RoundedCornerShape(16.dp))
+                .miniPlayerCapsule(
+
+                    restingRadius = 16.dp,
+
+                    color = backgroundColor,
+                    borderColor = outlineColor.copy(alpha = 0.15f),
+                )
         ) {
             // Background Layers
             MiniPlayerBackgroundLayer(
-                style = miniPlayerBackground,
+                style = effectiveBackgroundStyle,
                 mediaMetadata = mediaMetadata,
-                gradientColors = gradientColors
-            )
-
-            // Fluid liquid progress animation - reads progress in draw phase
-            LiquidProgressCanvas(
-                progress = { progressState.progress },
-                isPlaying = playbackState == Player.STATE_READY && playerConnection.player.playWhenReady,
-                enabled = liquidMiniPlayer,
+                gradientColors = gradientColors,
                 interfaceAnimations = interfaceAnimations,
-                primaryColor = primaryColor
             )
 
             // Bottom Progress Bar
@@ -343,23 +322,13 @@ fun AppleMiniPlayer(
                         .clip(RoundedCornerShape(10.dp))
                         .background(color = outlineColor.copy(alpha = 0.2f))
                 ) {
-                    if (mediaMetadata?.thumbnailUrl.isNullOrBlank()) {
-                        Icon(
-                            painter = painterResource(R.drawable.mkr_music_small_icon),
-                            contentDescription = null,
-                            tint = primaryColor.copy(alpha = 0.6f),
-                            modifier = Modifier.size(28.dp)
-                        )
-                    } else {
-                        mediaMetadata?.let { metadata ->
-                            AsyncImage(
-                                model = metadata.thumbnailUrl,
-                                contentDescription = null,
-                                contentScale = ContentScale.Crop,
-                                modifier = Modifier.fillMaxSize()
-                            )
-                        }
-                    }
+                    MiniPlayerArtwork(
+
+                        url = mediaMetadata?.thumbnailUrl,
+
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize(),
+                    )
                 }
 
                 Spacer(modifier = Modifier.width(12.dp))
@@ -390,7 +359,7 @@ fun AppleMiniPlayer(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             softWrap = false,
-                            modifier = Modifier.fillMaxWidth().basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                            modifier = Modifier.fillMaxWidth().basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 3000, velocity = 30.dp),
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Row(
@@ -409,7 +378,7 @@ fun AppleMiniPlayer(
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     softWrap = false,
-                                    modifier = Modifier.weight(1f, fill = false).basicMarquee(iterations = 1, initialDelayMillis = 3000, velocity = 30.dp),
+                                    modifier = Modifier.weight(1f, fill = false).basicMarquee(iterations = Int.MAX_VALUE, initialDelayMillis = 3000, velocity = 30.dp),
                                 )
                             }
                         }
@@ -428,22 +397,11 @@ fun AppleMiniPlayer(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Cast indicator
-                if (isCasting) {
-                    Icon(
-                        painter = painterResource(R.drawable.cast_connected),
-                        contentDescription = "Casting",
-                        tint = primaryColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-
                 // Previous Button
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .clickable(
                             role = Role.Button,
@@ -456,11 +414,12 @@ fun AppleMiniPlayer(
                             }
                         }
                 ) {
+                    PlaybackCookieFace(MaterialTheme.colorScheme.secondaryContainer, faceFraction = 0.78f)
                     Icon(
-                        painter = painterResource(R.drawable.skip_previous),
+                        painter = painterResource(R.drawable.immersive_previous),
                         contentDescription = stringResource(R.string.previous_track),
-                        tint = if (canSkipPrevious && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
-                        modifier = Modifier.size(28.dp)
+                        tint = if (canSkipPrevious && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
+                        modifier = Modifier.size(24.dp)
                     )
                 }
 
@@ -480,10 +439,7 @@ fun AppleMiniPlayer(
                                     playerConnection.toggleMute()
                                     return@clickable
                                 }
-                                if (isCasting) {
-                                    val castIsPlaying = castHandler?.castIsPlaying?.value ?: false
-                                    if (castIsPlaying) castHandler?.pause() else castHandler?.play()
-                                } else if (playbackState == Player.STATE_ENDED) {
+                                if (playbackState == Player.STATE_ENDED) {
                                     playerConnection.player.seekTo(0, 0)
                                     playerConnection.player.playWhenReady = true
                                 } else {
@@ -493,12 +449,11 @@ fun AppleMiniPlayer(
                         }
                 ) {
                     val isPlaying by playerConnection.isPlaying.collectAsState()
-                    val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
-                    val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
                     val isMuted by playerConnection.isMuted.collectAsState()
 
+                    PlaybackCookieFace(MaterialTheme.colorScheme.primaryContainer)
                     Crossfade(
-                        targetState = effectiveIsPlaying,
+                        targetState = isPlaying,
                         animationSpec = if (interfaceAnimations) tween(150) else snap(),
                         label = "AppleMiniPlayPauseCrossfade"
                     ) { playing ->
@@ -507,8 +462,8 @@ fun AppleMiniPlayer(
                                 when {
                                     isListenTogetherGuest -> if (isMuted) R.drawable.volume_off else R.drawable.volume_up
                                     playbackState == Player.STATE_ENDED -> R.drawable.replay
-                                    playing -> R.drawable.pause
-                                    else -> R.drawable.play
+                                    playing -> R.drawable.transport_pause
+                                    else -> R.drawable.transport_play
                                 }
                             ),
                             contentDescription = if (isListenTogetherGuest) {
@@ -516,7 +471,7 @@ fun AppleMiniPlayer(
                             } else {
                                 if (playing) stringResource(R.string.pause) else stringResource(R.string.play)
                             },
-                            tint = onSurfaceColor,
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer,
                             modifier = Modifier.size(28.dp)
                         )
                     }
@@ -528,7 +483,7 @@ fun AppleMiniPlayer(
                 Box(
                     contentAlignment = Alignment.Center,
                     modifier = Modifier
-                        .size(44.dp)
+                        .size(48.dp)
                         .clip(CircleShape)
                         .clickable(
                             role = Role.Button,
@@ -541,11 +496,12 @@ fun AppleMiniPlayer(
                             }
                         }
                 ) {
+                    PlaybackCookieFace(MaterialTheme.colorScheme.secondaryContainer, faceFraction = 0.78f)
                     Icon(
-                        painter = painterResource(R.drawable.skip_next),
-                        contentDescription = stringResource(R.string.next),
-                        tint = if (canSkipNext && !isListenTogetherGuest) onSurfaceColor else onSurfaceColor.copy(alpha = 0.3f),
-                        modifier = Modifier.size(28.dp)
+                        painter = painterResource(R.drawable.immersive_next),
+                        contentDescription = stringResource(R.string.next_track),
+                        tint = if (canSkipNext && !isListenTogetherGuest) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.38f),
+                        modifier = Modifier.size(24.dp)
                     )
                 }
             }

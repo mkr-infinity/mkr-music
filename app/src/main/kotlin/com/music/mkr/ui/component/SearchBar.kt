@@ -246,4 +246,3 @@ val InputFieldHeight = 48.dp
 internal val TopAppBarVerticalPadding: Dp = 8.dp
 internal val TopAppBarHorizontalPadding: Dp = 12.dp
 val SearchBarIconOffsetX: Dp = 4.dp
-private const val AnimationDurationMillis: Int = 300

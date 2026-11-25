@@ -35,15 +35,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import com.music.mkr.ui.utils.safeStartActivity
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.painter.Painter
@@ -126,6 +124,7 @@ internal fun AnimatedActionButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     emphasis: ActionButtonEmphasis = ActionButtonEmphasis.Primary,
+    compact: Boolean = false,
     content: @Composable RowScope.() -> Unit,
 ) {
     val colors = MaterialTheme.colorScheme
@@ -144,14 +143,20 @@ internal fun AnimatedActionButton(
         ActionButtonEmphasis.Quiet -> colors.primary
     }
     val raised = if (primary) 3.dp else 1.dp
+    val restCorner = if (primary) 28.dp else 20.dp
+    val corner by animateDpAsState(
+        targetValue = if (animate && pressed && !quiet) restCorner - 5.dp else restCorner,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMedium),
+        label = "action_button_corner",
+    )
 
     Button(
         onClick = onClick,
         enabled = enabled,
         modifier = modifier
-            .heightIn(min = if (primary) 56.dp else 48.dp)
+            .heightIn(min = if (primary && !compact) 56.dp else 48.dp)
             .mkrPressFeedback(0.975f, interaction, animate),
-        shape = if (primary) MaterialTheme.shapes.extraLarge else MaterialTheme.shapes.large,
+        shape = RoundedCornerShape(if (animate) corner else restCorner),
         interactionSource = interaction,
         colors = ButtonDefaults.buttonColors(
             containerColor = if (pressed && !quiet) lerp(face, ink, 0.06f) else face,
@@ -166,7 +171,8 @@ internal fun AnimatedActionButton(
         border = if (quiet || !enabled) null else BorderStroke(
             1.dp, if (primary) colors.onPrimary.copy(alpha = 0.18f) else colors.outlineVariant,
         ),
-        contentPadding = PaddingValues(horizontal = 18.dp, vertical = 10.dp),
+        contentPadding = if (compact) PaddingValues(horizontal = 12.dp, vertical = 6.dp)
+            else PaddingValues(horizontal = 18.dp, vertical = 10.dp),
         content = content,
     )
 }
@@ -205,26 +211,6 @@ fun ExpressiveIconButton(
                 modifier = Modifier.size(24.dp)
             )
         }
-    }
-}
-
-@Composable
-fun ErrorSnackbar(
-    hostState: SnackbarHostState,
-    modifier: Modifier = Modifier
-) {
-    SnackbarHost(
-        hostState = hostState,
-        modifier = modifier
-    ) { data ->
-        Snackbar(
-            snackbarData = data,
-            containerColor = MaterialTheme.colorScheme.inverseSurface,
-            contentColor = MaterialTheme.colorScheme.inverseOnSurface,
-            actionColor = MaterialTheme.colorScheme.inversePrimary,
-            actionContentColor = MaterialTheme.colorScheme.inversePrimary,
-            dismissActionContentColor = MaterialTheme.colorScheme.inverseOnSurface
-        )
     }
 }
 
@@ -286,7 +272,7 @@ fun ChangelogItem(
                 text = annotatedText,
                 onClick = { offset ->
                     annotatedText.getStringAnnotations("URL", offset, offset).firstOrNull()?.let {
-                        ContextCompat.startActivity(context, Intent(Intent.ACTION_VIEW, Uri.parse(it.item)), null)
+                        context.safeStartActivity(Intent(Intent.ACTION_VIEW, Uri.parse(it.item)))
                     }
                 },
                 style = MaterialTheme.typography.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface)

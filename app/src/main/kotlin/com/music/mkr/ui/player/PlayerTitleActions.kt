@@ -8,7 +8,6 @@ package com.music.mkr.ui.player
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.widget.Toast
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.remember
@@ -16,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.navigation.NavController
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.ui.component.BottomSheetState
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 
 /**
  * Centralized title and artist actions shared by all player styles.
@@ -59,13 +59,13 @@ fun rememberPlayerTitleActions(
                 clipboardManager.setPrimaryClip(
                     ClipData.newPlainText("Copied Title", mediaMetadata.title)
                 )
-                Toast.makeText(context, "Copied Title", Toast.LENGTH_SHORT).show()
+                SnackbarManager.show("Copied Title")
             },
             onCopyArtists = {
                 clipboardManager.setPrimaryClip(
                     ClipData.newPlainText("Copied Artist", artistLine)
                 )
-                Toast.makeText(context, "Copied Artist", Toast.LENGTH_SHORT).show()
+                SnackbarManager.show("Copied Artist")
             },
         )
     }

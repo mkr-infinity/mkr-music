@@ -28,3 +28,38 @@ internal fun gaplessHistoryStart(matchesTrack: Boolean, terminalState: Boolean, 
         playingAudio -> GaplessHistoryStart.Record
         else -> GaplessHistoryStart.Wait
     }
+
+internal fun shouldStopPlaybackOnTaskRemoval(
+    stopOnTaskClear: Boolean,
+    hasQueue: Boolean,
+    isLoadingQueue: Boolean,
+    isCasting: Boolean,
+): Boolean = stopOnTaskClear || !(hasQueue || isLoadingQueue || isCasting)
+
+
+internal enum class SearchPlayNextResult { Added, AlreadyCurrent, AlreadyNext, QueueLoading, Blocked, Failed }
+
+internal fun shuffleOrderWithPlayNext(order: IntArray, insertionIndex: Int, count: Int): IntArray {
+    if (count <= 0) return order
+    val result = IntArray(order.size + count)
+    var next = 0
+    if (insertionIndex <= 0) {
+        repeat(count) { offset -> result[next++] = offset }
+        for (index in order) {
+            result[next++] = index + count
+        }
+        return result
+    }
+    val currentIndex = insertionIndex - 1
+    for (index in order) {
+        result[next++] = if (index >= insertionIndex) index + count else index
+        if (index == currentIndex) {
+            repeat(count) { offset -> result[next++] = insertionIndex + offset }
+        }
+    }
+    while (next < result.size) {
+        result[next] = order.size + (next - order.size)
+        next++
+    }
+    return result
+}

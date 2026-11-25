@@ -34,12 +34,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.compose.SubcomposeAsyncImage
 import com.music.mkr.R
+import com.music.mkr.models.toMediaMetadata
+import com.music.mkr.playback.queues.YouTubeQueue
+import com.music.mkr.viewmodels.HomeViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.music.mkr.constants.SuggestionRegionKey
 import com.music.mkr.constants.SuggestionRegionSlugToName
 import com.music.mkr.utils.rememberPreference
@@ -52,8 +57,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import kotlinx.coroutines.launch
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.boundsInRoot
@@ -65,6 +70,7 @@ import androidx.lifecycle.ViewModelStoreOwner
 import com.music.innertube.models.AlbumItem
 import com.music.mkr.ui.component.NavigationTitle
 import com.music.mkr.ui.screens.NetworkReload
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -74,16 +80,17 @@ fun SuggestionsTabContent(
     contentPadding: PaddingValues = PaddingValues(0.dp),
     headerContent: (@Composable () -> Unit)? = null
 ) {
-    val suggestionTracks by viewModel.suggestionTracks.collectAsState()
-    val suggestionArtists by viewModel.suggestionArtists.collectAsState()
-    val suggestionAlbums by viewModel.suggestionAlbums.collectAsState()
-    val suggestionVideos by viewModel.suggestionVideos.collectAsState()
-    val youtubeNewReleases by viewModel.youtubeNewReleases.collectAsState()
+    val home: HomeViewModel = (LocalActivity.current as? ViewModelStoreOwner)?.let { hiltViewModel(it) }
+        ?: hiltViewModel()
+    val quickPicks by home.quickPicks.collectAsStateWithLifecycle()
+    val hasListeningHistory by home.hasListeningHistory.collectAsStateWithLifecycle()
+    val personalTracks = if (hasListeningHistory) quickPicks.orEmpty().take(8) else emptyList()
+    val trendingAlbums by viewModel.suggestionAlbums.collectAsStateWithLifecycle()
+    var showAlbumCharts by rememberSaveable { mutableStateOf(false) }
     val isLoading by viewModel.isLoading.collectAsState()
     val isManualLoading by viewModel.isManualLoading.collectAsState()
     val uriHandler = androidx.compose.ui.platform.LocalUriHandler.current
     val playerConnection = com.music.mkr.LocalPlayerConnection.current
-    val context = LocalContext.current
     val (regionCode, _) = rememberPreference(
         key = SuggestionRegionKey,
         defaultValue = "system"
@@ -96,8 +103,6 @@ fun SuggestionsTabContent(
     )
 
     val pullToRefreshState = rememberPullToRefreshState()
-    val scope = rememberCoroutineScope()
-
     PullToRefreshBox(
         isRefreshing = isManualLoading,
         onRefresh = {
@@ -122,130 +127,80 @@ fun SuggestionsTabContent(
                     headerContent()
                 }
             }
-        if ((isLoading && !isManualLoading) || (suggestionTracks == null && suggestionArtists == null && suggestionAlbums == null && suggestionVideos == null && youtubeNewReleases == null)) {
-            item {
-                SkeletonSuggestions()
-            }
-        }
-
-        suggestionTracks?.let { tracks ->
-                item {
-                    TrendingAppleMusicSection(
-                        tracks = suggestionTracks!!,
-                        countryCode = regionCode,
-                        onTrackClick = { track ->
-                            android.widget.Toast.makeText(context, "Loading ${track.title}...", android.widget.Toast.LENGTH_SHORT).show()
-                            viewModel.playTrack(track, playerConnection)
-                        },
-                        onMoreClick = {
-                            val code = if (regionCode == "system") java.util.Locale.getDefault().country.lowercase() else regionCode.lowercase()
-                            uriHandler.openUri("https://music.apple.com/$code/charts")
-                        }
-                    )
-                }
-            }
-
-            youtubeNewReleases?.let { albums ->
-                item {
-                    YouTubeLatestAlbumsSection(
-                        albums = albums,
-                        onAlbumClick = { album ->
-                            android.widget.Toast.makeText(context, "Loading ${album.title}...", android.widget.Toast.LENGTH_SHORT).show()
-                            navController.navigate("album/${album.id}")
-                        },
-                        onMoreClick = {
-                            navController.navigate("new_release")
-                        }
-                    )
-                }
-            }
-
-            suggestionArtists?.let { artists ->
-                item {
-                    TopArtistsSection(
-                        artists = artists,
-                        onArtistClick = { artist ->
-                            android.widget.Toast.makeText(context, "Loading ${artist.name}...", android.widget.Toast.LENGTH_SHORT).show()
-                            viewModel.navigateToArtist(artist, navController)
-                        }
-                    )
-                }
-            }
-
-            suggestionAlbums?.let { albums ->
-                item {
-                    TrendingAlbumsSection(
-                        albums = albums,
-                        onAlbumClick = { album ->
-                            android.widget.Toast.makeText(context, "Loading ${album.title}...", android.widget.Toast.LENGTH_SHORT).show()
-                            viewModel.navigateToAlbum(album, navController)
-                        },
-                        onMoreClick = {
-                            val code = if (regionCode == "system") java.util.Locale.getDefault().country.lowercase() else regionCode.lowercase()
-                            uriHandler.openUri("https://music.apple.com/$code/charts/albums")
-                        }
-                    )
-                }
-            }
-
-            suggestionVideos?.let { videos ->
-                item {
-                    TrendingVideosSection(
-                        videos = videos,
-                        onVideoClick = { video ->
-                            android.widget.Toast.makeText(context, "Loading video ${video.title}...", android.widget.Toast.LENGTH_SHORT).show()
-                            viewModel.playVideo(video, playerConnection)
-                        },
-                        onMoreClick = {
-                            val code = if (regionCode == "system") java.util.Locale.getDefault().country.lowercase() else regionCode.lowercase()
-                            uriHandler.openUri("https://music.apple.com/$code/charts/videos")
-                        }
-                    )
-                }
-            }
-
-            if (suggestionTracks == null && suggestionArtists == null && suggestionAlbums == null && suggestionVideos == null && !isLoading) {
-                item {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(top = 100.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Text(
-                                text = "No suggestions available at the moment.",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            OutlinedButton(onClick = { viewModel.refresh(regionCode, force = true) }) {
-                                Text("Refresh")
+            if (personalTracks.isNotEmpty() || !trendingAlbums.isNullOrEmpty()) {
+                item(key = "personalized_suggestions") {
+                    BoxWithConstraints(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 10.dp)) {
+                        val columns = if (maxWidth >= 640.dp) 2 else 1
+                        val albumCardWidth = searchAlbumCardWidth(maxWidth)
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Text(stringResource(R.string.search_personalized_suggestions), style = MaterialTheme.typography.titleLarge)
+                            personalTracks.chunked(columns).forEach { row ->
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    row.forEach { song ->
+                                        val metadata = song.toMediaMetadata()
+                                        Surface(
+                                            onClick = {
+                                                val connection = playerConnection
+                                                if (connection == null) SnackbarManager.show(R.string.error_playback_failed)
+                                                else connection.playQueue(YouTubeQueue.radio(metadata))
+                                            },
+                                            modifier = Modifier.weight(1f),
+                                            shape = MaterialTheme.shapes.medium,
+                                            color = MaterialTheme.colorScheme.surfaceContainerLow,
+                                        ) {
+                                            Row(
+                                                Modifier.padding(8.dp),
+                                                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                            ) {
+                                                AsyncImage(
+                                                    model = metadata.thumbnailUrl,
+                                                    contentDescription = null,
+                                                    contentScale = ContentScale.Crop,
+                                                    modifier = Modifier.size(48.dp).clip(MaterialTheme.shapes.small),
+                                                )
+                                                Column(Modifier.weight(1f)) {
+                                                    Text(metadata.title, style = MaterialTheme.typography.titleSmall, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                                                    Text(metadata.artists.joinToString { it.name }, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                                }
+                                                Icon(painterResource(R.drawable.play), contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                                            }
+                                        }
+                                    }
+                                    if (row.size < columns) Spacer(Modifier.weight(1f))
+                                }
+                            }
+                            if (!trendingAlbums.isNullOrEmpty()) {
+                                TextButton(onClick = { showAlbumCharts = !showAlbumCharts }) {
+                                    Text(stringResource(if (showAlbumCharts) R.string.search_hide_album_charts else R.string.search_browse_album_charts))
+                                }
+                                if (showAlbumCharts) {
+                                    TrendingAlbumsSection(
+                                        albums = trendingAlbums.orEmpty(),
+                                        cardWidth = albumCardWidth,
+                                        onAlbumClick = { viewModel.navigateToAlbum(it, navController) },
+                                        onMoreClick = {
+                                            val code = if (regionCode == "system") java.util.Locale.getDefault().country.lowercase() else regionCode.lowercase()
+                                            uriHandler.openUri("https://music.apple.com/$code/charts/albums")
+                                        },
+                                    )
+                                }
                             }
                         }
                     }
                 }
             }
-
-            // Footer at the very bottom
-            if (suggestionTracks != null || suggestionArtists != null || suggestionAlbums != null || suggestionVideos != null) {
-                item {
-                    Column(
-                        modifier = Modifier.fillMaxWidth().padding(top = 48.dp, bottom = 32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = "Data from Apple Music",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
-                        )
-                        Text(
-                            text = "mkr-music",
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            fontWeight = FontWeight.Bold
-                        )
+            val hasDiscoveries = personalTracks.isNotEmpty() || !trendingAlbums.isNullOrEmpty()
+            if (!hasDiscoveries && isLoading && !isManualLoading) {
+                item(key = "loading_discovery") { SkeletonSuggestions() }
+            } else if (!hasDiscoveries && !isLoading) {
+                item(key = "retry_discovery") {
+                    TextButton(onClick = { viewModel.refresh(regionCode, force = true) }) {
+                        Text(stringResource(R.string.try_again))
                     }
                 }
             }
+
         }
     }
 }
@@ -412,28 +367,28 @@ fun TopArtistsSection(
     }
 }
 
+private fun searchAlbumCardWidth(width: Dp): Dp = (width * 0.28f).coerceIn(92.dp, 120.dp)
+
 @Composable
 fun TrendingAlbumsSection(
     albums: List<SuggestionAlbum>,
+    cardWidth: Dp,
     onAlbumClick: (SuggestionAlbum) -> Unit,
     onMoreClick: () -> Unit
 ) {
     if (albums.isEmpty()) return
     Column(modifier = Modifier.fillMaxWidth()) {
-        Spacer(modifier = Modifier.height(16.dp))
         Text(
             text = "Trending Albums",
             style = MaterialTheme.typography.titleLarge,
-            modifier = Modifier.padding(horizontal = 16.dp)
         )
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         LazyRow(
-            contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             items(albums) { album ->
-                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(120.dp).clickable { onAlbumClick(album) }) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(cardWidth).clickable { onAlbumClick(album) }) {
                     Box(contentAlignment = Alignment.BottomEnd) {
                         SubcomposeAsyncImage(
                             model = album.thumbnailUrl,
@@ -444,7 +399,7 @@ fun TrendingAlbumsSection(
                                     LoadingIndicator()
                                 }
                             },
-                            modifier = Modifier.size(120.dp).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
+                            modifier = Modifier.size(cardWidth).clip(RoundedCornerShape(12.dp)).background(MaterialTheme.colorScheme.surfaceVariant)
                         )
                         Surface(modifier = Modifier.size(28.dp).offset((-4).dp, (-4).dp), shape = CircleShape, color = MaterialTheme.colorScheme.primary, tonalElevation = 4.dp) {
                             Box(contentAlignment = Alignment.Center) {
@@ -462,13 +417,13 @@ fun TrendingAlbumsSection(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .width(100.dp)
+                        .width(cardWidth)
                         .clickable { onMoreClick() }
                 ) {
                     Box(
                         contentAlignment = Alignment.Center,
                         modifier = Modifier
-                            .size(120.dp)
+                            .size(cardWidth)
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.primaryContainer)
                     ) {
@@ -608,27 +563,28 @@ fun TrendingVideosSection(
 @Composable
 fun YouTubeLatestAlbumsSection(
     albums: List<AlbumItem>,
+    cardWidth: Dp,
     onAlbumClick: (AlbumItem) -> Unit,
     onMoreClick: () -> Unit
 ) {
     if (albums.isEmpty()) return
     Column(modifier = Modifier.fillMaxWidth()) {
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
         NavigationTitle(
             title = "New Releases",
             onClick = onMoreClick
         )
-        Spacer(Modifier.height(16.dp))
+        Spacer(Modifier.height(8.dp))
         LazyRow(
             contentPadding = PaddingValues(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.fillMaxWidth()
         ) {
             items(albums) { album ->
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     modifier = Modifier
-                        .width(120.dp)
+                        .width(cardWidth)
                         .clickable { onAlbumClick(album) }
                 ) {
                     AsyncImage(
@@ -636,7 +592,7 @@ fun YouTubeLatestAlbumsSection(
                         contentDescription = album.title,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .size(120.dp)
+                            .size(cardWidth)
                             .clip(RoundedCornerShape(12.dp))
                             .background(MaterialTheme.colorScheme.surfaceVariant)
                     )
@@ -661,7 +617,7 @@ fun YouTubeLatestAlbumsSection(
                 }
             }
         }
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(8.dp))
     }
 }
 

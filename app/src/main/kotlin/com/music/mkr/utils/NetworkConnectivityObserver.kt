@@ -10,8 +10,9 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * Simple NetworkConnectivityObserver based on OuterTune's implementation
@@ -21,16 +22,16 @@ class NetworkConnectivityObserver(context: Context) {
     private val connectivityManager =
         context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
 
-    private val _networkStatus = Channel<Boolean>(Channel.CONFLATED)
-    val networkStatus = _networkStatus.receiveAsFlow()
+    private val _networkStatus = MutableStateFlow(isCurrentlyConnected())
+    val networkStatus: StateFlow<Boolean> = _networkStatus.asStateFlow()
 
     private val networkCallback = object : ConnectivityManager.NetworkCallback() {
         override fun onAvailable(network: Network) {
-            _networkStatus.trySend(true)
+            _networkStatus.value = true
         }
 
         override fun onLost(network: Network) {
-            _networkStatus.trySend(false)
+            _networkStatus.value = false
         }
     }
 
@@ -44,12 +45,8 @@ class NetworkConnectivityObserver(context: Context) {
             connectivityManager.registerNetworkCallback(request, networkCallback)
         } catch (e: Exception) {
             // Fallback: assume connected if registration fails
-            _networkStatus.trySend(true)
+            _networkStatus.value = true
         }
-        
-        // Send initial state
-        val isInitiallyConnected = isCurrentlyConnected()
-        _networkStatus.trySend(isInitiallyConnected)
     }
 
     fun unregister() {

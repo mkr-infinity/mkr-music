@@ -5,17 +5,8 @@
 
 package com.music.mkr.ui.screens.settings
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
@@ -45,7 +36,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.compose.ui.platform.LocalContext
-import com.music.mkr.BuildConfig
 import com.music.mkr.LocalPlayerAwareWindowInsets
 import com.music.mkr.LocalPlayerConnection
 import com.music.mkr.R
@@ -57,13 +47,13 @@ import com.music.mkr.constants.AutoDownloadOnLikeKey
 import com.music.mkr.constants.CrossfadeCurve
 import com.music.mkr.constants.CrossfadeCurveKey
 import com.music.mkr.constants.CrossfadeDurationKey
+import com.music.mkr.constants.DefaultCrossfadeEnabled
 import com.music.mkr.constants.CrossfadeEnabledKey
 import com.music.mkr.constants.CrossfadeGaplessKey
 import com.music.mkr.constants.CrossfadeManualSkipKey
 import com.music.mkr.constants.AutoLoadMoreKey
 import com.music.mkr.constants.AutoSkipNextOnErrorKey
 import com.music.mkr.constants.DisableLoadMoreWhenRepeatAllKey
-import com.music.mkr.constants.EnableGoogleCastKey
 import com.music.mkr.constants.EnableSponsorBlockKey
 import com.music.mkr.constants.HistoryDuration
 import com.music.mkr.constants.KeepScreenOn
@@ -79,17 +69,6 @@ import com.music.mkr.constants.SimilarContent
 import com.music.mkr.constants.SkipSilenceInstantKey
 import com.music.mkr.constants.SkipSilenceKey
 import com.music.mkr.constants.StopMusicOnTaskClearKey
-import com.music.mkr.constants.LiquidMiniPlayerKey
-import com.music.mkr.constants.PureBlackMiniPlayerKey
-import com.music.mkr.constants.MiniPlayerBackgroundStyleKey
-import com.music.mkr.constants.PlayerBackgroundStyle
-import com.music.mkr.constants.PlayerBackgroundStyleKey
-import com.music.mkr.constants.PlayerStyle
-import com.music.mkr.constants.PlayerStyleKey
-import com.music.mkr.constants.UseAppleMiniPlayerKey
-import com.music.mkr.constants.UseNewMiniPlayerDesignKey
-import com.music.mkr.ui.component.PlayerStyleSelectionDialog
-import com.music.mkr.ui.screens.settings.MiniPlayerDesignOption
 import com.music.mkr.ui.component.ActionPromptDialog
 import com.music.mkr.ui.component.CrossfadeCurvePreview
 import com.music.mkr.ui.component.DefaultDialog
@@ -117,7 +96,7 @@ fun PlayerSettings(
     )
     val (crossfadeEnabled, onCrossfadeEnabledChange) = rememberPreference(
         CrossfadeEnabledKey,
-        defaultValue = false
+        defaultValue = DefaultCrossfadeEnabled
     )
     val (crossfadeDuration, onCrossfadeDurationChange) = rememberPreference(
         CrossfadeDurationKey,
@@ -129,7 +108,7 @@ fun PlayerSettings(
     )
     val (crossfadeGapless, onCrossfadeGaplessChange) = rememberPreference(
         CrossfadeGaplessKey,
-        defaultValue = true
+        defaultValue = false
     )
     val (crossfadeManualSkip, onCrossfadeManualSkipChange) = rememberPreference(
         CrossfadeManualSkipKey,
@@ -155,11 +134,6 @@ fun PlayerSettings(
     val (audioOffload, onAudioOffloadChange) = rememberPreference(
         key = AudioOffload,
         defaultValue = false
-    )
-
-    val (enableGoogleCast, onEnableGoogleCastChange) = rememberPreference(
-        key = EnableGoogleCastKey,
-        defaultValue = true
     )
 
     val (seekExtraSeconds, onSeekExtraSeconds) = rememberPreference(
@@ -252,45 +226,6 @@ fun PlayerSettings(
         )
     }
 
-
-
-    val (rawPlayerStyle, onPlayerStyleChange) = rememberEnumPreference(
-        PlayerStyleKey,
-        defaultValue = PlayerStyle.CINEMATIC
-    )
-    val playerStyle = remember(rawPlayerStyle) {
-        if (rawPlayerStyle == PlayerStyle.APPLE) PlayerStyle.CINEMATIC else rawPlayerStyle
-    }
-    val (useAppleMiniPlayer, onUseAppleMiniPlayerChange) = rememberPreference(
-        UseAppleMiniPlayerKey,
-        defaultValue = false
-    )
-    val (useNewMiniPlayerDesign, onUseNewMiniPlayerDesignChange) = rememberPreference(
-        UseNewMiniPlayerDesignKey,
-        defaultValue = true
-    )
-    val (liquidMiniPlayer, onLiquidMiniPlayerChange) = rememberPreference(
-        LiquidMiniPlayerKey,
-        defaultValue = true
-    )
-    val (playerBackground, onPlayerBackgroundChange) = rememberEnumPreference(
-        PlayerBackgroundStyleKey,
-        defaultValue = PlayerBackgroundStyle.DEFAULT
-    )
-
-    val (pureBlackMiniPlayer, onPureBlackMiniPlayerChange) = rememberPreference(
-        PureBlackMiniPlayerKey,
-        defaultValue = false
-    )
-    val (miniPlayerBackground, onMiniPlayerBackgroundChange) = rememberEnumPreference(
-        MiniPlayerBackgroundStyleKey,
-        defaultValue = PlayerBackgroundStyle.DEFAULT
-    )
-
-    var showPlayerDesignDialog by remember { mutableStateOf(false) }
-    var showMiniPlayerDesignDialog by remember { mutableStateOf(false) }
-    var showPlayerBackgroundDialog by remember { mutableStateOf(false) }
-    var showMiniPlayerBackgroundDialog by remember { mutableStateOf(false) }
     var showCrossfadeBetaDialog by remember { mutableStateOf(false) }
     var showCrossfadeCurveDialog by remember { mutableStateOf(false) }
     var showEqualizerDialog by remember { mutableStateOf(false) }
@@ -298,113 +233,6 @@ fun PlayerSettings(
     if (showEqualizerDialog) {
         EqualizerDialog(
             onDismiss = { showEqualizerDialog = false }
-        )
-    }
-
-    if (showPlayerDesignDialog) {
-        PlayerStyleSelectionDialog(
-            currentStyle = playerStyle,
-            onDismiss = { showPlayerDesignDialog = false },
-            onSelect = { selectedStyle ->
-                onPlayerStyleChange(selectedStyle)
-                if (selectedStyle != PlayerStyle.CLASSIC && selectedStyle != PlayerStyle.APPLE && playerBackground == PlayerBackgroundStyle.APPLE_MUSIC) {
-                    onPlayerBackgroundChange(PlayerBackgroundStyle.DEFAULT)
-                }
-                showPlayerDesignDialog = false
-            }
-        )
-    }
-
-    val currentMiniPlayerOption = remember(useAppleMiniPlayer, useNewMiniPlayerDesign) {
-        when {
-            useAppleMiniPlayer -> MiniPlayerDesignOption.APPLE
-            useNewMiniPlayerDesign -> MiniPlayerDesignOption.NEW
-            else -> MiniPlayerDesignOption.CLASSIC
-        }
-    }
-
-    if (showMiniPlayerDesignDialog) {
-        EnumDialog(
-            onDismiss = { showMiniPlayerDesignDialog = false },
-            onSelect = { option ->
-                when (option) {
-                    MiniPlayerDesignOption.CLASSIC -> {
-                        onUseAppleMiniPlayerChange(false)
-                        onUseNewMiniPlayerDesignChange(false)
-                    }
-                    MiniPlayerDesignOption.NEW -> {
-                        onUseAppleMiniPlayerChange(false)
-                        onUseNewMiniPlayerDesignChange(true)
-                    }
-                    MiniPlayerDesignOption.APPLE -> {
-                        onUseAppleMiniPlayerChange(true)
-                        onUseNewMiniPlayerDesignChange(false)
-                    }
-                }
-                showMiniPlayerDesignDialog = false
-            },
-            title = stringResource(R.string.mini_player),
-            current = currentMiniPlayerOption,
-            values = MiniPlayerDesignOption.values().toList(),
-            valueText = {
-                when (it) {
-                    MiniPlayerDesignOption.CLASSIC -> "Classic mini player"
-                    MiniPlayerDesignOption.NEW -> "Expressive mini player"
-                    MiniPlayerDesignOption.APPLE -> "Apple-style capsule"
-                }
-            }
-        )
-    }
-
-    if (showPlayerBackgroundDialog) {
-        EnumDialog(
-            onDismiss = { showPlayerBackgroundDialog = false },
-            onSelect = {
-                onPlayerBackgroundChange(it)
-                showPlayerBackgroundDialog = false
-            },
-            title = stringResource(R.string.player_background_style),
-            current = playerBackground,
-            values = PlayerBackgroundStyle.values().toList(),
-            valueText = {
-                when (it) {
-                    PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
-                    PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
-                    PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
-                    PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
-                    PlayerBackgroundStyle.APPLE_MUSIC -> stringResource(R.string.apple_music)
-                    PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
-                }
-            }
-        )
-    }
-
-    if (showMiniPlayerBackgroundDialog) {
-        EnumDialog(
-            onDismiss = { showMiniPlayerBackgroundDialog = false },
-            onSelect = {
-                onMiniPlayerBackgroundChange(it)
-                showMiniPlayerBackgroundDialog = false
-            },
-            title = stringResource(R.string.miniplayer_background_style),
-            current = miniPlayerBackground,
-            values = listOf(
-                PlayerBackgroundStyle.DEFAULT,
-                PlayerBackgroundStyle.GRADIENT,
-                PlayerBackgroundStyle.BLUR,
-                PlayerBackgroundStyle.GLOW_ANIMATED,
-                PlayerBackgroundStyle.LIVE_MESH
-            ),
-            valueText = {
-                when (it) {
-                    PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
-                    PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
-                    PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
-                    PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
-                    PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
-                    else -> stringResource(R.string.follow_theme)
-                }
-            }
         )
     }
 
@@ -461,159 +289,7 @@ fun PlayerSettings(
                 )
             )
         )
-        // Group 1 — Player Architecture & Styling
-        ExpressiveSettingGroup(
-            title = "Player Architecture & Styling",
-            items = listOf(
-                Material3SettingsItem(
-                    key = "appearance_player_style",
-                    icon = painterResource(R.drawable.palette),
-                    title = { Text(stringResource(R.string.player_style)) },
-                    description = { Text("Choose from 8 distinct player designs") },
-                    trailingContent = {
-                        Text(stringResource(playerStyle.titleRes))
-                    },
-                    onClick = { showPlayerDesignDialog = true }
-                ),
-                Material3SettingsItem(
-                    key = "appearance_player_background",
-                    icon = painterResource(R.drawable.gradient),
-                    title = { Text(stringResource(R.string.player_background_style)) },
-                    description = { Text("Apple Music fluid mesh, gradient, animated glow or theme") },
-                    trailingContent = {
-                        Text(
-                            when (playerBackground) {
-                                PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
-                                PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
-                                PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
-                                PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
-                                PlayerBackgroundStyle.APPLE_MUSIC -> stringResource(R.string.apple_music)
-                                PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
-                            }
-                        )
-                    },
-                    onClick = { showPlayerBackgroundDialog = true }
-                )
-            )
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Group 2 — Mini Player
-        ExpressiveSettingGroup(
-            title = stringResource(R.string.mini_player),
-            items = listOf(
-                Material3SettingsItem(
-                    key = "appearance_apple_player",
-                    icon = painterResource(R.drawable.nav_bar),
-                    title = { Text(stringResource(R.string.mini_player)) },
-                    description = { 
-                        Text(
-                            text = "Classic bar, Expressive pill, or Apple capsule",
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    },
-                    trailingContent = {
-                        Surface(
-                            shape = RoundedCornerShape(12.dp),
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
-                            ) {
-                                Text(
-                                    text = when (currentMiniPlayerOption) {
-                                        MiniPlayerDesignOption.CLASSIC -> "Classic"
-                                        MiniPlayerDesignOption.NEW -> "Expressive"
-                                        MiniPlayerDesignOption.APPLE -> "Apple"
-                                    },
-                                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    maxLines = 1
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Icon(
-                                    painter = painterResource(R.drawable.navigate_next),
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                            }
-                        }
-                    },
-                    onClick = { showMiniPlayerDesignDialog = true }
-                ),
-                Material3SettingsItem(
-                    key = "appearance_liquid_mini_player",
-                    icon = painterResource(R.drawable.sparks),
-                    title = { Text("Liquid Mini-Player") },
-                    description = { Text("Fluid organic water progress animation on mini-player") },
-                    trailingContent = {
-                        Switch(
-                            checked = liquidMiniPlayer,
-                            onCheckedChange = onLiquidMiniPlayerChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (liquidMiniPlayer) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onLiquidMiniPlayerChange(!liquidMiniPlayer) }
-                ),
-                Material3SettingsItem(
-                    key = "appearance_pure_black",
-                    icon = painterResource(R.drawable.contrast),
-                    title = { Text(stringResource(R.string.pure_black_mini_player)) },
-                    description = { Text("Use pure AMOLED black background on mini player") },
-                    trailingContent = {
-                        Switch(
-                            checked = pureBlackMiniPlayer,
-                            onCheckedChange = onPureBlackMiniPlayerChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (pureBlackMiniPlayer) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onPureBlackMiniPlayerChange(!pureBlackMiniPlayer) }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.palette),
-                    title = { Text(stringResource(R.string.miniplayer_background_style)) },
-                    description = { Text("Follow theme, gradient, blur, or animated glow") },
-                    trailingContent = {
-                        Text(
-                            when (miniPlayerBackground) {
-                                PlayerBackgroundStyle.DEFAULT -> stringResource(R.string.follow_theme)
-                                PlayerBackgroundStyle.GRADIENT -> stringResource(R.string.gradient)
-                                PlayerBackgroundStyle.BLUR -> stringResource(R.string.player_background_blur)
-                                PlayerBackgroundStyle.GLOW_ANIMATED -> stringResource(R.string.glow_animated)
-                                PlayerBackgroundStyle.LIVE_MESH -> stringResource(R.string.live_mesh)
-                                else -> stringResource(R.string.follow_theme)
-                            }
-                        )
-                    },
-                    onClick = { showMiniPlayerBackgroundDialog = true }
-                )
-            )
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Group 3 — Audio Quality & Sound
+        // Audio Quality & Sound
         ExpressiveSettingGroup(
             title = "Audio Quality & Sound",
             items = buildList {
@@ -659,34 +335,6 @@ fun PlayerSettings(
                         )
                     },
                     onClick = { onAudioNormalizationChange(!audioNormalization) }
-                ))
-                add(Material3SettingsItem(
-                    key = "player_audio_offload",
-                    icon = painterResource(R.drawable.graphic_eq),
-                    title = { Text(stringResource(R.string.audio_offload)) },
-                    description = {
-                        Text(
-                            if (crossfadeEnabled) stringResource(R.string.audio_offload_disabled_by_crossfade)
-                            else stringResource(R.string.audio_offload_description)
-                        )
-                    },
-                    trailingContent = {
-                        Switch(
-                            checked = if (crossfadeEnabled) false else audioOffload,
-                            onCheckedChange = onAudioOffloadChange,
-                            enabled = !crossfadeEnabled,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (!crossfadeEnabled && audioOffload) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { if (!crossfadeEnabled) onAudioOffloadChange(!audioOffload) }
                 ))
                 add(Material3SettingsItem(
                     key = "player_skip_silence",
@@ -754,31 +402,6 @@ fun PlayerSettings(
                     },
                     onClick = { onSeekExtraSeconds(!seekExtraSeconds) }
                 ))
-                // Only show Cast setting in GMS builds (not in F-Droid/FOSS)
-                if (BuildConfig.CAST_AVAILABLE) {
-                    add(Material3SettingsItem(
-                        key = "player_google_cast",
-                        icon = painterResource(R.drawable.cast),
-                        title = { Text(stringResource(R.string.google_cast)) },
-                        description = { Text(stringResource(R.string.google_cast_description)) },
-                        trailingContent = {
-                            Switch(
-                                checked = enableGoogleCast,
-                                onCheckedChange = onEnableGoogleCastChange,
-                                thumbContent = {
-                                    Icon(
-                                        painter = painterResource(
-                                            id = if (enableGoogleCast) R.drawable.check else R.drawable.close
-                                        ),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(SwitchDefaults.IconSize)
-                                    )
-                                }
-                            )
-                        },
-                        onClick = { onEnableGoogleCastChange(!enableGoogleCast) }
-                    ))
-                }
             }
         )
 
@@ -1104,6 +727,7 @@ fun PlayerSettings(
                     onClick = { onPreventDuplicateTracksInQueueChange(!preventDuplicateTracksInQueue) }
                 ),
                 Material3SettingsItem(
+                    key = "player_auto_skip_error",
                     icon = painterResource(R.drawable.skip_next),
                     title = { Text(stringResource(R.string.auto_skip_next_on_error)) },
                     description = { Text(stringResource(R.string.auto_skip_next_on_error_desc)) },
@@ -1245,6 +869,41 @@ fun PlayerSettings(
                         )
                     },
                     onClick = { onKeepScreenOnChange(!keepScreenOn) }
+                )
+            )
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+
+        ExpressiveSettingGroup(
+            title = stringResource(R.string.advanced),
+            items = listOf(
+                Material3SettingsItem(
+                    key = "player_audio_offload",
+                    icon = painterResource(R.drawable.graphic_eq),
+                    title = { Text(stringResource(R.string.audio_offload)) },
+                    description = {
+                        Text(
+                            if (crossfadeEnabled) stringResource(R.string.audio_offload_disabled_by_crossfade)
+                            else stringResource(R.string.audio_offload_description)
+                        )
+                    },
+                    trailingContent = {
+                        Switch(
+                            checked = if (crossfadeEnabled) false else audioOffload,
+                            onCheckedChange = onAudioOffloadChange,
+                            enabled = !crossfadeEnabled,
+                            thumbContent = {
+                                Icon(
+                                    painter = painterResource(
+                                        id = if (!crossfadeEnabled && audioOffload) R.drawable.check else R.drawable.close
+                                    ),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(SwitchDefaults.IconSize)
+                                )
+                            }
+                        )
+                    },
+                    onClick = { if (!crossfadeEnabled) onAudioOffloadChange(!audioOffload) }
                 )
             )
         )

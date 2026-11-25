@@ -5,11 +5,8 @@
 
 package com.music.mkr.mkrmusic.component
 
-import android.app.DownloadManager
-import android.content.Context
 import android.content.Intent
 import android.net.Uri
-import android.os.Environment
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,6 +42,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +62,8 @@ import androidx.compose.ui.unit.sp
 import com.music.mkr.R
 import com.music.mkr.mkrmusic.updater.ReleaseMetadata
 import com.music.mkr.mkrmusic.updater.ReleasePreviewState
+import com.music.mkr.mkrmusic.updater.downloadLatestUniversalUpdate
+import kotlinx.coroutines.launch
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -74,6 +74,20 @@ fun UpdatePreviewDialog(
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
+    val scope = rememberCoroutineScope()
+    var checkingDownload by remember { mutableStateOf(false) }
+    val downloadUpdate: () -> Unit = {
+        if (!checkingDownload) {
+            checkingDownload = true
+            scope.launch {
+                try {
+                    downloadLatestUniversalUpdate(context)
+                } finally {
+                    checkingDownload = false
+                }
+            }
+        }
+    }
 
     BasicAlertDialog(
         onDismissRequest = onDismiss
@@ -172,9 +186,8 @@ fun UpdatePreviewDialog(
                             installedVersionName = state.installedVersionName,
                             installedVersionCode = state.installedVersionCode,
                             isVersionCodeUnverified = state.isVersionCodeUnverified,
-                            onDownloadClick = { url, name ->
-                                triggerApkDownload(context, url, name)
-                            },
+                            checkingDownload = checkingDownload,
+                            onDownloadClick = downloadUpdate,
                             onViewReleaseClick = {
                                 try {
                                     uriHandler.openUri(state.release.htmlUrl)
@@ -194,9 +207,8 @@ fun UpdatePreviewDialog(
                             installedVersionName = state.installedVersionName,
                             installedVersionCode = state.installedVersionCode,
                             isVersionCodeUnverified = false,
-                            onDownloadClick = { url, name ->
-                                triggerApkDownload(context, url, name)
-                            },
+                            checkingDownload = checkingDownload,
+                            onDownloadClick = downloadUpdate,
                             onViewReleaseClick = {
                                 try {
                                     uriHandler.openUri(state.release.htmlUrl)
@@ -225,7 +237,8 @@ private fun UpdateContent(
     installedVersionName: String,
     installedVersionCode: Long,
     isVersionCodeUnverified: Boolean,
-    onDownloadClick: (url: String, name: String) -> Unit,
+    checkingDownload: Boolean,
+    onDownloadClick: () -> Unit,
     onViewReleaseClick: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -384,16 +397,12 @@ private fun UpdateContent(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            val hasDirectApk = !release.apkDownloadUrl.isNullOrBlank()
+            val hasDirectApk = isUpdateAvailable && !release.apkDownloadUrl.isNullOrBlank()
 
             // Button 1: Download APK
             Button(
-                onClick = {
-                    release.apkDownloadUrl?.let { url ->
-                        onDownloadClick(url, release.apkName ?: "mkr-music-universal.apk")
-                    }
-                },
-                enabled = hasDirectApk,
+                onClick = onDownloadClick,
+                enabled = hasDirectApk && !checkingDownload,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp)
@@ -411,8 +420,11 @@ private fun UpdateContent(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = if (hasDirectApk) stringResource(R.string.download_apk)
-                    else stringResource(R.string.no_direct_apk),
+                    text = when {
+                        checkingDownload -> stringResource(R.string.checking_for_updates)
+                        hasDirectApk -> stringResource(R.string.download_apk)
+                        else -> stringResource(R.string.no_direct_apk)
+                    },
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -573,30 +585,6 @@ private fun RenderSafeMarkdown(
                 }
             }
         }
-    }
-}
-
-/**
- * Triggers APK download using Android's DownloadManager, opening the download stream cleanly.
- */
-private fun triggerApkDownload(context: Context, downloadUrl: String, filename: String) {
-    try {
-        val uri = Uri.parse(downloadUrl)
-        val request = DownloadManager.Request(uri)
-            .setTitle("MKR Music Update ($filename)")
-            .setDescription("Downloading latest release APK")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, filename)
-            .setMimeType("application/vnd.android.package-archive")
-
-        val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        manager.enqueue(request)
-    } catch (_: Exception) {
-        // Fallback to standard browser intent
-        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(downloadUrl)).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK
-        }
-        context.startActivity(browserIntent)
     }
 }
 

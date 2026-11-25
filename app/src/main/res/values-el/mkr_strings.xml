@@ -50,7 +50,6 @@
     <string name="player_background_style">Στυλ φόντου αναπαραγωγέα</string>
     <string name="follow_theme">Με βάση το θέμα</string>
     <string name="gradient">Διαβάθμιση</string>
-    <string name="player_background_blur">Θάμπωμα</string>
     <string name="player_buttons_style">Χρώματα κουμπιού παίχτη</string>
     <string name="default_style">Προεπιλογή</string>
     <string name="secondary_color_style">Δευτερεύον</string>

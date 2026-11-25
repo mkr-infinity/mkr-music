@@ -23,11 +23,6 @@ enum class NavigationStyle(
         descriptionRes = R.string.nav_style_floating_glass_desc,
         isFloating = true,
     ),
-    AMBER_DOCK(
-        titleRes = R.string.nav_style_amber_dock,
-        descriptionRes = R.string.nav_style_amber_dock_desc,
-        isFloating = true,
-    ),
     CLEAN_MATERIAL(
         titleRes = R.string.nav_style_clean_material,
         descriptionRes = R.string.nav_style_clean_material_desc,
@@ -35,6 +30,6 @@ enum class NavigationStyle(
     );
 
     companion object {
-        val DEFAULT = FLOATING_GLASS
+        val DEFAULT = CLEAN_MATERIAL
     }
 }

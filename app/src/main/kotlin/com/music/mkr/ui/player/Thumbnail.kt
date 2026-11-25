@@ -97,6 +97,9 @@ import com.music.mkr.constants.ShowPlayerThumbnailShadowKey
 import com.music.mkr.constants.PlayerThumbnailShadowElevationKey
 import com.music.mkr.constants.PlayerBackgroundStyle
 import com.music.mkr.constants.PlayerBackgroundStyleKey
+import com.music.mkr.constants.PlayerStyle
+import com.music.mkr.constants.PlayerStyleKey
+import com.music.mkr.constants.resolveFullPlayerBackground
 import com.music.mkr.constants.PlayerHorizontalPadding
 import com.music.mkr.constants.RotatingThumbnailKey
 import com.music.mkr.constants.SeekExtraSeconds
@@ -104,8 +107,6 @@ import com.music.mkr.constants.SwipeThumbnailKey
 import com.music.mkr.constants.ThumbnailCornerRadiusKey
 import com.music.mkr.constants.ThumbnailCornerRadius
 import com.music.mkr.listentogether.RoomRole
-import com.music.mkr.ui.component.CastButton
-import com.music.mkr.utils.rememberEnumPreference
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.delay
@@ -214,7 +215,7 @@ private fun getMediaItems(
 private fun getTextColor(playerBackground: PlayerBackgroundStyle): Color {
     return when (playerBackground) {
         PlayerBackgroundStyle.DEFAULT -> MaterialTheme.colorScheme.onBackground
-        PlayerBackgroundStyle.BLUR, PlayerBackgroundStyle.GRADIENT, PlayerBackgroundStyle.GLOW_ANIMATED, PlayerBackgroundStyle.APPLE_MUSIC, PlayerBackgroundStyle.LIVE_MESH -> Color.White
+        else -> Color.White
     }
 }
 
@@ -244,11 +245,10 @@ fun Thumbnail(
     val swipeThumbnail = swipeThumbnailPref && !isListenTogetherGuest
     val hidePlayerThumbnail by rememberPreference(HidePlayerThumbnailKey, false)
     val cropAlbumArt by rememberPreference(CropAlbumArtKey, false)
-    val playerBackground by rememberEnumPreference(
-        key = PlayerBackgroundStyleKey,
-        defaultValue = PlayerBackgroundStyle.DEFAULT
-    )
-    val thumbnailCornerRadius by rememberPreference(ThumbnailCornerRadiusKey, defaultValue = 3f)
+    val playerStyleName by rememberPreference(PlayerStyleKey, PlayerStyle.DEFAULT.name)
+    val savedPlayerBackground by rememberPreference(PlayerBackgroundStyleKey, "")
+    val playerBackground = resolveFullPlayerBackground(savedPlayerBackground, PlayerStyle.fromString(playerStyleName))
+    val thumbnailCornerRadius by rememberPreference(ThumbnailCornerRadiusKey, defaultValue = 32f)
     
     // Pre-calculate text color based on background style
     val textBackgroundColor = getTextColor(playerBackground)
@@ -363,7 +363,7 @@ fun Thumbnail(
 
         // Main thumbnail view
         AnimatedVisibility(
-            visible = error == null && !(playerBackground == PlayerBackgroundStyle.APPLE_MUSIC && !isLandscape),
+            visible = error == null,
             enter = fadeIn(),
             exit = fadeOut(),
             modifier = Modifier
@@ -428,11 +428,13 @@ fun Thumbnail(
                         }
                     ) {
                         items(
-                            items = mediaItems,
-                            key = { item -> 
-                                item.mediaId.ifEmpty { "unknown_${item.hashCode()}" }
+                            count = mediaItems.size,
+                            key = { index ->
+                                val item = mediaItems[index]
+                                "${index}_${item.mediaId.ifEmpty { item.hashCode() }}"
                             }
-                        ) { item ->
+                        ) { index ->
+                            val item = mediaItems[index]
                             ThumbnailItem(
                                 item = item,
                                 dimensions = dimensions,
@@ -530,13 +532,6 @@ private fun ThumbnailHeader(
                 }
             }
         }
-
-        CastButton(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .size(24.dp),
-            tintColor = textColor
-        )
     }
 }
 
@@ -624,7 +619,12 @@ private fun ThumbnailItem(
                             playerConnection.player.seekTo((currentPosition - skipAmount).coerceAtLeast(0))
                             onSeek(context.getString(R.string.seek_backward_dynamic, skipAmount / 1000), true)
                         } else {
-                            playerConnection.player.seekTo((currentPosition + skipAmount).coerceAtMost(duration))
+                            val targetPos = if (duration > 0L) {
+                                (currentPosition + skipAmount).coerceAtMost(duration)
+                            } else {
+                                currentPosition + skipAmount
+                            }.coerceAtLeast(0L)
+                            playerConnection.player.seekTo(targetPos)
                             onSeek(context.getString(R.string.seek_forward_dynamic, skipAmount / 1000), true)
                         }
                     }
@@ -745,27 +745,46 @@ private fun ThumbnailImage(
             }
         } else {
             var currentUrl by remember(artworkUri) {
-                mutableStateOf(artworkUri)
+                mutableStateOf<String?>(artworkUri)
             }
-            AsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(currentUrl)
-                    .memoryCachePolicy(CachePolicy.ENABLED)
-                    .diskCachePolicy(CachePolicy.ENABLED)
-                    .networkCachePolicy(CachePolicy.ENABLED)
-                    .crossfade(true)
-                    .build(),
-                onError = {
-                    val url = currentUrl
-                    Timber.e("[Thumbnail] ThumbnailImage load FAILED: url=$url | error=${it.result.throwable}")
-                    if (url != null && url.contains("maxresdefault.jpg")) {
-                        currentUrl = url.replace("maxresdefault.jpg", "hqdefault.jpg")
-                    }
-                },
-                contentDescription = null,
-                contentScale = if (cropArtwork) ContentScale.Crop else ContentScale.Fit,
-                modifier = Modifier.fillMaxSize()
-            )
+            if (currentUrl == null) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.mkr_music_small_icon),
+                        contentDescription = null,
+                        tint = com.music.mkr.ui.theme.PlayerColorExtractor.WarmAmber.copy(alpha = 0.6f),
+                        modifier = Modifier.size(96.dp)
+                    )
+                }
+            } else {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(currentUrl)
+                        .memoryCachePolicy(CachePolicy.ENABLED)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .networkCachePolicy(CachePolicy.ENABLED)
+                        .crossfade(true)
+                        .build(),
+                    onError = {
+                        val url = currentUrl
+                        Timber.e("[Thumbnail] ThumbnailImage load FAILED: url=$url | error=${it.result.throwable}")
+                        currentUrl = when {
+                            url == null -> null
+                            url.contains("maxresdefault.jpg") -> url.replace("maxresdefault.jpg", "sddefault.jpg")
+                            url.contains("sddefault.jpg") -> url.replace("sddefault.jpg", "hqdefault.jpg")
+                            url.contains("hqdefault.jpg") -> url.replace("hqdefault.jpg", "mqdefault.jpg")
+                            artworkUri != null && url != artworkUri -> artworkUri
+                            else -> null
+                        }
+                    },
+                    contentDescription = null,
+                    contentScale = if (cropArtwork) ContentScale.Crop else ContentScale.Fit,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }

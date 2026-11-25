@@ -62,12 +62,19 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PointMode
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.toShape
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -176,25 +183,42 @@ private data class OnboardingFeatureItem(
     val iconTint: Color
 )
 
+private const val ONBOARDING_VERSION_KEY = "completed_onboarding_version"
+private const val ONBOARDING_UPDATE_TIME_KEY = "completed_onboarding_update_time"
+private const val LEGACY_ONBOARDING_KEY = "has_completed_onboarding"
+
+private fun Context.onboardingPreferences() = getSharedPreferences("app_state", Context.MODE_PRIVATE)
+
+internal fun Context.getAppLastUpdateTime(): Long = runCatching {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0)).lastUpdateTime
+    } else {
+        @Suppress("DEPRECATION")
+        packageManager.getPackageInfo(packageName, 0).lastUpdateTime
+    }
+}.getOrDefault(0L)
+
+internal fun Context.hasCompletedOnboardingForCurrentVersion(): Boolean {
+    val prefs = onboardingPreferences()
+    val completedVersion = prefs.getInt(ONBOARDING_VERSION_KEY, 0)
+    val completedUpdateTime = prefs.getLong(ONBOARDING_UPDATE_TIME_KEY, 0L)
+    val currentUpdateTime = getAppLastUpdateTime()
+
+    return completedVersion == BuildConfig.VERSION_CODE && completedUpdateTime == currentUpdateTime && currentUpdateTime != 0L
+}
+
 class WelcomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        val sp = getSharedPreferences("app_state", Context.MODE_PRIVATE)
-        val hasCompletedOnboardingSp = sp.getBoolean("has_completed_onboarding", false)
-
-        val isFirstRun = dataStore.get(IsFirstRunKey, true)
+        val preferences = onboardingPreferences()
         val forceShow = intent.getBooleanExtra("FORCE_SHOW", false)
 
-        if (!isFirstRun && !hasCompletedOnboardingSp) {
-            sp.edit().putBoolean("has_completed_onboarding", true).apply()
-        }
-
-        val completedOnboarding = !isFirstRun || hasCompletedOnboardingSp
-
-        if (completedOnboarding && !forceShow) {
+        if (hasCompletedOnboardingForCurrentVersion() && !forceShow) {
             super.onCreate(savedInstanceState)
             finishOnboarding()
             return
         }
+
+        val showSetup = true
 
         try {
             installSplashScreen()
@@ -223,20 +247,21 @@ class WelcomeActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    WelcomePagerScreen(onFinished = {
+                    WelcomePagerScreen(showSetup = showSetup) {
                         lifecycleScope.launch {
-                            getSharedPreferences("app_state", Context.MODE_PRIVATE)
-                                .edit()
-                                .putBoolean("has_completed_onboarding", true)
+                            if (showSetup) dataStore.edit { it[IsFirstRunKey] = false }
+                            preferences.edit()
+                                .putBoolean(LEGACY_ONBOARDING_KEY, true)
+                                .putInt(ONBOARDING_VERSION_KEY, BuildConfig.VERSION_CODE)
+                                .putLong(ONBOARDING_UPDATE_TIME_KEY, getAppLastUpdateTime())
                                 .apply()
-                            dataStore.edit { it[IsFirstRunKey] = false }
                             if (forceShow) {
                                 finish()
                             } else {
                                 finishOnboarding()
                             }
                         }
-                    })
+                    }
                 }
             }
         }
@@ -268,7 +293,7 @@ val GoogleSansFlex = FontFamily(
 )
 
 @Composable
-fun WelcomePagerScreen(onFinished: () -> Unit) {
+private fun WelcomePagerScreen(showSetup: Boolean, onFinished: () -> Unit) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
     val scope = rememberCoroutineScope()
@@ -323,6 +348,14 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
         )
     }
 
+    var hasInstallUnknownAppsPermission by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.packageManager.canRequestPackageInstalls()
+            } else true
+        )
+    }
+
     var isLastPageScrolledToEnd by remember { mutableStateOf(true) }
 
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -334,6 +367,9 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         context,
                         Manifest.permission.POST_NOTIFICATIONS
                     ) == PackageManager.PERMISSION_GRANTED
+                }
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    hasInstallUnknownAppsPermission = context.packageManager.canRequestPackageInstalls()
                 }
             }
         }
@@ -348,7 +384,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
         }
     )
 
-    val pages = listOf(
+    val pages = listOfNotNull(
         OnboardingPageInfo(
             content = { _ ->
                 WelcomePageContent(
@@ -359,7 +395,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                 )
             }
         ),
-        OnboardingPageInfo(
+        if (showSetup) OnboardingPageInfo(
             content = { _ ->
                 BoxWithConstraints(
                     modifier = Modifier.fillMaxSize()
@@ -457,6 +493,47 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                                         }
                                     }
                                 )
+
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                PermissionCard(
+                                    icon = painterResource(id = R.drawable.apk_install),
+                                    iconColor = Color(0xFF80da88),
+                                    iconTint = Color(0xFF00522c),
+                                    title = stringResource(com.music.mkr.R.string.perm_install_title),
+                                    description = stringResource(com.music.mkr.R.string.perm_install_desc),
+                                    shape = RoundedCornerShape(24.dp),
+                                    control = {
+                                        Switch(
+                                            checked = hasInstallUnknownAppsPermission,
+                                            onCheckedChange = {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    val intent = Intent(
+                                                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                                        Uri.parse("package:${context.packageName}")
+                                                    )
+                                                    context.startActivity(intent)
+                                                }
+                                            },
+                                            thumbContent = {
+                                                Icon(
+                                                    painter = painterResource(if (hasInstallUnknownAppsPermission) R.drawable.check else R.drawable.close),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        )
+                                    },
+                                    onClick = {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            val intent = Intent(
+                                                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                                Uri.parse("package:${context.packageName}")
+                                            )
+                                            context.startActivity(intent)
+                                        }
+                                    }
+                                )
                             }
                         }
                     } else {
@@ -550,13 +627,54 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                                     }
                                 )
 
+                                Spacer(modifier = Modifier.height(14.dp))
+
+                                PermissionCard(
+                                    icon = painterResource(id = R.drawable.apk_install),
+                                    iconColor = Color(0xFF80da88),
+                                    iconTint = Color(0xFF00522c),
+                                    title = stringResource(com.music.mkr.R.string.perm_install_title),
+                                    description = stringResource(com.music.mkr.R.string.perm_install_desc),
+                                    shape = RoundedCornerShape(24.dp),
+                                    control = {
+                                        Switch(
+                                            checked = hasInstallUnknownAppsPermission,
+                                            onCheckedChange = {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                                    val intent = Intent(
+                                                        Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                                        Uri.parse("package:${context.packageName}")
+                                                    )
+                                                    context.startActivity(intent)
+                                                }
+                                            },
+                                            thumbContent = {
+                                                Icon(
+                                                    painter = painterResource(if (hasInstallUnknownAppsPermission) R.drawable.check else R.drawable.close),
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(16.dp)
+                                                )
+                                            }
+                                        )
+                                    },
+                                    onClick = {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                                            val intent = Intent(
+                                                Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                                                Uri.parse("package:${context.packageName}")
+                                            )
+                                            context.startActivity(intent)
+                                        }
+                                    }
+                                )
+
                                 Spacer(modifier = Modifier.height(100.dp))
                             }
                         }
                     }
                 }
             }
-        ),
+        ) else null,
         OnboardingPageInfo(
             content = { onUpdateScroll ->
                 LaunchedEffect(Unit) {
@@ -672,37 +790,77 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     ),
                     label = "ambientPulseScale"
                 )
+                val cardWavyPhase by infiniteTransition.animateFloat(
+                    initialValue = 0f,
+                    targetValue = (2 * Math.PI).toFloat(),
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(6000, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart
+                    ),
+                    label = "cardWavyPhase"
+                )
 
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .drawBehind {
-                            // Top-right dynamic ambient glow according to active feature
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(
-                                        dynamicBgColor.copy(alpha = 0.28f),
-                                        dynamicBgColor.copy(alpha = 0.08f),
-                                        Color.Transparent
-                                    ),
-                                    center = Offset(size.width * 0.85f, size.height * 0.12f + ambientFloatY),
-                                    radius = size.width * 0.65f * ambientPulseScale
-                                )
-                            )
-                            // Bottom-left dynamic aura glow according to active feature
-                            drawCircle(
-                                brush = Brush.radialGradient(
-                                    colors = listOf(
-                                        dynamicTintColor.copy(alpha = 0.22f),
-                                        dynamicBgColor.copy(alpha = 0.06f),
-                                        Color.Transparent
-                                    ),
-                                    center = Offset(size.width * 0.25f, size.height * 0.75f - ambientFloatY),
-                                    radius = size.width * 0.70f * ambientPulseScale
-                                )
-                            )
-                        }
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxSize()
                 ) {
+                    val density = LocalDensity.current
+                    val widthPx = with(density) { maxWidth.toPx() }
+                    val heightPx = with(density) { maxHeight.toPx() }
+                    val dotSpacingPx = with(density) { 32.dp.toPx() }
+                    val dotPoints = remember(widthPx, heightPx) {
+                        val points = ArrayList<Offset>()
+                        if (widthPx > 0 && heightPx > 0) {
+                            val cols = (widthPx / dotSpacingPx).toInt()
+                            val rows = (heightPx / dotSpacingPx).toInt()
+                            for (c in 0..cols) {
+                                for (r in 0..rows) {
+                                    points.add(Offset(c * dotSpacingPx + dotSpacingPx * 0.5f, r * dotSpacingPx + dotSpacingPx * 0.5f))
+                                }
+                            }
+                        }
+                        points
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .drawBehind {
+                                // Top-right dynamic ambient glow according to active feature
+                                drawCircle(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            dynamicBgColor.copy(alpha = 0.28f),
+                                            dynamicBgColor.copy(alpha = 0.08f),
+                                            Color.Transparent
+                                        ),
+                                        center = Offset(size.width * 0.85f, size.height * 0.12f + ambientFloatY),
+                                        radius = size.width * 0.65f * ambientPulseScale
+                                    )
+                                )
+                                // Bottom-left dynamic aura glow according to active feature
+                                drawCircle(
+                                    brush = Brush.radialGradient(
+                                        colors = listOf(
+                                            dynamicTintColor.copy(alpha = 0.22f),
+                                            dynamicBgColor.copy(alpha = 0.06f),
+                                            Color.Transparent
+                                        ),
+                                        center = Offset(size.width * 0.25f, size.height * 0.75f - ambientFloatY),
+                                        radius = size.width * 0.70f * ambientPulseScale
+                                    )
+                                )
+                                // Alive animated music dot matrix overlay
+                                if (dotPoints.isNotEmpty()) {
+                                    drawPoints(
+                                        points = dotPoints,
+                                        pointMode = PointMode.Points,
+                                        color = dynamicBgColor.copy(alpha = 0.08f * ambientPulseScale),
+                                        strokeWidth = 3.dp.toPx(),
+                                        cap = StrokeCap.Round
+                                    )
+                                }
+                            }
+                    ) {
                     Column(
                         modifier = Modifier.fillMaxSize(),
                         horizontalAlignment = Alignment.Start
@@ -764,14 +922,17 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                                             scaleX = scale
                                             scaleY = scale
                                             this.alpha = alpha
-                                        },
+                                        }
+                                        .wavyCookieBorder(
+                                            color = item.iconColor.copy(alpha = lerp(0.35f, 0.85f, 1f - pageOffset.coerceIn(0f, 1f))),
+                                            strokeWidth = 1.6.dp,
+                                            waveAmplitude = 2.dp,
+                                            cornerRadius = 32.dp,
+                                            phase = cardWavyPhase
+                                        ),
                                     shape = RoundedCornerShape(32.dp),
                                     colors = CardDefaults.cardColors(
                                         containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                                    ),
-                                    border = BorderStroke(
-                                        1.2.dp,
-                                        item.iconColor.copy(alpha = lerp(0.25f, 0.70f, 1f - pageOffset.coerceIn(0f, 1f)))
                                     )
                                 ) {
                                     Column(
@@ -796,7 +957,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Surface(
-                                                shape = RoundedCornerShape(18.dp),
+                                                shape = MaterialShapes.Cookie12Sided.toShape(),
                                                 color = item.iconColor,
                                                 modifier = Modifier.size(54.dp)
                                             ) {
@@ -811,7 +972,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                                             }
 
                                             Surface(
-                                                shape = CircleShape,
+                                                shape = MaterialShapes.Cookie6Sided.toShape(),
                                                 color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.5f)
                                             ) {
                                                 Text(
@@ -904,6 +1065,7 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                     }
                 }
             }
+        }
         )
     )
 
@@ -1052,18 +1214,19 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                val showLanguageButton = showSetup && isTargetFirstPage
                 val languageButtonWidth by animateDpAsState(
-                    targetValue = if (isTargetFirstPage) 64.dp else 0.dp,
+                    targetValue = if (showLanguageButton) 64.dp else 0.dp,
                     animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
                     label = "languageButtonWidth"
                 )
                 val languageButtonAlpha by animateFloatAsState(
-                    targetValue = if (isTargetFirstPage) 1f else 0f,
+                    targetValue = if (showLanguageButton) 1f else 0f,
                     animationSpec = MaterialTheme.motionScheme.defaultEffectsSpec(),
                     label = "languageButtonAlpha"
                 )
                 val spacingValue by animateDpAsState(
-                    targetValue = if (isTargetFirstPage) 12.dp else 0.dp,
+                    targetValue = if (showLanguageButton) 12.dp else 0.dp,
                     animationSpec = MaterialTheme.motionScheme.defaultSpatialSpec(),
                     label = "buttonSpacing"
                 )
@@ -1075,42 +1238,44 @@ fun WelcomePagerScreen(onFinished: () -> Unit) {
                         .height(80.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val languageButtonShapes = IconButtonDefaults.shapes(
-                        shape = CircleShape,
-                        pressedShape = RoundedCornerShape(12.dp)
-                    )
-                    FilledTonalIconButton(
-                        onClick = {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                                runCatching {
-                                    context.startActivity(
-                                        Intent(
-                                            Settings.ACTION_APP_LOCALE_SETTINGS,
-                                            "package:${context.packageName}".toUri()
+                    if (showSetup) {
+                        val languageButtonShapes = IconButtonDefaults.shapes(
+                            shape = CircleShape,
+                            pressedShape = RoundedCornerShape(12.dp)
+                        )
+                        FilledTonalIconButton(
+                            onClick = {
+                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                                    runCatching {
+                                        context.startActivity(
+                                            Intent(
+                                                Settings.ACTION_APP_LOCALE_SETTINGS,
+                                                "package:${context.packageName}".toUri()
+                                            )
                                         )
-                                    )
+                                    }
+                                } else {
+                                    showAppLanguageDialog = true
                                 }
-                            } else {
-                                showAppLanguageDialog = true
-                            }
-                        },
-                        modifier = Modifier
-                            .size(languageButtonWidth)
-                            .alpha(languageButtonAlpha),
-                        shapes = languageButtonShapes,
-                        colors = IconButtonDefaults.filledTonalIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    ) {
-                        Icon(
-                            painter = painterResource(id = com.music.mkr.R.drawable.language),
-                            contentDescription = "Language",
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
+                            },
+                            modifier = Modifier
+                                .size(languageButtonWidth)
+                                .alpha(languageButtonAlpha),
+                            shapes = languageButtonShapes,
+                            colors = IconButtonDefaults.filledTonalIconButtonColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        ) {
+                            Icon(
+                                painter = painterResource(id = com.music.mkr.R.drawable.language),
+                                contentDescription = "Language",
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
 
-                    Spacer(modifier = Modifier.width(spacingValue))
+                        Spacer(modifier = Modifier.width(spacingValue))
+                    }
 
                     val isNextEnabled = !isLastPage || isLastPageScrolledToEnd
                     val alphaNext by animateFloatAsState(
@@ -1246,87 +1411,63 @@ private fun WelcomePageContent(
                     )
                 }
 
-                // Right Column: Branding, Minimal Typography, Feature Badges & Developer Attribution
+                // Right Column: Branding, Structured Typography, Expressive Cookie Version Tag & Developer Attribution
                 Column(
                     modifier = Modifier
                         .weight(1.2f)
                         .then(if (isCompactHeight) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                        .padding(vertical = 12.dp),
+                        .padding(vertical = 16.dp),
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Version / Brand Badge
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f))
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Text(
-                            text = com.music.mkr.github.GitHubConfig.VERSION_LABEL,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontFamily = GoogleSansFlex,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                            text = "MKR",
+                            style = thinHeaderStyle.copy(fontSize = 44.sp),
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Text(
+                            text = "Music",
+                            fontFamily = GoogleSansFlex,
+                            fontWeight = FontWeight.ExtraBold,
+                            fontSize = 44.sp,
+                            letterSpacing = (-0.8).sp,
+                            color = MaterialTheme.colorScheme.primary
                         )
                     }
 
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text(
-                        text = "MKR Music",
-                        style = thinHeaderStyle.copy(
-                            fontSize = 44.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.5).sp
-                        ),
-                        color = MaterialTheme.colorScheme.primary,
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(modifier = Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
 
                     Text(
                         text = "Your Music. Your Mood. Your World.",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontFamily = GoogleSansFlex,
-                            fontWeight = FontWeight.SemiBold,
-                            letterSpacing = (-0.2).sp
-                        ),
-                        color = MaterialTheme.colorScheme.onBackground,
-                        textAlign = TextAlign.Start
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Stream and discover your favorite tracks with pure sound and zero interruptions.",
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = GoogleSansFlex
+                            fontWeight = FontWeight.Medium,
+                            letterSpacing = 0.sp,
+                            lineHeight = 28.sp
                         ),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Start
                     )
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    // Wavy musical feature chips
                     FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
+                        itemVerticalAlignment = Alignment.CenterVertically
                     ) {
-                        WelcomeFeatureBadge(icon = R.drawable.music_note, label = "Audio Quality")
-                        WelcomeFeatureBadge(icon = R.drawable.sparks, label = "Zero Ads")
-                        WelcomeFeatureBadge(icon = R.drawable.equalizer, label = "Pure Focus")
+                        // Expressive cookie-style dynamic version tag (driven by version.properties)
+                        AliveCookieBadge()
+
+                        // Developer attribution chip linking to profile
+                        WelcomeDeveloperChip(
+                            onClick = { onOpenUrl(com.music.mkr.github.GitHubConfig.DEV_GITHUB_URL) }
+                        )
                     }
-
-                    Spacer(modifier = Modifier.height(20.dp))
-
-                    // Developer attribution chip linking to profile
-                    WelcomeDeveloperChip(
-                        onClick = { onOpenUrl(com.music.mkr.github.GitHubConfig.DEV_GITHUB_URL) }
-                    )
                 }
             }
         } else {
@@ -1335,7 +1476,7 @@ private fun WelcomePageContent(
                 modifier = Modifier
                     .fillMaxWidth()
                     .then(if (isCompactHeight) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                    .padding(horizontal = 20.dp, vertical = 12.dp),
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -1345,64 +1486,59 @@ private fun WelcomePageContent(
                     compact = isCompactHeight
                 )
 
-                Spacer(modifier = Modifier.height(if (isCompactHeight) 10.dp else 18.dp))
+                Spacer(modifier = Modifier.height(if (isCompactHeight) 14.dp else 24.dp))
 
-                // Brand Name
-                Text(
-                    text = "MKR Music",
-                    style = thinHeaderStyle.copy(
-                        fontSize = if (isCompactHeight) 34.sp else 42.sp,
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = (-0.5).sp
-                    ),
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.Center
-                )
+                // Structured Brand Name
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally)
+                ) {
+                    Text(
+                        text = "MKR",
+                        style = thinHeaderStyle.copy(
+                            fontSize = if (isCompactHeight) 36.sp else 42.sp
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground
+                    )
+                    Text(
+                        text = "Music",
+                        fontFamily = GoogleSansFlex,
+                        fontWeight = FontWeight.ExtraBold,
+                        fontSize = if (isCompactHeight) 36.sp else 42.sp,
+                        letterSpacing = (-0.8).sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
 
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(if (isCompactHeight) 6.dp else 10.dp))
 
-                // Punchy Tagline
+                // Tagline
                 Text(
                     text = "Your Music. Your Mood. Your World.",
                     style = MaterialTheme.typography.titleMedium.copy(
                         fontFamily = GoogleSansFlex,
-                        fontWeight = FontWeight.SemiBold,
-                        letterSpacing = (-0.2).sp
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.sp,
+                        lineHeight = 24.sp
                     ),
-                    color = MaterialTheme.colorScheme.onBackground,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
 
-                Spacer(modifier = Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(if (isCompactHeight) 16.dp else 26.dp))
 
-                Text(
-                    text = "Stream and discover your favorite tracks with pure sound and zero interruptions.",
-                    style = MaterialTheme.typography.bodySmall.copy(
-                        fontFamily = GoogleSansFlex
-                    ),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(horizontal = 12.dp)
-                )
-
-                Spacer(modifier = Modifier.height(if (isCompactHeight) 12.dp else 18.dp))
-
-                // Wavy musical feature chips
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                // Structured Metadata Row: Expressive Cookie Version Tag + Developer Chip
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    itemVerticalAlignment = Alignment.CenterVertically
                 ) {
-                    WelcomeFeatureBadge(icon = R.drawable.music_note, label = "Stream Info")
-                    WelcomeFeatureBadge(icon = R.drawable.sparks, label = "Ad-Free")
-                    WelcomeFeatureBadge(icon = R.drawable.equalizer, label = "Open Source")
+                    AliveCookieBadge()
+
+                    WelcomeDeveloperChip(
+                        onClick = { onOpenUrl(com.music.mkr.github.GitHubConfig.DEV_GITHUB_URL) }
+                    )
                 }
-
-                Spacer(modifier = Modifier.height(if (isCompactHeight) 12.dp else 20.dp))
-
-                // Developer attribution chip linking to profile
-                WelcomeDeveloperChip(
-                    onClick = { onOpenUrl(com.music.mkr.github.GitHubConfig.DEV_GITHUB_URL) }
-                )
             }
         }
     }
@@ -1482,14 +1618,24 @@ private fun WavySoundwaveHero(
         label = "emblemTranslationY"
     )
 
-    val logoAuraRotation by infiniteTransition.animateFloat(
+    val cookieRotation by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 7500, easing = LinearEasing),
+            animation = tween(durationMillis = 20000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = "logoAuraRotation"
+        label = "cookieRotation"
+    )
+
+    val cookieReverseRotation by infiniteTransition.animateFloat(
+        initialValue = 360f,
+        targetValue = 0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 26000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "cookieReverseRotation"
     )
 
     val logoAuraPulse by infiniteTransition.animateFloat(
@@ -1574,7 +1720,7 @@ private fun WavySoundwaveHero(
                 style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round)
             )
 
-            // Animated Central ambient radial glow
+            // Central ambient radial glow
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
@@ -1588,38 +1734,53 @@ private fun WavySoundwaveHero(
                 radius = heroSize.toPx() * 1.4f * glowScale,
                 center = Offset(width * 0.5f, midY)
             )
+
+            // Orbiting alive musical particles
+            for (i in 0..11) {
+                val angle = (i * (Math.PI * 2 / 12) + (wavePhase * 0.5f)).toFloat()
+                val r = heroSize.toPx() * (0.85f + 0.15f * kotlin.math.sin(wavePhase.toDouble() + i).toFloat())
+                val px = width * 0.5f + kotlin.math.cos(angle.toDouble()).toFloat() * r
+                val py = midY + kotlin.math.sin(angle.toDouble()).toFloat() * r * 0.7f
+                val dotAlpha = (0.25f + 0.25f * kotlin.math.sin(wavePhase2.toDouble() + i).toFloat()).coerceIn(0.1f, 0.6f)
+                drawCircle(
+                    color = if (i % 2 == 0) primaryColor.copy(alpha = dotAlpha) else tertiaryColor.copy(alpha = dotAlpha),
+                    radius = (2.2f + (i % 3) * 0.8f).dp.toPx(),
+                    center = Offset(px, py)
+                )
+            }
         }
 
-        // Living dynamic chromatic aura behind the app logo
+        // Living dynamic chromatic spinning cookie aura behind the app logo
         Box(
             modifier = Modifier
-                .size(heroSize * 1.38f * logoAuraPulse)
+                .size(heroSize * 1.48f * logoAuraPulse)
                 .graphicsLayer {
-                    rotationZ = logoAuraRotation
+                    rotationZ = cookieRotation
                     translationY = emblemTranslationY
                 }
-                .clip(CircleShape)
+                .clip(MaterialShapes.Cookie12Sided.toShape())
                 .background(
                     Brush.sweepGradient(
                         listOf(
-                            primaryColor.copy(alpha = 0.35f),
-                            tertiaryColor.copy(alpha = 0.42f),
-                            Color(0xFFFFB300).copy(alpha = 0.25f),
-                            primaryColor.copy(alpha = 0.35f)
+                            primaryColor.copy(alpha = 0.40f),
+                            tertiaryColor.copy(alpha = 0.48f),
+                            Color(0xFFFFB300).copy(alpha = 0.32f),
+                            primaryColor.copy(alpha = 0.40f)
                         )
                     )
                 )
         )
 
-        // Pulsating living expansion ring behind logo
+        // Pulsating counter-spinning inner cookie ring behind logo
         Box(
             modifier = Modifier
-                .size(heroSize * 1.22f * emblemScale)
+                .size(heroSize * 1.28f * emblemScale)
                 .graphicsLayer {
+                    rotationZ = cookieReverseRotation
                     translationY = emblemTranslationY
                 }
-                .clip(RoundedCornerShape(36.dp))
-                .background(primaryColor.copy(alpha = 0.18f))
+                .clip(MaterialShapes.Cookie6Sided.toShape())
+                .background(primaryColor.copy(alpha = 0.22f))
         )
 
         // Layered elevated emblem with living breathing motion
@@ -1649,36 +1810,137 @@ private fun WavySoundwaveHero(
 }
 
 @Composable
-private fun WelcomeFeatureBadge(
-    icon: Int,
-    label: String
+private fun AliveCookieBadge(
+    modifier: Modifier = Modifier
 ) {
+    val infiniteTransition = rememberInfiniteTransition(label = "AliveCookieBadgeAnim")
+    val cookieRotation by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 12000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "cookieSpin"
+    )
+
     Surface(
-        shape = RoundedCornerShape(12.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.7f),
-        border = BorderStroke(0.75.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f))
+        shape = CircleShape,
+        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f),
+        border = BorderStroke(1.2.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)),
+        modifier = modifier
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            modifier = Modifier.padding(start = 8.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(5.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Icon(
-                painter = painterResource(id = icon),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.size(13.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(22.dp)
+                    .graphicsLayer { rotationZ = cookieRotation }
+                    .background(MaterialTheme.colorScheme.primary, MaterialShapes.Cookie12Sided.toShape()),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(7.dp)
+                        .background(MaterialTheme.colorScheme.onPrimary, MaterialShapes.Cookie6Sided.toShape())
+                )
+            }
             Text(
-                text = label,
-                style = MaterialTheme.typography.labelSmall.copy(
+                text = "v${BuildConfig.VERSION_NAME}",
+                style = MaterialTheme.typography.labelLarge.copy(
                     fontFamily = GoogleSansFlex,
-                    fontWeight = FontWeight.Medium
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.4.sp
                 ),
-                color = MaterialTheme.colorScheme.onSurface
+                color = MaterialTheme.colorScheme.onPrimaryContainer
             )
         }
     }
+}
+
+private fun Modifier.wavyCookieBorder(
+    color: Color,
+    strokeWidth: androidx.compose.ui.unit.Dp = 1.6.dp,
+    waveAmplitude: androidx.compose.ui.unit.Dp = 2.dp,
+    cornerRadius: androidx.compose.ui.unit.Dp = 32.dp,
+    phase: Float = 0f
+): Modifier = this.drawWithContent {
+    drawContent()
+    val width = size.width
+    val height = size.height
+    if (width <= 0f || height <= 0f) return@drawWithContent
+
+    val amp = waveAmplitude.toPx()
+    val r = cornerRadius.toPx().coerceAtMost(minOf(width, height) / 2f)
+    val strokePx = strokeWidth.toPx()
+
+    val path = Path().apply {
+        moveTo(r, 0f)
+        val topWidth = width - 2 * r
+        val topWaves = 6
+        for (i in 1..40) {
+            val t = i / 40f
+            val x = r + t * topWidth
+            val y = kotlin.math.sin(t * topWaves * Math.PI * 2 + phase).toFloat() * amp
+            lineTo(x, y.coerceAtLeast(0f))
+        }
+        arcTo(
+            Rect(width - 2 * r, 0f, width, 2 * r),
+            -90f,
+            90f,
+            false
+        )
+        val rightHeight = height - 2 * r
+        val rightWaves = 5
+        for (i in 1..40) {
+            val t = i / 40f
+            val y = r + t * rightHeight
+            val x = width - kotlin.math.sin(t * rightWaves * Math.PI * 2 + phase).toFloat() * amp
+            lineTo(x.coerceAtMost(width), y)
+        }
+        arcTo(
+            Rect(width - 2 * r, height - 2 * r, width, height),
+            0f,
+            90f,
+            false
+        )
+        val botWaves = 6
+        for (i in 1..40) {
+            val t = i / 40f
+            val x = width - r - t * topWidth
+            val y = height - kotlin.math.sin(t * botWaves * Math.PI * 2 + phase).toFloat() * amp
+            lineTo(x, y.coerceAtMost(height))
+        }
+        arcTo(
+            Rect(0f, height - 2 * r, 2 * r, height),
+            90f,
+            90f,
+            false
+        )
+        val leftWaves = 5
+        for (i in 1..40) {
+            val t = i / 40f
+            val y = height - r - t * rightHeight
+            val x = kotlin.math.sin(t * leftWaves * Math.PI * 2 + phase).toFloat() * amp
+            lineTo(x.coerceAtLeast(0f), y)
+        }
+        arcTo(
+            Rect(0f, 0f, 2 * r, 2 * r),
+            180f,
+            90f,
+            false
+        )
+        close()
+    }
+
+    drawPath(
+        path = path,
+        color = color,
+        style = Stroke(width = strokePx, cap = StrokeCap.Round, join = StrokeJoin.Round)
+    )
 }
 
 @Composable

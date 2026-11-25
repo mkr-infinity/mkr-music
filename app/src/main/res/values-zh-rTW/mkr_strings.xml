@@ -33,7 +33,6 @@
     <string name="player_background_style">播放器背景樣式</string>
     <string name="follow_theme">跟隨主題</string>
     <string name="gradient">漸層</string>
-    <string name="player_background_blur">模糊</string>
     <string name="player_buttons_style">播放器按鈕顏色</string>
     <string name="default_style">預設</string>
     <string name="secondary_color_style">次要</string>

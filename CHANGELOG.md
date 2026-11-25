@@ -1,10 +1,98 @@
 # Changelog
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/releases/mkr-music-v1.1.0-poster.png" alt="MKR Music v1.1.0 Release Poster" width="100%" />
+  <img src="https://raw.githubusercontent.com/mkr-infinity/mkr-music/main/assets/releases/mkr-music-v2.0.0-poster.png" alt="MKR Music v2.0.0 Release Poster" width="100%" />
 </p>
 
 ---
+
+## [v2.0.0] - 2026-11-25
+
+### Added
+
+- **Lyrics Provider Menu Pill** — Switch lyrics providers from the 3-dot menu, sorted Word-synced → Line-synced → Plain with a Retry button. · *Lyrics → More options*
+- **Poppins Default Font** — Clean geometric typeface set as the default app font. · *Settings → Appearance → App font*
+- **Language & Mood Queue Recommendations** — Auto-queue suggestions now prioritize tracks matching the active song's language and acoustic mood. · *Full player → Queue*
+- **Audio Focus Auto-Resume** — Supports delayed audio focus gain and transient interruptions so playback resumes automatically when other apps release the speaker. · *Playback service*
+- **Update Install Permission Onboarding** — Added Unknown Apps install permission card on onboarding Page 2 for seamless in-app updates. · *Onboarding → Required Permissions*
+- **Auto-hide navigation** — On by default. Scroll down to hide the bar and up to reveal it. · *Settings → Appearance → Misc → Auto-hide bottom navigation*
+- **Top Song Match** — Play the best match or queue it next. · *Search → Top Song Match*
+- **APK download progress** — Track the download in a notification and tap when ready to install. · *Settings → System Updates → Download APK*
+- **Immersive Artwork** — Edge-to-edge artwork that fades behind playback controls. · *Settings → Appearance → Full Player → Player background style*
+
+### Changed
+
+- **~45% Smaller Universal APK** — Reduced release APK size to `16.04 MB` (down from `29.31 MB`, under `20 MB`). · *Universal APK*
+- **Expressive Settings Hub** — Adaptive Bento layout, YouTube profile banner, animated update alert, matching section cookies, and shorter descriptions. · *Settings*
+- **Split Expressive Navigation** — Left Home/Library pill with a separate circular Search button and a clean preview-only style picker. · *Bottom navigation*
+- **Search Discovery** — Simplified to Personalized Suggestions only. · *Search*
+- **Expressive Onboarding Redesign** — Animated wavy hero, spinning cookie-styled dynamic version badge, structured typography, and wavy cookie-bordered feature cards. · *Onboarding*
+- **Onboarding Update Trigger** — Opens on first install and once per APK update (using package update timestamp) without modifying or deleting user data. · *App launch*
+- **Player Defaults** — Squiggly slider and Classic mini-player (following theme) set as defaults. · *Settings → Appearance*
+- **Navigation styles** — Three layouts with matching icons. Material 3 is the default and highlights the active tab with a soft cookie shape. · *Settings → Appearance → Misc → Navigation style*
+- **Floating Glass** — A compact active capsule scales with your screen. · *Bottom navigation → Floating Glass*
+- **Top actions** — History, Account, and Settings use matching cookie buttons. · *Home and Library*
+- **Player style picker** — Capsule previews and a clear selected style. · *Settings → Appearance → Full Player → Player style*
+- **Appearance selections** — Settings show the chosen player styles, backgrounds, and artwork corner radius. · *Settings → Appearance*
+- **Immersive player** — Larger artwork, scrolling title and artist, and a transparent dismiss handle. · *Settings → Appearance → Full Player → Player style → Immersive*
+- **Shuffle and repeat** — Moved into the expanded player's three-dot menu. · *Full player → More options*
+- **Mini-player controls** — Rounded transport icons with smaller Previous and Next cookies. · *Mini-player*
+- **Mini-player background** — Glow Motion is the default and replaces saved Blur selections. · *Settings → Appearance → Mini-player → Background style*
+- **Full-player settings** — Style and background controls now sit together. · *Settings → Appearance → Full Player*
+- **Audio offload** — Moved to Advanced. · *Settings → Player and audio → Advanced → Enable offload*
+- **Library cards and headers** — Two category columns and collection headers with artwork beside the song details. · *Library*
+- **Settings and playback controls** — Upright icons on expressive faces that rotate during playback. · *Home, Library, and player*
+- **Home shuffle** — Speed Dial, Keep Listening, and eligible shelves keep their order until the next app session. · *Settings → Content → Misc → Randomize Home Screen Order*
+- **Search landing** — History, personalized suggestions with album charts, then new releases. · *Search*
+- **Search spacing** — Smaller result cards, album tiles, and category filters. · *Search*
+- **Home controls** — A matching account cookie, tighter category chips, and adaptive mood tiles. · *Home*
+- **Listen Together shortcut** — Opt in to show it on Home. · *Settings → Appearance → Auto playlists → Show Listen Together on Home Screen*
+- **Audio output** — A simpler sheet highlights the selected device. · *Full player → More options → Audio Output*
+- **Update checker** — Clearer version, status, and download actions. · *Settings → System Updates or Update Available*
+- **Support** — Copy the UPI ID and pay in your preferred app. · *Settings → About MKR Music → Donate & Support*
+- **README credits** — Simplified the credits and copyright footer. · *GitHub → README*
+
+### Fixed
+
+- **Custom Lyrics Provider Persistence** — Reopening lyrics preserves the provider chosen for that track. · *Lyrics*
+- **Lyrics Provider Stability** — Fixed concurrent popup crashes, stuck loading spinners, and duplicate Chinese lines. · *Lyrics*
+- **Settings Pure Black Contrast** — Pure Black no longer applies dark backgrounds in Light Mode. · *Settings*
+- **Backup & Restore Stability** — Cleanly stops playback service before staging/restoring archives to prevent mid-restore playback restarts, crash loops, and unintended onboarding resets. · *Settings → Backup and restore*
+- **Custom Playlist Reordering** — Drag handles on custom-sorted local playlists now sync order changes reliably. · *Library → Local playlist*
+- **Settings entry** — Uses the current destination’s app bar from the first frame. · *Home or Library → Settings*
+- **Top Song Match** — Eligible matches appear below the filters in All and Songs without scrolling. · *Search → Results*
+- **Mini-player backgrounds** — Classic uses the selected background, and Pure Black overrides every style. · *Settings → Appearance → Mini-player*
+- **Player thumbnails** — Foreground covers honor crop, corner radius, and shadow. · *Settings → Appearance → Full Player*
+- **Queue reliability** — Reorder and remove tracks more safely. Wide screens get a side panel. · *Full player → Queue*
+- **Adaptive full player** — Artwork stays visible when the window is short. Scroll to reach all controls. · *Full player*
+- **Player sheet gestures** — Slow drags settle at the nearest position, including in short windows. · *Full player and Queue*
+- **Minimal player** — Swipe down at the top to collapse the player. Artwork effects fill the background. · *Full player → Minimal*
+- **Cinematic player** — Swipe down to collapse and a seek bar that follows the selected background. · *Full player → Cinematic*
+- **Cast controls** — Play, pause, and seek from the full player while casting. · *Full player*
+- **Mini-player motion** — Glow Motion and Live Mesh respect animation settings. · *Settings → Appearance → Mini-player*
+- **Universal APK selection** — Downloads only the latest `mkr-music-universal.apk`. · *Settings → System Updates or Home → Update Available*
+- **Auto download on like** — Newly liked online songs queue once. · *Settings → Player and audio → Queue → Auto download on like*
+- **Backup export feedback** — Shows an error when the destination cannot be opened. · *Settings → Backup and restore → Backup*
+- **Artwork backgrounds** — Restored artwork effects with a theme fallback. · *Settings → Appearance → Full Player → Player background style*
+- **Playlist feedback** — Closes the picker and confirms successful adds at the top. · *Song menu → Add to playlist*
+- **Crossfade startup** — Improved automatic track transitions. · *Settings → Player and audio → Crossfade*
+- **Idle media notification** — Clears when playback is dismissed. · *Mini-player → Close*
+- **Playback notification** — Startup cleanup leaves active or buffering playback alone. · *Android media controls*
+
+### Removed
+
+- **Google Cast & Offline CJK Dictionaries** — Removed Cast support, Kuromoji, and TinyPinyin for a lightweight APK while keeping Bluetooth and local audio untouched. · *Playback & Lyrics*
+- **Search New Releases** — Removed from Search discovery. · *Search*
+- **Expressive Wavy Slider & Thumbnail Play/Pause** — Removed from Full Player slider styles and Appearance settings. · *Settings → Appearance*
+- **Show Comments Setting** — Removed from Appearance settings. · *Settings → Appearance*
+- **Cached Songs scrollbar** — Scroll and fling directly on the song list. · *Library → Cached Songs*
+- **MKR Signature Navigation** — Saved selections fall back to Material 3 Navigation. · *Settings → Appearance → Misc → Navigation style*
+- **Mini-player effects** — Removed Micro Equalizer, Artwork Transition, and Capsule Morph. · *Settings → Appearance → Mini-player*
+- **Liquid Mini Player** — Saved selections use the default mini-player. · *Settings → Appearance → Mini-player*
+- **Material Extended, Modern, and Classic** — Saved selections use Cinematic. · *Settings → Appearance → Full Player → Player style*
+- **Immersive Extended** — Saved selections use Cinematic. · *Settings → Appearance → Full Player → Player style*
+- **Full-player Blur** — Saved selections use Immersive Artwork. · *Settings → Appearance → Full Player → Player background style*
+- **Apple Music background** — Saved selections use Follow theme. · *Settings → Appearance → Full Player → Player background style*
 
 ## [v1.1.0] - 2026-11-01
 

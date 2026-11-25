@@ -62,9 +62,14 @@ fun ClickableArtists(
                 onTap = { offset ->
                     val layout = layoutResult ?: return@detectTapGestures
                     val position = layout.getOffsetForPosition(offset)
-                    annotatedString.getStringAnnotations(position, position)
-                        .firstOrNull()
-                        ?.let { onArtistClick(it.item) }
+                    val clicked = annotatedString.getStringAnnotations(position, position).firstOrNull()?.item
+                    if (!clicked.isNullOrBlank()) {
+                        onArtistClick(clicked)
+                    } else if (artists.size == 1) {
+                        artists.first().id?.takeIf { it.isNotBlank() }?.let(onArtistClick)
+                    } else {
+                        artists.firstOrNull { !it.id.isNullOrBlank() }?.id?.let(onArtistClick)
+                    }
                 },
                 onLongPress = onLongClick?.let { handler -> { handler() } },
             )

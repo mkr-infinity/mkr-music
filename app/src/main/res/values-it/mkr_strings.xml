@@ -52,7 +52,6 @@
     <string name="player_background_style">Sfondo del lettore</string>
     <string name="follow_theme">Segui il tema</string>
     <string name="gradient">Gradiente</string>
-    <string name="player_background_blur">Sfuma</string>
     <string name="player_buttons_style">Colori dei pulsanti del riproduttore</string>
     <string name="default_style">Predefiniti</string>
     <string name="secondary_color_style">Secondari</string>

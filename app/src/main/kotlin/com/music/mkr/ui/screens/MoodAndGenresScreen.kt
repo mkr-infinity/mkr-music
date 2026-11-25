@@ -57,11 +57,19 @@ fun MoodAndGenresScreen(
     val itemsPerRow = if (localConfiguration.orientation == ORIENTATION_LANDSCAPE) 3 else 2
 
     val moodAndGenresList by viewModel.moodAndGenres.collectAsState()
+    val error by viewModel.error.collectAsState()
 
     LazyColumn(
         contentPadding = LocalPlayerAwareWindowInsets.current.asPaddingValues(),
     ) {
-        if (moodAndGenresList == null) {
+        if (error != null && moodAndGenresList == null) {
+            item(key = "mood_and_genres_error") {
+                com.music.mkr.ui.component.LibraryLoadError(
+                    message = error.orEmpty(),
+                    onRetry = viewModel::load,
+                )
+            }
+        } else if (moodAndGenresList == null) {
             item(key = "mood_and_genres_shimmer") {
                 ShimmerHost(
                     modifier = Modifier.animateItem()
@@ -89,7 +97,9 @@ fun MoodAndGenresScreen(
                                 MoodAndGenresButton(
                                     title = it.title,
                                     onClick = {
-                                        navController.navigate("youtube_browse/${it.endpoint.browseId}?params=${it.endpoint.params}")
+                                        val encodedId = android.net.Uri.encode(it.endpoint.browseId)
+                                        val encodedParams = it.endpoint.params?.let { p -> "?params=${android.net.Uri.encode(p)}" }.orEmpty()
+                                        navController.navigate("youtube_browse/$encodedId$encodedParams")
                                     },
                                     modifier =
                                     Modifier

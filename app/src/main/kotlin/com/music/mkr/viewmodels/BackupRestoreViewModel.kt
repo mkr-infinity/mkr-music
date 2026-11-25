@@ -52,28 +52,34 @@ class BackupRestoreViewModel @Inject constructor(
     val database: MusicDatabase,
 ) : ViewModel() {
     fun backup(context: Context, uri: Uri) {
-        runCatching {
-            context.applicationContext.contentResolver.openOutputStream(uri)?.use {
-                it.buffered().zipOutputStream().use { outputStream ->
-                    (context.filesDir / "datastore" / SETTINGS_FILENAME).inputStream().buffered()
-                        .use { inputStream ->
-                            outputStream.putNextEntry(ZipEntry(SETTINGS_FILENAME))
-                            inputStream.copyTo(outputStream)
-                        }
-                    runBlocking(Dispatchers.IO) {
-                        database.checkpoint()
+        viewModelScope.launch {
+            val result = withContext(Dispatchers.IO) {
+                runCatching {
+                    val destination = checkNotNull(context.applicationContext.contentResolver.openOutputStream(uri)) {
+                        "Backup destination could not be opened"
                     }
-                    FileInputStream(database.openHelper.writableDatabase.path).use { inputStream ->
-                        outputStream.putNextEntry(ZipEntry(InternalDatabase.DB_NAME))
-                        inputStream.copyTo(outputStream)
+                    destination.use {
+                        it.buffered().zipOutputStream().use { outputStream ->
+                            (context.filesDir / "datastore" / SETTINGS_FILENAME).takeIf { it.exists() }
+                                ?.inputStream()?.buffered()?.use { inputStream ->
+                                    outputStream.putNextEntry(ZipEntry(SETTINGS_FILENAME))
+                                    inputStream.copyTo(outputStream)
+                                }
+                            database.checkpoint()
+                            FileInputStream(database.openHelper.writableDatabase.path).use { inputStream ->
+                                outputStream.putNextEntry(ZipEntry(InternalDatabase.DB_NAME))
+                                inputStream.copyTo(outputStream)
+                            }
+                        }
                     }
                 }
             }
-        }.onSuccess {
-            Toast.makeText(context, R.string.backup_create_success, Toast.LENGTH_SHORT).show()
-        }.onFailure {
-            reportException(it)
-            Toast.makeText(context, R.string.backup_create_failed, Toast.LENGTH_SHORT).show()
+            result.onSuccess {
+                Toast.makeText(context, R.string.backup_create_success, Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                reportException(it)
+                Toast.makeText(context, R.string.backup_create_failed, Toast.LENGTH_SHORT).show()
+            }
         }
     }
 
@@ -94,6 +100,15 @@ class BackupRestoreViewModel @Inject constructor(
             try {
                 withContext(Dispatchers.IO) {
                     openArchive().use { BackupRestore.stage(context.applicationContext, it) }
+                }
+                if (com.music.mkr.playback.MusicService.isRunning) {
+                    runCatching {
+                        val stopIntent = Intent(context, com.music.mkr.playback.MusicService::class.java).apply {
+                            action = com.music.mkr.playback.MusicService.ACTION_STOP
+                        }
+                        context.startService(stopIntent)
+                        context.stopService(Intent(context, com.music.mkr.playback.MusicService::class.java))
+                    }
                 }
                 val restart = Intent.makeRestartActivityTask(
                     android.content.ComponentName(context, MainActivity::class.java)
@@ -154,10 +169,10 @@ class BackupRestoreViewModel @Inject constructor(
                     val parts = parseCsvLine(line)
 
                     if (parts.isNotEmpty()) {
-                        if (columnMapping.artistColumnIndex < parts.size && columnMapping.titleColumnIndex < parts.size) {
+                        if (columnMapping.artistColumnIndex in parts.indices && columnMapping.titleColumnIndex in parts.indices) {
                             val title = parts[columnMapping.titleColumnIndex].trim()
                             val artistStr = parts[columnMapping.artistColumnIndex].trim()
-                            val url = if (columnMapping.urlColumnIndex >= 0 && columnMapping.urlColumnIndex < parts.size) {
+                            val url = if (columnMapping.urlColumnIndex in parts.indices) {
                                 parts[columnMapping.urlColumnIndex].trim()
                             } else {
                                 ""
@@ -192,27 +207,17 @@ class BackupRestoreViewModel @Inject constructor(
                     }
 
                     // Update progress
-                    val progress = ((index + 1) * 100) / totalLines
-                    onProgress(progress.coerceIn(0, 99))
+                    if (totalLines > 0) {
+                        val progress = ((index + 1) * 100) / totalLines
+                        onProgress(progress.coerceIn(0, 99))
+                    }
                 }
             }
         }.onFailure {
             reportException(it)
             Timber.tag("CSV_IMPORT").e(it, "CSV import failed")
-            Toast.makeText(
-                context,
-                "Failed to import CSV file",
-                Toast.LENGTH_SHORT
-            ).show()
         }
 
-        if (songs.isEmpty()) {
-            Toast.makeText(
-                context,
-                "No songs found. Invalid file, or perhaps no song matches were found.",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
         return songs
     }
 

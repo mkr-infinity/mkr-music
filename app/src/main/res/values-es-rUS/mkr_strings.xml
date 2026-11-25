@@ -101,7 +101,6 @@
     <string name="player_background_style">Estilo del reproductor de fondo</string>
     <string name="follow_theme">Seguir tema</string>
     <string name="gradient">Gradiente</string>
-    <string name="player_background_blur">Desenfoque</string>
     <string name="player_buttons_style">Colores de los botones del reproductor</string>
     <string name="default_style">Por defecto</string>
     <string name="secondary_color_style">Estilo de color secundario</string>

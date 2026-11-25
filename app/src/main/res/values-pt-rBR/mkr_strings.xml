@@ -30,7 +30,6 @@
     <string name="player_background_style">Estilo do fundo do tocador</string>
     <string name="follow_theme">Seguir o tema</string>
     <string name="gradient">Gradiente</string>
-    <string name="player_background_blur">Desfocado</string>
     <string name="enable_swipe_thumbnail">Deslizar para trocar de música</string>
     <string name="lyrics_click_change">Alterar letra ao clicar</string>
     <string name="slim">Pequeno</string>
@@ -642,7 +641,6 @@
     <string name="player_thumbnail_shadow_depth">Profundidade da Sombra</string>
     <string name="player_thumbnail_shadow_depth_desc">Ajuste a intensidade e a distância da sombra da miniatura do tocador</string>
     <string name="thumbnail_corner_radius">Raio de canto miniatura</string>
-    <string name="thumbnail_corner_radius_desc">Ajustar o raio do canto da miniatura</string>
     <string name="rotating_thumbnail">Girar a miniatura</string>
     <string name="rotating_thumbnail_desc">Ativar um efeito de animação em miniatura em rotação</string>
     <string name="continue_playing_next_in_queue">Continuar tocando a seguir na fila</string>

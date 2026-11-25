@@ -637,6 +637,7 @@ fun buildSyncCategoryItem(
     return Material3SettingsItem(
         icon = painterResource(R.drawable.cloud),
         title = { Text(title) },
+        onClick = onSyncClick,
         description = {
             Column {
                 if (status is SyncStatus.Error) {

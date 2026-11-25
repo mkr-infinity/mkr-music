@@ -38,6 +38,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.distinctUntilChanged
 import com.music.mkr.constants.SuggestionRegionKey
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 
 @HiltViewModel
 class SuggestionsViewModel @Inject constructor(
@@ -47,20 +48,8 @@ class SuggestionsViewModel @Inject constructor(
 ) : ViewModel() {
     private var currentLoadedRegion: String? = null
     
-    private val _suggestionTracks = MutableStateFlow<List<SuggestionTrack>?>(null)
-    val suggestionTracks: StateFlow<List<SuggestionTrack>?> = _suggestionTracks
-
-    private val _suggestionArtists = MutableStateFlow<List<SuggestionArtist>?>(null)
-    val suggestionArtists: StateFlow<List<SuggestionArtist>?> = _suggestionArtists
-
     private val _suggestionAlbums = MutableStateFlow<List<SuggestionAlbum>?>(null)
     val suggestionAlbums: StateFlow<List<SuggestionAlbum>?> = _suggestionAlbums
-
-    private val _suggestionVideos = MutableStateFlow<List<SuggestionTrack>?>(null)
-    val suggestionVideos: StateFlow<List<SuggestionTrack>?> = _suggestionVideos
-
-    private val _youtubeNewReleases = MutableStateFlow<List<AlbumItem>?>(null)
-    val youtubeNewReleases: StateFlow<List<AlbumItem>?> = _youtubeNewReleases
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -83,10 +72,7 @@ class SuggestionsViewModel @Inject constructor(
             var wasOffline = false
             networkConnectivityObserver.networkStatus.collect { isConnected ->
                 if (isConnected) {
-                    val hasData = _suggestionTracks.value != null ||
-                            _suggestionAlbums.value != null ||
-                            _suggestionVideos.value != null ||
-                            _youtubeNewReleases.value != null
+                    val hasData = _suggestionAlbums.value != null
 
                     if (wasOffline || !hasData) {
                         val regionCode = context.dataStore.data.first()[SuggestionRegionKey] ?: "system"
@@ -118,90 +104,16 @@ class SuggestionsViewModel @Inject constructor(
             
             // Clear current data if we are switching regions or forcing a fresh load
             if (currentLoadedRegion != resolvedCode || force) {
-                _suggestionTracks.value = null
-                _suggestionArtists.value = null
                 _suggestionAlbums.value = null
-                _suggestionVideos.value = null
-                _youtubeNewReleases.value = null
             }
 
             try {
-                coroutineScope {
-                    // Launch each fetch in its own job so they update the UI independently
-                    launch {
-                        try {
-                            val tracks = AppleMusicScraper.fetchTopSongs(context, resolvedCode)
-                            if (tracks.isNotEmpty()) {
-                                _suggestionTracks.value = tracks
-                                _suggestionArtists.value = AppleMusicScraper.getTrendingArtists(tracks)
-                            }
-                        } catch (e: Exception) {
-                            Log.e("SuggestionsViewModel", "Failed to fetch songs", e)
-                        }
-                    }
-
-                    launch {
-                        try {
-                            val albums = AppleMusicScraper.fetchTopAlbums(context, resolvedCode)
-                            if (albums.isNotEmpty()) {
-                                _suggestionAlbums.value = albums
-                            }
-                        } catch (e: Exception) {
-                            Log.e("SuggestionsViewModel", "Failed to fetch albums", e)
-                        }
-                    }
-
-                    launch {
-                        try {
-                            val videos = AppleMusicScraper.fetchTopVideos(context, resolvedCode)
-                            if (videos.isNotEmpty()) {
-                                _suggestionVideos.value = videos
-                            }
-                        } catch (e: Exception) {
-                            Log.e("SuggestionsViewModel", "Failed to fetch videos", e)
-                        }
-                    }
-
-                    launch {
-                        try {
-                            YouTube.newReleaseAlbums().onSuccess { albums ->
-                                val artists: MutableMap<Int, String> = mutableMapOf()
-                                val favouriteArtists: MutableMap<Int, String> = mutableMapOf()
-                                database.allArtistsByPlayTime().first().let { list ->
-                                    var favIndex = 0
-                                    for ((artistsIndex, artist) in list.withIndex()) {
-                                        artists[artistsIndex] = artist.id
-                                        if (artist.artist.bookmarkedAt != null) {
-                                            favouriteArtists[favIndex] = artist.id
-                                            favIndex++
-                                        }
-                                    }
-                                }
-                                _youtubeNewReleases.value =
-                                    albums
-                                        .sortedBy { album ->
-                                            val artistIds = album.artists.orEmpty().mapNotNull { it.id }
-                                            val firstArtistKey =
-                                                artistIds.firstNotNullOfOrNull { artistId ->
-                                                    if (artistId in favouriteArtists.values) {
-                                                        favouriteArtists.entries.firstOrNull { it.value == artistId }?.key
-                                                    } else {
-                                                        artists.entries.firstOrNull { it.value == artistId }?.key
-                                                    }
-                                                } ?: Int.MAX_VALUE
-                                            firstArtistKey
-                                        }.filterExplicit(context.dataStore.get(HideExplicitKey, false))
-                            }
-                        } catch (e: Exception) {
-                            Log.e("SuggestionsViewModel", "Failed to fetch YouTube new releases", e)
-                        }
-                    }
+                val albums = AppleMusicScraper.fetchTopAlbums(context, resolvedCode)
+                if (albums.isNotEmpty()) {
+                    _suggestionAlbums.value = albums
                 }
 
-                val hasData = _suggestionTracks.value != null ||
-                        _suggestionAlbums.value != null ||
-                        _suggestionVideos.value != null ||
-                        _youtubeNewReleases.value != null
+                val hasData = _suggestionAlbums.value != null
 
                 if (hasData) {
                     currentLoadedRegion = resolvedCode
@@ -259,11 +171,7 @@ class SuggestionsViewModel @Inject constructor(
                     }
                 } else {
                     withContext(Dispatchers.Main) {
-                        android.widget.Toast.makeText(
-                            context,
-                            "\"${track.title}\" is not available on YouTube Music",
-                            android.widget.Toast.LENGTH_SHORT
-                        ).show()
+                        SnackbarManager.show("\"${track.title}\" is not available on YouTube Music")
                     }
                 }
             }
@@ -327,11 +235,7 @@ class SuggestionsViewModel @Inject constructor(
                         }
                     } else {
                         withContext(Dispatchers.Main) {
-                            android.widget.Toast.makeText(
-                                context,
-                                "\"${video.title}\" is not available on YouTube Music",
-                                android.widget.Toast.LENGTH_SHORT
-                            ).show()
+                            SnackbarManager.show("\"${video.title}\" is not available on YouTube Music")
                         }
                     }
                 }

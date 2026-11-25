@@ -53,7 +53,7 @@ When committing is explicitly authorized:
 
 - Do not modify README files or any Markdown files, including `AGENTS.md`, without explicit human authorization and verification.
 - Do not create unnecessary documentation or report files.
-- Never bump or modify the application's version in any way unless explicitly requested and authorized by the user. 
+- Always increment `APP_BUILD_CODE` by `+1` in `version.properties` on every commit (one commit = `+1` build number), while keeping `APP_VERSION` unchanged unless a semantic version bump is explicitly requested and authorized by the user.
 - Do not modify unrelated project configuration or metadata.
 
 ## 6. Build and Testing Restrictions

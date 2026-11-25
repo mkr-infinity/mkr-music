@@ -115,7 +115,6 @@
     <string name="player_thumbnail_shadow_depth">Shadow Depth</string>
     <string name="player_thumbnail_shadow_depth_desc">Adjust the intensity and distance of the player thumbnail shadow</string>
     <string name="thumbnail_corner_radius">Thumbnail Corner Radius</string>
-    <string name="thumbnail_corner_radius_desc">Adjust thumbnail corner radius</string>
     <string name="crop_album_art">Crop Album Art</string>
     <string name="crop_album_art_desc">Force a square aspect ratio by cropping video thumbnails</string>
     <string name="rotating_thumbnail">Rotating thumbnail</string>
@@ -149,30 +148,22 @@
     <string name="general_settings">General settings</string>
 
     <string name="player_background_style">Player background style</string>
+    <string name="immersive_artwork_background">Immersive Artwork</string>
     <string name="player_background_solid">Solid</string>
     <string name="follow_theme">Follow theme</string>
     <string name="gradient">Gradient</string>
     <string name="glow_animated">Glow motion</string>
     <string name="live_mesh">Live Mesh</string>
-    <string name="apple_player">Apple Player</string>
-    <string name="apple_player_desc">Original fluid layout with dynamic background and system volume</string>
     <string name="player_design">Player style</string>
     <!-- Player Styles (9 Native Styles) -->
     <string name="player_style">Player style</string>
-    <string name="player_style_classic">Classic</string>
-    <string name="player_style_classic_desc">Timeless playback layout with circular controls and quick action buttons</string>
-    <string name="player_style_modern">Modern</string>
-    <string name="player_style_modern_desc">Pill-shaped tonal controls with rounded touch geometry</string>
+    <string name="player_style_apply">Apply</string>
     <string name="player_style_minimal">Minimal</string>
     <string name="player_style_minimal_desc">Clean compact square controls designed for focused listening</string>
     <string name="player_style_cinematic">Cinematic</string>
     <string name="player_style_cinematic_desc">Asymmetric spacious controls with prominent animated play button</string>
     <string name="player_style_immersive">Immersive</string>
     <string name="player_style_immersive_desc">Edge-to-edge ambient artwork with audio format badge</string>
-    <string name="player_style_immersive_extended">Immersive Extended</string>
-    <string name="player_style_immersive_extended_desc">Extended ambient backdrop with integrated volume bar and queue peek</string>
-    <string name="player_style_material_extended">Material Extended</string>
-    <string name="player_style_material_extended_desc">Material 3 expressive player with animated spring controls and wavy progress</string>
     <!-- Library 5-Category Cards -->
     <string name="library_liked_songs">Liked songs</string>
     <string name="library_liked_songs_desc">Your favorite tracks</string>
@@ -201,7 +192,6 @@
     <string name="show_song_thumbnail_in_list_desc">Show album song artwork instead of track numbers in expressive lists</string>
     <string name="album_settings">Album Settings</string>
     <string name="new_mini_player_design">New mini player design</string>
-    <string name="player_background_blur">Blur</string>
     <string name="player_buttons_style">Player button colors</string>
     <string name="default_style">Default</string>
     <string name="primary_color_style">Primary color</string>
@@ -488,6 +478,8 @@
     <string name="advanced_desc">Change the song\'s tempo and pitch</string>
     <string name="equalizer_desc">Adjust the audio equalizer</string>
     <string name="enable_dynamic_icon">Enable dynamic app icon</string>
+    <string name="appearance_theme_colors">Theme &amp; Colors</string>
+    <string name="appearance_full_player">Full Player</string>
     <string name="mini_player">Mini-player</string>
     <string name="miniplayer_background_style">Mini-player background style</string>
     <string name="pure_black_mini_player">Pure black mini-player</string>
@@ -896,7 +888,7 @@
     <string name="pin_to_speed_dial">Pin to Speed dial</string>
     <string name="unpin_from_speed_dial">Unpin from Speed dial</string>
     <string name="randomize_home_order">Randomize Home Screen Order</string>
-    <string name="randomize_home_order_desc">Randomly reorder home screen sections with weighted priorities</string>
+    <string name="randomize_home_order_desc">Shuffle eligible Home sections once each app session</string>
 
     <!-- Daily Discover -->
     <string name="daily_discover_sounds_like">Sounds like %1$s</string>
@@ -1088,6 +1080,8 @@
     <string name="cipher_rate_limited">Manual update rate limit reached. Please wait before updating again.</string>
 
     <!-- Floating Navigation Bar -->
+    <string name="auto_hide_navbar">Auto-hide bottom navigation</string>
+    <string name="auto_hide_navbar_desc">Hide the bottom bar as you scroll down. Scroll up to bring it back.</string>
     <string name="floating_navbar">Floating navigation bar</string>
     <string name="floating_navbar_desc">Show suspended centered navigation bar at the bottom</string>
     <string name="enabled">Enabled</string>
@@ -1122,6 +1116,14 @@
     <string name="account_settings_desc_about">Version information and legal details</string>
     <string name="action_view_update">View</string>
     <string name="new_version_found">New version found</string>
+    <string name="support_mkr_title">Support MKR Music</string>
+    <string name="support_mkr_intro">Enjoying MKR Music? You can support its development using UPI.</string>
+    <string name="support_upi_id">UPI ID</string>
+    <string name="support_copy_upi_id">Copy UPI ID</string>
+    <string name="support_upi_copied">Copied</string>
+    <string name="support_upi_helper">Copy the UPI ID and paste it into your preferred UPI app.</string>
+    <string name="support_upi_copy_failed">Couldn’t copy the UPI ID</string>
+    <string name="support_buy_me_a_coffee">Buy Me a Coffee</string>
     <string name="support">Support</string>
     <string name="support_desc">Support app development</string>
 
@@ -1157,8 +1159,6 @@
     <string name="hide_speed_dial_desc">Hide the Speed dial section from the home screen</string>
 
     <!-- Liquid Mini-Player & Motion Settings -->
-    <string name="liquid_mini_player">Liquid mini-player</string>
-    <string name="liquid_mini_player_desc">Fill the mini-player with a fluid animation as your music plays.</string>
     <string name="interface_animations">Interface animations</string>
     <string name="interface_animations_desc">Enable smooth transitions and animated interface effects.</string>
     <string name="previous_track">Previous track</string>
@@ -1185,4 +1185,7 @@
     <string name="search_load_failed">Could not load search results.</string>
     <string name="spotify_import_incomplete_fetch">Spotify returned %1$d of %2$d tracks. The playlist was kept unchanged.</string>
     <string name="spotify_import_skipped">Skipped %1$d empty or incomplete playlists. Existing playlists were preserved.</string>
+    <string name="search_personalized_suggestions">Personalized Suggestions</string>
+    <string name="search_browse_album_charts">Browse album charts</string>
+    <string name="search_hide_album_charts">Hide album charts</string>
 </resources>

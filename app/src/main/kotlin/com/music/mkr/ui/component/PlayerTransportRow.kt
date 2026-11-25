@@ -17,10 +17,15 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -29,7 +34,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
@@ -51,6 +55,8 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.media3.common.Player
@@ -63,12 +69,12 @@ import com.music.mkr.utils.rememberPreference
  * Shape styling variant for the player transport controls.
  */
 enum class TransportVariant {
-    /** Classic and Minimal circular buttons */
+    /** Circular buttons */
     CIRCLE,
-    /** Proportional pill buttons used by Modern player */
-    PILL,
-    /** Smooth rounded squircle used by MaterialExtended and Apple player */
-    EXPRESSIVE
+    /** Smooth squircle used by Cinematic and Minimal player */
+    EXPRESSIVE,
+    /** Immersive layout button sizing */
+    IMMERSIVE,
 }
 
 /**
@@ -81,6 +87,7 @@ enum class TransportVariant {
  * - Parameterized design tokens for container and content palettes
  * - Optional leading and trailing action slots (shuffle, repeat, like, lyrics)
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun PlayerTransportRow(
     isPlaying: Boolean,
@@ -106,195 +113,237 @@ fun PlayerTransportRow(
     playIconSize: Dp = 36.dp,
     sideIconSize: Dp = 32.dp,
     haptic: HapticFeedback = LocalHapticFeedback.current,
+    fitCompactWidth: Boolean = false,
     leadingControl: (@Composable RowScope.() -> Unit)? = null,
     trailingControl: (@Composable RowScope.() -> Unit)? = null,
 ) {
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
-
-    val effectivePlayWidth = playButtonWidth ?: if (variant == TransportVariant.PILL) playButtonSize * 1.55f else playButtonSize
+    val immersive = variant == TransportVariant.IMMERSIVE
+    val effectivePlayWidth = playButtonWidth ?: playButtonSize
     val effectivePlayHeight = playButtonHeight ?: playButtonSize
-    val effectiveSideWidth = sideButtonWidth ?: if (variant == TransportVariant.PILL) sideButtonSize * 1.30f else sideButtonSize
+    val effectiveSideWidth = sideButtonWidth ?: sideButtonSize
     val effectiveSideHeight = sideButtonHeight ?: sideButtonSize
+    val playShape = CircleShape
+    val skipShape = CircleShape
+    val pressSpec = if (interfaceAnimations) {
+        spring<Float>(
+            dampingRatio = Spring.DampingRatioNoBouncy,
+            stiffness = if (immersive) 400f else Spring.StiffnessMediumLow,
+        )
+    } else snap<Float>()
+
     val playInteractionSource = remember { MutableInteractionSource() }
     val isPlayPressed by playInteractionSource.collectIsPressedAsState()
     val playScale by animateFloatAsState(
-        targetValue = if (isPlayPressed && interfaceAnimations) 0.92f else 1.0f,
-        animationSpec = if (interfaceAnimations) {
-            spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
-        } else {
-            snap()
-        },
+        targetValue = if (isPlayPressed && interfaceAnimations) (if (immersive) 0.96f else 0.92f) else 1f,
+        animationSpec = pressSpec,
         label = "playPressScale"
     )
 
     val prevInteractionSource = remember { MutableInteractionSource() }
     val isPrevPressed by prevInteractionSource.collectIsPressedAsState()
     val prevScale by animateFloatAsState(
-        targetValue = if (isPrevPressed && canSkipPrevious && interfaceAnimations) 0.90f else 1.0f,
-        animationSpec = if (interfaceAnimations) {
-            spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
-        } else {
-            snap()
-        },
+        targetValue = if (isPrevPressed && canSkipPrevious && interfaceAnimations) (if (immersive) 0.94f else 0.90f) else 1f,
+        animationSpec = pressSpec,
         label = "prevPressScale"
     )
 
     val nextInteractionSource = remember { MutableInteractionSource() }
     val isNextPressed by nextInteractionSource.collectIsPressedAsState()
     val nextScale by animateFloatAsState(
-        targetValue = if (isNextPressed && canSkipNext && interfaceAnimations) 0.90f else 1.0f,
-        animationSpec = if (interfaceAnimations) {
-            spring(
-                dampingRatio = Spring.DampingRatioNoBouncy,
-                stiffness = Spring.StiffnessMediumLow
-            )
-        } else {
-            snap()
-        },
+        targetValue = if (isNextPressed && canSkipNext && interfaceAnimations) (if (immersive) 0.94f else 0.90f) else 1f,
+        animationSpec = pressSpec,
         label = "nextPressScale"
     )
 
-    val playShape: Shape = when (variant) {
-        TransportVariant.CIRCLE -> CircleShape
-        TransportVariant.PILL -> RoundedCornerShape(32.dp)
-        TransportVariant.EXPRESSIVE -> RoundedCornerShape(26.dp)
+    val sideFace = if (!immersive && secondaryContainerColor == Color.Transparent) {
+        secondaryContentColor.copy(alpha = 0.12f)
+    } else {
+        secondaryContainerColor
     }
 
-    val sideShape: Shape = when (variant) {
-        TransportVariant.CIRCLE -> CircleShape
-        TransportVariant.PILL -> RoundedCornerShape(24.dp)
-        TransportVariant.EXPRESSIVE -> CircleShape
-    }
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = if (leadingControl != null || trailingControl != null) Arrangement.SpaceEvenly else Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (leadingControl != null) {
-            leadingControl()
+    BoxWithConstraints(modifier.fillMaxWidth()) {
+        val auxiliaryCount = listOfNotNull(leadingControl, trailingControl).size
+        val inlineAuxiliary = !immersive &&
+            maxWidth >= effectivePlayWidth + effectiveSideWidth * 2 + 48.dp * auxiliaryCount + 24.dp
+        val gap = when {
+            immersive -> 12.dp
+            auxiliaryCount == 0 -> 24.dp
+            inlineAuxiliary -> 12.dp
+            else -> 4.dp
         }
-
-        // Skip Previous
-        Surface(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onSkipPrevious()
-            },
-            enabled = canSkipPrevious,
-            shape = sideShape,
-            color = if (secondaryContainerColor == Color.Transparent) Color.Transparent else secondaryContainerColor.copy(alpha = if (canSkipPrevious) 1f else 0.40f),
-            interactionSource = prevInteractionSource,
-            modifier = Modifier
-                .scale(prevScale)
-                .size(width = effectiveSideWidth, height = effectiveSideHeight)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.skip_previous),
-                    contentDescription = stringResource(R.string.previous_track),
-                    tint = secondaryContentColor.copy(alpha = if (canSkipPrevious) 1f else 0.38f),
-                    modifier = Modifier.size(sideIconSize)
-                )
-            }
+        val fitTransport = immersive || fitCompactWidth
+        val wrapTransport = fitTransport && maxWidth < 48.dp * 3 + gap * 2
+        val widthBudget = (maxWidth - gap * 2 - if (inlineAuxiliary) 48.dp * auxiliaryCount else 0.dp)
+            .coerceAtLeast(144.dp)
+        val defaultSideWidth = minOf(effectiveSideWidth, widthBudget * 0.30f).coerceAtLeast(48.dp)
+        val playWidthLimit = if (fitTransport && !wrapTransport) {
+            minOf(widthBudget * 0.40f, widthBudget - defaultSideWidth * 2)
+        } else {
+            widthBudget * 0.40f
         }
+        val immersiveButtonWidth = widthBudget.coerceAtMost(300.dp) / 3
+        val playWidth = if (immersive && !wrapTransport) immersiveButtonWidth
+            else minOf(effectivePlayWidth, playWidthLimit).coerceAtLeast(48.dp)
+        val sideWidth = if (immersive && !wrapTransport) immersiveButtonWidth else defaultSideWidth
+        val actualPlayIconSize = if (immersive) minOf(playIconSize, playWidth - 12.dp) else playIconSize
+        val actualSideIconSize = if (immersive) minOf(sideIconSize, sideWidth - 12.dp) else sideIconSize
+        val playLabel = stringResource(if (isPlaying) R.string.pause else R.string.play)
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            val transport: @Composable RowScope.() -> Unit = {
+                if (inlineAuxiliary) leadingControl?.invoke(this)
 
-        Spacer(Modifier.width(if (leadingControl != null) 12.dp else 20.dp))
-
-        // Play / Pause / Replay Central Button
-        Surface(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onPlayPause()
-            },
-            shape = playShape,
-            color = primaryContainerColor,
-            shadowElevation = if (variant == TransportVariant.PILL) 4.dp else 6.dp,
-            interactionSource = playInteractionSource,
-            modifier = Modifier
-                .scale(playScale)
-                .size(width = effectivePlayWidth, height = effectivePlayHeight)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                AnimatedContent(
-                    targetState = Triple(isLoading, playbackState == Player.STATE_ENDED, isPlaying),
-                    transitionSpec = {
-                        if (interfaceAnimations) {
-                            (fadeIn(animationSpec = tween(180, easing = LinearEasing)) + scaleIn(initialScale = 0.85f, animationSpec = tween(180)))
-                                .togetherWith(fadeOut(animationSpec = tween(140, easing = LinearEasing)) + scaleOut(targetScale = 0.85f, animationSpec = tween(140)))
-                        } else {
-                            fadeIn(animationSpec = snap()).togetherWith(fadeOut(animationSpec = snap()))
-                        }
+                // Skip Previous
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onSkipPrevious()
                     },
-                    label = "playPauseCrossfade"
-                ) { (loading, ended, playing) ->
-                    if (loading) {
-                        CircularProgressIndicator(
-                            color = primaryContentColor,
-                            strokeWidth = 3.dp,
-                            modifier = Modifier.size(playIconSize * 0.85f)
+                    enabled = canSkipPrevious,
+                    shape = skipShape,
+                    color = Color.Transparent,
+                    interactionSource = prevInteractionSource,
+                    modifier = Modifier
+                        .scale(if (immersive) 1f else prevScale)
+                        .size(width = sideWidth, height = effectiveSideHeight.coerceAtLeast(48.dp))
+                ) {
+                    val face = sideFace.copy(alpha = if (canSkipPrevious) sideFace.alpha else sideFace.alpha * 0.4f)
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize().then(
+                            if (immersive) Modifier.scale(prevScale).background(face, skipShape) else Modifier
                         )
-                    } else {
+                    ) {
+                        if (!immersive) PlaybackCookieFace(face)
                         Icon(
-                            painter = painterResource(
-                                when {
-                                    ended -> R.drawable.replay
-                                    playing -> R.drawable.pause
-                                    else -> R.drawable.play
-                                }
-                            ),
-                            contentDescription = stringResource(if (playing) R.string.pause else R.string.play),
-                            tint = primaryContentColor,
-                            modifier = Modifier.size(playIconSize)
+                            painter = painterResource(if (immersive) R.drawable.immersive_previous else R.drawable.skip_previous),
+                            contentDescription = stringResource(R.string.previous_track),
+                            tint = secondaryContentColor.copy(alpha = if (canSkipPrevious) 1f else 0.38f),
+                            modifier = Modifier.size(actualSideIconSize)
                         )
                     }
                 }
+
+                if (!wrapTransport) Spacer(Modifier.width(gap))
+
+                // Play / Pause / Replay Central Button
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onPlayPause()
+                    },
+                    shape = playShape,
+                    color = Color.Transparent,
+                    interactionSource = playInteractionSource,
+                    modifier = Modifier
+                        .scale(if (immersive) 1f else playScale)
+                        .size(width = playWidth, height = effectivePlayHeight.coerceAtLeast(48.dp))
+                        .then(if (immersive && isLoading) Modifier.semantics { contentDescription = playLabel } else Modifier)
+                ) {
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize().then(
+                            if (immersive) Modifier.scale(playScale).background(primaryContainerColor, playShape) else Modifier
+                        )
+                    ) {
+                        if (!immersive) PlaybackCookieFace(primaryContainerColor)
+                        AnimatedContent(
+                            targetState = Triple(isLoading, playbackState == Player.STATE_ENDED, isPlaying),
+                            transitionSpec = {
+                                if (interfaceAnimations) {
+                                    val enterMs = if (immersive) 150 else 180
+                                    val exitMs = if (immersive) 110 else 140
+                                    val iconScale = if (immersive) 0.94f else 0.85f
+                                    (fadeIn(animationSpec = tween(enterMs, easing = LinearEasing)) + scaleIn(initialScale = iconScale, animationSpec = tween(enterMs)))
+                                        .togetherWith(fadeOut(animationSpec = tween(exitMs, easing = LinearEasing)) + scaleOut(targetScale = iconScale, animationSpec = tween(exitMs)))
+                                } else {
+                                    fadeIn(animationSpec = snap()).togetherWith(fadeOut(animationSpec = snap()))
+                                }
+                            },
+                            label = "playPauseCrossfade"
+                        ) { (loading, ended, playing) ->
+                            if (loading) {
+                                CircularProgressIndicator(
+                                    color = primaryContentColor,
+                                    strokeWidth = 3.dp,
+                                    modifier = Modifier.size(actualPlayIconSize * 0.85f)
+                                )
+                            } else {
+                                Icon(
+                                    painter = painterResource(
+                                        when {
+                                            ended -> R.drawable.replay
+                                            playing -> if (immersive) R.drawable.transport_pause else R.drawable.pause
+                                            else -> if (immersive) R.drawable.transport_play else R.drawable.play
+                                        }
+                                    ),
+                                    contentDescription = stringResource(if (playing) R.string.pause else R.string.play),
+                                    tint = primaryContentColor,
+                                    modifier = Modifier.size(actualPlayIconSize)
+                                )
+                            }
+                        }
+                    }
+                }
+
+                if (!wrapTransport) Spacer(Modifier.width(gap))
+
+                // Skip Next
+                Surface(
+                    onClick = {
+                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+                        onSkipNext()
+                    },
+                    enabled = canSkipNext,
+                    shape = skipShape,
+                    color = Color.Transparent,
+                    interactionSource = nextInteractionSource,
+                    modifier = Modifier
+                        .scale(if (immersive) 1f else nextScale)
+                        .size(width = sideWidth, height = effectiveSideHeight.coerceAtLeast(48.dp))
+                ) {
+                    val face = sideFace.copy(alpha = if (canSkipNext) sideFace.alpha else sideFace.alpha * 0.4f)
+                    Box(
+                        contentAlignment = Alignment.Center,
+                        modifier = Modifier.fillMaxSize().then(
+                            if (immersive) Modifier.scale(nextScale).background(face, skipShape) else Modifier
+                        )
+                    ) {
+                        if (!immersive) PlaybackCookieFace(face)
+                        Icon(
+                            painter = painterResource(if (immersive) R.drawable.immersive_next else R.drawable.skip_next),
+                            contentDescription = stringResource(R.string.next_track),
+                            tint = secondaryContentColor.copy(alpha = if (canSkipNext) 1f else 0.38f),
+                            modifier = Modifier.size(actualSideIconSize)
+                        )
+                    }
+                }
+
+                if (inlineAuxiliary) trailingControl?.invoke(this)
             }
-        }
-
-        Spacer(Modifier.width(if (trailingControl != null) 12.dp else 20.dp))
-
-        // Skip Next
-        Surface(
-            onClick = {
-                haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                onSkipNext()
-            },
-            enabled = canSkipNext,
-            shape = sideShape,
-            color = if (secondaryContainerColor == Color.Transparent) Color.Transparent else secondaryContainerColor.copy(alpha = if (canSkipNext) 1f else 0.40f),
-            interactionSource = nextInteractionSource,
-            modifier = Modifier
-                .scale(nextScale)
-                .size(width = effectiveSideWidth, height = effectiveSideHeight)
-        ) {
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier.fillMaxSize()
-            ) {
-                Icon(
-                    painter = painterResource(R.drawable.skip_next),
-                    contentDescription = stringResource(R.string.next_track),
-                    tint = secondaryContentColor.copy(alpha = if (canSkipNext) 1f else 0.38f),
-                    modifier = Modifier.size(sideIconSize)
+            if (wrapTransport) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(gap, Alignment.CenterHorizontally),
+                    verticalArrangement = Arrangement.spacedBy(gap),
+                ) { transport() }
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically,
+                    content = transport,
                 )
             }
-        }
-
-        if (trailingControl != null) {
-            trailingControl()
+            if (!inlineAuxiliary && auxiliaryCount > 0) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    leadingControl?.invoke(this)
+                    trailingControl?.invoke(this)
+                }
+            }
         }
     }
 }

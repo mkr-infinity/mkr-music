@@ -28,6 +28,7 @@ import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -84,7 +85,10 @@ fun ArtistSongsScreen(
     )
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
     val artist by viewModel.artist.collectAsState()
-    val songs by viewModel.songs.collectAsState()
+    val rawSongs by viewModel.songs.collectAsState()
+    val songs = remember(rawSongs, hideExplicit) {
+        if (hideExplicit) rawSongs.filter { !it.song.explicit } else rawSongs
+    }
     val lazyListState = rememberLazyListState()
 
     Box(

@@ -43,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarScrollBehavior
+import com.music.mkr.ui.utils.safeStartActivity
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
@@ -71,13 +72,13 @@ import com.music.mkr.constants.DensityScaleKey
 import com.music.mkr.constants.DynamicThemeKey
 import com.music.mkr.constants.EnableDynamicIconKey
 import com.music.mkr.constants.EnableHighRefreshRateKey
-import com.music.mkr.constants.EnableLyricsThumbnailPlayPauseKey
 import com.music.mkr.constants.GridItemSize
 import com.music.mkr.constants.GridItemsSizeKey
 import com.music.mkr.constants.HidePlayerThumbnailKey
 import com.music.mkr.constants.ShowPlayerThumbnailShadowKey
 import com.music.mkr.constants.PlayerThumbnailShadowElevationKey
 import com.music.mkr.constants.LibraryFilter
+import com.music.mkr.constants.DefaultListenTogetherHomeShortcut
 import com.music.mkr.constants.ShowListenTogetherHomeShortcutKey
 import com.music.mkr.constants.LyricsAnimationStyle
 import com.music.mkr.constants.LyricsAnimationStyleKey
@@ -100,6 +101,7 @@ import com.music.mkr.constants.SliderStyleKey
 import com.music.mkr.constants.FloatingNavBarKey
 import com.music.mkr.constants.NavigationStyle
 import com.music.mkr.constants.NavigationStyleKey
+import com.music.mkr.constants.AutoHideNavBarKey
 import com.music.mkr.constants.SlimNavBarKey
 import com.music.mkr.ui.component.NavigationStyleDialog
 import com.music.mkr.constants.SquigglySliderKey
@@ -121,7 +123,6 @@ import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.ui.component.PlayerSliderTrack
 import com.music.mkr.ui.component.SquigglySlider
 import com.music.mkr.ui.component.WavySlider
-import com.ermohdamaan.justforpixel.justforpixelexpressivelab.core.components.sliders.ExpressiveWavySlider
 import com.music.mkr.ui.theme.DefaultThemeColor
 import com.music.mkr.ui.theme.PlayerSliderColors
 import com.music.mkr.ui.utils.backToMain
@@ -156,7 +157,7 @@ fun AppearanceSettings(
     )
     val (selectedFontValue) = rememberPreference(
         SelectedFontKey,
-        defaultValue = AppFont.SYSTEM.value
+        defaultValue = AppFont.POPPINS.value
     )
     val (enableDynamicIcon, onEnableDynamicIconChange) = rememberPreference(
         EnableDynamicIconKey,
@@ -292,7 +293,6 @@ fun AppearanceSettings(
     val (appleMusicLyricsBlur, onAppleMusicLyricsBlurChange) = rememberPreference(AppleMusicLyricsBlurKey, defaultValue = true)
     val (lyricsStandardBlur, onLyricsStandardBlurChange) = rememberPreference(LyricsStandardBlurKey, defaultValue = false)
     val (swipeLyrics, onSwipeLyricsChange) = rememberPreference(SwipeLyricsKey, defaultValue = false)
-    val (enableLyricsThumbnailPlayPause, onEnableLyricsThumbnailPlayPauseChange) = rememberPreference(EnableLyricsThumbnailPlayPauseKey, defaultValue = false)
 
     val (sliderStyle, onSliderStyleChange) = rememberEnumPreference(
         SliderStyleKey,
@@ -300,7 +300,7 @@ fun AppearanceSettings(
     )
     val (squigglySlider, onSquigglySliderChange) = rememberPreference(
         SquigglySliderKey,
-        defaultValue = false
+        defaultValue = true
     )
     val (swipeThumbnail, onSwipeThumbnailChange) = rememberPreference(
         SwipeThumbnailKey,
@@ -324,6 +324,7 @@ fun AppearanceSettings(
         SlimNavBarKey,
         defaultValue = false
     )
+    val (autoHideNav, onAutoHideNavChange) = rememberPreference(AutoHideNavBarKey, true)
     val (floatingNavBar, onFloatingNavBarChange) = rememberPreference(
         FloatingNavBarKey,
         defaultValue = true
@@ -355,7 +356,7 @@ fun AppearanceSettings(
 
     val (showListenTogetherHomeShortcut, onShowListenTogetherHomeShortcutChange) = rememberPreference(
         ShowListenTogetherHomeShortcutKey,
-        defaultValue = true
+        defaultValue = DefaultListenTogetherHomeShortcut
     )
 
     val (swipeToSong, onSwipeToSongChange) = rememberPreference(
@@ -705,8 +706,9 @@ fun AppearanceSettings(
                         val intent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
                             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
                         }
-                        context.startActivity(intent)
-                        Runtime.getRuntime().exit(0)
+                        if (intent != null && context.safeStartActivity(intent)) {
+                            Runtime.getRuntime().exit(0)
+                        }
                     }
                 ) {
                     Text(text = stringResource(R.string.restart))
@@ -946,48 +948,6 @@ fun AppearanceSettings(
                         )
                     }
                 }
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
-                        modifier = Modifier
-                            .aspectRatio(1f)
-                            .weight(1f)
-                            .clip(RoundedCornerShape(16.dp))
-                            .border(
-                                1.dp,
-                                if (sliderStyle == SliderStyle.EXPRESSIVE) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant,
-                                RoundedCornerShape(16.dp)
-                            )
-                            .clickable {
-                                onSliderStyleChange(SliderStyle.EXPRESSIVE)
-                                onSquigglySliderChange(false)
-                                showSliderOptionDialog = false
-                            }
-                            .padding(12.dp)
-                    ) {
-                        val sliderValue = 0.5f
-                        ExpressiveWavySlider(
-                            value = { sliderValue },
-                            valueRange = 0f..1f,
-                            onValueChange = { /* preview only */ },
-                            modifier = Modifier.weight(1f),
-                            enabled = false,
-                            isPlaying = true,
-                            activeTrackColor = sliderPreviewColors.activeTrackColor,
-                            thumbColor = sliderPreviewColors.thumbColor,
-                        )
-                        Text(
-                            text = stringResource(R.string.expressive_wavy),
-                            style = MaterialTheme.typography.labelSmall,
-                            maxLines = 2,
-                            overflow = TextOverflow.Ellipsis
-                        )
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                }
             }
         }
     }
@@ -999,7 +959,7 @@ fun AppearanceSettings(
             .padding(horizontal = 16.dp),
     ) {
         ExpressiveSettingGroup(
-            title = stringResource(R.string.theme),
+            title = stringResource(R.string.appearance_theme_colors),
             items = buildList {
                 add(
                     Material3SettingsItem(
@@ -1060,11 +1020,9 @@ fun AppearanceSettings(
                         title = { Text(stringResource(R.string.app_font)) },
                         trailingContent = {
                             val fontLabel = when (AppFont.fromValue(selectedFontValue)) {
+                                AppFont.POPPINS -> "Poppins"
                                 AppFont.SYSTEM -> stringResource(R.string.font_system)
                                 AppFont.GOOGLE_SANS -> stringResource(R.string.font_google_sans)
-                                AppFont.SANS_FLEX -> stringResource(R.string.font_sans_flex)
-                                AppFont.OUTFIT -> stringResource(R.string.font_outfit)
-                                AppFont.PLUS_JAKARTA_SANS -> stringResource(R.string.font_plus_jakarta_sans)
                                 AppFont.CUSTOM -> stringResource(R.string.font_custom)
                             }
                             Text(fontLabel)
@@ -1157,15 +1115,19 @@ fun AppearanceSettings(
 
         val (thumbnailCornerRadius, onThumbnailCornerRadiusChange) = rememberPreference(
             ThumbnailCornerRadiusKey,
-            defaultValue = 3f
+            defaultValue = 32f
         )
         
         var showSensitivityDialog by rememberSaveable { mutableStateOf(false) }
         var showThumbnailCornerRadiusDialog by rememberSaveable { mutableStateOf(false) }
 
+        MiniPlayerAppearanceSettings()
+
+        Spacer(modifier = Modifier.height(27.dp))
+
         ExpressiveSettingGroup(
-            title = stringResource(R.string.player),
-            items = listOfNotNull(
+            title = stringResource(R.string.appearance_full_player),
+            items = fullPlayerAppearanceItems() + listOfNotNull(
                 Material3SettingsItem(
                     key = "appearance_audio_quality_badge",
                     icon = painterResource(R.drawable.tune),
@@ -1210,6 +1172,7 @@ fun AppearanceSettings(
                     onClick = { onHidePlayerThumbnailChange(!hidePlayerThumbnail) }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_thumbnail_shadow",
                     icon = painterResource(R.drawable.contrast),
                     title = { Text(stringResource(R.string.show_player_thumbnail_shadow)) },
                     description = { Text(stringResource(R.string.show_player_thumbnail_shadow_desc)) },
@@ -1259,14 +1222,7 @@ fun AppearanceSettings(
                     key = "appearance_thumbnail_radius",
                     icon = painterResource(R.drawable.image),
                     title = { Text(stringResource(R.string.thumbnail_corner_radius)) },
-                    description = { Text(stringResource(R.string.thumbnail_corner_radius_desc)) },
-                    trailingContent = {
-                        Text(
-                            text = "${thumbnailCornerRadius.roundToInt()}dp",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    },
+                    description = { Text("${thumbnailCornerRadius.roundToInt()} dp") },
                     onClick = { showThumbnailCornerRadiusDialog = true }
                 ),
                 Material3SettingsItem(
@@ -1317,7 +1273,6 @@ fun AppearanceSettings(
                                     R.string.wavy
                                 )
                                 SliderStyle.SLIM -> stringResource(R.string.slim)
-                                SliderStyle.EXPRESSIVE -> stringResource(R.string.expressive_wavy)
                             }
                         )
                     },
@@ -1366,27 +1321,6 @@ fun AppearanceSettings(
                         )
                     },
                     onClick = { onRotatingThumbnailChange(!rotatingThumbnail) }
-                ),
-                Material3SettingsItem(
-                    icon = painterResource(R.drawable.chat_msg),
-                    title = { Text(stringResource(R.string.show_comment_button)) },
-                    description = { Text(stringResource(R.string.show_comment_button_description)) },
-                    trailingContent = {
-                        Switch(
-                            checked = showCommentButton,
-                            onCheckedChange = onShowCommentButtonChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (showCommentButton) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onShowCommentButtonChange(!showCommentButton) }
                 )
             ) + if (swipeThumbnail) listOf(
                 Material3SettingsItem(
@@ -1721,28 +1655,6 @@ fun AppearanceSettings(
                     onClick = { onSwipeLyricsChange(!swipeLyrics) }
                 ),
                 Material3SettingsItem(
-                    key = "appearance_lyrics_thumbnail_play_pause",
-                    icon = painterResource(R.drawable.play),
-                    title = { Text(stringResource(R.string.lyrics_thumbnail_play_pause)) },
-                    description = { Text(stringResource(R.string.lyrics_thumbnail_play_pause_desc)) },
-                    trailingContent = {
-                        Switch(
-                            checked = enableLyricsThumbnailPlayPause,
-                            onCheckedChange = onEnableLyricsThumbnailPlayPauseChange,
-                            thumbContent = {
-                                Icon(
-                                    painter = painterResource(
-                                        id = if (enableLyricsThumbnailPlayPause) R.drawable.check else R.drawable.close
-                                    ),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(SwitchDefaults.IconSize)
-                                )
-                            }
-                        )
-                    },
-                    onClick = { onEnableLyricsThumbnailPlayPauseChange(!enableLyricsThumbnailPlayPause) }
-                ),
-                Material3SettingsItem(
                     key = "appearance_lyrics_providers_link",
                     icon = painterResource(R.drawable.tune),
                     title = { Text(stringResource(R.string.lyrics_provider_priority)) },
@@ -1854,6 +1766,16 @@ fun AppearanceSettings(
                     onClick = { showNavigationStyleDialog = true }
                 ),
                 Material3SettingsItem(
+                    key = "appearance_auto_hide_nav",
+                    icon = painterResource(R.drawable.nav_bar),
+                    title = { Text(stringResource(R.string.auto_hide_navbar)) },
+                    description = { Text(stringResource(R.string.auto_hide_navbar_desc)) },
+                    trailingContent = {
+                        Switch(checked = autoHideNav, onCheckedChange = onAutoHideNavChange)
+                    },
+                    onClick = { onAutoHideNavChange(!autoHideNav) }
+                ),
+                Material3SettingsItem(
                     key = "appearance_floating_nav",
                     icon = painterResource(R.drawable.nav_bar),
                     title = { Text(stringResource(R.string.floating_navbar)) },
@@ -1861,7 +1783,14 @@ fun AppearanceSettings(
                     trailingContent = {
                         Switch(
                             checked = floatingNavBar,
-                            onCheckedChange = onFloatingNavBarChange,
+                            onCheckedChange = { next ->
+                                onFloatingNavBarChange(next)
+                                if (!next && navigationStyle.isFloating) {
+                                    onNavigationStyleChange(NavigationStyle.CLEAN_MATERIAL)
+                                } else if (next && !navigationStyle.isFloating) {
+                                    onNavigationStyleChange(NavigationStyle.FLOATING_GLASS)
+                                }
+                            },
                             thumbContent = {
                                 Icon(
                                     painter = painterResource(
@@ -1873,7 +1802,15 @@ fun AppearanceSettings(
                             }
                         )
                     },
-                    onClick = { onFloatingNavBarChange(!floatingNavBar) }
+                    onClick = {
+                        val next = !floatingNavBar
+                        onFloatingNavBarChange(next)
+                        if (!next && navigationStyle.isFloating) {
+                            onNavigationStyleChange(NavigationStyle.CLEAN_MATERIAL)
+                        } else if (next && !navigationStyle.isFloating) {
+                            onNavigationStyleChange(NavigationStyle.FLOATING_GLASS)
+                        }
+                    }
                 ),
                 Material3SettingsItem(
                     icon = painterResource(R.drawable.grid_view),
@@ -2049,11 +1986,4 @@ enum class LyricsPosition {
 enum class PlayerTextAlignment {
     SIDED,
     CENTER,
-}
-
-
-enum class MiniPlayerDesignOption {
-    CLASSIC,
-    NEW,
-    APPLE
 }

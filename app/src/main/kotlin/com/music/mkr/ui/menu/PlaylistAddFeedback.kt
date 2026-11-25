@@ -41,6 +41,8 @@ import com.music.mkr.db.entities.Playlist
 import com.music.mkr.ui.component.DefaultDialog
 import com.music.mkr.viewmodels.DuplicateChoice
 import com.music.mkr.viewmodels.DuplicateSongs
+import com.music.mkr.viewmodels.PlaylistAddResult
+import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.viewmodels.PlaylistsViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -52,26 +54,39 @@ internal fun playlistAddHandler(
     onDismiss: () -> Unit,
     syncRemote: Boolean = true,
     prepare: suspend () -> List<String>,
-): Pair<Boolean, (Playlist) -> Unit> {
+): Triple<Boolean, PlaylistAddResult.Feedback?, (Playlist) -> Unit> {
     val scope = rememberCoroutineScope()
     val pickerVisible by rememberUpdatedState(isVisible)
     val dismissPicker by rememberUpdatedState(onDismiss)
     var activePlaylist by remember { mutableStateOf<Playlist?>(null) }
     var duplicateRequest by remember { mutableStateOf<DuplicateSongs?>(null) }
+    var feedback by remember { mutableStateOf<PlaylistAddResult.Feedback?>(null) }
     var busy by remember { mutableStateOf(false) }
+    var dismissing by remember { mutableStateOf(false) }
 
     fun submit(playlist: Playlist, choice: DuplicateChoice? = null) {
-        if (busy) return
+        if (busy || dismissing) return
         val prepared = duplicateRequest?.songIds
         duplicateRequest = null
         activePlaylist = playlist
+        feedback = null
         busy = true
         val operation = viewModel.addSongs(playlist.playlist, choice, syncRemote) { prepared ?: prepare() }
         scope.launch {
             try {
-                val duplicates = operation.await()
-                if (pickerVisible) {
-                    if (duplicates == null) dismissPicker() else duplicateRequest = duplicates
+                when (val result = operation.await()) {
+                    is PlaylistAddResult.Duplicates -> if (pickerVisible) duplicateRequest = result.songs
+                    is PlaylistAddResult.Feedback -> {
+                        if (result.added || !pickerVisible) {
+                            if (pickerVisible) {
+                                dismissing = true
+                                dismissPicker()
+                            }
+                            SnackbarManager.show(result.message, messageArgs = result.playlistName, iconRes = result.icon)
+                        } else {
+                            feedback = result
+                        }
+                    }
                 }
             } finally {
                 busy = false
@@ -80,7 +95,11 @@ internal fun playlistAddHandler(
     }
 
     LaunchedEffect(isVisible) {
-        if (!isVisible) duplicateRequest = null
+        if (!isVisible) {
+            duplicateRequest = null
+            feedback = null
+            dismissing = false
+        }
     }
     val request = duplicateRequest
     val destination = activePlaylist
@@ -104,11 +123,25 @@ internal fun playlistAddHandler(
             )
         }
     }
-    return busy to { playlist: Playlist -> if (duplicateRequest == null) submit(playlist) }
+    return Triple(busy, feedback) { playlist: Playlist -> if (duplicateRequest == null) submit(playlist) }
 }
 
 @Composable
-internal fun PlaylistAddProgress() {
+internal fun PlaylistAddStatus(busy: Boolean, feedback: PlaylistAddResult.Feedback?) {
+    if (busy) {
+        PlaylistAddProgress()
+    } else if (feedback != null) {
+        Text(
+            text = stringResource(feedback.message, feedback.playlistName),
+            color = if (feedback.icon == R.drawable.error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+        )
+    }
+}
+
+@Composable
+private fun PlaylistAddProgress() {
     var visible by remember { mutableStateOf(false) }
     LaunchedEffect(Unit) {
         delay(300)

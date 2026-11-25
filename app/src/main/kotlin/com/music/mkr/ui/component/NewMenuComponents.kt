@@ -16,10 +16,12 @@ import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonGroupDefaults
@@ -28,6 +30,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -161,19 +164,21 @@ fun NewMenuSectionHeader(
 }
 
 // Enhanced Action Grid - Material 3 Expressive Design
-@OptIn(ExperimentalLayoutApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NewActionGrid(
     actions: List<NewAction>,
     modifier: Modifier = Modifier,
-    columns: Int = 3
+    columns: Int = 2
 ) {
     FlowRow(
         modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(ButtonGroupDefaults.ConnectedSpaceBetween),
-        verticalArrangement = Arrangement.spacedBy(12.dp)
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        maxItemsInEachRow = columns
     ) {
-        actions.forEachIndexed { index, action ->
+        val capsuleShape = RoundedCornerShape(24.dp)
+        actions.forEach { action ->
             var performAction by remember { mutableStateOf(false) }
 
             if (performAction) {
@@ -186,34 +191,33 @@ fun NewActionGrid(
             val bgColor = if (action.backgroundColor != Color.Unspecified) action.backgroundColor else MaterialTheme.colorScheme.surfaceVariant
             val contentCol = if (action.contentColor != Color.Unspecified) action.contentColor else MaterialTheme.colorScheme.onSurfaceVariant
 
-            ToggleButton(
-                checked = false,
-                onCheckedChange = { performAction = true },
+            Surface(
+                onClick = { performAction = true },
                 enabled = action.enabled,
-                shapes = when {
-                    actions.size == 1 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                    index == 0 -> ButtonGroupDefaults.connectedLeadingButtonShapes()
-                    index == actions.lastIndex -> ButtonGroupDefaults.connectedTrailingButtonShapes()
-                    else -> ButtonGroupDefaults.connectedMiddleButtonShapes()
-                },
-                colors = ToggleButtonDefaults.colors(
-                    containerColor = bgColor,
-                    contentColor = contentCol,
-                    disabledContainerColor = bgColor.copy(alpha = 0.5f),
-                    disabledContentColor = contentCol.copy(alpha = 0.5f)
-                ),
+                shape = capsuleShape,
+                color = bgColor,
+                contentColor = contentCol,
                 modifier = Modifier
                     .weight(1f)
+                    .height(48.dp)
                     .semantics { role = Role.Button }
             ) {
-                action.icon()
-                Spacer(Modifier.size(ToggleButtonDefaults.IconSpacing))
-                Text(
-                    text = action.text,
-                    style = MaterialTheme.typography.labelMedium,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 14.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    action.icon()
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = action.text,
+                        style = MaterialTheme.typography.labelMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
             }
         }
     }

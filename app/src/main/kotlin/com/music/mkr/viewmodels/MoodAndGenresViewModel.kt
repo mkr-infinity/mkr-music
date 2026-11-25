@@ -20,14 +20,21 @@ class MoodAndGenresViewModel
 @Inject
 constructor() : ViewModel() {
     val moodAndGenres = MutableStateFlow<List<MoodAndGenres>?>(null)
+    val error = MutableStateFlow<String?>(null)
 
     init {
+        load()
+    }
+
+    fun load() {
+        error.value = null
         viewModelScope.launch {
             YouTube
                 .moodAndGenres()
                 .onSuccess {
                     moodAndGenres.value = it
                 }.onFailure {
+                    error.value = it.localizedMessage ?: "Failed to load"
                     reportException(it)
                 }
         }

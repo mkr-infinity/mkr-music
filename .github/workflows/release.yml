@@ -1,6 +1,9 @@
 name: Production Release Build
 
 'on':
+  push:
+    branches:
+      - fix/ui-polish-crossfade
   workflow_dispatch:
     inputs:
       publish_release:
@@ -88,17 +91,22 @@ jobs:
             exit 1
           fi
 
-          # Compute deterministic versionCode: MAJOR * 10000 + MINOR * 100 + PATCH
-          COMPUTED_CODE=$(( 10#$MAJOR * 10000 + 10#$MINOR * 100 + 10#$PATCH ))
+          # Read manual APP_BUILD_CODE directly from version.properties
+          RAW_BUILD_CODE=$(grep "^APP_BUILD_CODE=" version.properties | head -n 1 | cut -d'=' -f2- | tr -d ' \r\n')
+          if [[ -z "$RAW_BUILD_CODE" || ! "$RAW_BUILD_CODE" =~ ^[0-9]+$ ]]; then
+            echo "::error file=version.properties::Missing or invalid integer 'APP_BUILD_CODE' key in version.properties!"
+            exit 1
+          fi
+          COMPUTED_CODE=$(( 10#$RAW_BUILD_CODE ))
 
           # Ensure strictly greater than historical published version code 77
           if (( COMPUTED_CODE <= 77 || COMPUTED_CODE > 2147483647 )); then
-            echo "::error file=version.properties::Computed versionCode ($COMPUTED_CODE) must be strictly greater than historical version code 77."
+            echo "::error file=version.properties::APP_BUILD_CODE ($COMPUTED_CODE) must be strictly greater than historical version code 77."
             exit 1
           fi
 
           echo "✓ Canonical Version Name: $RAW_APP_VERSION"
-          echo "✓ Computed Version Code: $COMPUTED_CODE"
+          echo "✓ Canonical Build Code: $COMPUTED_CODE"
           echo "version_name=$RAW_APP_VERSION" >> $GITHUB_OUTPUT
           echo "version_code=$COMPUTED_CODE" >> $GITHUB_OUTPUT
 
@@ -408,26 +416,25 @@ jobs:
 
           > ### Release Highlights
           >
-          > Milestone release featuring unified Material 3 Expressive library views, strengthened personalized song suggestions, instant audio playback, and notification artwork styling matching source.
+          > Major v{version_name} release featuring Expressive Material 3 onboarding & navigation, language- and mood-aligned queues, audio focus auto-resume, hardened backup & restore, and in-app APK updates.
 
           ---
 
           ### 🎵 Smart Recommendations & Playback
-          - **Strengthened Taste-Based Song Suggestions:** Deeply personalizes Quick Picks and radio queues to your listening history, favorite artists, and active moods.
-          - **Always-On Quick Picks:** Pinned at top of Home with popular chart starters for new users and seamless guest fallback.
-          - **Instant Audio Streaming:** Streams tracks immediately upon tap with low-latency buffering.
-          - **Persistent "Not Interested" Filter:** Easily hide unwanted songs permanently from your recommendations.
+          - **Language & Mood Queue Recommendations:** Auto-queue prioritizes tracks matching the active song's language and acoustic mood.
+          - **Audio Focus Auto-Resume:** Supports delayed audio focus gain and transient interruptions so playback resumes cleanly when other apps finish using the speaker.
+          - **Always-On Quick Picks & Top Song Match:** Instant chart starters on Home and highlighted best-match cards in Search.
+          - **Crossfade & Smart Cache:** Smooth track transitions with configurable background caching (5s–90s).
 
           ### 🎨 UI & Library Experience
-          - **Material 3 Expressive Library:** Unified Liked, Offline, Cached, and Local views with hero cards, 2x2 collage artwork, and stats pills.
-          - **Numbered Track Rows:** Clean left-side track numbering, live playing visualizers, squircle thumbnails, and duration capsules.
-          - **Default Modern Player & Follow Theme:** Clean modern player layout with dynamic background following current theme.
-          - **Synced Notification Artwork:** Exact media notification style with dynamic album artwork colors and skip controls.
-          - **Letter-by-Letter Lyrics Animation:** Smooth word and character synchronization across multiple providers.
+          - **Expressive Material 3 Onboarding:** Animated wavy hero, spinning cookie-styled dynamic version badge, and update-aware first-launch flow that preserves user data.
+          - **Immersive Artwork & Squiggly Slider:** Full-bleed artwork backgrounds with Squiggly slider and Classic mini-player defaults.
+          - **Auto-Hide Navigation & Adaptive Bars:** Scroll-responsive bottom navigation with Material 3, Floating Glass, and Compact styles.
+          - **Custom Playlist Reordering:** Reliable drag-and-drop track reordering on custom-sorted local playlists.
 
           ### 🛠️ Reliability & Performance
-          - **Background Playback Lifecycle:** Resilient audio playback service that stays alive when clearing recents.
-          - **Zero Inset Overlaps:** Protected player controls and navigation bars against system cutout and gesture collisions.
+          - **Hardened Backup & Restore:** Cleanly stops playback before restoring archives to prevent crash loops, audio restarts, or unintended onboarding resets.
+          - **In-App APK Updates:** Download progress notifications and Unknown Apps permission onboarding for seamless universal APK updates.
           - **Universal APK:** Single consolidated release build supporting all Android device architectures.
 
           ---

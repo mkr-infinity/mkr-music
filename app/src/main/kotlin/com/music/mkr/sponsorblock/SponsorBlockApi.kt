@@ -12,7 +12,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONArray
 import timber.log.Timber
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 
 data class SponsorSegment(
@@ -33,7 +32,11 @@ object SponsorBlockApi {
         .build()
 
     // Memory LRU cache: videoId -> List<SponsorSegment>
-    private val segmentCache = ConcurrentHashMap<String, List<SponsorSegment>>()
+    private const val MAX_CACHE_SIZE = 200
+    private val segmentCache = object : LinkedHashMap<String, List<SponsorSegment>>(MAX_CACHE_SIZE, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, List<SponsorSegment>>): Boolean =
+            size > MAX_CACHE_SIZE
+    }
 
     suspend fun getSkipSegments(
         videoId: String,
@@ -45,7 +48,9 @@ object SponsorBlockApi {
         }
 
         // Return cached result if available
-        segmentCache[videoId]?.let { cached ->
+        synchronized(segmentCache) {
+            segmentCache[videoId]
+        }?.let { cached ->
             return@withContext Result.success(cached)
         }
 
@@ -115,7 +120,9 @@ object SponsorBlockApi {
             }
 
             val sortedSegments = segments.sortedBy { it.startMs }
-            segmentCache[videoId] = sortedSegments
+            synchronized(segmentCache) {
+                segmentCache[videoId] = sortedSegments
+            }
             Result.success(sortedSegments)
         } catch (e: Exception) {
             Timber.tag(TAG).e(e, "Failed to fetch SponsorBlock segments for $videoId")
@@ -124,6 +131,8 @@ object SponsorBlockApi {
     }
 
     fun clearCache() {
-        segmentCache.clear()
+        synchronized(segmentCache) {
+            segmentCache.clear()
+        }
     }
 }

@@ -13,7 +13,6 @@ import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -31,21 +30,19 @@ import androidx.compose.foundation.layout.systemBars
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import com.music.mkr.constants.QueuePeekHeight
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.res.painterResource
@@ -55,11 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.music.mkr.ui.component.PlayerTransportRow
 import com.music.mkr.ui.component.TransportVariant
-import androidx.media3.common.Player
 import androidx.navigation.NavController
-import coil3.compose.AsyncImage
-import coil3.request.ImageRequest
-import coil3.request.crossfade
 import com.music.mkr.R
 import com.music.mkr.models.MediaMetadata
 import com.music.mkr.playback.PlayerConnection
@@ -70,8 +63,6 @@ import com.music.mkr.ui.player.ClickableArtists
 import com.music.mkr.ui.player.rememberPlayerTitleActions
 import com.music.mkr.ui.theme.PlayerSliderColors
 import com.music.mkr.constants.PlayerBackgroundStyle
-import com.music.mkr.extensions.togglePlayPause
-import com.music.mkr.extensions.toggleRepeatMode
 import com.music.mkr.utils.makeTimeString
 
 /**
@@ -81,6 +72,8 @@ import com.music.mkr.utils.makeTimeString
 @Composable
 fun CinematicPlayer(
     mediaMetadata: MediaMetadata,
+    itemArtwork: String?,
+    animateArtwork: Boolean,
     playbackState: Int,
     isPlaying: Boolean,
     isLoading: Boolean,
@@ -89,8 +82,6 @@ fun CinematicPlayer(
     sliderPosition: Long?,
     position: Long,
     duration: Long,
-    repeatMode: Int,
-    shuffleModeEnabled: Boolean,
     isLiked: Boolean,
     playerConnection: PlayerConnection,
     navController: NavController,
@@ -98,10 +89,10 @@ fun CinematicPlayer(
     textButtonColor: Color,
     iconButtonColor: Color,
     textBackgroundColor: Color,
+    playerBackground: PlayerBackgroundStyle,
+    useDarkTheme: Boolean,
     onSliderValueChange: (Long) -> Unit,
     onSliderValueChangeFinished: () -> Unit,
-    onShowLyrics: () -> Unit,
-    onShowQueue: () -> Unit,
     onShowMenu: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -118,46 +109,30 @@ fun CinematicPlayer(
     )
 
     val insets = WindowInsets.systemBars.asPaddingValues()
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    val sheetScrollConnection = remember(state) { state.preUpPostDownNestedScrollConnection }
+    AdaptivePlayerLayout(
         modifier = modifier
             .fillMaxSize()
+            .nestedScroll(sheetScrollConnection)
             .windowInsetsPadding(WindowInsets.systemBars.only(WindowInsetsSides.Horizontal))
             .padding(
                 top = insets.calculateTopPadding() + 8.dp,
                 bottom = QueuePeekHeight + insets.calculateBottomPadding() + 8.dp,
                 start = 20.dp,
                 end = 20.dp
+            ),
+        artworkFraction = 0.90f,
+        artwork = { size ->
+            FullPlayerArtwork(
+                metadata = mediaMetadata,
+                itemArtwork = itemArtwork,
+                animate = animateArtwork,
+                backgroundColor = if (playerBackground == PlayerBackgroundStyle.DEFAULT) MaterialTheme.colorScheme.surface
+                    else Color.Transparent,
+                modifier = Modifier.size(size).scale(artworkScale),
             )
+        },
     ) {
-        // Center Artwork
-        BoxWithConstraints(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            val size = minOf(maxWidth * 0.90f, maxHeight * 0.95f)
-            Surface(
-                shape = RoundedCornerShape(26.dp),
-                shadowElevation = if (isPlaying) 16.dp else 8.dp,
-                modifier = Modifier
-                    .size(size)
-                    .scale(artworkScale)
-            ) {
-                AsyncImage(
-                    model = ImageRequest.Builder(LocalContext.current)
-                        .data(mediaMetadata.thumbnailUrl)
-                        .crossfade(true)
-                        .build(),
-                    contentDescription = mediaMetadata.title,
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-        }
-
-        Spacer(Modifier.height(20.dp))
 
         // Audio Quality Badge (respects ShowAudioQualityBadgeKey, genuine format only)
         AudioQualityBadge(
@@ -222,12 +197,13 @@ fun CinematicPlayer(
 
         // Slider
         PlayerSliderTrack(
-            sliderColors = PlayerSliderColors.getSliderColors(PlayerBackgroundStyle.DEFAULT, false),
+            sliderColors = PlayerSliderColors.getSliderColors(playerBackground, useDarkTheme),
             value = (sliderPosition ?: position).toFloat(),
             onValueChange = { onSliderValueChange(it.toLong()) },
             onValueChangeFinished = onSliderValueChangeFinished,
             valueRange = 0f..duration.coerceAtLeast(0L).toFloat(),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            isPlaying = isPlaying,
         )
 
         Row(
@@ -257,17 +233,11 @@ fun CinematicPlayer(
             playbackState = playbackState,
             canSkipPrevious = canSkipPrevious,
             canSkipNext = canSkipNext,
-            onPlayPause = {
-                if (playbackState == Player.STATE_ENDED) {
-                    playerConnection.player.seekTo(0, 0)
-                    playerConnection.player.playWhenReady = true
-                } else {
-                    playerConnection.player.togglePlayPause()
-                }
-            },
+            onPlayPause = { playerConnection.togglePlayPause(restartIfEnded = true) },
             onSkipPrevious = { playerConnection.seekToPrevious() },
             onSkipNext = { playerConnection.seekToNext() },
             variant = TransportVariant.EXPRESSIVE,
+            fitCompactWidth = true,
             primaryContainerColor = textButtonColor,
             primaryContentColor = iconButtonColor,
             secondaryContainerColor = Color.Transparent,
@@ -277,51 +247,6 @@ fun CinematicPlayer(
             playIconSize = 40.dp,
             sideIconSize = 32.dp,
             haptic = haptic,
-            leadingControl = {
-                Surface(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.player.shuffleModeEnabled = !shuffleModeEnabled
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    color = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 0.22f else 0.08f),
-                    modifier = Modifier.size(46.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(R.drawable.shuffle),
-                            contentDescription = stringResource(R.string.shuffle),
-                            tint = textBackgroundColor.copy(alpha = if (shuffleModeEnabled) 1f else 0.6f),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-            },
-            trailingControl = {
-                Surface(
-                    onClick = {
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        playerConnection.player.toggleRepeatMode()
-                    },
-                    shape = RoundedCornerShape(16.dp),
-                    color = textBackgroundColor.copy(alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 0.22f else 0.08f),
-                    modifier = Modifier.size(46.dp)
-                ) {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Icon(
-                            painter = painterResource(
-                                when (repeatMode) {
-                                    Player.REPEAT_MODE_ONE -> R.drawable.repeat_one
-                                    else -> R.drawable.repeat
-                                }
-                            ),
-                            contentDescription = stringResource(R.string.repeat),
-                            tint = textBackgroundColor.copy(alpha = if (repeatMode != Player.REPEAT_MODE_OFF) 1f else 0.6f),
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-            }
         )
 
         Spacer(Modifier.height(16.dp))
