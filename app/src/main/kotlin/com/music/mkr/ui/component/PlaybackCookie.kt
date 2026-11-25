@@ -40,13 +40,9 @@ internal val LocalPlaybackCookieAngle = compositionLocalOf<State<Float>?> { null
 @Composable
 internal fun rememberPlaybackCookieAngle(connection: PlayerConnection?, visible: Boolean): State<Float> {
     val localPlaying = connection?.isPlaying?.collectAsStateWithLifecycle()?.value == true
-    val cast = connection?.service?.castConnectionHandler
-    val casting = cast?.isCasting?.collectAsStateWithLifecycle()?.value == true
-    val castPlaying = cast?.castIsPlaying?.collectAsStateWithLifecycle()?.value == true
-    val buffering = cast?.castIsBuffering?.collectAsStateWithLifecycle()?.value == true
     val animations by rememberPreference(InterfaceAnimationsKey, true)
     val lifecycle by LocalLifecycleOwner.current.lifecycle.currentStateFlow.collectAsStateWithLifecycle()
-    val playing = if (casting) castPlaying && !buffering else localPlaying
+    val playing = localPlaying
     val angle = remember { mutableFloatStateOf(0f) }
     val active = visible && playing && animations && lifecycle.isAtLeast(Lifecycle.State.RESUMED)
 

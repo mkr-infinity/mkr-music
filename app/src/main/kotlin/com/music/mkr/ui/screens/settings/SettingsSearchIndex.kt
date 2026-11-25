@@ -454,16 +454,6 @@ fun buildSettingsSearchCatalog(context: Context): List<SearchableSettingItem> {
             keywords = listOf("skip on error", "playback error", "failed stream", "broken track", "skip unplayable")
         ),
         SearchableSettingItem(
-            id = "player_google_cast",
-            title = "Google Cast & Chromecast",
-            description = "Stream and cast music to Google Nest speakers, Smart TVs, and Chromecast devices",
-            category = "Player and Audio",
-            iconRes = R.drawable.earbud_case,
-            route = "settings/player",
-            targetKey = "player_google_cast",
-            keywords = listOf("cast", "chromecast", "google cast", "speakers", "nest", "tv", "stream to speaker", "wifi stream")
-        ),
-        SearchableSettingItem(
             id = "player_equalizer",
             title = "Equalizer",
             description = "Open device system audio equalizer",

@@ -306,23 +306,7 @@ fun BottomSheetPlayer(
     )
     val sliderStyle by rememberEnumPreference(SliderStyleKey, SliderStyle.WAVY)
     val squigglySlider by rememberPreference(SquigglySliderKey, defaultValue = true)
-    
-    // Cast state - safely access castConnectionHandler to prevent crashes during service lifecycle changes
-    val castHandler = remember(playerConnection) {
-        try {
-            playerConnection.service.castConnectionHandler
-        } catch (e: Exception) {
-            null
-        }
-    }
-    val isCasting by castHandler?.isCasting?.collectAsState() ?: remember { mutableStateOf(false) }
-    val castPosition by castHandler?.castPosition?.collectAsState() ?: remember { mutableLongStateOf(0L) }
-    val castDuration by castHandler?.castDuration?.collectAsState() ?: remember { mutableLongStateOf(0L) }
-    val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
-    val castIsBuffering by castHandler?.castIsBuffering?.collectAsState() ?: remember { mutableStateOf(false) }
-    
-    // Use Cast state when casting, otherwise local player
-    val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
+    val effectiveIsPlaying = isPlaying
 
     // Use State objects for position/duration to pass to MiniPlayer without causing recomposition
     // These states persist across playback state changes to ensure continuous progress updates
@@ -334,13 +318,7 @@ fun BottomSheetPlayer(
     var duration by durationState
     
     val effectivePosition by remember {
-        derivedStateOf {
-            if (isCasting) {
-                castPosition
-            } else {
-                position
-            }
-        }
+        derivedStateOf { position }
     }
     
     var sliderPosition by remember {
@@ -476,11 +454,9 @@ fun BottomSheetPlayer(
         mutableStateOf(false)
     }
 
-    // Position update - only for local playback
-    // When casting, we use castPosition directly to avoid sync issues
     // Use isPlaying instead of playbackState to ensure continuous updates during playback
-    LaunchedEffect(isPlaying, isCasting, state.isExpanded) {
-        if (!isCasting && isPlaying) {
+    LaunchedEffect(isPlaying, state.isExpanded) {
+        if (isPlaying) {
             val updateInterval = if (state.isExpanded) 100L else 500L
             while (isActive) {
                 delay(updateInterval) // 100ms for smooth expanded slider, 500ms when collapsed to save battery
@@ -493,18 +469,9 @@ fun BottomSheetPlayer(
     }
     
     // Also update position when playback state changes (e.g., song change, seek)
-    LaunchedEffect(playbackState, mediaMetadata?.id, isCasting) {
-        if (!isCasting) {
-            position = playerConnection.player.currentPosition
-            duration = playerConnection.player.duration
-        }
-    }
-
-    LaunchedEffect(isCasting, castPosition, castDuration) {
-        if (isCasting && sliderPosition == null) {
-            position = castPosition
-            if (castDuration > 0) duration = castDuration
-        }
+    LaunchedEffect(playbackState, mediaMetadata?.id) {
+        position = playerConnection.player.currentPosition
+        duration = playerConnection.player.duration
     }
 
     val dismissedBound = QueuePeekHeight + WindowInsets.systemBars.asPaddingValues().calculateBottomPadding()
@@ -865,16 +832,12 @@ fun BottomSheetPlayer(
             )
         },
     ) {
-        val transportState = if (isCasting) Player.STATE_READY else playbackState
-        val isLoading = if (isCasting) castIsBuffering else playbackState == Player.STATE_BUFFERING
-        val effectiveDuration = if (isCasting) castDuration else duration
+        val transportState = playbackState
+        val isLoading = playbackState == Player.STATE_BUFFERING
+        val effectiveDuration = duration
         val finishSeek: () -> Unit = {
             sliderPosition?.let {
-                if (isCasting) {
-                    castHandler?.seekTo(it)
-                } else {
-                    playerConnection.seekTo(it)
-                }
+                playerConnection.seekTo(it)
                 position = it
             }
             sliderPosition = null

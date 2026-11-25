@@ -138,11 +138,6 @@ fun PlayerSettings(
         defaultValue = false
     )
 
-    val (enableGoogleCast, onEnableGoogleCastChange) = rememberPreference(
-        key = EnableGoogleCastKey,
-        defaultValue = true
-    )
-
     val (seekExtraSeconds, onSeekExtraSeconds) = rememberPreference(
         SeekExtraSeconds,
         defaultValue = false
@@ -409,31 +404,6 @@ fun PlayerSettings(
                     },
                     onClick = { onSeekExtraSeconds(!seekExtraSeconds) }
                 ))
-                // Only show Cast setting in GMS builds (not in F-Droid/FOSS)
-                if (BuildConfig.CAST_AVAILABLE) {
-                    add(Material3SettingsItem(
-                        key = "player_google_cast",
-                        icon = painterResource(R.drawable.cast),
-                        title = { Text(stringResource(R.string.google_cast)) },
-                        description = { Text(stringResource(R.string.google_cast_description)) },
-                        trailingContent = {
-                            Switch(
-                                checked = enableGoogleCast,
-                                onCheckedChange = onEnableGoogleCastChange,
-                                thumbContent = {
-                                    Icon(
-                                        painter = painterResource(
-                                            id = if (enableGoogleCast) R.drawable.check else R.drawable.close
-                                        ),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(SwitchDefaults.IconSize)
-                                    )
-                                }
-                            )
-                        },
-                        onClick = { onEnableGoogleCastChange(!enableGoogleCast) }
-                    ))
-                }
             }
         )
 

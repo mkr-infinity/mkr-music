@@ -57,7 +57,6 @@ import com.music.mkr.R
 import com.music.mkr.constants.*
 import com.music.mkr.listentogether.ListenTogetherManager
 import com.music.mkr.models.MediaMetadata
-import com.music.mkr.playback.CastConnectionHandler
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.ui.theme.PlayerColorExtractor
 import com.music.mkr.utils.rememberPreference
@@ -86,16 +85,6 @@ internal fun AppleMiniPlayer(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
-    
-    // Cast state
-    val castHandler = remember(playerConnection) {
-        try {
-            playerConnection.service.castConnectionHandler
-        } catch (e: Exception) {
-            null
-        }
-    }
-    val isCasting by castHandler?.isCasting?.collectAsState() ?: remember { mutableStateOf(false) }
 
     // Swipe settings
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
@@ -408,17 +397,6 @@ internal fun AppleMiniPlayer(
 
                 Spacer(modifier = Modifier.width(8.dp))
 
-                // Cast indicator
-                if (isCasting) {
-                    Icon(
-                        painter = painterResource(R.drawable.cast_connected),
-                        contentDescription = "Casting",
-                        tint = primaryColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
-
                 // Previous Button
                 Box(
                     contentAlignment = Alignment.Center,
@@ -461,10 +439,7 @@ internal fun AppleMiniPlayer(
                                     playerConnection.toggleMute()
                                     return@clickable
                                 }
-                                if (isCasting) {
-                                    val castIsPlaying = castHandler?.castIsPlaying?.value ?: false
-                                    if (castIsPlaying) castHandler?.pause() else castHandler?.play()
-                                } else if (playbackState == Player.STATE_ENDED) {
+                                if (playbackState == Player.STATE_ENDED) {
                                     playerConnection.player.seekTo(0, 0)
                                     playerConnection.player.playWhenReady = true
                                 } else {
@@ -474,13 +449,11 @@ internal fun AppleMiniPlayer(
                         }
                 ) {
                     val isPlaying by playerConnection.isPlaying.collectAsState()
-                    val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
-                    val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
                     val isMuted by playerConnection.isMuted.collectAsState()
 
                     PlaybackCookieFace(MaterialTheme.colorScheme.primaryContainer)
                     Crossfade(
-                        targetState = effectiveIsPlaying,
+                        targetState = isPlaying,
                         animationSpec = if (interfaceAnimations) tween(150) else snap(),
                         label = "AppleMiniPlayPauseCrossfade"
                     ) { playing ->

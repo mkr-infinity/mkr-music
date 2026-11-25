@@ -246,17 +246,6 @@ fun Queue(
 
     val currentFormat by playerConnection.currentFormat.collectAsState(initial = null)
 
-    // Cast state - safely access castConnectionHandler to prevent crashes during service lifecycle changes
-    val castHandler = remember(playerConnection) {
-        try {
-            playerConnection.service.castConnectionHandler
-        } catch (e: Exception) {
-            null
-        }
-    }
-    val isCasting by castHandler?.isCasting?.collectAsState() ?: remember { mutableStateOf(false) }
-    val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
-
     val selection = viewModel<QueueSelection>()
     val onExitSelectionMode = {
         selection.active = false
@@ -1217,31 +1206,11 @@ fun Queue(
                                                             val target = player.queueWindowIndices(setOf(window.uid)).singleOrNull()
                                                                 ?: return@combinedClickable
                                                             if (target == player.currentMediaItemIndex) {
-                                                                if (isCasting) {
-                                                                    if (castIsPlaying) {
-                                                                        castHandler?.pause()
-                                                                    } else {
-                                                                        castHandler?.play()
-                                                                    }
-                                                                } else {
-                                                                    playerConnection.togglePlayPause()
-                                                                }
+                                                                playerConnection.togglePlayPause()
                                                             } else {
-                                                                if (isCasting) {
-                                                                    val mediaId =
-                                                                        window.mediaItem.mediaId
-                                                                    val navigated =
-                                                                        castHandler?.navigateToMediaIfInQueue(
-                                                                            mediaId
-                                                                        ) ?: false
-                                                                    if (!navigated) {
-                                                                        player.seekToDefaultPosition(target)
-                                                                    }
-                                                                } else {
-                                                                    if (!playerConnection.service.manualSeekToIndexWithCrossfade(target)) {
-                                                                        player.seekToDefaultPosition(target)
-                                                                        player.playWhenReady = true
-                                                                    }
+                                                                if (!playerConnection.service.manualSeekToIndexWithCrossfade(target)) {
+                                                                    player.seekToDefaultPosition(target)
+                                                                    player.playWhenReady = true
                                                                 }
                                                             }
                                                         }

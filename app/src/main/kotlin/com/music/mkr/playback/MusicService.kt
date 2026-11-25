@@ -509,9 +509,7 @@ class MusicService :
     private val recentlyFailedSongs = mutableSetOf<String>()
     private var failedSongsClearJob: Job? = null
 
-    // Google Cast support
-    var castConnectionHandler: CastConnectionHandler? = null
-        private set
+    // Playback listeners & state
 
     private val screenStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
@@ -648,9 +646,6 @@ class MusicService :
         audioQuality = dataStore.get(AudioQualityKey).toEnum(com.music.mkr.constants.AudioQuality.AUTO)
         ipVersion = dataStore.get(IpVersionKey).toEnum(IpVersion.AUTO)
         playerVolume = MutableStateFlow(dataStore.get(PlayerVolumeKey, 1f).coerceIn(0f, 1f))
-
-        // Initialize Google Cast
-        initializeCast()
 
         // 4. Watch for EQ profile changes
         scope.launch {
@@ -1286,7 +1281,7 @@ class MusicService :
                 resumeAfterFocusLoss = false
                 lastAudioFocusState = focusChange
                 applyPlaybackVolume()
-                if (resume && castConnectionHandler?.isCasting?.value != true && player.mediaItemCount > 0) {
+                if (resume && player.mediaItemCount > 0) {
                     player.play()
                 }
                 updateOutgoingPlayback()
@@ -1420,10 +1415,7 @@ class MusicService :
         if (consecutivePlaybackErr <= MAX_CONSECUTIVE_ERR && nextWindowIndex != C.INDEX_UNSET) {
             player.seekTo(nextWindowIndex, C.TIME_UNSET)
             player.prepare()
-            // Don't start local playback if casting
-            if (castConnectionHandler?.isCasting?.value != true) {
-                player.play()
-            }
+            player.play()
             return
         }
 
@@ -2290,7 +2282,6 @@ class MusicService :
         retryJob?.cancel()
         waitingForNetworkConnection.value = false
         mediaButtonStartupJob?.cancel()
-        castConnectionHandler?.pause()
         automixItems.value = emptyList()
         player.pause()
         player.stop()
@@ -2329,7 +2320,7 @@ class MusicService :
         if (player.mediaItemCount == 0 || (!preserveIdleQueue && player.playbackState == STATE_IDLE)) {
             player.setMediaItems(distinctItems)
             player.prepare()
-            if (castConnectionHandler?.isCasting?.value != true) player.play()
+            player.play()
         } else {
             if (preventDuplicates) {
                 val ids = distinctItems.mapTo(hashSetOf()) { it.mediaId }
@@ -2690,22 +2681,7 @@ class MusicService :
             scrobbleManager?.onSongStart(player.currentMetadata, duration = player.duration)
         }
 
-        // Sync Cast when media changes and Cast is connected
-        // Skip if this change was triggered by Cast sync (to prevent loops)
-        if (castConnectionHandler?.isCasting?.value == true &&
-            castConnectionHandler?.isSyncingFromCast != true &&
-            mediaItem != null) {
-            val metadata = mediaItem.metadata
-            if (metadata != null) {
-                // Try to navigate to the item if it's already in Cast queue
-                // This avoids a full reload which causes the widget to refresh
-                val navigated = castConnectionHandler?.navigateToMediaIfInQueue(metadata.id) ?: false
-                if (!navigated) {
-                    // Item not in Cast queue, need to reload
-                    castConnectionHandler?.loadMedia(metadata)
-                }
-            }
-        }
+        scheduleCrossfade()
 
         // Auto load more songs from queue
         if (dataStore.get(AutoLoadMoreKey, true) &&
@@ -2867,11 +2843,6 @@ class MusicService :
         if (!playWhenReady) {
             cancelCrossfadePreparation()
             updateOutgoingPlayback()
-        }
-        // Safety net: if local player tries to start while casting, immediately pause it
-        if (playWhenReady && castConnectionHandler?.isCasting?.value == true) {
-            player.pause()
-            return
         }
 
         if (reason == Player.PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST) {
@@ -3445,9 +3416,7 @@ class MusicService :
                     if (resumeAfterRecovery) {
                         delay(500) // Brief delay to allow renderer to be ready
                         if (hasAudioFocus && playerInitialized.value) {
-                            if (castConnectionHandler?.isCasting?.value != true) {
-                                player.play()
-                            }
+                            player.play()
                         }
                     }
                 } else {
@@ -3603,7 +3572,7 @@ class MusicService :
                 player.pause()
             }
         } else if (volume > 0 && !muted && pauseOnMute) {
-            if (wasPlayingBeforeVolumeMute && !player.isPlaying && castConnectionHandler?.isCasting?.value != true) {
+            if (wasPlayingBeforeVolumeMute && !player.isPlaying) {
                 wasPlayingBeforeVolumeMute = false
                 isPausedByVolumeMute = false
                 player.play()
@@ -4124,7 +4093,6 @@ class MusicService :
             // Ignore
         }
         audioManager.unregisterAudioDeviceCallback(audioDeviceCallback)
-        castConnectionHandler?.release()
         if (dataStore.get(PersistentQueueKey, true)) {
             saveQueueToDisk()
         }
@@ -4154,13 +4122,12 @@ class MusicService :
                 stopOnTaskClear = dataStore.get(StopMusicOnTaskClearKey, false),
                 hasQueue = player.mediaItemCount > 0,
                 isLoadingQueue = queueLoadJob?.isActive == true,
-                isCasting = castConnectionHandler?.isCasting?.value == true,
+                isCasting = false,
             )
         ) return
 
         queueLoadJob?.cancel()
         mediaButtonStartupJob?.cancel()
-        castConnectionHandler?.pause()
         player.pause()
         releaseCrossfadePlayers()
         pauseAllPlayersAndStopSelf()
@@ -4237,7 +4204,6 @@ class MusicService :
                     autoLoadJob?.cancel()
                     retryJob?.cancel()
                     mediaButtonStartupJob?.cancel()
-                    castConnectionHandler?.pause()
                     releaseCrossfadePlayers()
                     player.stop()
                     player.clearMediaItems()
@@ -4272,7 +4238,7 @@ class MusicService :
         }
 
         super.onStartCommand(intent, flags, startId)
-        val isCasting = castConnectionHandler?.isCasting?.value == true
+        val isCasting = false
         if (intent?.action != Intent.ACTION_MEDIA_BUTTON &&
             player.mediaItemCount == 0 && queueLoadJob?.isActive != true &&
             !isCasting && !isPlaybackOngoing()
@@ -4392,22 +4358,6 @@ class MusicService :
         }
     }
 
-    /**
-     * Initialize Google Cast support
-     */
-    private fun initializeCast() {
-        if (dataStore.get(com.music.mkr.constants.EnableGoogleCastKey, true)) {
-            try {
-                castConnectionHandler = CastConnectionHandler(this, scope, this)
-                castConnectionHandler?.initialize()
-                timber.log.Timber.d("Google Cast initialized")
-            } catch (e: Exception) {
-                timber.log.Timber.e(e, "Failed to initialize Google Cast")
-            }
-        }
-    }
-
-
     override fun onPositionDiscontinuity(
         oldPosition: Player.PositionInfo,
         newPosition: Player.PositionInfo,
@@ -4425,7 +4375,7 @@ class MusicService :
         val index = source.currentMediaItemIndex
         val timeline = source.currentTimeline
         if (!crossfadeEnabled || crossfadeDurationMs <= 0 || !source.isPlaying || !hasAudioFocus ||
-            castConnectionHandler?.isCasting?.value == true || timeline.isEmpty ||
+            timeline.isEmpty ||
             index !in 0 until timeline.windowCount || source.isCurrentMediaItemLive || source.duration <= 0
         ) return null
         val speed = source.playbackParameters.speed
@@ -4439,7 +4389,7 @@ class MusicService :
         val index = active.currentMediaItemIndex
         val timeline = active.currentTimeline
         return active === source.player && active.isPlaying && hasAudioFocus && crossfadeEnabled &&
-            castConnectionHandler?.isCasting?.value != true && index in 0 until timeline.windowCount &&
+            index in 0 until timeline.windowCount &&
             timeline.getWindow(index, Timeline.Window()).uid == source.windowUid &&
             active.playbackParameters.speed == source.speed
     }

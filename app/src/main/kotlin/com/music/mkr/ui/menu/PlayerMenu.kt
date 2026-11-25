@@ -119,18 +119,6 @@ fun PlayerMenu(
     val database = LocalDatabase.current
     val playerConnection = LocalPlayerConnection.current ?: return
     val playerVolume = playerConnection.service.playerVolume.collectAsState()
-    
-    // Cast state for volume control - safely access castConnectionHandler to prevent crashes
-    val castHandler = remember(playerConnection) {
-        try {
-            playerConnection.service.castConnectionHandler
-        } catch (e: Exception) {
-            null
-        }
-    }
-    val isCasting by castHandler?.isCasting?.collectAsState() ?: remember { mutableStateOf(false) }
-    val castVolume by castHandler?.castVolume?.collectAsState() ?: remember { mutableFloatStateOf(1f) }
-    val castDeviceName by castHandler?.castDeviceName?.collectAsState() ?: remember { mutableStateOf<String?>(null) }
     val audioDevice by playerConnection.activeAudioDevice.collectAsState()
     
     val librarySong by database.song(mediaMetadata.id).collectAsState(initial = null)
@@ -252,38 +240,10 @@ fun PlayerMenu(
                 .padding(horizontal = 24.dp)
                 .padding(top = 24.dp, bottom = 6.dp),
         ) {
-            // Show Cast indicator when casting
-            if (isCasting && castDeviceName != null) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 16.dp)
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.cast),
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp),
-                        tint = MaterialTheme.colorScheme.primary
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = stringResource(R.string.casting_to, castDeviceName ?: ""),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
-            }
-            
             VolumeSlider(
-                value = if (isCasting) castVolume else playerVolume.value,
+                value = playerVolume.value,
                 onValueChange = { volume ->
-                    if (isCasting) {
-                        castHandler?.setVolume(volume)
-                    } else {
-                        playerConnection.service.playerVolume.value = volume
-                    }
+                    playerConnection.service.playerVolume.value = volume
                 },
                 modifier = Modifier.fillMaxWidth(),
                 accentColor = MaterialTheme.colorScheme.primary

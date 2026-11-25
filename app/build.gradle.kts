@@ -26,27 +26,14 @@ val canonicalAppVersion = versionProperties.getProperty("APP_VERSION")?.trim()
     ?: throw GradleException("Missing 'APP_VERSION' key in version.properties.")
 
 val semverRegex = Regex("""^(\d+)\.(\d+)\.(\d+)$""")
-val semverMatch = semverRegex.matchEntire(canonicalAppVersion)
-    ?: throw GradleException("Invalid APP_VERSION '$canonicalAppVersion' in version.properties. Must strictly follow semantic versioning MAJOR.MINOR.PATCH (e.g., 1.0.0).")
-
-val (majorStr, minorStr, patchStr) = semverMatch.destructured
-val versionMajor = majorStr.toIntOrNull() ?: throw GradleException("Invalid MAJOR component in '$canonicalAppVersion'")
-val versionMinor = minorStr.toIntOrNull() ?: throw GradleException("Invalid MINOR component in '$canonicalAppVersion'")
-val versionPatch = patchStr.toIntOrNull() ?: throw GradleException("Invalid PATCH component in '$canonicalAppVersion'")
-
-if (versionMinor !in 0..99) {
-    throw GradleException("MINOR version '$versionMinor' out of supported range (0..99).")
-}
-if (versionPatch !in 0..99) {
-    throw GradleException("PATCH version '$versionPatch' out of supported range (0..99).")
-}
-if (versionMajor < 0 || versionMajor > 214748) {
-    throw GradleException("MAJOR version '$versionMajor' out of supported range (0..214748).")
+if (!semverRegex.matches(canonicalAppVersion)) {
+    throw GradleException("Invalid APP_VERSION '$canonicalAppVersion' in version.properties. Must strictly follow semantic versioning MAJOR.MINOR.PATCH (e.g., 1.0.0).")
 }
 
-val computedVersionCode = versionMajor * 10000 + versionMinor * 100 + versionPatch
+val computedVersionCode = versionProperties.getProperty("APP_BUILD_CODE")?.trim()?.toIntOrNull()
+    ?: throw GradleException("Missing or invalid integer 'APP_BUILD_CODE' key in version.properties.")
 if (computedVersionCode <= 77) {
-    throw GradleException("Computed versionCode ($computedVersionCode) must be strictly greater than historical version code 77 to permit Android upgrades.")
+    throw GradleException("APP_BUILD_CODE ($computedVersionCode) must be strictly greater than historical version code 77 to permit Android upgrades.")
 }
 plugins {
     id("com.android.application")
@@ -88,7 +75,7 @@ android {
 //add nightly build label support
         val isNightly = project.hasProperty("nightly") && project.property("nightly") == "true"
         buildConfigField("Boolean", "IS_NIGHTLY", isNightly.toString())
-        buildConfigField("Boolean", "CAST_AVAILABLE", "true")
+        buildConfigField("Boolean", "CAST_AVAILABLE", "false")
     }
 
     flavorDimensions += listOf("abi")
@@ -303,14 +290,7 @@ dependencies {
     implementation(libs.media3.ui)
     implementation(libs.media3.okhttp)
 
-    // Google Cast
-    implementation(libs.media3.cast)
-    implementation(libs.mediarouter)
-    implementation(libs.cast.framework)
-
     implementation(libs.room.runtime)
-    implementation(libs.kuromoji.ipadic)
-    implementation(libs.tinypinyin)
     ksp(libs.room.compiler)
     implementation(libs.room.ktx)
 

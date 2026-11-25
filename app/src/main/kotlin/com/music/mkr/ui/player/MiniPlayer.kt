@@ -139,7 +139,6 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import com.music.mkr.db.entities.ArtistEntity
 import com.music.mkr.listentogether.ListenTogetherManager
 import com.music.mkr.models.MediaMetadata
-import com.music.mkr.playback.CastConnectionHandler
 import com.music.mkr.playback.PlayerConnection
 import com.music.mkr.ui.theme.PlayerColorExtractor
 import com.music.mkr.ui.utils.resize
@@ -234,16 +233,6 @@ private fun NewMiniPlayer(
     val mediaMetadata by playerConnection.mediaMetadata.collectAsState()
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
-    
-    // Cast state - safely access castConnectionHandler to prevent crashes during service lifecycle changes
-    val castHandler = remember(playerConnection) {
-        try {
-            playerConnection.service.castConnectionHandler
-        } catch (e: Exception) {
-            null
-        }
-    }
-    val isCasting by castHandler?.isCasting?.collectAsState() ?: remember { mutableStateOf(false) }
 
     // Audio Output State
     val context = LocalContext.current
@@ -475,8 +464,6 @@ private fun NewMiniPlayer(
 
                     progressState = progressState,
                     playbackState = playbackState,
-                    isCasting = isCasting,
-                    castHandler = castHandler,
                     playerConnection = playerConnection,
                     mediaMetadata = mediaMetadata,
                     primaryColor = primaryColor,
@@ -496,17 +483,6 @@ private fun NewMiniPlayer(
                 )
 
                 Spacer(modifier = Modifier.width(8.dp))
-                
-                // Cast indicator
-                if (isCasting) {
-                    Icon(
-                        painter = painterResource(R.drawable.cast_connected),
-                        contentDescription = "Casting",
-                        tint = primaryColor,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                }
 
                 // Transport controls: Previous, Play/Pause, Next
                 PlaybackCookieButton(
@@ -541,12 +517,6 @@ private fun NewMiniPlayer(
                             lastPlayPauseClickTime = now
                             if (isListenTogetherGuest) {
                                 playerConnection.toggleMute()
-                            } else if (isCasting) {
-                                if (castHandler?.castIsPlaying?.value == true) {
-                                    castHandler.pause()
-                                } else {
-                                    castHandler?.play()
-                                }
                             } else if (playbackState == Player.STATE_ENDED) {
                                 playerConnection.player.seekTo(0, 0)
                                 playerConnection.player.playWhenReady = true
@@ -558,12 +528,10 @@ private fun NewMiniPlayer(
                     modifier = Modifier.size(48.dp)
                 ) {
                     val isPlaying by playerConnection.isPlaying.collectAsState()
-                    val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
-                    val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
                     val isMuted by playerConnection.isMuted.collectAsState()
 
                     Crossfade(
-                        targetState = effectiveIsPlaying,
+                        targetState = isPlaying,
                         animationSpec = if (interfaceAnimations) tween(150) else snap(),
                         label = "MiniPlayerPlayPauseCrossfade"
                     ) { playing ->
@@ -628,8 +596,6 @@ private fun NewMiniPlayerPlayButton(
 
     progressState: ProgressState,
     playbackState: Int,
-    isCasting: Boolean,
-    castHandler: CastConnectionHandler?,
     playerConnection: PlayerConnection,
     mediaMetadata: MediaMetadata?,
     primaryColor: Color,
@@ -637,8 +603,6 @@ private fun NewMiniPlayerPlayButton(
     listenTogetherManager: ListenTogetherManager?
 ) {
     val isPlaying by playerConnection.isPlaying.collectAsState()
-    val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
-    val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
 
     val trackColor = outlineColor.copy(alpha = 0.2f)
@@ -646,7 +610,7 @@ private fun NewMiniPlayerPlayButton(
     val rawProgress = progressState.progress
     val animatedProgress by animateFloatAsState(
         targetValue = rawProgress,
-        animationSpec = if (interfaceAnimations && effectiveIsPlaying && playbackState == Player.STATE_READY) {
+        animationSpec = if (interfaceAnimations && isPlaying && playbackState == Player.STATE_READY) {
             tween(durationMillis = 500, easing = LinearEasing)
         } else {
             snap()
@@ -791,15 +755,6 @@ private fun LegacyMiniPlayer(
     MiniPlayerColorExtractor(mediaMetadata, effectiveMiniPlayerBackground) { gradientColors = it }
     val canSkipNext by playerConnection.canSkipNext.collectAsState()
     val canSkipPrevious by playerConnection.canSkipPrevious.collectAsState()
-    
-    val castHandler = remember(playerConnection) {
-        try {
-            playerConnection.service.castConnectionHandler
-        } catch (e: Exception) {
-            null
-        }
-    }
-    val isCasting by castHandler?.isCasting?.collectAsState() ?: remember { mutableStateOf(false) }
 
     val swipeSensitivity by rememberPreference(SwipeSensitivityKey, 0.73f)
     val swipeThumbnailPref by rememberPreference(SwipeThumbnailKey, true)
@@ -1047,8 +1002,6 @@ private fun LegacyMiniPlayer(
 
             LegacyPlayPauseButton(
                 playbackState = playbackState,
-                isCasting = isCasting,
-                castHandler = castHandler,
                 playerConnection = playerConnection,
                 listenTogetherManager = listenTogetherManager
             )
@@ -1083,14 +1036,10 @@ private fun LegacyMiniPlayer(
 @Composable
 private fun LegacyPlayPauseButton(
     playbackState: Int,
-    isCasting: Boolean,
-    castHandler: CastConnectionHandler?,
     playerConnection: PlayerConnection,
     listenTogetherManager: ListenTogetherManager?
 ) {
     val isPlaying by playerConnection.isPlaying.collectAsState()
-    val castIsPlaying by castHandler?.castIsPlaying?.collectAsState() ?: remember { mutableStateOf(false) }
-    val effectiveIsPlaying = if (isCasting) castIsPlaying else isPlaying
     val isListenTogetherGuest = listenTogetherManager?.let { it.isInRoom && !it.isHost } ?: false
     val isMuted by playerConnection.isMuted.collectAsState()
     val (interfaceAnimations) = rememberPreference(InterfaceAnimationsKey, defaultValue = true)
@@ -1100,8 +1049,6 @@ private fun LegacyPlayPauseButton(
         onClick = {
             if (isListenTogetherGuest) {
                 playerConnection.toggleMute()
-            } else if (isCasting) {
-                if (castIsPlaying) castHandler?.pause() else castHandler?.play()
             } else if (playbackState == Player.STATE_ENDED) {
                 playerConnection.player.seekTo(0, 0)
                 playerConnection.player.playWhenReady = true
@@ -1112,7 +1059,7 @@ private fun LegacyPlayPauseButton(
         modifier = Modifier.size(48.dp)
     ) {
         Crossfade(
-            targetState = effectiveIsPlaying,
+            targetState = isPlaying,
             animationSpec = if (interfaceAnimations) tween(150) else snap(),
             label = "LegacyMiniPlayPauseCrossfade"
         ) { playing ->

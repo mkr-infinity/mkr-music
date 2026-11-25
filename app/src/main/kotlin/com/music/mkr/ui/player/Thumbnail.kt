@@ -107,7 +107,6 @@ import com.music.mkr.constants.SwipeThumbnailKey
 import com.music.mkr.constants.ThumbnailCornerRadiusKey
 import com.music.mkr.constants.ThumbnailCornerRadius
 import com.music.mkr.listentogether.RoomRole
-import com.music.mkr.ui.component.CastButton
 import com.music.mkr.ui.utils.resize
 import com.music.mkr.utils.rememberPreference
 import kotlinx.coroutines.delay
@@ -531,13 +530,6 @@ private fun ThumbnailHeader(
                 }
             }
         }
-
-        CastButton(
-            modifier = Modifier
-                .align(Alignment.CenterEnd)
-                .size(24.dp),
-            tintColor = textColor
-        )
     }
 }
 
