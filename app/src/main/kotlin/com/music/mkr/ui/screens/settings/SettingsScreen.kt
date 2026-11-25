@@ -52,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
@@ -874,64 +875,83 @@ private fun SettingsHeroBanner(
         MaterialTheme.colorScheme.surfaceContainerHigh
     }
     val borderColor = if (isUpdateAvailable) {
-        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.40f)
     } else {
-        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.28f)
+    }
+    val gradientBrush = if (isUpdateAvailable) {
+        Brush.horizontalGradient(
+            listOf(
+                containerColor,
+                MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f)
+            )
+        )
+    } else {
+        Brush.horizontalGradient(
+            listOf(
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (pureBlack) 0.16f else 0.26f).compositeOver(containerColor),
+                containerColor
+            )
+        )
     }
 
     Surface(
-        shape = RoundedCornerShape(28.dp),
+        shape = RoundedCornerShape(30.dp),
         color = containerColor,
         border = BorderStroke(1.dp, borderColor),
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(28.dp))
+            .clip(RoundedCornerShape(30.dp))
             .clickable(role = Role.Button, onClick = onBannerClick)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(gradientBrush)
                 .padding(horizontal = 18.dp, vertical = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(14.dp)
         ) {
             val badgeShape = MaterialShapes.Cookie12Sided.toShape()
-            if (!isUpdateAvailable && hasSession && !accountImageUrl.isNullOrBlank()) {
-                AsyncImage(
-                    model = accountImageUrl,
-                    contentDescription = accountName.ifBlank { "YouTube account" },
-                    contentScale = ContentScale.Crop,
-                    modifier = Modifier
-                        .size(46.dp)
-                        .clip(badgeShape)
-                )
-            } else {
+            Box(
+                modifier = Modifier.size(54.dp),
+                contentAlignment = Alignment.Center
+            ) {
                 Box(
-                    modifier = Modifier.size(46.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .graphicsLayer { rotationZ = cookieAngle }
+                        .clip(badgeShape)
+                        .background(
+                            if (isUpdateAvailable) MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+                            else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                        )
+                )
+                if (!isUpdateAvailable && hasSession && !accountImageUrl.isNullOrBlank()) {
+                    AsyncImage(
+                        model = accountImageUrl,
+                        contentDescription = accountName.ifBlank { "YouTube account" },
+                        contentScale = ContentScale.Crop,
                         modifier = Modifier
-                            .fillMaxSize()
-                            .graphicsLayer { rotationZ = cookieAngle }
-                            .clip(badgeShape)
-                            .background(
-                                if (isUpdateAvailable) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
-                            )
+                            .size(44.dp)
+                            .clip(CircleShape)
                     )
+                } else {
                     Icon(
                         painter = painterResource(
                             if (isUpdateAvailable) R.drawable.update_alert else R.drawable.account
                         ),
                         contentDescription = null,
-                        tint = if (isUpdateAvailable) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp)
                     )
                 }
             }
 
-            Column(modifier = Modifier.weight(1f)) {
+            Column(
+                modifier = Modifier.weight(1f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Text(
                     text = if (isUpdateAvailable) {
                         "Update Ready"
@@ -947,25 +967,35 @@ private fun SettingsHeroBanner(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Text(
-                    text = if (isUpdateAvailable) {
-                        "Tap to install"
-                    } else if (isLoggedIn) {
-                        "YouTube Music"
-                    } else if (accountName.isNotBlank()) {
-                        "Signed in"
-                    } else {
-                        "Local session"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
+                Surface(
+                    shape = CircleShape,
                     color = if (isUpdateAvailable) {
-                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.16f)
                     } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                        MaterialTheme.colorScheme.surface.copy(alpha = if (pureBlack) 0.45f else 0.7f)
+                    }
+                ) {
+                    Text(
+                        text = if (isUpdateAvailable) {
+                            "Tap to install"
+                        } else if (isLoggedIn) {
+                            "YouTube Music"
+                        } else if (accountName.isNotBlank()) {
+                            "Signed in"
+                        } else {
+                            "Local session"
+                        },
+                        style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+                        color = if (isUpdateAvailable) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp)
+                    )
+                }
             }
 
             Surface(
@@ -973,17 +1003,21 @@ private fun SettingsHeroBanner(
                 color = if (isUpdateAvailable) {
                     MaterialTheme.colorScheme.primary
                 } else {
-                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
                 },
+                border = BorderStroke(
+                    1.dp,
+                    if (isUpdateAvailable) Color.Transparent else MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
+                ),
                 modifier = Modifier
                     .clip(CircleShape)
                     .clickable(role = Role.Button, onClick = onVersionClick)
             ) {
                 Text(
-                    text = "v${BuildConfig.VERSION_NAME}",
+                    text = if (isUpdateAvailable) "Update" else "v${BuildConfig.VERSION_NAME}",
                     style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
                     color = if (isUpdateAvailable) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 7.dp)
                 )
             }
         }

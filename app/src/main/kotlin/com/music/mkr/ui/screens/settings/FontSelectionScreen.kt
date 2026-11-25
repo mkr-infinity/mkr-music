@@ -51,9 +51,6 @@ import com.music.mkr.ui.component.IconButton
 import com.music.mkr.ui.component.ExpressiveSettingGroup
 import com.music.mkr.ui.component.Material3SettingsItem
 import com.music.mkr.ui.theme.GoogleSansFontFamily
-import com.music.mkr.ui.theme.SansFlexFontFamily
-import com.music.mkr.ui.theme.OutfitFontFamily
-import com.music.mkr.ui.theme.PlusJakartaSansFontFamily
 import com.music.mkr.ui.theme.PoppinsFontFamily
 import com.music.mkr.ui.utils.backToMain
 import com.music.mkr.utils.rememberPreference
@@ -104,9 +101,6 @@ fun FontSelectionScreen(
             AppFont.POPPINS -> PoppinsFontFamily
             AppFont.SYSTEM -> FontFamily.Default
             AppFont.GOOGLE_SANS -> GoogleSansFontFamily
-            AppFont.SANS_FLEX -> SansFlexFontFamily
-            AppFont.OUTFIT -> OutfitFontFamily
-            AppFont.PLUS_JAKARTA_SANS -> PlusJakartaSansFontFamily
             AppFont.CUSTOM -> {
                 try {
                     if (customFontPath.isNotEmpty() && File(customFontPath).exists()) {
@@ -181,27 +175,6 @@ fun FontSelectionScreen(
                 Material3SettingsItem(
                     leadingContent = {
                         AnimatedRadioButton(
-                            selected = currentFont == AppFont.POPPINS,
-                            onClick = null
-                        )
-                    },
-                    title = {
-                        Text(
-                            text = "Poppins",
-                            fontFamily = PoppinsFontFamily
-                        )
-                    },
-                    description = {
-                        Text(
-                            text = "Clean geometric rounded typeface",
-                            fontFamily = PoppinsFontFamily
-                        )
-                    },
-                    onClick = { onSelectedFontChange(AppFont.POPPINS.value) }
-                ),
-                Material3SettingsItem(
-                    leadingContent = {
-                        AnimatedRadioButton(
                             selected = currentFont == AppFont.SYSTEM,
                             onClick = null
                         )
@@ -223,6 +196,27 @@ fun FontSelectionScreen(
                 Material3SettingsItem(
                     leadingContent = {
                         AnimatedRadioButton(
+                            selected = currentFont == AppFont.POPPINS,
+                            onClick = null
+                        )
+                    },
+                    title = {
+                        Text(
+                            text = "Poppins",
+                            fontFamily = PoppinsFontFamily
+                        )
+                    },
+                    description = {
+                        Text(
+                            text = "Clean geometric rounded typeface",
+                            fontFamily = PoppinsFontFamily
+                        )
+                    },
+                    onClick = { onSelectedFontChange(AppFont.POPPINS.value) }
+                ),
+                Material3SettingsItem(
+                    leadingContent = {
+                        AnimatedRadioButton(
                             selected = currentFont == AppFont.GOOGLE_SANS,
                             onClick = null
                         )
@@ -240,69 +234,6 @@ fun FontSelectionScreen(
                         )
                     },
                     onClick = { onSelectedFontChange(AppFont.GOOGLE_SANS.value) }
-                ),
-                Material3SettingsItem(
-                    leadingContent = {
-                        AnimatedRadioButton(
-                            selected = currentFont == AppFont.SANS_FLEX,
-                            onClick = null
-                        )
-                    },
-                    title = {
-                        Text(
-                            text = stringResource(R.string.font_sans_flex),
-                            fontFamily = SansFlexFontFamily
-                        )
-                    },
-                    description = {
-                        Text(
-                            text = stringResource(R.string.font_sans_flex_desc),
-                            fontFamily = SansFlexFontFamily
-                        )
-                    },
-                    onClick = { onSelectedFontChange(AppFont.SANS_FLEX.value) }
-                ),
-                Material3SettingsItem(
-                    leadingContent = {
-                        AnimatedRadioButton(
-                            selected = currentFont == AppFont.OUTFIT,
-                            onClick = null
-                        )
-                    },
-                    title = {
-                        Text(
-                            text = stringResource(R.string.font_outfit),
-                            fontFamily = OutfitFontFamily
-                        )
-                    },
-                    description = {
-                        Text(
-                            text = stringResource(R.string.font_outfit_desc),
-                            fontFamily = OutfitFontFamily
-                        )
-                    },
-                    onClick = { onSelectedFontChange(AppFont.OUTFIT.value) }
-                ),
-                Material3SettingsItem(
-                    leadingContent = {
-                        AnimatedRadioButton(
-                            selected = currentFont == AppFont.PLUS_JAKARTA_SANS,
-                            onClick = null
-                        )
-                    },
-                    title = {
-                        Text(
-                            text = stringResource(R.string.font_plus_jakarta_sans),
-                            fontFamily = PlusJakartaSansFontFamily
-                        )
-                    },
-                    description = {
-                        Text(
-                            text = stringResource(R.string.font_plus_jakarta_sans_desc),
-                            fontFamily = PlusJakartaSansFontFamily
-                        )
-                    },
-                    onClick = { onSelectedFontChange(AppFont.PLUS_JAKARTA_SANS.value) }
                 ),
                 Material3SettingsItem(
                     leadingContent = {

@@ -39,6 +39,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shape
@@ -123,10 +124,10 @@ fun ExpressiveIconButton(
     modifier: Modifier = Modifier,
     onLongClick: (() -> Unit)? = null,
     enabled: Boolean = true,
-    shape: Shape = RoundedCornerShape(13.dp),
-    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.52f),
+    shape: Shape = CircleShape,
+    containerColor: Color = MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.42f),
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
     size: Dp = 40.dp,
     interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
     animateShape: Boolean = false,
@@ -175,9 +176,18 @@ fun ExpressiveIconButton(
                     scaleX = if (animationsEnabled) scale.value else 1f
                     scaleY = scaleX
                 }
-                .border(1.dp, borderColor, faceShape)
                 .clip(faceShape)
-                .background(containerColor),
+                .background(containerColor, faceShape)
+                .background(
+                    Brush.verticalGradient(
+                        listOf(
+                            Color.White.copy(alpha = 0.16f),
+                            Color.Transparent
+                        )
+                    ),
+                    faceShape
+                )
+                .border(1.dp, borderColor, faceShape),
             contentAlignment = Alignment.Center,
         ) {
             CompositionLocalProvider(LocalContentColor provides contentColor, content = content)

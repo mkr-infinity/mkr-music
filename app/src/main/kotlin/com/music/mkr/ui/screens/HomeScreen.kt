@@ -1503,7 +1503,9 @@ fun HomeScreen(
                             }
                         HomeSection.CoversAndRemixes -> {
                             coversAndRemixes?.takeIf { it.items.isNotEmpty() }?.let { mixSection ->
-                                val mixSongs = mixSection.items.filterIsInstance<SongItem>()
+                                val mixSongs = mixSection.items
+                                    .filterIsInstance<SongItem>()
+                                    .filterNot { it.id in dismissedQuickPicks }
                                 if (mixSongs.isEmpty()) return@let
 
                                 item(key = "covers_and_remixes_title") {
@@ -1549,6 +1551,7 @@ fun HomeScreen(
                                                                 YouTubeSongMenu(
                                                                     song = song,
                                                                     navController = navController,
+                                                                    onNotInterested = { viewModel.dismissQuickPick(song.id) },
                                                                     onDismiss = menuState::dismiss
                                                                 )
                                                             }
@@ -1578,6 +1581,7 @@ fun HomeScreen(
                                                                 YouTubeSongMenu(
                                                                     song = song,
                                                                     navController = navController,
+                                                                    onNotInterested = { viewModel.dismissQuickPick(song.id) },
                                                                     onDismiss = menuState::dismiss
                                                                 )
                                                             }
@@ -1921,7 +1925,9 @@ fun HomeScreen(
                             val sectionData = homePage?.sections?.getOrNull(section.index)
                             sectionData?.let {
                                 // Check if section contains songs for Play All functionality
-                                val sectionSongs = sectionData.items.filterIsInstance<SongItem>()
+                                val sectionSongs = sectionData.items
+                                    .filterIsInstance<SongItem>()
+                                    .filterNot { it.id in dismissedQuickPicks }
                                 val hasPlayableSongs = sectionSongs.isNotEmpty()
                                 // Check if this section contains ONLY songs (like Quick picks, Trending songs)
                                 val isSongsOnlySection = sectionData.items.isNotEmpty() &&

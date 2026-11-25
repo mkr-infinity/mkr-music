@@ -114,7 +114,7 @@ fun DonateDialog(onDismiss: () -> Unit) {
                                 modifier = Modifier.fillMaxWidth(),
                                 animate = animationsEnabled,
                                 compact = true,
-                                emphasis = ActionButtonEmphasis.Tonal,
+                                emphasis = ActionButtonEmphasis.Primary,
                             ) {
                                 Icon(painterResource(if (copied) R.drawable.check else R.drawable.content_copy), null, Modifier.size(18.dp))
                                 Spacer(Modifier.width(8.dp))
@@ -134,6 +134,7 @@ fun DonateDialog(onDismiss: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         animate = animationsEnabled,
                         compact = true,
+                        emphasis = ActionButtonEmphasis.Tonal,
                     ) {
                         Icon(painterResource(R.drawable.buymeacoffee), null, Modifier.size(18.dp))
                         Spacer(Modifier.width(8.dp))
