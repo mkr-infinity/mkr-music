@@ -60,8 +60,8 @@ class BackupRestoreViewModel @Inject constructor(
                     }
                     destination.use {
                         it.buffered().zipOutputStream().use { outputStream ->
-                            (context.filesDir / "datastore" / SETTINGS_FILENAME).inputStream().buffered()
-                                .use { inputStream ->
+                            (context.filesDir / "datastore" / SETTINGS_FILENAME).takeIf { it.exists() }
+                                ?.inputStream()?.buffered()?.use { inputStream ->
                                     outputStream.putNextEntry(ZipEntry(SETTINGS_FILENAME))
                                     inputStream.copyTo(outputStream)
                                 }
@@ -98,17 +98,17 @@ class BackupRestoreViewModel @Inject constructor(
         restoring = true
         viewModelScope.launch {
             try {
-                runCatching {
-                    val stopIntent = Intent(context, com.music.mkr.playback.MusicService::class.java).apply {
-                        action = com.music.mkr.playback.MusicService.ACTION_STOP
-                    }
-                    context.startService(stopIntent)
-                }
                 withContext(Dispatchers.IO) {
                     openArchive().use { BackupRestore.stage(context.applicationContext, it) }
                 }
-                runCatching {
-                    context.stopService(Intent(context, com.music.mkr.playback.MusicService::class.java))
+                if (com.music.mkr.playback.MusicService.isRunning) {
+                    runCatching {
+                        val stopIntent = Intent(context, com.music.mkr.playback.MusicService::class.java).apply {
+                            action = com.music.mkr.playback.MusicService.ACTION_STOP
+                        }
+                        context.startService(stopIntent)
+                        context.stopService(Intent(context, com.music.mkr.playback.MusicService::class.java))
+                    }
                 }
                 val restart = Intent.makeRestartActivityTask(
                     android.content.ComponentName(context, MainActivity::class.java)

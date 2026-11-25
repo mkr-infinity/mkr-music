@@ -377,6 +377,11 @@ fun CommunityPlaylistCard(
                     onClick = {
                         scope.launch(Dispatchers.IO) {
                             if (dbPlaylist?.playlist == null) {
+                                val fetchedSongs = item.songs.ifEmpty {
+                                    YouTube.playlist(item.playlist.id).completed()
+                                        .getOrNull()?.songs.orEmpty()
+                                }.map { it.toMediaMetadata() }
+
                                 database.transaction {
                                     val playlistEntity = PlaylistEntity(
                                         name = item.playlist.title,
@@ -388,22 +393,17 @@ fun CommunityPlaylistCard(
                                         radioEndpointParams = item.playlist.radioEndpoint?.params
                                     ).toggleLike()
                                     insert(playlistEntity)
-                                    scope.launch(Dispatchers.IO) {
-                                        item.songs.ifEmpty {
-                                            YouTube.playlist(item.playlist.id).completed()
-                                                .getOrNull()?.songs.orEmpty()
-                                        }.map { it.toMediaMetadata() }
-                                            .onEach(::insert)
-                                            .mapIndexed { index, song ->
-                                                PlaylistSongMap(
-                                                    songId = song.id,
-                                                    playlistId = playlistEntity.id,
-                                                    position = index,
-                                                    setVideoId = song.setVideoId
-                                                )
-                                            }
-                                            .forEach(::insert)
-                                    }
+                                    fetchedSongs
+                                        .onEach(::insert)
+                                        .mapIndexed { index, song ->
+                                            PlaylistSongMap(
+                                                songId = song.id,
+                                                playlistId = playlistEntity.id,
+                                                position = index,
+                                                setVideoId = song.setVideoId
+                                            )
+                                        }
+                                        .forEach(::insert)
                                 }
                             } else {
                                 database.transaction {
@@ -1810,11 +1810,12 @@ fun HomeScreen(
                                         ) { index, originalSong ->
                                             val song by database.song(originalSong.id)
                                                 .collectAsState(initial = originalSong)
+                                            val currentSong = song ?: originalSong
 
                                             SongListItem(
-                                                song = song!!,
+                                                song = currentSong,
                                                 showInLibraryIcon = true,
-                                                isActive = song!!.id == mediaMetadata?.id,
+                                                isActive = currentSong.id == mediaMetadata?.id,
                                                 isPlaying = isPlaying,
                                                 isSwipeable = false,
                                                 shape = listItemShape(index = index % rows, count = rows),
@@ -1824,7 +1825,7 @@ fun HomeScreen(
                                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                             menuState.show {
                                                                 SongMenu(
-                                                                    originalSong = song!!,
+                                                                    originalSong = currentSong,
                                                                     navController = navController,
                                                                     onDismiss = menuState::dismiss
                                                                 )
@@ -1841,12 +1842,12 @@ fun HomeScreen(
                                                     .width(horizontalLazyGridItemWidth)
                                                     .combinedClickable(
                                                         onClick = {
-                                                            if (song!!.id == mediaMetadata?.id) {
+                                                            if (currentSong.id == mediaMetadata?.id) {
                                                                 playerConnection.togglePlayPause()
                                                             } else {
                                                                 playerConnection.playQueue(
                                                                     YouTubeQueue.radio(
-                                                                        song!!.toMediaMetadata()
+                                                                        currentSong.toMediaMetadata()
                                                                     )
                                                                 )
                                                             }
@@ -1855,7 +1856,7 @@ fun HomeScreen(
                                                             haptic.performHapticFeedback(HapticFeedbackType.LongPress)
                                                             menuState.show {
                                                                 SongMenu(
-                                                                    originalSong = song!!,
+                                                                    originalSong = currentSong,
                                                                     navController = navController,
                                                                     onDismiss = menuState::dismiss
                                                                 )
@@ -1891,10 +1892,12 @@ fun HomeScreen(
                                             }
                                         },
                                         onClick = {
-                                            when (recommendation.title) {
-                                                is Song -> navController.navigate("album/${recommendation.title.album!!.id}")
-                                                is Album -> navController.navigate("album/${recommendation.title.id}")
-                                                is Artist -> navController.navigate("artist/${recommendation.title.id}")
+                                            when (val titleItem = recommendation.title) {
+                                                is Song -> titleItem.album?.id?.let { albumId ->
+                                                    navController.navigate("album/$albumId")
+                                                }
+                                                is Album -> navController.navigate("album/${titleItem.id}")
+                                                is Artist -> navController.navigate("artist/${titleItem.id}")
                                                 is Playlist -> {}
                                             }
                                         },

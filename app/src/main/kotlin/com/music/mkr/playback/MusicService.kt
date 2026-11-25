@@ -2139,12 +2139,28 @@ class MusicService :
             return
         }
 
+        val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
+        val hideExplicit = dataStore.get(HideExplicitKey, false)
+        val hideVideoSongs = dataStore.get(HideVideoSongsKey, false)
+        // Read ExoPlayer state on the calling (main) thread before hopping to Dispatchers.IO.
+        val currentQueueSnapshot = (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }
+        val currentMeta = player.currentMetadata?.takeIf { it.id == videoId }
+            ?: currentQueueSnapshot.find { it.mediaId == videoId }?.metadata
+        val curTitle = currentMeta?.title
+            ?: currentQueueSnapshot.find { it.mediaId == videoId }?.mediaMetadata?.title?.toString()
+            ?: ""
+        val curArtist = currentMeta?.artists?.joinToString(" ") { it.name }
+            ?: currentQueueSnapshot.find { it.mediaId == videoId }?.mediaMetadata?.artist?.toString()
+            ?: ""
+        val currentQueueIds = if (preventDuplicates) {
+            currentQueueSnapshot.map { it.mediaId }.toSet()
+        } else {
+            emptySet()
+        }
+
         moodRecommendationsJob?.cancel()
         moodRecommendationsJob = scope.launch(Dispatchers.IO + SilentHandler) {
             try {
-                val hideExplicit = dataStore.get(HideExplicitKey, false)
-                val hideVideoSongs = dataStore.get(HideVideoSongsKey, false)
-
                 // 1. YouTube Radio Endpoint for the exact song:
                 // RDAMVM$videoId creates YouTube Music's mood-clustered radio stream
                 val radioResult = YouTube.next(WatchEndpoint(
@@ -2172,15 +2188,6 @@ class MusicService :
                 val combined = (radioItems + relatedItems).distinctBy { it.mediaId }
 
                 // 4. Detect Language and Mood of current playing track
-                val currentMeta = player.currentMetadata?.takeIf { it.id == videoId }
-                    ?: (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }.find { it.mediaId == videoId }?.metadata
-                val curTitle = currentMeta?.title
-                    ?: (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }.find { it.mediaId == videoId }?.mediaMetadata?.title?.toString()
-                    ?: ""
-                val curArtist = currentMeta?.artists?.joinToString(" ") { it.name }
-                    ?: (0 until player.mediaItemCount).map { player.getMediaItemAt(it) }.find { it.mediaId == videoId }?.mediaMetadata?.artist?.toString()
-                    ?: ""
-
                 val currentLang = detectSongLanguage(curTitle, curArtist)
                 val currentMood = detectSongMood(curTitle, curArtist)
 
@@ -2238,9 +2245,7 @@ class MusicService :
                     scoredCandidates.sortedByDescending { it.second }.map { it.first }
                 }
 
-                val preventDuplicates = dataStore.get(PreventDuplicateTracksInQueueKey, true)
                 val finalRecommendations = if (preventDuplicates) {
-                    val currentQueueIds = (0 until player.mediaItemCount).map { player.getMediaItemAt(it).mediaId }.toSet()
                     resultList.filter { it.mediaId !in currentQueueIds }.distinctBy { it.mediaId }
                 } else {
                     resultList
@@ -2912,7 +2917,7 @@ class MusicService :
             val isBufferingOrReady =
                 player.playbackState == Player.STATE_BUFFERING || player.playbackState == Player.STATE_READY
             if (isBufferingOrReady && player.playWhenReady) {
-                val focusGranted = requestAudioFocus()
+                val focusGranted = hasAudioFocus || requestAudioFocus()
                 if (focusGranted) {
                     openAudioEffectSession()
                     updateOutgoingPlayback()
@@ -4228,6 +4233,12 @@ class MusicService :
             ACTION_STOP -> {
                 resumeAfterFocusLoss = false
                 runCatching {
+                    queueLoadJob?.cancel()
+                    autoLoadJob?.cancel()
+                    retryJob?.cancel()
+                    mediaButtonStartupJob?.cancel()
+                    castConnectionHandler?.pause()
+                    releaseCrossfadePlayers()
                     player.stop()
                     player.clearMediaItems()
                     abandonAudioFocus()
@@ -4696,7 +4707,7 @@ class MusicService :
                     crossfadeProgress = (elapsed / overlapDuration).coerceIn(0f, 1f)
                     applyPlaybackVolume()
                     if (crossfadeProgress >= 1f || outgoing.playbackState != Player.STATE_READY ||
-                        !outgoing.playWhenReady
+                        (!outgoing.playWhenReady && overlapPlaying.value)
                     ) break
                     delay(20)
                 }

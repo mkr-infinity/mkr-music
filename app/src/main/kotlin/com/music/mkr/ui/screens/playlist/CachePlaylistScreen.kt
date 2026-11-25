@@ -148,14 +148,15 @@ fun CachePlaylistScreen(
     val (sortDescending, onSortDescendingChange) = rememberPreference(SongSortDescendingKey, true)
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
 
-    val sortedSongs = remember(cachedSongs, sortType, sortDescending) {
+    val sortedSongs = remember(cachedSongs, sortType, sortDescending, hideExplicit) {
+        val visible = if (hideExplicit) cachedSongs.filter { !it.song.explicit } else cachedSongs
         val sorted = when (sortType) {
-            SongSortType.CREATE_DATE -> cachedSongs.asReversed()
-            SongSortType.NAME -> cachedSongs.sortedBy { it.song.title }
-            SongSortType.ARTIST -> cachedSongs.sortedBy { song ->
+            SongSortType.CREATE_DATE -> visible.asReversed()
+            SongSortType.NAME -> visible.sortedBy { it.song.title }
+            SongSortType.ARTIST -> visible.sortedBy { song ->
                 song.artists.joinToString(separator = "") { it.name }
             }
-            SongSortType.PLAY_TIME -> cachedSongs.sortedBy { it.song.totalPlayTime }
+            SongSortType.PLAY_TIME -> visible.sortedBy { it.song.totalPlayTime }
         }
         if (sortDescending) sorted.reversed() else sorted
     }

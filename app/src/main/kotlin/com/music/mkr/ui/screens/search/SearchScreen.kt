@@ -158,7 +158,7 @@ fun SearchScreen(
                 .fillMaxSize(),
             contentAlignment = Alignment.TopCenter,
         ) {
-            val isSearchingWithQuery = searchActive && (query.text.isNotEmpty() || searchSource == SearchSource.ONLINE)
+            val isSearchingWithQuery = searchActive
 
             AnimatedContent(
                 modifier = Modifier.widthIn(max = 1080.dp).fillMaxWidth(),
@@ -203,7 +203,7 @@ fun SearchScreen(
                                     history = searchHistory,
                                     onQueryClick = { clickedQuery ->
                                         query = TextFieldValue(clickedQuery, TextRange(clickedQuery.length))
-                                        submitSearch(clickedQuery, SearchSource.ONLINE)
+                                        submitSearch(clickedQuery, searchSource)
                                     },
                                     onDelete = { item ->
                                         coroutineScope.launch(Dispatchers.IO) {

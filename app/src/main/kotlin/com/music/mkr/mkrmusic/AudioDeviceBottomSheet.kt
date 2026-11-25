@@ -292,7 +292,7 @@ fun AudioDeviceBottomSheet(
                         Text(stringResource(R.string.audio_output_detecting))
                     }
 
-                    errorMessage != null -> Surface(
+                    errorMessage != null && audioDevices.isEmpty() -> Surface(
                         color = MaterialTheme.colorScheme.errorContainer,
                         shape = MaterialTheme.shapes.large,
                     ) {
@@ -307,6 +307,21 @@ fun AudioDeviceBottomSheet(
                     }
 
                     else -> {
+                        if (errorMessage != null) {
+                            Surface(
+                                color = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.7f),
+                                shape = MaterialTheme.shapes.medium,
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                    text = errorMessage.orEmpty(),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onErrorContainer,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+                                )
+                            }
+                            Spacer(Modifier.height(8.dp))
+                        }
                         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                             audioDevices.forEach { device ->
                                 OutputDestinationTile(device, enabled = service != null) {

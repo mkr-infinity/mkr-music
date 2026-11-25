@@ -84,7 +84,10 @@ fun ArtistSongsScreen(
     )
     val hideExplicit by rememberPreference(key = HideExplicitKey, defaultValue = false)
     val artist by viewModel.artist.collectAsState()
-    val songs by viewModel.songs.collectAsState()
+    val rawSongs by viewModel.songs.collectAsState()
+    val songs = remember(rawSongs, hideExplicit) {
+        if (hideExplicit) rawSongs.filter { !it.song.explicit } else rawSongs
+    }
     val lazyListState = rememberLazyListState()
 
     Box(

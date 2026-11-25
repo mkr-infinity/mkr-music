@@ -245,14 +245,8 @@ fun BottomSheetPlayer(
         if (darkTheme == DarkMode.AUTO) isSystemInDarkTheme else darkTheme == DarkMode.ON
     }
 
-    val shouldUseDarkButtonColors = remember(playerBackground, useDarkTheme) {
-        when (playerBackground) {
-            PlayerBackgroundStyle.DEFAULT -> useDarkTheme
-            else -> true
-        }
-    }
-
     val isPlaying by playerConnection.isPlaying.collectAsState()
+    val playbackError by playerConnection.error.collectAsState()
     val swipeLyrics by rememberPreference(SwipeLyricsKey, false)
     val enableLyricsThumbnailPlayPause by rememberPreference(EnableLyricsThumbnailPlayPauseKey, false)
     val isKeepScreenOn by rememberPreference(KeepScreenOn, false)
@@ -931,7 +925,7 @@ fun BottomSheetPlayer(
                                 Icon(
                                     painter = painterResource(R.drawable.expand_more),
                                     contentDescription = stringResource(R.string.close),
-                                    tint = MaterialTheme.colorScheme.onSurface
+                                    tint = Color.White
                                 )
                             }
                             Column(
@@ -943,14 +937,14 @@ fun BottomSheetPlayer(
                                     style = MaterialTheme.typography.titleMedium,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    color = Color.White
                                 )
                                 Text(
                                     text = mediaMetadata?.artists?.joinToString { it.name }.orEmpty(),
                                     style = MaterialTheme.typography.bodySmall,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    color = Color.White.copy(alpha = 0.72f)
                                 )
                             }
                             IconButton(
@@ -976,7 +970,7 @@ fun BottomSheetPlayer(
                                 Icon(
                                     painter = painterResource(R.drawable.more_vert),
                                     contentDescription = stringResource(R.string.more_label),
-                                    tint = MaterialTheme.colorScheme.onSurface
+                                    tint = Color.White
                                 )
                             }
                         }
@@ -1087,6 +1081,21 @@ fun BottomSheetPlayer(
                         }
                     }
                     }
+                    AnimatedVisibility(
+                        visible = playbackError != null && !lyricsVisible && state.isExpanded,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(horizontal = 24.dp)
+                    ) {
+                        playbackError?.let { err ->
+                            PlaybackError(
+                                error = err,
+                                retry = playerConnection.player::prepare
+                            )
+                        }
+                    }
             }
         }
     }
@@ -1128,47 +1137,4 @@ fun InlineLyricsView(
         modifier = Modifier.fillMaxSize(),
         contentPadding = contentPadding
     )
-}
-
-
-@Composable
-fun MoreActionsButton(
-    mediaMetadata: MediaMetadata,
-    navController: NavController,
-    state: BottomSheetState,
-    textButtonColor: Color,
-    iconButtonColor: Color
-) {
-    val menuState = LocalMenuState.current
-    val bottomSheetPageState = LocalBottomSheetPageState.current
-
-    Box(
-        modifier = Modifier
-            .size(40.dp)
-            .clip(RoundedCornerShape(24.dp))
-            .background(textButtonColor)
-            .clickable {
-                menuState.show {
-                    PlayerMenu(
-                        mediaMetadata = mediaMetadata,
-                        navController = navController,
-                        playerBottomSheetState = state,
-                        onShowDetailsDialog = {
-                            mediaMetadata.id.let {
-                                bottomSheetPageState.show {
-                                    ShowMediaInfo(it)
-                                }
-                            }
-                        },
-                        onDismiss = menuState::dismiss
-                    )
-                }
-            }
-    ) {
-        Image(
-            painter = painterResource(R.drawable.more_vert),
-            contentDescription = null,
-            colorFilter = ColorFilter.tint(iconButtonColor)
-        )
-    }
 }

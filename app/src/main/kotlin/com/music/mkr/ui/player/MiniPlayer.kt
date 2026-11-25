@@ -407,7 +407,7 @@ private fun NewMiniPlayer(
                                     (kotlin.math.abs(currentOffset) > autoSwipeThreshold)
 
                                 if (shouldChangeSong) {
-                                    val now = System.currentTimeMillis()
+                                    val now = android.os.SystemClock.uptimeMillis()
                                     if (currentOffset > 0 && canSkipPrevious) {
                                         if (now - lastPreviousClickTime >= 400L) {
                                             lastPreviousClickTime = now
@@ -541,6 +541,12 @@ private fun NewMiniPlayer(
                             lastPlayPauseClickTime = now
                             if (isListenTogetherGuest) {
                                 playerConnection.toggleMute()
+                            } else if (isCasting) {
+                                if (castHandler?.castIsPlaying?.value == true) {
+                                    castHandler.pause()
+                                } else {
+                                    castHandler?.play()
+                                }
                             } else if (playbackState == Player.STATE_ENDED) {
                                 playerConnection.player.seekTo(0, 0)
                                 playerConnection.player.playWhenReady = true
@@ -926,7 +932,7 @@ private fun LegacyMiniPlayer(
                                     (kotlin.math.abs(currentOffset) > autoSwipeThreshold)
 
                                 if (shouldChangeSong) {
-                                    val now = System.currentTimeMillis()
+                                    val now = android.os.SystemClock.uptimeMillis()
                                     if (currentOffset > 0 && canSkipPreviousAction) {
                                         if (now - lastLegacyPreviousClickTime >= 400L) {
                                             lastLegacyPreviousClickTime = now

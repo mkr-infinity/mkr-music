@@ -602,9 +602,14 @@ fun LyricsMenu(
                             },
                             onClick = {
                                 isChecked = !isChecked
-                                songProvider()?.let { song ->
-                                    database.query {
-                                        upsert(song.copy(romanizeLyrics = isChecked))
+                                val existingSong = songProvider()
+                                database.query {
+                                    if (existingSong != null) {
+                                        upsert(existingSong.copy(romanizeLyrics = isChecked))
+                                    } else {
+                                        val meta = mediaMetadataProvider()
+                                        insert(meta)
+                                        upsert(meta.toSongEntity().copy(romanizeLyrics = isChecked))
                                     }
                                 }
                             },
@@ -613,9 +618,14 @@ fun LyricsMenu(
                                     checked = isChecked,
                                     onCheckedChange = { newCheckedState ->
                                         isChecked = newCheckedState
-                                        songProvider()?.let { song ->
-                                            database.query {
-                                                upsert(song.copy(romanizeLyrics = newCheckedState))
+                                        val existingSong = songProvider()
+                                        database.query {
+                                            if (existingSong != null) {
+                                                upsert(existingSong.copy(romanizeLyrics = newCheckedState))
+                                            } else {
+                                                val meta = mediaMetadataProvider()
+                                                insert(meta)
+                                                upsert(meta.toSongEntity().copy(romanizeLyrics = newCheckedState))
                                             }
                                         }
                                     },

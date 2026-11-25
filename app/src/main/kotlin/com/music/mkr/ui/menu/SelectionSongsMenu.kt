@@ -708,7 +708,9 @@ fun SelectionMediaMetadataMenu(
                         Material3MenuItemData(
                             title = {
                                 Text(
-                                    text = stringResource(R.string.like_all)
+                                    text = stringResource(
+                                        if (allLiked) R.string.dislike_all else R.string.like_all
+                                    )
                                 )
                             },
                             icon = {

@@ -346,10 +346,11 @@ fun OnlinePlaylistScreen(
 
     val onShareAction: () -> Unit = {
         playlist?.shareLink?.let { link ->
-            val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            val clip = ClipData.newPlainText("Playlist Link", link)
-            clipboard.setPrimaryClip(clip)
-            SnackbarManager.show(R.string.link_copied)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_TEXT, link)
+            }
+            context.startActivity(Intent.createChooser(intent, null))
         }
     }
 

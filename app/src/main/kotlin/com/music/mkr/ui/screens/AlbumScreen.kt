@@ -295,16 +295,24 @@ fun AlbumScreen(
                         globalDownloadState = globalDownloadState,
                         isPlaying = isAlbumActivelyPlaying,
                         onPlay = {
-                            playerConnection.playQueue(LocalAlbumRadio(currentAlbumWithSongs))
+                            val visibleSongs = wrappedSongs.map { it.item }
+                            if (visibleSongs.isNotEmpty()) {
+                                playerConnection.playQueue(
+                                    LocalAlbumRadio(currentAlbumWithSongs.copy(songs = visibleSongs))
+                                )
+                            }
                         },
                         onShuffle = {
-                            playerConnection.playQueue(
-                                LocalAlbumRadio(
-                                    currentAlbumWithSongs.copy(
-                                        songs = currentAlbumWithSongs.songs.shuffled()
+                            val visibleSongs = wrappedSongs.map { it.item }
+                            if (visibleSongs.isNotEmpty()) {
+                                playerConnection.playQueue(
+                                    LocalAlbumRadio(
+                                        currentAlbumWithSongs.copy(
+                                            songs = visibleSongs.shuffled()
+                                        )
                                     )
                                 )
-                            )
+                            }
                         },
                         onToggleBookmark = {
                             database.query {
@@ -436,8 +444,11 @@ fun AlbumScreen(
                                 if (isSongActive) {
                                     playerConnection.player.togglePlayPause()
                                 } else {
+                                    val originalIndex = currentAlbumWithSongs.songs
+                                        .indexOfFirst { it.id == songWrapper.item.id }
+                                        .takeIf { it >= 0 } ?: index
                                     playerConnection.playQueue(
-                                        LocalAlbumRadio(currentAlbumWithSongs, startIndex = index),
+                                        LocalAlbumRadio(currentAlbumWithSongs, startIndex = originalIndex),
                                     )
                                 }
                             } else {

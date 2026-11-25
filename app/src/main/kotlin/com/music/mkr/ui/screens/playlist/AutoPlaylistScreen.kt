@@ -232,17 +232,18 @@ fun AutoPlaylistScreen(
         }
     }
 
-    LaunchedEffect(songs) {
+    LaunchedEffect(songs, hideExplicit) {
+        val visibleSongs = if (hideExplicit) songs?.filter { !it.song.explicit } else songs
         mutableSongs.apply {
             clear()
-            songs?.let { addAll(it) }
+            visibleSongs?.let { addAll(it) }
         }
-        if (songs?.isEmpty() == true) return@LaunchedEffect
+        if (visibleSongs?.isEmpty() == true) return@LaunchedEffect
         downloadUtil.downloads.collect { downloads ->
             downloadState =
-                if (songs?.all { downloads[it.song.id]?.state == Download.STATE_COMPLETED } == true) {
+                if (visibleSongs?.all { downloads[it.song.id]?.state == Download.STATE_COMPLETED } == true) {
                     Download.STATE_COMPLETED
-                } else if (songs?.all {
+                } else if (visibleSongs?.all {
                         downloads[it.song.id]?.state == Download.STATE_QUEUED ||
                                 downloads[it.song.id]?.state == Download.STATE_DOWNLOADING ||
                                 downloads[it.song.id]?.state == Download.STATE_COMPLETED

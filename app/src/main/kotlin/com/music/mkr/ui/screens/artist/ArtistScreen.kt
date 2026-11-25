@@ -411,7 +411,7 @@ fun ArtistScreen(
                                                 playerConnection.playQueue(
                                                     ListQueue(
                                                         title = artistName.ifEmpty { "Artist" },
-                                                        items = librarySongs.map { it.toMediaItem() },
+                                                        items = filteredLibrarySongs.map { it.toMediaItem() },
                                                         startIndex = index
                                                     )
                                                 )

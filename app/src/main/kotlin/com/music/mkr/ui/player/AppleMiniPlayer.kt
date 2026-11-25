@@ -248,7 +248,7 @@ internal fun AppleMiniPlayer(
                                     (kotlin.math.abs(currentOffset) > autoSwipeThreshold)
 
                                 if (shouldChangeSong) {
-                                    val now = System.currentTimeMillis()
+                                    val now = android.os.SystemClock.uptimeMillis()
                                     if (currentOffset > 0 && canSkipPreviousLocal) {
                                         if (now - lastPreviousTime >= 400L) {
                                             lastPreviousTime = now

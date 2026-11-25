@@ -277,11 +277,15 @@ fun Queue(
 
     var showSleepTimerDialog by remember { mutableStateOf(false) }
     var sleepTimerValue by remember { mutableFloatStateOf(30f) }
-    val sleepTimerEnabled = remember(
+    var sleepTimerEnabled by remember {
+        mutableStateOf(playerConnection.service.sleepTimer.isActive)
+    }
+    LaunchedEffect(
         playerConnection.service.sleepTimer.triggerTime,
-        playerConnection.service.sleepTimer.pauseWhenSongEnd
+        playerConnection.service.sleepTimer.pauseWhenSongEnd,
+        showSleepTimerDialog,
     ) {
-        playerConnection.service.sleepTimer.isActive
+        sleepTimerEnabled = playerConnection.service.sleepTimer.isActive
     }
     var sleepTimerTimeLeft by remember { mutableLongStateOf(0L) }
     var showCommentSheet by rememberSaveable { mutableStateOf(false) }
@@ -381,6 +385,7 @@ fun Queue(
                                 if (!isListenTogetherGuest) {
                                     if (sleepTimerEnabled) {
                                         playerConnection.service.sleepTimer.clear()
+                                        sleepTimerEnabled = false
                                     } else {
                                         showSleepTimerDialog = true
                                     }
@@ -1037,14 +1042,6 @@ fun Queue(
                         .nestedScroll(state.preUpPostDownNestedScrollConnection)
                 ) {
                     if (scrollHeader) item(key = "queue_header") { header(bounded) }
-                    item(key = "queue_top_spacer") {
-                        Spacer(
-                            modifier =
-                                Modifier
-                                    .animateContentSize()
-                                    .height(if (selection.active) 48.dp else 0.dp),
-                        )
-                    }
 
                     if (mutableQueueWindows.isEmpty()) {
                         item(key = "empty_queue") {

@@ -265,25 +265,45 @@ fun BackupAndRestore(
                 pendingCsvUri?.let { uri ->
                     showCsvImportProgress = true
                     coroutineScope.launch(Dispatchers.Default) {
-                        val result = viewModel.importPlaylistFromCsv(
-                            context,
-                            uri,
-                            mappingState,
-                            onProgress = { progress ->
-                                csvImportProgress = progress
-                            },
-                            onLogUpdate = { logs ->
+                        try {
+                            val result = viewModel.importPlaylistFromCsv(
+                                context,
+                                uri,
+                                mappingState,
+                                onProgress = { progress ->
+                                    coroutineScope.launch(Dispatchers.Main) {
+                                        csvImportProgress = progress
+                                    }
+                                },
+                                onLogUpdate = { logs ->
+                                    coroutineScope.launch(Dispatchers.Main) {
+                                        csvRecentLogs.clear()
+                                        csvRecentLogs.addAll(logs)
+                                    }
+                                },
+                            )
+                            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                importedSongs.clear()
+                                importedSongs.addAll(result)
+                                showCsvImportProgress = false
+                                csvImportProgress = 0
                                 csvRecentLogs.clear()
-                                csvRecentLogs.addAll(logs)
-                            },
-                        )
-                        importedSongs.clear()
-                        importedSongs.addAll(result)
-                        if (result.isNotEmpty()) {
-                            showCsvImportProgress = false
-                            csvImportProgress = 0
-                            csvRecentLogs.clear()
-                            showChoosePlaylistDialogOnline = true
+                                if (result.isNotEmpty()) {
+                                    showChoosePlaylistDialogOnline = true
+                                } else {
+                                    android.widget.Toast.makeText(
+                                        context,
+                                        R.string.no_results_found,
+                                        android.widget.Toast.LENGTH_SHORT,
+                                    ).show()
+                                }
+                            }
+                        } catch (_: Exception) {
+                            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                                showCsvImportProgress = false
+                                csvImportProgress = 0
+                                csvRecentLogs.clear()
+                            }
                         }
                     }
                 }

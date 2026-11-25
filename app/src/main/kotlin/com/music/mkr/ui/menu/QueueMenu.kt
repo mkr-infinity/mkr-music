@@ -149,18 +149,6 @@ fun QueueMenu(
                         }
                         .padding(horizontal = 12.dp),
                 ) {
-                    Box(
-                        modifier = Modifier.padding(8.dp),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        AsyncImage(
-                            model = null,
-                            contentDescription = null,
-                            modifier = Modifier
-                                .size(ListThumbnailSize)
-                                .clip(CircleShape),
-                        )
-                    }
                     Text(
                         text = artist.name,
                         fontSize = 18.sp,
@@ -169,7 +157,7 @@ fun QueueMenu(
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier
                             .weight(1f)
-                            .padding(horizontal = 8.dp),
+                            .padding(horizontal = 8.dp, vertical = 12.dp),
                     )
                 }
             }
