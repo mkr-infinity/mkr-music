@@ -199,6 +199,7 @@ fun LyricsV2(
 
     val currentTrackId = mediaMetadata?.id
     var showProviderSelectorDialog by remember { mutableStateOf(false) }
+    var providerSearchNonce by remember { mutableIntStateOf(0) }
     val availableProviders = remember { mutableStateListOf<LyricsResult>() }
     var isLoadingProviders by remember { mutableStateOf(false) }
 
@@ -211,7 +212,7 @@ fun LyricsV2(
         }
     }
 
-    LaunchedEffect(showProviderSelectorDialog, currentTrackId) {
+    LaunchedEffect(showProviderSelectorDialog, currentTrackId, providerSearchNonce) {
         if (showProviderSelectorDialog && mediaMetadata != null) {
             val trackId = mediaMetadata.id
             val cur = currentLyrics
@@ -1096,6 +1097,10 @@ fun LyricsV2(
                 }
                 showProviderSelectorDialog = false
             },
+            onRetry = {
+                availableProviders.clear()
+                providerSearchNonce++
+            },
             onDismiss = { showProviderSelectorDialog = false }
         )
     }
@@ -1238,7 +1243,7 @@ private fun LyricsHeader(
 }
 
 @Composable
-private fun LyricsProviderSelectorDialog(
+internal fun LyricsProviderSelectorDialog(
     currentProvider: String?,
     availableProviders: List<LyricsResult>,
     isLoading: Boolean,
@@ -1246,8 +1251,21 @@ private fun LyricsProviderSelectorDialog(
     songTitle: String,
     songArtist: String,
     onSelectProvider: (LyricsResult) -> Unit,
+    onRetry: (() -> Unit)? = null,
     onDismiss: () -> Unit
 ) {
+    val sortedProviders = remember(availableProviders.toList()) {
+        availableProviders.sortedBy { item ->
+            when (
+                runCatching { LyricsUtils.getSyncType(item.lyrics) }
+                    .getOrDefault(LyricsUtils.SyncType.NONE)
+            ) {
+                LyricsUtils.SyncType.WORD -> 0
+                LyricsUtils.SyncType.LINE -> 1
+                LyricsUtils.SyncType.NONE -> 2
+            }
+        }
+    }
     androidx.compose.ui.window.Dialog(
         onDismissRequest = onDismiss,
         properties = androidx.compose.ui.window.DialogProperties(usePlatformDefaultWidth = false)
@@ -1306,7 +1324,7 @@ private fun LyricsProviderSelectorDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Provider list
-                if (availableProviders.isEmpty() && isLoading) {
+                if (sortedProviders.isEmpty() && isLoading) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -1327,19 +1345,56 @@ private fun LyricsProviderSelectorDialog(
                             )
                         }
                     }
-                } else if (availableProviders.isEmpty() && !isLoading) {
-                    Box(
+                } else if (sortedProviders.isEmpty() && !isLoading) {
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 24.dp),
-                        contentAlignment = Alignment.Center
+                            .padding(vertical = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        Icon(
+                            painter = painterResource(R.drawable.lyrics),
+                            contentDescription = null,
+                            tint = palette.textSecondary.copy(alpha = 0.7f),
+                            modifier = Modifier.size(28.dp)
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
                         Text(
-                            text = "No providers found with lyrics for this track",
-                            style = MaterialTheme.typography.bodyMedium,
+                            text = "No lyrics available",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = palette.textPrimary,
+                            textAlign = TextAlign.Center
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "No word-synced, line-synced, or plain text lyrics were found for this track.",
+                            style = MaterialTheme.typography.bodySmall,
                             color = palette.textSecondary,
                             textAlign = TextAlign.Center
                         )
+                        if (onRetry != null) {
+                            Spacer(modifier = Modifier.height(14.dp))
+                            Button(
+                                onClick = onRetry,
+                                shape = CircleShape,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = palette.primaryAccent.copy(alpha = 0.16f),
+                                    contentColor = palette.primaryAccent
+                                )
+                            ) {
+                                Icon(
+                                    painter = painterResource(R.drawable.replay),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = "Retry",
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
                     }
                 } else {
                     LazyColumn(
@@ -1348,7 +1403,7 @@ private fun LyricsProviderSelectorDialog(
                             .heightIn(max = 340.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        items(availableProviders, key = { it.providerName }) { item ->
+                        items(sortedProviders, key = { it.providerName }) { item ->
                             val isSelected = currentProvider != null &&
                                     item.providerName.equals(currentProvider, ignoreCase = true)
                             val syncType = try {

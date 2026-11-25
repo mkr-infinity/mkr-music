@@ -6,23 +6,18 @@
 package com.music.mkr.ui.screens.settings
 
 import android.os.Build
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.itemsIndexed
-import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -30,23 +25,29 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
+import androidx.compose.material3.MaterialShapes
+import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
@@ -79,7 +80,6 @@ import com.music.mkr.ui.component.snackbar.SnackbarManager
 import com.music.mkr.utils.dataStore
 import com.music.mkr.utils.rememberPreference
 import com.music.mkr.constants.*
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import kotlinx.coroutines.Dispatchers
@@ -89,7 +89,7 @@ import timber.log.Timber
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun SettingsScreen(
     navController: NavController,
@@ -104,6 +104,7 @@ fun SettingsScreen(
     var isUpdateAvailable by remember { mutableStateOf(getUpdateAvailableState(context)) }
     var searchQuery by remember { mutableStateOf("") }
     val pureBlack by rememberPreference(PureBlackKey, defaultValue = false)
+    val accountName by rememberPreference(AccountNameKey, defaultValue = "")
 
     val searchCatalog = remember(context) { buildSettingsSearchCatalog(context) }
 
@@ -135,361 +136,552 @@ fun SettingsScreen(
         }
     }
 
-    Column(
-        Modifier
+    val surfaceColor = if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface
+    val cardContainerBase = if (pureBlack) Color(0xFF141518) else MaterialTheme.colorScheme.surfaceContainerLow
+
+    BoxWithConstraints(
+        modifier = Modifier
             .fillMaxSize()
-            .background(if (pureBlack) Color.Black else MaterialTheme.colorScheme.surface)
-            .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(14.dp)
+            .background(surfaceColor)
     ) {
-        Spacer(modifier = Modifier.height(4.dp))
+        val isWide = maxWidth >= 600.dp
+        val horizontalPadding = if (isWide) 24.dp else 16.dp
 
-        // Top Search Bar (16.dp Rounded Surface)
-        OutlinedTextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = {
-                Text(
-                    text = "Search settings, features...",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
-            },
-            leadingIcon = {
-                Icon(
-                    painter = painterResource(R.drawable.search),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp)
-                )
-            },
-            trailingIcon = {
-                if (searchQuery.isNotEmpty()) {
-                    IconButton(onClick = { searchQuery = "" }) {
-                        Icon(
-                            painter = painterResource(R.drawable.close),
-                            contentDescription = stringResource(R.string.clear),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(18.dp)
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(LocalPlayerAwareWindowInsets.current)
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = horizontalPadding),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .widthIn(max = 840.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Spacer(modifier = Modifier.height(4.dp))
+
+                if (searchQuery.isBlank()) {
+                    SettingsHeroBanner(
+                        accountName = accountName,
+                        isUpdateAvailable = isUpdateAvailable,
+                        pureBlack = pureBlack,
+                        onBannerClick = {
+                            navController.navigate(if (isUpdateAvailable) "settings/update" else "settings/account")
+                        },
+                        onVersionClick = { navController.navigate("settings/about") }
+                    )
+                }
+
+                // Borderless Pill Search Bar
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { searchQuery = it },
+                    placeholder = {
+                        Text(
+                            text = "Search settings...",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.72f)
                         )
-                    }
-                }
-            },
-            singleLine = true,
-            shape = RoundedCornerShape(16.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-                focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
-                cursorColor = MaterialTheme.colorScheme.primary,
-                focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f),
-                unfocusedBorderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f),
-            ),
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        if (searchQuery.isNotBlank()) {
-            val searchResults = remember(searchQuery, searchCatalog) {
-                searchSettingsCatalog(searchQuery, searchCatalog)
-            }
-            val displayedResults = remember(searchResults) {
-                searchResults.take(35)
-            }
-
-            if (searchResults.isEmpty()) {
-                EmptyPlaceholder(
-                    icon = R.drawable.search,
-                    text = "No matching settings found",
-                    description = "Try searching with different keywords like 'silence', 'bluetooth', 'sponsor', 'eq', 'theme', 'cache', or 'clear task'",
-                    modifier = Modifier.padding(vertical = 32.dp)
-                )
-            } else {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = if (searchResults.size > displayedResults.size) "Results (top ${displayedResults.size} of ${searchResults.size})" else "Results (${searchResults.size})",
-                        style = MaterialTheme.typography.labelLarge,
-                        color = MaterialTheme.colorScheme.primary,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Ranked by relevance",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
-                    )
-                }
-
-                ExpressiveSettingGroup(
-                    items = displayedResults.map { item ->
-                        Material3SettingsItem(
-                            icon = painterResource(item.iconRes),
-                            title = {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                        text = item.title,
-                                        fontWeight = FontWeight.SemiBold,
-                                        modifier = Modifier.weight(1f, fill = false),
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                    Surface(
-                                        shape = RoundedCornerShape(6.dp),
-                                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
-                                    ) {
-                                        Text(
-                                            text = item.category,
-                                            style = MaterialTheme.typography.labelSmall.copy(
-                                                fontSize = 10.sp,
-                                                fontWeight = FontWeight.Bold
-                                            ),
-                                            color = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                        )
-                                    }
-                                }
-                            },
-                            description = {
-                                Text(
-                                    text = item.description,
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    maxLines = 3,
-                                    overflow = TextOverflow.Ellipsis
+                    },
+                    leadingIcon = {
+                        Icon(
+                            painter = painterResource(R.drawable.search),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp)
+                        )
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { searchQuery = "" }) {
+                                Icon(
+                                    painter = painterResource(R.drawable.close),
+                                    contentDescription = stringResource(R.string.clear),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
                                 )
-                            },
-                            onClick = {
-                                SettingsHighlightManager.requestHighlight(item.targetKey, item.categoryKey)
-                                if (item.route == "settings") {
-                                    searchQuery = ""
-                                } else {
-                                    navController.navigate(item.route)
-                                }
+                            }
+                        }
+                    },
+                    singleLine = true,
+                    shape = CircleShape,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = if (pureBlack) Color(0xFF141518) else MaterialTheme.colorScheme.surfaceContainerHighest,
+                        unfocusedContainerColor = if (pureBlack) Color(0xFF141518) else MaterialTheme.colorScheme.surfaceContainerHigh,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        cursorColor = MaterialTheme.colorScheme.primary,
+                        focusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                        unfocusedBorderColor = Color.Transparent,
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                if (searchQuery.isNotBlank()) {
+                    val searchResults = remember(searchQuery, searchCatalog) {
+                        searchSettingsCatalog(searchQuery, searchCatalog)
+                    }
+                    val displayedResults = remember(searchResults) {
+                        searchResults.take(35)
+                    }
+
+                    if (searchResults.isEmpty()) {
+                        EmptyPlaceholder(
+                            icon = R.drawable.search,
+                            text = "No matching settings found",
+                            description = "Try searching with different keywords like 'silence', 'bluetooth', 'sponsor', 'eq', 'theme', 'cache', or 'clear task'",
+                            modifier = Modifier.padding(vertical = 32.dp)
+                        )
+                    } else {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 4.dp, vertical = 2.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (searchResults.size > displayedResults.size) "Results (top ${displayedResults.size} of ${searchResults.size})" else "Results (${searchResults.size})",
+                                style = MaterialTheme.typography.labelLarge,
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Ranked by relevance",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                            )
+                        }
+
+                        ExpressiveSettingGroup(
+                            items = displayedResults.map { item ->
+                                Material3SettingsItem(
+                                    icon = painterResource(item.iconRes),
+                                    title = {
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Text(
+                                                text = item.title,
+                                                fontWeight = FontWeight.SemiBold,
+                                                modifier = Modifier.weight(1f, fill = false),
+                                                maxLines = 2,
+                                                overflow = TextOverflow.Ellipsis
+                                            )
+                                            Surface(
+                                                shape = RoundedCornerShape(6.dp),
+                                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                                            ) {
+                                                Text(
+                                                    text = item.category,
+                                                    style = MaterialTheme.typography.labelSmall.copy(
+                                                        fontSize = 10.sp,
+                                                        fontWeight = FontWeight.Bold
+                                                    ),
+                                                    color = MaterialTheme.colorScheme.primary,
+                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                                                )
+                                            }
+                                        }
+                                    },
+                                    description = {
+                                        Text(
+                                            text = item.description,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            maxLines = 3,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    },
+                                    onClick = {
+                                        SettingsHighlightManager.requestHighlight(item.targetKey, item.categoryKey)
+                                        if (item.route == "settings") {
+                                            searchQuery = ""
+                                        } else {
+                                            navController.navigate(item.route)
+                                        }
+                                    }
+                                )
                             }
                         )
-                    }
-                )
 
-                if (searchResults.size > displayedResults.size) {
-                    Text(
-                        text = "Type more letters to narrow down among ${searchResults.size} matches",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        if (searchResults.size > displayedResults.size) {
+                            Text(
+                                text = "Type more letters to narrow down among ${searchResults.size} matches",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 8.dp, horizontal = 12.dp)
+                            )
+                        }
+                    }
+                } else {
+                    // 1-Tap Quick-Jump Chips
+                    Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp, horizontal = 12.dp)
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        SettingsQuickJumpChip(
+                            icon = R.drawable.equalizer,
+                            label = "EQ",
+                            pureBlack = pureBlack,
+                            onClick = { navController.navigate("settings/player") }
+                        )
+                        SettingsQuickJumpChip(
+                            icon = R.drawable.palette,
+                            label = "Theme",
+                            pureBlack = pureBlack,
+                            onClick = { navController.navigate("settings/appearance") }
+                        )
+                        SettingsQuickJumpChip(
+                            icon = R.drawable.lyrics,
+                            label = "Lyrics",
+                            pureBlack = pureBlack,
+                            onClick = { navController.navigate("settings/content") }
+                        )
+                        SettingsQuickJumpChip(
+                            icon = R.drawable.restore,
+                            label = "Backup",
+                            pureBlack = pureBlack,
+                            onClick = { navController.navigate("settings/backup_restore") }
+                        )
+                    }
+
+                    // Section 1 — Four Primary Categories in Adaptive Expressive Bento Grid
+                    val primaryCards = remember {
+                        listOf(
+                            SettingsHubCategory(
+                                key = "appearance_theme_palette",
+                                icon = R.drawable.palette,
+                                title = "Appearance",
+                                subtitle = "Theme & layout",
+                                route = "settings/appearance"
+                            ),
+                            SettingsHubCategory(
+                                key = "player_audio_quality",
+                                icon = R.drawable.earbud_case,
+                                title = "Player and Audio",
+                                subtitle = "Playback & EQ",
+                                route = "settings/player"
+                            ),
+                            SettingsHubCategory(
+                                key = "account_login",
+                                icon = R.drawable.account,
+                                title = "Account",
+                                subtitle = "Sync & profile",
+                                route = "settings/account"
+                            ),
+                            SettingsHubCategory(
+                                key = "storage_downloads",
+                                icon = R.drawable.storage,
+                                title = "Storage",
+                                subtitle = "Cache & downloads",
+                                route = "settings/storage"
+                            )
+                        )
+                    }
+
+                    SettingsBentoGrid(
+                        categories = primaryCards,
+                        isWide = isWide,
+                        pureBlack = pureBlack,
+                        baseSurface = cardContainerBase,
+                        onCategoryClick = { category ->
+                            navController.navigate(category.route)
+                        }
                     )
+
+                    val contentAiGroup: @Composable () -> Unit = {
+                        ExpressiveSettingGroup(
+                            title = "Content & AI",
+                            itemMinHeight = 56.dp,
+                            useCapsules = false,
+                            items = listOf(
+                                Material3SettingsItem(
+                                    key = "content_language",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = R.drawable.language,
+                                            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f),
+                                            contentColor = MaterialTheme.colorScheme.secondary,
+                                            shape = MaterialShapes.Cookie6Sided.toShape()
+                                        )
+                                    },
+                                    title = { Text(stringResource(R.string.content)) },
+                                    description = { Text("Region & lyrics") },
+                                    onClick = { navController.navigate("settings/content") }
+                                ),
+                                Material3SettingsItem(
+                                    key = "content_ai_lyrics",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = R.drawable.translate,
+                                            containerColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f),
+                                            contentColor = MaterialTheme.colorScheme.secondary,
+                                            shape = MaterialShapes.Clover8Leaf.toShape()
+                                        )
+                                    },
+                                    title = { Text(stringResource(R.string.ai_lyrics_translation)) },
+                                    description = { Text("Auto-translate") },
+                                    onClick = { navController.navigate("settings/ai") }
+                                )
+                            )
+                        )
+                    }
+
+                    val communityGroup: @Composable () -> Unit = {
+                        ExpressiveSettingGroup(
+                            title = "Features & Community",
+                            itemMinHeight = 56.dp,
+                            useCapsules = false,
+                            items = listOf(
+                                Material3SettingsItem(
+                                    key = "screen_listen_together",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = R.drawable.group,
+                                            containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
+                                            contentColor = MaterialTheme.colorScheme.tertiary,
+                                            shape = MaterialShapes.Cookie4Sided.toShape()
+                                        )
+                                    },
+                                    title = { Text("Listen Together") },
+                                    description = { Text("Live sessions") },
+                                    onClick = { navController.navigate(Screens.ListenTogether.route) }
+                                ),
+                                Material3SettingsItem(
+                                    key = "stats_screen",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = R.drawable.stats,
+                                            containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
+                                            contentColor = MaterialTheme.colorScheme.tertiary,
+                                            shape = RoundedCornerShape(14.dp)
+                                        )
+                                    },
+                                    title = { Text(stringResource(R.string.stats)) },
+                                    onClick = { navController.navigate("stats") }
+                                ),
+                                Material3SettingsItem(
+                                    key = "privacy_listening_summary",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = R.drawable.history,
+                                            containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
+                                            contentColor = MaterialTheme.colorScheme.tertiary,
+                                            shape = MaterialShapes.Cookie6Sided.toShape()
+                                        )
+                                    },
+                                    title = { Text("Listening Recap") },
+                                    description = { Text("Top tracks") },
+                                    onClick = { navController.navigate("settings/listening_summary") }
+                                ),
+                                Material3SettingsItem(
+                                    key = "privacy_discord_rpc",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = R.drawable.integration,
+                                            containerColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
+                                            contentColor = MaterialTheme.colorScheme.tertiary,
+                                            shape = MaterialShapes.Clover8Leaf.toShape()
+                                        )
+                                    },
+                                    title = { Text(stringResource(R.string.integrations)) },
+                                    description = { Text("Last.fm & Discord") },
+                                    onClick = { navController.navigate("settings/integrations") }
+                                )
+                            )
+                        )
+                    }
+
+                    val securityGroup: @Composable () -> Unit = {
+                        ExpressiveSettingGroup(
+                            title = "Security & Data",
+                            itemMinHeight = 56.dp,
+                            useCapsules = false,
+                            items = listOf(
+                                Material3SettingsItem(
+                                    key = "privacy_history",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = R.drawable.security,
+                                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                                            contentColor = MaterialTheme.colorScheme.primary,
+                                            shape = MaterialShapes.Cookie4Sided.toShape()
+                                        )
+                                    },
+                                    title = { Text(stringResource(R.string.privacy)) },
+                                    onClick = { navController.navigate("settings/privacy") }
+                                ),
+                                Material3SettingsItem(
+                                    key = "backup_export_import",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = R.drawable.restore,
+                                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
+                                            contentColor = MaterialTheme.colorScheme.primary,
+                                            shape = RoundedCornerShape(14.dp)
+                                        )
+                                    },
+                                    title = { Text(stringResource(R.string.backup_restore)) },
+                                    description = { Text("Export & import") },
+                                    onClick = { navController.navigate("settings/backup_restore") }
+                                )
+                            )
+                        )
+                    }
+
+                    val updatesAboutGroup: @Composable () -> Unit = {
+                        ExpressiveSettingGroup(
+                            title = "Updates & Feedback",
+                            itemMinHeight = 56.dp,
+                            useCapsules = false,
+                            items = listOf(
+                                Material3SettingsItem(
+                                    key = "update_check",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = if (isUpdateAvailable) R.drawable.update_alert else R.drawable.system_update_uptodate,
+                                            containerColor = if (isUpdateAvailable) {
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.2f)
+                                            } else {
+                                                MaterialTheme.colorScheme.surfaceContainerHighest
+                                            },
+                                            contentColor = if (isUpdateAvailable) {
+                                                MaterialTheme.colorScheme.primary
+                                            } else {
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                            },
+                                            shape = MaterialShapes.Cookie12Sided.toShape()
+                                        )
+                                    },
+                                    title = { Text(if (isUpdateAvailable) "Update Available" else "System Updates") },
+                                    description = {
+                                        Text(if (isUpdateAvailable) "Update ready" else "v${BuildConfig.VERSION_NAME}")
+                                    },
+                                    onClick = { navController.navigate("settings/update") }
+                                ),
+                                Material3SettingsItem(
+                                    key = "support_request_feature",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = R.drawable.support_mkr,
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            shape = RoundedCornerShape(14.dp)
+                                        )
+                                    },
+                                    title = { Text("Request a Feature") },
+                                    onClick = {
+                                        val featureTitle = "Feature Request: "
+                                        val featureBody = """
+                                            ### Feature Description
+                                            Please describe the feature you would like to see in MKR Music.
+
+                                            ### Benefit & Use Case
+                                            Explain how this enhancement benefits listeners.
+                                        """.trimIndent()
+                                        val url = "https://github.com/mkr-infinity/mkr-music/issues/new?title=" +
+                                            URLEncoder.encode(featureTitle, StandardCharsets.UTF_8.name()) +
+                                            "&body=" + URLEncoder.encode(featureBody, StandardCharsets.UTF_8.name())
+                                        uriHandler.safeOpenUri(context, url)
+                                    },
+                                    isExternalLink = true
+                                ),
+                                Material3SettingsItem(
+                                    key = "support_report_problem",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = R.drawable.bug_report,
+                                            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+                                            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            shape = RoundedCornerShape(14.dp)
+                                        )
+                                    },
+                                    title = { Text("Report a Problem") },
+                                    onClick = {
+                                        val bugTitle = "Bug Report: "
+                                        val bugBody = """
+                                            ### Device & App Information
+                                            - App Version: v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})
+                                            - Android Version: Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})
+                                            - Device: ${Build.MANUFACTURER} ${Build.MODEL}
+
+                                            ### Description of the Issue
+                                            Please describe what occurred.
+                                        """.trimIndent()
+                                        val url = "https://github.com/mkr-infinity/mkr-music/issues/new?title=" +
+                                            URLEncoder.encode(bugTitle, StandardCharsets.UTF_8.name()) +
+                                            "&body=" + URLEncoder.encode(bugBody, StandardCharsets.UTF_8.name())
+                                        uriHandler.safeOpenUri(context, url)
+                                    },
+                                    isExternalLink = true
+                                ),
+                                Material3SettingsItem(
+                                    key = "about_app",
+                                    leadingContent = {
+                                        ExpressiveRowBadge(
+                                            icon = R.drawable.info,
+                                            containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
+                                            contentColor = MaterialTheme.colorScheme.primary,
+                                            shape = MaterialShapes.Cookie6Sided.toShape()
+                                        )
+                                    },
+                                    title = { Text("About MKR Music") },
+                                    description = { Text("Credits & info") },
+                                    onClick = { navController.navigate("settings/about") }
+                                )
+                            )
+                        )
+                    }
+
+                    if (isWide) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
+                            verticalAlignment = Alignment.Top
+                        ) {
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                contentAiGroup()
+                                securityGroup()
+                            }
+                            Column(
+                                modifier = Modifier.weight(1f),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                communityGroup()
+                                updatesAboutGroup()
+                            }
+                        }
+                    } else {
+                        contentAiGroup()
+                        communityGroup()
+                        securityGroup()
+                        updatesAboutGroup()
+                    }
                 }
+
+                Spacer(modifier = Modifier.height(48.dp))
             }
-        } else {
-            // Section 1 — Four Primary Categories in Card-Style UI
-            val primaryCards = remember {
-                listOf(
-                    SettingsHubCategory(
-                        key = "appearance_theme_palette",
-                        icon = R.drawable.palette,
-                        title = "Appearance",
-                        subtitle = "Themes, accents, fonts & lyrics",
-                        route = "settings/appearance"
-                    ),
-                    SettingsHubCategory(
-                        key = "player_audio_quality",
-                        icon = R.drawable.earbud_case,
-                        title = "Player and Audio",
-                        subtitle = "Quality, styling & EQ",
-                        route = "settings/player"
-                    ),
-                    SettingsHubCategory(
-                        key = "account_login",
-                        icon = R.drawable.account,
-                        title = "Account",
-                        subtitle = "Profiles, login & sync",
-                        route = "settings/account"
-                    ),
-                    SettingsHubCategory(
-                        key = "storage_downloads",
-                        icon = R.drawable.storage,
-                        title = "Storage",
-                        subtitle = "Cache & download budget",
-                        route = "settings/storage"
-                    )
-                )
-            }
-
-            SettingsCategoryCarousel(
-                categories = primaryCards,
-                pureBlack = pureBlack,
-                onCategoryClick = { category ->
-                    navController.navigate(category.route)
-                }
-            )
-
-            // Section 2 — Content & AI
-            ExpressiveSettingGroup(
-                title = "Content & AI",
-                itemMinHeight = 64.dp,
-                useCapsules = true,
-                items = listOf(
-                    Material3SettingsItem(
-                        key = "content_language",
-                        icon = painterResource(R.drawable.language),
-                        title = { Text(stringResource(R.string.content)) },
-                        description = { Text("Language, country, lyrics providers & explicit filter") },
-                        onClick = { navController.navigate("settings/content") }
-                    ),
-                    Material3SettingsItem(
-                        key = "content_ai_lyrics",
-                        icon = painterResource(R.drawable.translate),
-                        title = { Text(stringResource(R.string.ai_lyrics_translation)) },
-                        description = { Text("Real-time song lyrics translation using intelligent AI") },
-                        onClick = { navController.navigate("settings/ai") }
-                    )
-                )
-            )
-
-            // Section 6 — Features & Listen Together
-            ExpressiveSettingGroup(
-                title = "Features & Community",
-                itemMinHeight = 64.dp,
-                useCapsules = true,
-                items = listOf(
-                    Material3SettingsItem(
-                        key = "screen_listen_together",
-                        icon = painterResource(R.drawable.group),
-                        title = { Text("Listen Together") },
-                        description = { Text("Synchronized live group listening sessions with friends") },
-                        onClick = { navController.navigate(Screens.ListenTogether.route) }
-                    ),
-                    Material3SettingsItem(
-                        key = "stats_screen",
-                        icon = painterResource(R.drawable.stats),
-                        title = { Text(stringResource(R.string.stats)) },
-                        description = { Text("Detailed personal listening statistics, top tracks & artists") },
-                        onClick = { navController.navigate("stats") }
-                    ),
-                    Material3SettingsItem(
-                        key = "privacy_listening_summary",
-                        icon = painterResource(R.drawable.history),
-                        title = { Text("Listening Recap") },
-                        description = { Text("Weekly listening stats, top artists, moods & highlights") },
-                        onClick = { navController.navigate("settings/listening_summary") }
-                    ),
-                    Material3SettingsItem(
-                        key = "privacy_discord_rpc",
-                        icon = painterResource(R.drawable.integration),
-                        title = { Text(stringResource(R.string.integrations)) },
-                        description = { Text("Discord, Last.fm, Listen Together, Spotify & YouTube Music") },
-                        onClick = { navController.navigate("settings/integrations") }
-                    )
-                )
-            )
-
-            // Section 7 — Security & Data
-            ExpressiveSettingGroup(
-                title = "Security & Data",
-                itemMinHeight = 64.dp,
-                useCapsules = true,
-                items = listOf(
-                    Material3SettingsItem(
-                        key = "privacy_history",
-                        icon = painterResource(R.drawable.security),
-                        title = { Text(stringResource(R.string.privacy)) },
-                        description = { Text("History tracking, search logs & permission controls") },
-                        onClick = { navController.navigate("settings/privacy") }
-                    ),
-                    Material3SettingsItem(
-                        key = "backup_export_import",
-                        icon = painterResource(R.drawable.restore),
-                        title = { Text(stringResource(R.string.backup_restore)) },
-                        description = { Text("Export & import playlists, data & settings backups") },
-                        onClick = { navController.navigate("settings/backup_restore") }
-                    )
-                )
-            )
-
-            // Section 8 — Updates & Feedback
-            ExpressiveSettingGroup(
-                title = "Updates & Feedback",
-                itemMinHeight = 64.dp,
-                useCapsules = true,
-                items = listOf(
-                    Material3SettingsItem(
-                        key = "update_check",
-                        icon = painterResource(if (isUpdateAvailable) R.drawable.update_alert else R.drawable.system_update_uptodate),
-                        title = { Text(if (isUpdateAvailable) "Update Available" else "System Updates") },
-                        description = { Text(if (isUpdateAvailable) "New MKR Music release is ready to install" else "MKR Music is up to date • Check for updates") },
-                        onClick = { navController.navigate("settings/update") }
-                    ),
-                    Material3SettingsItem(
-                        key = "support_request_feature",
-                        icon = painterResource(R.drawable.support_mkr),
-                        title = { Text("Request a Feature") },
-                        description = { Text("Propose new ideas & enhancements on GitHub") },
-                        onClick = {
-                            val featureTitle = "Feature Request: "
-                            val featureBody = """
-                                ### Feature Description
-                                Please describe the feature you would like to see in MKR Music.
-
-                                ### Benefit & Use Case
-                                Explain how this enhancement benefits listeners.
-                            """.trimIndent()
-                            val url = "https://github.com/mkr-infinity/mkr-music/issues/new?title=" +
-                                URLEncoder.encode(featureTitle, StandardCharsets.UTF_8.name()) +
-                                "&body=" + URLEncoder.encode(featureBody, StandardCharsets.UTF_8.name())
-                            uriHandler.safeOpenUri(context, url)
-                        },
-                        isExternalLink = true
-                    ),
-                    Material3SettingsItem(
-                        key = "support_report_problem",
-                        icon = painterResource(R.drawable.bug_report),
-                        title = { Text("Report a Problem") },
-                        description = { Text("Submit issue report with device & version details") },
-                        onClick = {
-                            val bugTitle = "Bug Report: "
-                            val bugBody = """
-                                ### Device & App Information
-                                - App Version: v${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})
-                                - Android Version: Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})
-                                - Device: ${Build.MANUFACTURER} ${Build.MODEL}
-
-                                ### Description of the Issue
-                                Please describe what occurred.
-                            """.trimIndent()
-                            val url = "https://github.com/mkr-infinity/mkr-music/issues/new?title=" +
-                                URLEncoder.encode(bugTitle, StandardCharsets.UTF_8.name()) +
-                                "&body=" + URLEncoder.encode(bugBody, StandardCharsets.UTF_8.name())
-                            uriHandler.safeOpenUri(context, url)
-                        },
-                        isExternalLink = true
-                    ),
-                    Material3SettingsItem(
-                        key = "about_app",
-                        icon = painterResource(R.drawable.info),
-                        title = { Text("About MKR Music") },
-                        description = { Text("Version v${BuildConfig.VERSION_NAME} • Credits & Info") },
-                        onClick = { navController.navigate("settings/about") }
-                    )
-                )
-            )
         }
-
-        Spacer(modifier = Modifier.height(48.dp))
     }
 
     TopAppBar(
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = surfaceColor,
+            scrolledContainerColor = surfaceColor
+        ),
         title = {
             Text(
                 text = stringResource(R.string.settings),
@@ -624,145 +816,297 @@ private data class CardColorScheme(
     val border: Color
 )
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
-private fun SettingsCategoryCarousel(
-    categories: List<SettingsHubCategory>,
-    pureBlack: Boolean = false,
-    onCategoryClick: (SettingsHubCategory) -> Unit,
-    modifier: Modifier = Modifier
+private fun SettingsHeroBanner(
+    accountName: String,
+    isUpdateAvailable: Boolean,
+    pureBlack: Boolean,
+    onBannerClick: () -> Unit,
+    onVersionClick: () -> Unit,
 ) {
-    val listState = rememberLazyListState()
-    val lifecycleOwner = LocalLifecycleOwner.current
-    var lastInteractionTime by remember { mutableStateOf(0L) }
-
-    LaunchedEffect(listState.isScrollInProgress) {
-        if (listState.isScrollInProgress) {
-            lastInteractionTime = System.currentTimeMillis()
-        }
+    val containerColor = if (isUpdateAvailable) {
+        MaterialTheme.colorScheme.primaryContainer
+    } else if (pureBlack) {
+        Color(0xFF141518)
+    } else {
+        MaterialTheme.colorScheme.surfaceContainerHigh
+    }
+    val borderColor = if (isUpdateAvailable) {
+        MaterialTheme.colorScheme.primary.copy(alpha = 0.35f)
+    } else {
+        MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)
     }
 
-    LaunchedEffect(categories, lifecycleOwner) {
-        if (categories.size <= 1) return@LaunchedEffect
-        var forward = true
-        while (isActive) {
-            delay(3500L)
-            if (!lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
-                continue
-            }
-            if (listState.isScrollInProgress) {
-                lastInteractionTime = System.currentTimeMillis()
-                continue
-            }
-
-            val elapsedSinceInteraction = System.currentTimeMillis() - lastInteractionTime
-            if (elapsedSinceInteraction < 6000L) {
-                delay(6000L - elapsedSinceInteraction)
-                continue
-            }
-            if (listState.isScrollInProgress) {
-                lastInteractionTime = System.currentTimeMillis()
-                continue
-            }
-
-            val currentIdx = listState.firstVisibleItemIndex
-            val targetIdx = if (forward) {
-                if (currentIdx >= categories.size - 1) {
-                    forward = false
-                    (categories.size - 2).coerceAtLeast(0)
-                } else {
-                    currentIdx + 1
-                }
-            } else {
-                if (currentIdx <= 0) {
-                    forward = true
-                    1.coerceAtMost(categories.size - 1)
-                } else {
-                    currentIdx - 1
-                }
-            }.coerceIn(0, categories.size - 1)
-
-            if (targetIdx != currentIdx) {
-                try {
-                    listState.animateScrollToItem(targetIdx)
-                } catch (e: Exception) {
-                    lastInteractionTime = System.currentTimeMillis()
-                }
-            }
-        }
-    }
-
-    val baseSurface = if (pureBlack) Color(0xFF141518) else MaterialTheme.colorScheme.surfaceContainerLow
-
-    LazyRow(
-        state = listState,
-        horizontalArrangement = Arrangement.spacedBy(14.dp),
-        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp),
-        modifier = modifier.fillMaxWidth()
+    Surface(
+        shape = RoundedCornerShape(28.dp),
+        color = containerColor,
+        border = BorderStroke(1.dp, borderColor),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(28.dp))
+            .clickable(role = Role.Button, onClick = onBannerClick)
     ) {
-        itemsIndexed(categories, key = { _, cat -> cat.key }) { _, category ->
-            val colorScheme = when (category.key) {
-                "appearance_theme_palette" -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.primary.copy(alpha = if (pureBlack) 0.12f else 0.08f).compositeOver(baseSurface),
-                    content = MaterialTheme.colorScheme.onSurface,
-                    iconBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f),
-                    iconTint = MaterialTheme.colorScheme.primary,
-                    border = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
-                )
-                "player_audio_quality" -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.secondary.copy(alpha = if (pureBlack) 0.12f else 0.08f).compositeOver(baseSurface),
-                    content = MaterialTheme.colorScheme.onSurface,
-                    iconBg = MaterialTheme.colorScheme.secondary.copy(alpha = 0.14f),
-                    iconTint = MaterialTheme.colorScheme.secondary,
-                    border = MaterialTheme.colorScheme.secondary.copy(alpha = 0.22f)
-                )
-                "account_login" -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.tertiary.copy(alpha = if (pureBlack) 0.12f else 0.08f).compositeOver(baseSurface),
-                    content = MaterialTheme.colorScheme.onSurface,
-                    iconBg = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.14f),
-                    iconTint = MaterialTheme.colorScheme.tertiary,
-                    border = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.22f)
-                )
-                else -> CardColorScheme(
-                    container = MaterialTheme.colorScheme.surfaceTint.copy(alpha = if (pureBlack) 0.10f else 0.06f).compositeOver(baseSurface),
-                    content = MaterialTheme.colorScheme.onSurface,
-                    iconBg = MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.14f),
-                    iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    border = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp, vertical = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(14.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(46.dp)
+                    .clip(MaterialShapes.Cookie12Sided.toShape())
+                    .background(
+                        if (isUpdateAvailable) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    painter = painterResource(
+                        if (isUpdateAvailable) R.drawable.update_alert else R.drawable.account
+                    ),
+                    contentDescription = null,
+                    tint = if (isUpdateAvailable) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
                 )
             }
 
-            SettingsCarouselCard(
-                category = category,
-                colors = colorScheme,
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = if (isUpdateAvailable) {
+                        "Update Ready"
+                    } else if (accountName.isNotBlank()) {
+                        accountName
+                    } else {
+                        "MKR Music"
+                    },
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                    color = if (isUpdateAvailable) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+                Text(
+                    text = if (isUpdateAvailable) {
+                        "Tap to install"
+                    } else if (accountName.isNotBlank()) {
+                        "Signed in"
+                    } else {
+                        "Local session"
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (isUpdateAvailable) {
+                        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Surface(
+                shape = CircleShape,
+                color = if (isUpdateAvailable) {
+                    MaterialTheme.colorScheme.primary
+                } else {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f)
+                },
                 modifier = Modifier
-                    .width(180.dp)
-                    .heightIn(min = 140.dp),
-                onClick = {
-                    lastInteractionTime = System.currentTimeMillis()
-                    onCategoryClick(category)
-                }
+                    .clip(CircleShape)
+                    .clickable(role = Role.Button, onClick = onVersionClick)
+            ) {
+                Text(
+                    text = "v${BuildConfig.VERSION_NAME}",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+                    color = if (isUpdateAvailable) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsQuickJumpChip(
+    icon: Int,
+    label: String,
+    pureBlack: Boolean,
+    onClick: () -> Unit,
+) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = if (pureBlack) Color(0xFF141518) else MaterialTheme.colorScheme.surfaceContainerHigh,
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f))
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1
             )
         }
     }
 }
 
 @Composable
-private fun SettingsCarouselCard(
+private fun ExpressiveRowBadge(
+    icon: Int,
+    containerColor: Color,
+    contentColor: Color,
+    shape: Shape,
+) {
+    Box(
+        modifier = Modifier
+            .size(40.dp)
+            .clip(shape)
+            .background(containerColor),
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            painter = painterResource(icon),
+            contentDescription = null,
+            tint = contentColor,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
+@Composable
+private fun SettingsBentoGrid(
+    categories: List<SettingsHubCategory>,
+    isWide: Boolean,
+    pureBlack: Boolean,
+    baseSurface: Color,
+    onCategoryClick: (SettingsHubCategory) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    @Composable
+    fun bentoColorsFor(key: String): CardColorScheme = when (key) {
+        "appearance_theme_palette" -> CardColorScheme(
+            container = MaterialTheme.colorScheme.primary.copy(alpha = if (pureBlack) 0.14f else 0.10f).compositeOver(baseSurface),
+            content = MaterialTheme.colorScheme.onSurface,
+            iconBg = MaterialTheme.colorScheme.primary.copy(alpha = 0.16f),
+            iconTint = MaterialTheme.colorScheme.primary,
+            border = MaterialTheme.colorScheme.primary.copy(alpha = 0.22f)
+        )
+        "player_audio_quality" -> CardColorScheme(
+            container = MaterialTheme.colorScheme.secondary.copy(alpha = if (pureBlack) 0.14f else 0.10f).compositeOver(baseSurface),
+            content = MaterialTheme.colorScheme.onSurface,
+            iconBg = MaterialTheme.colorScheme.secondary.copy(alpha = 0.16f),
+            iconTint = MaterialTheme.colorScheme.secondary,
+            border = MaterialTheme.colorScheme.secondary.copy(alpha = 0.22f)
+        )
+        "account_login" -> CardColorScheme(
+            container = MaterialTheme.colorScheme.tertiary.copy(alpha = if (pureBlack) 0.14f else 0.10f).compositeOver(baseSurface),
+            content = MaterialTheme.colorScheme.onSurface,
+            iconBg = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.16f),
+            iconTint = MaterialTheme.colorScheme.tertiary,
+            border = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.22f)
+        )
+        else -> CardColorScheme(
+            container = MaterialTheme.colorScheme.surfaceTint.copy(alpha = if (pureBlack) 0.12f else 0.08f).compositeOver(baseSurface),
+            content = MaterialTheme.colorScheme.onSurface,
+            iconBg = MaterialTheme.colorScheme.surfaceTint.copy(alpha = 0.15f),
+            iconTint = MaterialTheme.colorScheme.onSurfaceVariant,
+            border = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)
+        )
+    }
+
+    @Composable
+    fun iconShapeFor(key: String): Shape = when (key) {
+        "appearance_theme_palette" -> MaterialShapes.Cookie6Sided.toShape()
+        "player_audio_quality" -> MaterialShapes.Clover8Leaf.toShape()
+        "account_login" -> MaterialShapes.Cookie4Sided.toShape()
+        else -> RoundedCornerShape(14.dp)
+    }
+
+    if (isWide) {
+        Row(
+            modifier = modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Max),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            categories.forEach { category ->
+                SettingsBentoCard(
+                    category = category,
+                    colors = bentoColorsFor(category.key),
+                    iconShape = iconShapeFor(category.key),
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .heightIn(min = 128.dp),
+                    onClick = { onCategoryClick(category) }
+                )
+            }
+        }
+    } else {
+        Column(
+            modifier = modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            categories.chunked(2).forEach { rowItems ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Max),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    rowItems.forEach { category ->
+                        SettingsBentoCard(
+                            category = category,
+                            colors = bentoColorsFor(category.key),
+                            iconShape = iconShapeFor(category.key),
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                                .heightIn(min = 124.dp),
+                            onClick = { onCategoryClick(category) }
+                        )
+                    }
+                    if (rowItems.size == 1) {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsBentoCard(
     category: SettingsHubCategory,
     colors: CardColorScheme,
+    iconShape: Shape,
     modifier: Modifier = Modifier,
     onClick: () -> Unit
 ) {
     Surface(
         modifier = modifier
-            .settingsHighlight(category.key, RoundedCornerShape(22.dp))
-            .clip(RoundedCornerShape(22.dp))
+            .settingsHighlight(category.key, RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(24.dp))
             .clickable(
                 role = Role.Button,
                 onClickLabel = category.title,
                 onClick = onClick
             ),
-        shape = RoundedCornerShape(22.dp),
+        shape = RoundedCornerShape(24.dp),
         color = colors.container,
         tonalElevation = 1.dp,
         border = BorderStroke(1.dp, colors.border)
@@ -776,7 +1120,7 @@ private fun SettingsCarouselCard(
             Box(
                 modifier = Modifier
                     .size(42.dp)
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(iconShape)
                     .background(colors.iconBg),
                 contentAlignment = Alignment.Center
             ) {
@@ -784,7 +1128,7 @@ private fun SettingsCarouselCard(
                     painter = painterResource(category.icon),
                     contentDescription = null,
                     tint = colors.iconTint,
-                    modifier = Modifier.size(22.dp)
+                    modifier = Modifier.size(21.dp)
                 )
             }
 
@@ -801,7 +1145,7 @@ private fun SettingsCarouselCard(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = category.subtitle,
                     style = MaterialTheme.typography.bodySmall.copy(
@@ -809,8 +1153,7 @@ private fun SettingsCarouselCard(
                         lineHeight = 16.sp
                     ),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    softWrap = true,
+                    maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
             }

@@ -36,6 +36,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import coil3.compose.AsyncImage
 import com.music.mkr.lyrics.LyricsProviderRegistry
+import com.music.mkr.lyrics.LyricsResult
+import com.music.mkr.ui.component.LyricsProviderSelectorDialog
+import com.music.mkr.ui.theme.LocalPlayerArtworkPalette
 import androidx.compose.material3.CircularWavyProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -45,6 +48,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -150,6 +154,77 @@ fun LyricsMenu(
     }
     var showSearchResultDialog by rememberSaveable {
         mutableStateOf(false)
+    }
+    var showProviderSelectorDialog by rememberSaveable {
+        mutableStateOf(false)
+    }
+
+    if (showProviderSelectorDialog) {
+        val providerResults by viewModel.results.collectAsState()
+        val isProviderLoading by viewModel.isLoading.collectAsState()
+        val currentLyricsEntity = lyricsProvider()
+        val metadata = mediaMetadataProvider()
+        val availableProviders = remember(providerResults, currentLyricsEntity, metadata.id) {
+            val combined = mutableListOf<LyricsResult>()
+            if (
+                currentLyricsEntity != null &&
+                currentLyricsEntity.id == metadata.id &&
+                currentLyricsEntity.lyrics.isNotBlank() &&
+                currentLyricsEntity.lyrics != LyricsEntity.LYRICS_NOT_FOUND
+            ) {
+                combined.add(
+                    LyricsResult(
+                        providerName = currentLyricsEntity.provider.ifBlank { "Current" },
+                        lyrics = currentLyricsEntity.lyrics
+                    )
+                )
+            }
+            providerResults.forEach { result ->
+                if (
+                    result.lyrics.isNotBlank() &&
+                    result.lyrics != LyricsEntity.LYRICS_NOT_FOUND &&
+                    combined.none { it.providerName.equals(result.providerName, ignoreCase = true) }
+                ) {
+                    combined.add(result)
+                }
+            }
+            combined
+        }
+
+        LyricsProviderSelectorDialog(
+            currentProvider = currentLyricsEntity?.provider,
+            availableProviders = availableProviders,
+            isLoading = isProviderLoading,
+            palette = LocalPlayerArtworkPalette.current,
+            songTitle = metadata.title,
+            songArtist = metadata.artists.joinToString { it.name },
+            onSelectProvider = { selected ->
+                viewModel.cancelSearch()
+                database.query {
+                    upsert(
+                        LyricsEntity(
+                            id = metadata.id,
+                            lyrics = selected.lyrics,
+                            provider = selected.providerName
+                        )
+                    )
+                }
+                showProviderSelectorDialog = false
+            },
+            onRetry = {
+                viewModel.search(
+                    mediaId = metadata.id,
+                    title = metadata.title,
+                    artist = metadata.artists.joinToString { it.name },
+                    duration = metadata.duration,
+                    album = metadata.album?.title
+                )
+            },
+            onDismiss = {
+                viewModel.cancelSearch()
+                showProviderSelectorDialog = false
+            }
+        )
     }
 
     val searchMediaMetadata =
@@ -459,6 +534,77 @@ fun LyricsMenu(
                             )
                         }
                     }
+                }
+            }
+        }
+
+        // Capsule Pill — Choose Lyrics Provider
+        item {
+            val activeProvider = lyricsProvider()?.provider
+                ?.takeIf { it.isNotBlank() && !it.equals("Unknown", ignoreCase = true) }
+                ?.let { LyricsProviderRegistry.getDisplayName(it) }
+                ?: "Auto"
+
+            Surface(
+                onClick = {
+                    val metadata = mediaMetadataProvider()
+                    viewModel.search(
+                        mediaId = metadata.id,
+                        title = metadata.title,
+                        artist = metadata.artists.joinToString { it.name },
+                        duration = metadata.duration,
+                        album = metadata.album?.title
+                    )
+                    showProviderSelectorDialog = true
+                },
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.55f),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(R.drawable.lyrics),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Lyrics Provider",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.weight(1f))
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)
+                    ) {
+                        Text(
+                            text = activeProvider,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.primary,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    Icon(
+                        painter = painterResource(R.drawable.chevron_right_px),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(18.dp)
+                    )
                 }
             }
         }
