@@ -91,17 +91,22 @@ jobs:
             exit 1
           fi
 
-          # Compute deterministic versionCode: MAJOR * 10000 + MINOR * 100 + PATCH
-          COMPUTED_CODE=$(( 10#$MAJOR * 10000 + 10#$MINOR * 100 + 10#$PATCH ))
+          # Read manual APP_BUILD_CODE directly from version.properties
+          RAW_BUILD_CODE=$(grep "^APP_BUILD_CODE=" version.properties | head -n 1 | cut -d'=' -f2- | tr -d ' \r\n')
+          if [[ -z "$RAW_BUILD_CODE" || ! "$RAW_BUILD_CODE" =~ ^[0-9]+$ ]]; then
+            echo "::error file=version.properties::Missing or invalid integer 'APP_BUILD_CODE' key in version.properties!"
+            exit 1
+          fi
+          COMPUTED_CODE=$(( 10#$RAW_BUILD_CODE ))
 
           # Ensure strictly greater than historical published version code 77
           if (( COMPUTED_CODE <= 77 || COMPUTED_CODE > 2147483647 )); then
-            echo "::error file=version.properties::Computed versionCode ($COMPUTED_CODE) must be strictly greater than historical version code 77."
+            echo "::error file=version.properties::APP_BUILD_CODE ($COMPUTED_CODE) must be strictly greater than historical version code 77."
             exit 1
           fi
 
           echo "✓ Canonical Version Name: $RAW_APP_VERSION"
-          echo "✓ Computed Version Code: $COMPUTED_CODE"
+          echo "✓ Canonical Build Code: $COMPUTED_CODE"
           echo "version_name=$RAW_APP_VERSION" >> $GITHUB_OUTPUT
           echo "version_code=$COMPUTED_CODE" >> $GITHUB_OUTPUT
 
